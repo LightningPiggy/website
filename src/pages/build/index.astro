@@ -1,0 +1,189 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Button from '../../components/ui/Button.astro';
+import SectionHeading from '../../components/ui/SectionHeading.astro';
+---
+
+<BaseLayout title="Build" description="Build your own Lightning Piggy - choose between the E-paper or LCD edition">
+  <section class="py-16 md:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <SectionHeading
+        title="Build Your Own"
+        subtitle="Choose the version that's right for you. Both are fully open source with step-by-step guides."
+      />
+
+      <div class="mt-16 grid md:grid-cols-2 gap-8">
+        <!-- LightningPiggy v1 -->
+        <div class="bg-white rounded-3xl overflow-hidden border border-gray-200 hover:border-pink hover:shadow-xl transition-all">
+          <div class="aspect-video bg-gray-100 overflow-hidden">
+            <img
+              src="/images/v1-example.jpeg"
+              alt="LightningPiggy v1 E-paper edition"
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div class="p-8">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">Classic</span>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">Lightning Piggy v1</h3>
+            <p class="text-gray-500 mb-2">E-Paper Edition</p>
+            <p class="text-gray-600 mb-6">
+              The original design using a LILYGO T5 e-paper display. Great battery life and
+              easy-to-read display that works in direct sunlight.
+            </p>
+            <ul class="space-y-2 text-sm text-gray-600 mb-6">
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                E-paper display (paper-like, low power)
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                LILYGO T5 board
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Battery or USB powered
+              </li>
+            </ul>
+            <Button href="/build/v1" variant="outline" class="w-full">
+              View v1 Build Guide
+            </Button>
+          </div>
+        </div>
+
+        <!-- LightningPiggy v2 -->
+        <div class="bg-white rounded-3xl overflow-hidden border-2 border-pink shadow-xl relative">
+          <div class="absolute top-4 right-4 z-10">
+            <span class="px-3 py-1 bg-pink text-white text-sm font-medium rounded-full">Recommended</span>
+          </div>
+          <div class="aspect-video bg-gray-100 overflow-hidden">
+            <img
+              src="/images/v2-example.jpeg"
+              alt="LightningPiggy v2 LCD edition"
+              class="w-[120%] h-[120%] object-cover object-[55%_85%]"
+            />
+          </div>
+          <div class="p-8">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="px-3 py-1 bg-yellow text-gray-900 text-sm font-medium rounded-full">Latest</span>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">Lightning Piggy v2</h3>
+            <p class="text-gray-500 mb-2">LCD Touch Edition</p>
+            <p class="text-gray-600 mb-6">
+              The latest design using WaveShare ESP32-S3 with touchscreen display. Runs MicroPythonOS
+              for easy customization.
+            </p>
+            <ul class="space-y-2 text-sm text-gray-600 mb-6">
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Color LCD touchscreen
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                WaveShare ESP32-S3-Touch board
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                MicroPythonOS (easy to modify)
+              </li>
+            </ul>
+            <Button href="/build/v2" variant="primary" class="w-full">
+              View v2 Build Guide
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cases section -->
+      <div class="mt-16 text-center">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Need a case?</h2>
+        <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
+          Browse community-designed enclosures or create your own. 3D printable, laser-cut, or DIY options available.
+        </p>
+        <Button href="/build/cases" variant="outline">
+          Browse Cases →
+        </Button>
+      </div>
+
+      <!-- Guides section -->
+      <div class="mt-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Guides</h2>
+        <p class="text-gray-600 mb-6">Step-by-step guides to help you set up your Lightning Piggy.</p>
+        <div class="grid gap-6">
+          <a
+            href="/build/lnbits"
+            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+          >
+            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                LNbits Setup
+              </h3>
+              <p class="text-gray-600 mt-1">Step-by-step guide to setting up a self-custodial LNbits wallet.</p>
+            </div>
+            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <!-- Tools section -->
+      <div class="mt-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Tools</h2>
+        <p class="text-gray-600 mb-6">Handy utilities for your Lightning Piggy build.</p>
+        <div class="grid gap-6">
+          <a
+            href="/build/wifi-qr"
+            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+          >
+            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                WiFi QR Code Generator
+              </h3>
+              <p class="text-gray-600 mt-1">Generate a scannable QR code to share your WiFi network instantly. Great for setting up your Lightning Piggy.</p>
+            </div>
+            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+          <a
+            href="/build/lnurl-qr"
+            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+          >
+            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                ZapRewards! - QR Code Generator
+              </h3>
+              <p class="text-gray-600 mt-1">Generate scannable QR codes for your LNbits LNURL pay links.</p>
+            </div>
+            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

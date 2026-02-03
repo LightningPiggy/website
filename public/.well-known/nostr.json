@@ -1,0 +1,30 @@
+{
+  "names": {
+    "richard": "6bb36e4f65717a8e8acec00e726cdb93e51020d8e576e482720309c874b8e187",
+    "jake": "e9f90f307e89e7ec31a6bbd0d5cd7400876a833105bf7dc070ad3ff02ad53f50",
+    "thomas": "181137054fe60df5168976311f0bf44dbe4bd4d2e0af69325dfee9fa81a8cbda"
+  },
+  "relays": {
+    "6bb36e4f65717a8e8acec00e726cdb93e51020d8e576e482720309c874b8e187": [
+      "wss://relay.primal.net",
+      "wss://relay.damus.io",
+      "wss://relay.nostr.band",
+      "wss://nos.lol",
+      "wss://relay.snort.social"
+    ],
+    "e9f90f307e89e7ec31a6bbd0d5cd7400876a833105bf7dc070ad3ff02ad53f50": [
+      "wss://relay.primal.net",
+      "wss://relay.damus.io",
+      "wss://relay.nostr.band",
+      "wss://nos.lol",
+      "wss://relay.snort.social"
+    ],
+    "181137054fe60df5168976311f0bf44dbe4bd4d2e0af69325dfee9fa81a8cbda": [
+      "wss://relay.primal.net",
+      "wss://relay.damus.io",
+      "wss://relay.nostr.band",
+      "wss://nos.lol",
+      "wss://relay.snort.social"
+    ]
+  }
+}

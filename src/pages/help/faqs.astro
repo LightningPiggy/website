@@ -1,0 +1,28 @@
+---
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+const posts = await getCollection('pages');
+const faqsPost = posts.find(p => p.data.slug === 'faqs');
+
+let Content = null;
+if (faqsPost) {
+  const rendered = await render(faqsPost);
+  Content = rendered.Content;
+}
+---
+
+<ContentLayout
+  title="FAQs"
+  description="Frequently asked questions about Lightning Piggy"
+>
+  {Content && <Content />}
+
+  <hr class="my-12 border-gray-200" />
+
+  <h2>Still have questions?</h2>
+  <p>
+    Join our <a href="https://t.me/LightningPiggy" target="_blank" rel="noopener" class="text-pink">Telegram community</a> or
+    email us at <a href="mailto:oink@lightningpiggy.com" class="text-pink">oink@lightningpiggy.com</a>.
+  </p>
+</ContentLayout>

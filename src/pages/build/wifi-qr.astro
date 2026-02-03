@@ -1,0 +1,285 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="WiFi QR Code Generator" description="Generate a QR code to share your WiFi network instantly">
+  <section class="py-16 md:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">WiFi QR Code Generator</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Generate a QR code that anyone can scan to connect to your WiFi network. Perfect for setting up your Lightning Piggy.
+        </p>
+        <div class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          Everything runs in your browser — no data is sent to any server.
+        </div>
+      </header>
+
+      <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+        <form id="wifi-form" class="space-y-6">
+          <div>
+            <label for="ssid" class="block text-sm font-semibold text-gray-900 mb-1.5">Network Name (SSID)</label>
+            <input
+              type="text"
+              id="ssid"
+              name="ssid"
+              required
+              placeholder="e.g. MyHomeWiFi"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
+            />
+          </div>
+
+          <div>
+            <label for="security" class="block text-sm font-semibold text-gray-900 mb-1.5">Security Type</label>
+            <select
+              id="security"
+              name="security"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 bg-white"
+            >
+              <option value="WPA">WPA / WPA2</option>
+              <option value="WEP">WEP</option>
+              <option value="">None (Open Network)</option>
+            </select>
+          </div>
+
+          <div id="password-field">
+            <label for="password" class="block text-sm font-semibold text-gray-900 mb-1.5">Password</label>
+            <div class="relative">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter WiFi password"
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400 pr-12"
+              />
+              <button
+                type="button"
+                id="toggle-password"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Toggle password visibility"
+              >
+                <svg id="eye-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                <svg id="eye-off-icon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L6.59 6.59m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <input
+              type="checkbox"
+              id="hidden"
+              name="hidden"
+              class="w-4 h-4 rounded border-gray-300 text-pink focus:ring-pink/20"
+            />
+            <label for="hidden" class="text-sm text-gray-700">Hidden network</label>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-3 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors"
+          >
+            Generate QR Code
+          </button>
+        </form>
+
+        <div id="qr-output" class="hidden mt-8 text-center">
+          <!-- Branded QR display -->
+          <div class="inline-block">
+            <div class="relative border-[3px] border-pink rounded-2xl p-6 pt-4 pb-8 bg-white">
+              <p id="qr-ssid-display" class="text-sm font-semibold text-gray-700 mb-1"></p>
+              <p class="text-lg font-bold text-gray-900 mb-4">WiFi QR</p>
+              <div id="qr-code" class="inline-block"></div>
+              <!-- Logo centred vertically on bottom border -->
+              <div class="absolute -bottom-[14px] left-1/2 -translate-x-1/2 bg-white px-4">
+                <img src="/images/branding/lightningpiggy-logo.svg" alt="LightningPiggy" class="h-7 w-auto" />
+              </div>
+            </div>
+          </div>
+          <div class="mt-6">
+            <button
+              id="download-btn"
+              class="inline-flex items-center gap-2 py-2.5 px-6 border border-gray-200 text-gray-700 font-medium rounded-xl hover:border-pink hover:text-pink transition-all"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Download PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Hidden canvas for branded PNG export -->
+  <canvas id="export-canvas" style="display:none;"></canvas>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" is:inline></script>
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function () {
+      var form = document.getElementById('wifi-form');
+      var securitySelect = document.getElementById('security');
+      var passwordField = document.getElementById('password-field');
+      var passwordInput = document.getElementById('password');
+      var toggleBtn = document.getElementById('toggle-password');
+      var eyeIcon = document.getElementById('eye-icon');
+      var eyeOffIcon = document.getElementById('eye-off-icon');
+      var qrOutput = document.getElementById('qr-output');
+      var qrCodeEl = document.getElementById('qr-code');
+      var qrSsidDisplay = document.getElementById('qr-ssid-display');
+      var downloadBtn = document.getElementById('download-btn');
+      var exportCanvas = document.getElementById('export-canvas');
+      var currentQR = null;
+      var logoImg = new Image();
+      logoImg.src = '/images/branding/lightningpiggy-logo.svg';
+
+      toggleBtn.addEventListener('click', function () {
+        var isPassword = passwordInput.type === 'password';
+        passwordInput.type = isPassword ? 'text' : 'password';
+        eyeIcon.classList.toggle('hidden', isPassword);
+        eyeOffIcon.classList.toggle('hidden', !isPassword);
+      });
+
+      securitySelect.addEventListener('change', function () {
+        if (securitySelect.value === '') {
+          passwordField.classList.add('hidden');
+          passwordInput.removeAttribute('required');
+        } else {
+          passwordField.classList.remove('hidden');
+          passwordInput.setAttribute('required', '');
+        }
+      });
+
+      function escapeWifiString(str) {
+        return str.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/:/g, '\\:');
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        var ssid = document.getElementById('ssid').value.trim();
+        var password = passwordInput.value;
+        var security = securitySelect.value;
+        var hidden = document.getElementById('hidden').checked;
+
+        if (!ssid) return;
+
+        var wifiString = 'WIFI:T:' + security + ';S:' + escapeWifiString(ssid) + ';P:' + escapeWifiString(password) + ';H:' + hidden + ';;';
+
+        qrCodeEl.innerHTML = '';
+        currentQR = null;
+
+        currentQR = new QRCode(qrCodeEl, {
+          text: wifiString,
+          width: 256,
+          height: 256,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+
+        qrSsidDisplay.textContent = ssid;
+        qrOutput.classList.remove('hidden');
+
+        setTimeout(function () {
+          qrOutput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      });
+
+      downloadBtn.addEventListener('click', function () {
+        var qrCanvas = qrCodeEl.querySelector('canvas');
+        if (!qrCanvas) return;
+
+        var ssid = document.getElementById('ssid').value.trim();
+        var pink = '#EC008C';
+
+        // Canvas dimensions (at 1x, then rendered at 2x for crisp output)
+        var scale = 2;
+        var padding = 40;
+        var border = 4;
+        var qrSize = 256;
+        var topTextHeight = 70; // space for SSID + "WiFi QR"
+        var innerWidth = qrSize + padding * 2;
+        var innerHeight = topTextHeight + qrSize + padding;
+        var canvasWidth = innerWidth + border * 2;
+        var canvasHeight = innerHeight + border * 2 + 20;
+
+        exportCanvas.width = canvasWidth * scale;
+        exportCanvas.height = canvasHeight * scale;
+        var ctx = exportCanvas.getContext('2d');
+        ctx.scale(scale, scale);
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+        // Pink border with rounded corners
+        var r = 16;
+        ctx.strokeStyle = pink;
+        ctx.lineWidth = border;
+        var bx = border / 2;
+        var by = border / 2;
+        var bw = canvasWidth - border;
+        var bh = canvasHeight - border - 20;
+        ctx.beginPath();
+        ctx.moveTo(bx + r, by);
+        ctx.lineTo(bx + bw - r, by);
+        ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+        ctx.lineTo(bx + bw, by + bh - r);
+        ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+        ctx.lineTo(bx + r, by + bh);
+        ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+        ctx.lineTo(bx, by + r);
+        ctx.arcTo(bx, by, bx + r, by, r);
+        ctx.closePath();
+        ctx.stroke();
+
+        // SSID text
+        ctx.fillStyle = '#374151';
+        ctx.font = '600 14px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(ssid, canvasWidth / 2, border + 30);
+
+        // "WiFi QR" text
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 20px Inter, system-ui, sans-serif';
+        ctx.fillText('WiFi QR', canvasWidth / 2, border + 55);
+
+        // QR code
+        var qrX = (canvasWidth - qrSize) / 2;
+        var qrY = border + topTextHeight;
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+        // Logo centred vertically on bottom border
+        var logoAspect = 467.716 / 190.193;
+        var logoHeight = 33;
+        var logoWidth = logoHeight * logoAspect;
+        var logoX = (canvasWidth - logoWidth) / 2;
+        var borderBottom = by + bh;
+        var logoY = borderBottom - logoHeight / 2;
+
+        // White rectangle behind logo to fully cover the border line
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(logoX - 12, logoY - 3, logoWidth + 24, logoHeight + 6);
+
+        // Draw logo
+        if (logoImg.complete && logoImg.naturalWidth > 0) {
+          ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+        }
+
+        // Scale back down to 1x for export
+        var outputCanvas = document.createElement('canvas');
+        outputCanvas.width = canvasWidth;
+        outputCanvas.height = canvasHeight;
+        var outCtx = outputCanvas.getContext('2d');
+        outCtx.drawImage(exportCanvas, 0, 0, canvasWidth, canvasHeight);
+
+        // Export
+        var safeName = ssid.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+        var link = document.createElement('a');
+        link.download = 'wifi-' + safeName + '-qr.png';
+        link.href = outputCanvas.toDataURL('image/png');
+        link.click();
+      });
+    });
+  </script>
+</BaseLayout>

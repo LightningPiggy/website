@@ -1,0 +1,73 @@
+---
+import Button from '../ui/Button.astro';
+---
+
+<section class="py-20 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <!-- Pig mascot -->
+    <div class="mb-8">
+      <img
+        src="/images/mascot.png"
+        alt="LightningPiggy mascot"
+        class="w-24 h-24 mx-auto rounded-2xl"
+      />
+    </div>
+
+    <h2 class="text-3xl md:text-4xl font-bold mb-4">
+      Ready to build?
+    </h2>
+    <p class="text-lg text-gray-300 mb-8 max-w-2xl mx-auto">
+      Join the community of makers teaching the next generation about sound money.
+      Start building your Lightning Piggy today.
+    </p>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <Button href="/build" variant="secondary" size="lg">
+        Build Your Own
+      </Button>
+      <Button href="/shop" variant="outline" size="lg" class="border-white text-white hover:bg-white hover:text-gray-900">
+        Buy Ready-Made
+      </Button>
+    </div>
+
+    <!-- Support the project -->
+    <div class="mt-12 pt-8 border-t border-gray-700">
+      <p class="text-sm text-gray-400 mb-4">Support the project</p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+        <a
+          href="https://geyser.fund/project/lightningpiggy"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-full text-sm font-semibold transition-colors"
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          Donate on Geyser
+        </a>
+        <a
+          href="lightning:oink@getalby.com"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-full text-sm font-semibold transition-colors"
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 0L3 14h7v10l10-14h-7V0z"/></svg>
+          oink@getalby.com
+        </a>
+      </div>
+    </div>
+
+    <div class="pt-4">
+      <p class="text-sm text-gray-400 mb-4">
+        Questions? Resources for different audiences:
+      </p>
+      <div class="flex flex-wrap justify-center gap-6 text-sm">
+        <a href="/community/educators" class="text-gray-300 hover:text-white transition-colors">
+          For Educators →
+        </a>
+        <a href="/help/faqs" class="text-gray-300 hover:text-white transition-colors">
+          FAQs →
+        </a>
+        <a href="https://github.com/LightningPiggy" class="text-gray-300 hover:text-white transition-colors" target="_blank" rel="noopener">
+          GitHub →
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

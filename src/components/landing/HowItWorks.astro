@@ -1,0 +1,69 @@
+---
+import SectionHeading from '../ui/SectionHeading.astro';
+
+const svg = (d: string) => `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${d}" /></svg>`;
+
+const steps = [
+  {
+    number: '1',
+    title: 'Get the hardware',
+    description: 'Source the parts yourself or buy a ready-made kit. Uses affordable, widely available components.',
+    icon: svg('M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z'),
+  },
+  {
+    number: '2',
+    title: 'Flash the firmware',
+    description: 'Use our browser-based installer to flash the software. No coding required - just plug-in and click.',
+    icon: svg('M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'),
+  },
+  {
+    number: '3',
+    title: 'Connect & save',
+    description: 'Connect to wifi and link your Lightning wallet and instantly start receiving sats. Watch the balance grow on the display!',
+    icon: svg('M13 10V3L4 14h7v7l9-11h-7z'),
+  },
+];
+---
+
+<section class="py-20 bg-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <SectionHeading
+      title="How it works"
+      subtitle="Get your Lightning Piggy running in three simple steps."
+    />
+
+    <div class="mt-16 grid md:grid-cols-3 gap-8">
+      {steps.map((step, index) => (
+        <div class="relative text-center">
+          {/* Connector line (not on last item) */}
+          {index < steps.length - 1 && (
+            <div class="hidden md:block absolute top-12 left-1/2 w-full h-0.5 bg-gradient-to-r from-pink to-pink/0"></div>
+          )}
+
+          {/* Step circle */}
+          <div class="relative inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-pink to-pink/80 rounded-full text-white mb-6 shadow-lg">
+            <Fragment set:html={step.icon} />
+            <span class="absolute -bottom-2 -right-2 w-8 h-8 bg-yellow rounded-full flex items-center justify-center text-sm font-bold text-gray-900">
+              {step.number}
+            </span>
+          </div>
+
+          <h3 class="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
+          <p class="text-gray-600 max-w-xs mx-auto">{step.description}</p>
+        </div>
+      ))}
+    </div>
+
+    <div class="mt-12 text-center">
+      <a
+        href="/build"
+        class="inline-flex items-center text-pink font-semibold hover:text-gray-900 transition-colors"
+      >
+        View the full build guide
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        </svg>
+      </a>
+    </div>
+  </div>
+</section>

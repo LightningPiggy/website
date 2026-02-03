@@ -1,0 +1,113 @@
+---
+import Button from '../ui/Button.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const showcaseDir = path.join(process.cwd(), 'public', 'images', 'showcase');
+const showcaseImages = fs.readdirSync(showcaseDir)
+  .filter((f: string) => /\.(jpe?g|png|webp|gif)$/i.test(f))
+  .sort();
+---
+
+<section class="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+    <div class="grid md:grid-cols-2 gap-12 items-center">
+      <!-- Content -->
+      <div class="text-center md:text-left">
+        <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
+          Bitcoin savings for the
+          <span class="text-pink">next generation</span>
+        </h1>
+        <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-lg">
+          An open source electronic piggy bank that accepts Bitcoin over Lightning.
+          Teach your kids sound money with sats.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+          <Button href="/build" variant="primary" size="lg">
+            Build Your Own
+          </Button>
+          <Button href="/shop" variant="outline" size="lg">
+            Buy Ready-Made
+          </Button>
+        </div>
+        <p class="mt-6 text-sm text-gray-500">
+          Free & open source. No subscriptions. Your keys, your sats.
+        </p>
+      </div>
+
+      <!-- Image -->
+      <div class="relative flex justify-center">
+        <div class="relative">
+          <!-- Decorative elements -->
+          <div class="absolute -top-4 -right-4 w-72 h-72 bg-yellow/20 rounded-full blur-3xl"></div>
+          <div class="absolute -bottom-4 -left-4 w-72 h-72 bg-pink-light/30 rounded-full blur-3xl"></div>
+
+          <!-- Rotating showcase images -->
+          <div class="relative z-10 w-full max-w-lg" style="aspect-ratio:1/1;min-height:360px;">
+            <img
+              id="hero-img-a"
+              src={`/images/showcase/${showcaseImages[0]}`}
+              alt="LightningPiggy showcase"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl drop-shadow-2xl transition-opacity duration-1000 ease-in-out opacity-100"
+            />
+            <img
+              id="hero-img-b"
+              alt="LightningPiggy showcase"
+              class="absolute inset-0 w-full h-full object-cover rounded-2xl drop-shadow-2xl transition-opacity duration-1000 ease-in-out opacity-0"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wave decoration -->
+  <div class="absolute bottom-0 left-0 right-0">
+    <svg viewBox="0 0 1440 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
+      <path d="M0 50L60 45.7C120 41 240 33 360 35.2C480 37 600 50 720 55.8C840 62 960 60 1080 53.3C1200 47 1320 37 1380 31.7L1440 27V100H1380C1320 100 1200 100 1080 100C960 100 840 100 720 100C600 100 480 100 360 100C240 100 120 100 60 100H0V50Z" fill="white"/>
+    </svg>
+  </div>
+</section>
+
+<script define:vars={{ showcaseImages }}>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Fisher-Yates shuffle
+    var pool = showcaseImages.slice();
+    for (var i = pool.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+    }
+
+    var imgA = document.getElementById('hero-img-a');
+    var imgB = document.getElementById('hero-img-b');
+    var current = 0;
+    var showingA = true;
+
+    // First image already set server-side, update to shuffled first
+    imgA.src = '/images/showcase/' + pool[0];
+
+    function preload(idx) {
+      var img = new Image();
+      img.src = '/images/showcase/' + pool[idx % pool.length];
+    }
+    preload(1);
+
+    setInterval(function () {
+      current = (current + 1) % pool.length;
+      var nextSrc = '/images/showcase/' + pool[current];
+
+      if (showingA) {
+        imgB.src = nextSrc;
+        imgB.style.opacity = '1';
+        imgA.style.opacity = '0';
+      } else {
+        imgA.src = nextSrc;
+        imgA.style.opacity = '1';
+        imgB.style.opacity = '0';
+      }
+      showingA = !showingA;
+
+      preload(current + 1);
+    }, 5000);
+  });
+</script>

@@ -1,0 +1,157 @@
+---
+const navItems = [
+  { label: 'About', href: '/about' },
+  {
+    label: 'Build',
+    href: '/build',
+    children: [
+      { label: 'v1 (E-Paper)', href: '/build/v1' },
+      { label: 'v2 (LCD)', href: '/build/v2' },
+      { label: 'Cases', href: '/build/cases' },
+    ]
+  },
+  { label: 'Shop', href: '/shop' },
+  {
+    label: 'Community',
+    href: '/community',
+    children: [
+      { label: 'In the Wild', href: '/community/wild' },
+      { label: 'Educators', href: '/community/educators' },
+      { label: 'Bitcoin Kids', href: '/community/bitcoinkids' },
+      { label: 'Credits', href: '/community/credits' },
+    ]
+  },
+  {
+    label: 'News',
+    href: '/news',
+    children: [
+      { label: 'In the News', href: '/news#in-the-news' },
+      { label: 'Software Updates', href: '/news#software-updates' },
+    ]
+  },
+  {
+    label: 'Help',
+    href: '/help',
+    children: [
+      { label: 'Troubleshooting', href: '/help/troubleshooting' },
+      { label: 'FAQs', href: '/help/faqs' },
+    ]
+  },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+  <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <!-- Logo -->
+      <a href="/" class="flex items-center">
+        <img src="/images/branding/lightningpiggy-logo.svg" alt="LightningPiggy" class="h-10 w-auto" />
+      </a>
+
+      <!-- Desktop Navigation -->
+      <div class="hidden md:flex items-center gap-1">
+        {navItems.map((item) => (
+          <div class="relative group">
+            <a
+              href={item.href}
+              class={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                currentPath.startsWith(item.href) && item.href !== '/'
+                  ? 'text-pink bg-pink-light/30'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+              }`}
+            >
+              {item.label}
+              {item.children && (
+                <svg class="inline-block w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </a>
+            {item.children && (
+              <div class="absolute left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                <div class="py-2">
+                  {item.children.map((child) => (
+                    <a
+                      href={child.href}
+                      class="block px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    >
+                      {child.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <!-- CTA Button -->
+      <a
+        href="/build"
+        class="hidden md:inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
+      >
+        Build Your Own
+      </a>
+
+      <!-- Mobile Menu Button -->
+      <button
+        id="mobile-menu-button"
+        class="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+        aria-label="Toggle menu"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile Navigation -->
+  <div id="mobile-menu" class="hidden md:hidden border-t border-gray-100 bg-white">
+    <div class="px-4 py-4 space-y-2">
+      {navItems.map((item) => (
+        <div>
+          <a
+            href={item.href}
+            class={`block px-3 py-2 text-base font-medium rounded-lg ${
+              currentPath.startsWith(item.href) && item.href !== '/'
+                ? 'text-pink bg-pink-light/30'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            {item.label}
+          </a>
+          {item.children && (
+            <div class="ml-4 mt-1 space-y-1">
+              {item.children.map((child) => (
+                <a
+                  href={child.href}
+                  class="block px-3 py-2 text-sm text-gray-500 hover:text-gray-900 hover:bg-gray-50 rounded-lg"
+                >
+                  {child.label}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      ))}
+      <a
+        href="/build"
+        class="block w-full text-center px-4 py-3 text-base font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors mt-4"
+      >
+        Build Your Own
+      </a>
+    </div>
+  </div>
+</header>
+
+<script>
+  const menuButton = document.getElementById('mobile-menu-button');
+  const mobileMenu = document.getElementById('mobile-menu');
+
+  menuButton?.addEventListener('click', () => {
+    mobileMenu?.classList.toggle('hidden');
+  });
+</script>

@@ -1,0 +1,372 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="LNURL Pay QR Code Generator" description="Generate QR codes for your LNbits LNURL pay links">
+  <section class="py-16 md:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">LNURL Pay QR Code Generator</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Generate QR codes for your LNbits LNURL pay links. Perfect for receiving bitcoin payments on your Lightning Piggy.
+        </p>
+        <div class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          Everything runs in your browser — no data is sent to any server.
+        </div>
+      </header>
+
+      <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+        <form id="lnurl-form" class="space-y-6">
+          <div id="entries-container" class="space-y-4"></div>
+
+          <div class="flex items-center justify-between">
+            <span id="entry-count" class="text-sm text-gray-500">1 of 6</span>
+            <button
+              type="button"
+              id="add-entry-btn"
+              class="inline-flex items-center gap-1.5 text-sm font-medium text-pink hover:text-pink/80 transition-colors"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" /></svg>
+              Add another pay link
+            </button>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-3 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors"
+          >
+            Generate QR Codes
+          </button>
+        </form>
+
+        <div id="qr-output" class="hidden mt-8">
+          <div id="qr-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-6 justify-items-center"></div>
+          <div class="mt-6 text-center">
+            <button
+              id="download-all-btn"
+              class="inline-flex items-center gap-2 py-2.5 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Download All as PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <canvas id="export-canvas" style="display:none;"></canvas>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" is:inline></script>
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function () {
+      var form = document.getElementById('lnurl-form');
+      var container = document.getElementById('entries-container');
+      var addBtn = document.getElementById('add-entry-btn');
+      var countEl = document.getElementById('entry-count');
+      var qrOutput = document.getElementById('qr-output');
+      var qrGrid = document.getElementById('qr-grid');
+      var downloadAllBtn = document.getElementById('download-all-btn');
+      var exportCanvas = document.getElementById('export-canvas');
+      var MAX_ENTRIES = 6;
+      var logoImg = new Image();
+      logoImg.src = '/images/branding/lightningpiggy-logo.svg';
+
+      var placeholderNames = ['Homework Reward', 'Reading Reward', 'Sports Reward', 'Bed Time Reward', 'Pocket Money', 'Thank you!'];
+
+      function createEntry() {
+        var count = container.children.length + 1;
+        var placeholder = placeholderNames[count - 1] || 'Pay Link Name';
+        var card = document.createElement('div');
+        card.className = 'entry-card relative bg-gray-50 rounded-xl p-5 border border-gray-100';
+        card.innerHTML =
+          '<div class="flex items-center justify-between mb-3">' +
+            '<span class="entry-number text-xs font-semibold text-gray-400 uppercase tracking-wider">Pay Link ' + count + '</span>' +
+            '<button type="button" class="remove-entry-btn text-gray-300 hover:text-red-500 transition-colors' + (count === 1 ? ' hidden' : '') + '" title="Remove">' +
+              '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>' +
+            '</button>' +
+          '</div>' +
+          '<div class="space-y-3">' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-900 mb-1.5">Pay Link Name</label>' +
+              '<input type="text" class="entry-name w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400" placeholder="e.g. ' + placeholder + '" required />' +
+            '</div>' +
+            '<div>' +
+              '<label class="block text-sm font-semibold text-gray-900 mb-1.5">LNURL Pay Link</label>' +
+              '<input type="text" class="entry-lnurl w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400" placeholder="e.g. LNURL1DP68GURN8GHJ7ER9D4HJ..." required />' +
+            '</div>' +
+          '</div>';
+
+        card.querySelector('.remove-entry-btn').addEventListener('click', function () {
+          card.remove();
+          renumber();
+        });
+
+        container.appendChild(card);
+        renumber();
+        return card;
+      }
+
+      function renumber() {
+        var cards = container.querySelectorAll('.entry-card');
+        cards.forEach(function (card, i) {
+          card.querySelector('.entry-number').textContent = 'Pay Link ' + (i + 1);
+          var removeBtn = card.querySelector('.remove-entry-btn');
+          if (cards.length <= 1) {
+            removeBtn.classList.add('hidden');
+          } else {
+            removeBtn.classList.remove('hidden');
+          }
+        });
+        countEl.textContent = cards.length + ' of ' + MAX_ENTRIES;
+        if (cards.length >= MAX_ENTRIES) {
+          addBtn.classList.add('hidden');
+        } else {
+          addBtn.classList.remove('hidden');
+        }
+      }
+
+      // Start with 1 entry
+      createEntry();
+
+      addBtn.addEventListener('click', function () {
+        if (container.children.length < MAX_ENTRIES) {
+          var card = createEntry();
+          card.querySelector('.entry-name').focus();
+        }
+      });
+
+      // Collect entries data
+      function getEntries() {
+        var entries = [];
+        container.querySelectorAll('.entry-card').forEach(function (card) {
+          var name = card.querySelector('.entry-name').value.trim();
+          var lnurl = card.querySelector('.entry-lnurl').value.trim();
+          if (name && lnurl) entries.push({ name: name, lnurl: lnurl });
+        });
+        return entries;
+      }
+
+      // Draw a single branded QR card on a canvas context
+      function drawQRCard(ctx, qrCanvas, payName, x, y, cardW, cardH, qrSize) {
+        var pink = '#EC008C';
+        var border = 3;
+        var r = 12;
+        var topTextHeight = 50;
+
+        // Pink border with rounded corners
+        ctx.strokeStyle = pink;
+        ctx.lineWidth = border;
+        var bx = x + border / 2;
+        var by = y + border / 2;
+        var bw = cardW - border;
+        var bh = cardH - border - 16;
+        ctx.beginPath();
+        ctx.moveTo(bx + r, by);
+        ctx.lineTo(bx + bw - r, by);
+        ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+        ctx.lineTo(bx + bw, by + bh - r);
+        ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+        ctx.lineTo(bx + r, by + bh);
+        ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+        ctx.lineTo(bx, by + r);
+        ctx.arcTo(bx, by, bx + r, by, r);
+        ctx.closePath();
+        ctx.stroke();
+
+        // Pay name (bold)
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 16px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(payName, x + cardW / 2, y + border + 22);
+
+        // "LNURL Pay" (grey)
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '500 11px Inter, system-ui, sans-serif';
+        ctx.fillText('LNURL Pay', x + cardW / 2, y + border + 38);
+
+        // QR code
+        var qrX = x + (cardW - qrSize) / 2;
+        var qrY = y + border + topTextHeight;
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+        // Logo on bottom border
+        var logoAspect = 467.716 / 190.193;
+        var logoHeight = 24;
+        var logoWidth = logoHeight * logoAspect;
+        var logoX = x + (cardW - logoWidth) / 2;
+        var borderBottom = by + bh;
+        var logoY = borderBottom - logoHeight / 2;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(logoX - 8, logoY - 2, logoWidth + 16, logoHeight + 4);
+
+        if (logoImg.complete && logoImg.naturalWidth > 0) {
+          ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+        }
+      }
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var entries = getEntries();
+        if (entries.length === 0) return;
+
+        qrGrid.innerHTML = '';
+
+        entries.forEach(function (entry, idx) {
+          // Create on-screen branded card
+          var wrapper = document.createElement('div');
+          wrapper.className = 'qr-item text-center';
+
+          var cardDiv = document.createElement('div');
+          cardDiv.className = 'inline-block';
+
+          var bordered = document.createElement('div');
+          bordered.className = 'relative border-[3px] border-pink rounded-2xl p-4 pt-3 pb-6 bg-white';
+
+          var nameP = document.createElement('p');
+          nameP.className = 'text-lg font-bold text-gray-900 mb-0.5';
+          nameP.textContent = entry.name;
+
+          var subtitleP = document.createElement('p');
+          subtitleP.className = 'text-sm font-medium text-gray-400 mb-3';
+          subtitleP.textContent = 'LNURL Pay';
+
+          var qrEl = document.createElement('div');
+          qrEl.className = 'inline-block qr-canvas-holder';
+
+          new QRCode(qrEl, {
+            text: entry.lnurl,
+            width: 180,
+            height: 180,
+            colorDark: '#000000',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+
+          var logoDiv = document.createElement('div');
+          logoDiv.className = 'absolute -bottom-[12px] left-1/2 -translate-x-1/2 bg-white px-3';
+          logoDiv.innerHTML = '<img src="/images/branding/lightningpiggy-logo.svg" alt="LightningPiggy" class="h-6 w-auto" />';
+
+          bordered.appendChild(nameP);
+          bordered.appendChild(subtitleP);
+          bordered.appendChild(qrEl);
+          bordered.appendChild(logoDiv);
+          cardDiv.appendChild(bordered);
+          wrapper.appendChild(cardDiv);
+
+          // Individual download button
+          var dlBtn = document.createElement('button');
+          dlBtn.className = 'mt-3 inline-flex items-center gap-1.5 py-1.5 px-4 border border-gray-200 text-gray-600 text-sm font-medium rounded-lg hover:border-pink hover:text-pink transition-all';
+          dlBtn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>Download';
+          dlBtn.addEventListener('click', (function (ent, qrHolder) {
+            return function () {
+              downloadSingle(ent, qrHolder);
+            };
+          })(entry, qrEl));
+          wrapper.appendChild(dlBtn);
+
+          qrGrid.appendChild(wrapper);
+        });
+
+        qrOutput.classList.remove('hidden');
+        // Show/hide download all button
+        downloadAllBtn.style.display = entries.length > 1 ? '' : 'none';
+
+        setTimeout(function () {
+          qrOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      });
+
+      function downloadSingle(entry, qrHolder) {
+        var qrCanvas = qrHolder.querySelector('canvas');
+        if (!qrCanvas) return;
+
+        var scale = 2;
+        var padding = 30;
+        var border = 3;
+        var qrSize = 180;
+        var topTextHeight = 55;
+        var innerW = qrSize + padding * 2;
+        var innerH = topTextHeight + qrSize + padding;
+        var cW = innerW + border * 2;
+        var cH = innerH + border * 2 + 16;
+
+        exportCanvas.width = cW * scale;
+        exportCanvas.height = cH * scale;
+        var ctx = exportCanvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cW, cH);
+
+        drawQRCard(ctx, qrCanvas, entry.name, 0, 0, cW, cH, qrSize);
+
+        var out = document.createElement('canvas');
+        out.width = cW;
+        out.height = cH;
+        out.getContext('2d').drawImage(exportCanvas, 0, 0, cW, cH);
+
+        var safeName = entry.name.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+        var link = document.createElement('a');
+        link.download = 'lnurl-' + safeName + '-qr.png';
+        link.href = out.toDataURL('image/png');
+        link.click();
+      }
+
+      downloadAllBtn.addEventListener('click', function () {
+        var items = qrGrid.querySelectorAll('.qr-item');
+        var entries = getEntries();
+        if (items.length === 0) return;
+
+        var scale = 2;
+        var cols = 2;
+        var rows = Math.ceil(items.length / cols);
+
+        // Card dimensions
+        var padding = 30;
+        var border = 3;
+        var qrSize = 180;
+        var topTextHeight = 55;
+        var innerW = qrSize + padding * 2;
+        var innerH = topTextHeight + qrSize + padding;
+        var cardW = innerW + border * 2;
+        var cardH = innerH + border * 2 + 16;
+
+        // Page layout
+        var pageMargin = 30;
+        var gap = 20;
+        var totalW = pageMargin * 2 + cardW * cols + gap * (cols - 1);
+        var totalH = pageMargin * 2 + cardH * rows + gap * (rows - 1);
+
+        exportCanvas.width = totalW * scale;
+        exportCanvas.height = totalH * scale;
+        var ctx = exportCanvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, totalW, totalH);
+
+        items.forEach(function (item, idx) {
+          var col = idx % cols;
+          var row = Math.floor(idx / cols);
+          var x = pageMargin + col * (cardW + gap);
+          var y = pageMargin + row * (cardH + gap);
+          var qrCanvas = item.querySelector('.qr-canvas-holder canvas');
+          if (qrCanvas && entries[idx]) {
+            drawQRCard(ctx, qrCanvas, entries[idx].name, x, y, cardW, cardH, qrSize);
+          }
+        });
+
+        var out = document.createElement('canvas');
+        out.width = totalW;
+        out.height = totalH;
+        out.getContext('2d').drawImage(exportCanvas, 0, 0, totalW, totalH);
+
+        var link = document.createElement('a');
+        link.download = 'lnurl-pay-qr-codes.png';
+        link.href = out.toDataURL('image/png');
+        link.click();
+      });
+    });
+  </script>
+</BaseLayout>

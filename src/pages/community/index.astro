@@ -1,0 +1,128 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Button from '../../components/ui/Button.astro';
+
+const sections = [
+  {
+    title: 'In the Wild',
+    description: 'See Lightning Piggy builds and sightings from around the world.',
+    href: '/community/wild',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+  },
+  {
+    title: 'For Educators',
+    description: 'Resources for teachers and workshop leaders to bring Bitcoin education to classrooms.',
+    href: '/community/educators',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>',
+  },
+  {
+    title: 'Bitcoin Kids',
+    description: 'Educational projects for children focused on Bitcoin, economics, and freedom technology.',
+    href: '/community/bitcoinkids',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+  },
+  {
+    title: 'Credits',
+    description: 'Meet the team and contributors who make Lightning Piggy possible.',
+    href: '/community/credits',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>',
+  },
+];
+
+const socialLinks = [
+  { label: 'Nostr', href: 'https://primal.net/p/npub1piggy', description: 'Follow updates' },
+  { label: 'Telegram', href: 'https://t.me/LightningPiggy', description: 'Join the conversation' },
+  { label: 'GitHub', href: 'https://github.com/LightningPiggy', description: 'Contribute code' },
+];
+---
+
+<BaseLayout title="Community" description="Join the Lightning Piggy community of builders, educators, and families">
+  <section class="py-16 md:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="text-center mb-16">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Community</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Lightning Piggy is powered by a global community of bitcoiners, makers, and educators.
+        </p>
+      </header>
+
+      <div class="grid gap-6 mb-16">
+        {sections.map((section) => (
+          <a
+            href={section.href}
+            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+          >
+            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+              <Fragment set:html={section.icon} />
+            </div>
+            <div class="flex-1">
+              <h2 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                {section.title}
+              </h2>
+              <p class="text-gray-600 mt-1">{section.description}</p>
+            </div>
+            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+        ))}
+      </div>
+
+      <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 md:p-12 text-white">
+        <h2 class="text-2xl font-bold mb-2 text-center">Connect with us</h2>
+        <p class="text-gray-300 text-center mb-8">
+          Join the conversation and stay up to date with the latest from Lightning Piggy.
+        </p>
+        <div class="grid sm:grid-cols-3 gap-4">
+          {socialLinks.map((link) => (
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="block p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors text-center"
+            >
+              <div class="font-semibold">{link.label}</div>
+              <div class="text-sm text-gray-400">{link.description}</div>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div class="mt-16 text-center">
+        <h2 class="text-xl font-bold text-gray-900 mb-4">Want to contribute?</h2>
+        <p class="text-gray-600 mb-6 max-w-lg mx-auto">
+          Lightning Piggy is 100% open source. Whether you code, design, write, or just have ideas - we'd love your help.
+        </p>
+        <Button href="https://github.com/LightningPiggy" variant="outline">
+          View on GitHub →
+        </Button>
+      </div>
+
+      <!-- Support the project -->
+      <div class="mt-16 text-center p-8 bg-gray-50 rounded-3xl">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Support the project</h2>
+        <p class="text-gray-600 mb-6 max-w-lg mx-auto">
+          Lightning Piggy is funded entirely by the community. Every sat helps us reach more kids.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <a
+            href="https://geyser.fund/project/lightningpiggy"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white rounded-full font-semibold hover:bg-pink/90 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+            Donate on Geyser
+          </a>
+          <a
+            href="lightning:oink@getalby.com"
+            class="inline-flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-full font-semibold hover:bg-gray-800 transition-colors"
+          >
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M13 0L3 14h7v10l10-14h-7V0z"/></svg>
+            oink@getalby.com
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

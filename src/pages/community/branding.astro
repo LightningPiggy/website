@@ -1,0 +1,223 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Branding & Style Guide" description="Official naming conventions, logos, and colours for the LightningPiggy project">
+  <section class="py-16 md:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="text-center mb-16">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Branding & Style Guide</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Official naming conventions, logos, and colours for the LightningPiggy open-source project.
+        </p>
+      </header>
+
+      <!-- Naming -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Naming</h2>
+
+        <div class="grid md:grid-cols-2 gap-6 mb-8">
+          <!-- Technical usage -->
+          <div class="bg-white rounded-2xl border border-gray-200 p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="px-2.5 py-1 bg-pink-light/50 text-pink text-xs font-semibold rounded-full">Technical</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">LightningPiggy</h3>
+            <p class="text-sm text-gray-500 mb-4">No space, CamelCase — the canonical form.</p>
+            <p class="text-sm font-semibold text-gray-700 mb-2">Use for:</p>
+            <ul class="text-sm text-gray-600 space-y-1.5">
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Project and repository references
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Code (classes, functions, variables, filenames)
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Usernames, handles, and hashtags
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Asset names (SVG, PNG, GIF)
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Firmware, releases, APIs, and technical docs
+              </li>
+            </ul>
+            <div class="mt-4 p-3 bg-gray-50 rounded-xl">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Examples</p>
+              <div class="space-y-1 text-sm">
+                <code class="block text-gray-700 bg-gray-100 px-2 py-1 rounded">LightningPiggy firmware v2.1</code>
+                <code class="block text-gray-700 bg-gray-100 px-2 py-1 rounded">class LightningPiggy</code>
+                <code class="block text-gray-700 bg-gray-100 px-2 py-1 rounded">#LightningPiggy</code>
+                <code class="block text-gray-700 bg-gray-100 px-2 py-1 rounded">lightningpiggy-logo.svg</code>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prose usage -->
+          <div class="bg-white rounded-2xl border border-gray-200 p-6">
+            <div class="flex items-center gap-2 mb-4">
+              <span class="px-2.5 py-1 bg-yellow-light text-gray-700 text-xs font-semibold rounded-full">Prose</span>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">Lightning Piggy</h3>
+            <p class="text-sm text-gray-500 mb-4">With a space — for natural language readability.</p>
+            <p class="text-sm font-semibold text-gray-700 mb-2">Use for:</p>
+            <ul class="text-sm text-gray-600 space-y-1.5">
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Website and marketing copy
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Blog posts and articles
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Human-friendly documentation
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Storytelling and descriptive text
+              </li>
+            </ul>
+            <div class="mt-4 p-3 bg-gray-50 rounded-xl">
+              <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Examples</p>
+              <div class="space-y-1 text-sm text-gray-700">
+                <p class="bg-gray-100 px-2 py-1 rounded">"Lightning Piggy helps kids save sats."</p>
+                <p class="bg-gray-100 px-2 py-1 rounded">"Meet Lightning Piggy, the Bitcoin piggy bank."</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Capitalisation & Consistency -->
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-3">Capitalisation</h3>
+            <p class="text-sm text-gray-600 mb-3">Always capitalise both words:</p>
+            <div class="space-y-2">
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span class="text-sm font-medium text-gray-900">LightningPiggy</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+                <span class="text-sm font-medium text-gray-900">Lightning Piggy</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <code class="text-sm text-gray-500">lightningpiggy</code>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <code class="text-sm text-gray-500">Lightningpiggy</code>
+              </div>
+              <div class="flex items-center gap-3">
+                <svg class="w-5 h-5 text-red-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <code class="text-sm text-gray-500">LIGHTNING PIGGY</code>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl border border-gray-200 p-6">
+            <h3 class="text-lg font-bold text-gray-900 mb-3">Consistency</h3>
+            <ul class="text-sm text-gray-600 space-y-3">
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Do not mix both forms within the same sentence.
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                First mention may use: <strong>LightningPiggy (Lightning Piggy)</strong>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                After first mention, choose one form and stay consistent.
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                Avoid common typos such as <code class="text-red-400 bg-red-50 px-1 rounded">LightingPiggy</code>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-pink mt-0.5">&#8226;</span>
+                When unsure, default to <strong>LightningPiggy</strong>.
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- Logo -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Logo</h2>
+        <div class="grid md:grid-cols-2 gap-6">
+          <div class="bg-white rounded-2xl border border-gray-200 p-8 flex flex-col items-center">
+            <img
+              src="/images/branding/lightningpiggy-logo.svg"
+              alt="LightningPiggy logo - Pink & Yellow"
+              class="h-16 w-auto mb-4"
+            />
+            <p class="text-sm font-medium text-gray-700">Pink & Yellow</p>
+            <p class="text-xs text-gray-400 mt-1">For light backgrounds</p>
+          </div>
+          <div class="bg-gray-900 rounded-2xl border border-gray-700 p-8 flex flex-col items-center">
+            <img
+              src="/images/branding/lightningpiggy-logo-white-yellow.svg"
+              alt="LightningPiggy logo - White & Yellow"
+              class="h-16 w-auto mb-4"
+            />
+            <p class="text-sm font-medium text-gray-300">White & Yellow</p>
+            <p class="text-xs text-gray-500 mt-1">For dark backgrounds</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Colours -->
+      <div class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Colours</h2>
+        <div class="grid sm:grid-cols-3 gap-6">
+          <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div class="h-24" style="background-color: #EC008C;"></div>
+            <div class="p-4">
+              <p class="font-bold text-gray-900">Accent Pink</p>
+              <p class="text-sm text-gray-500 mt-0.5">Outline & primary accent</p>
+              <code class="block mt-2 text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">#EC008C</code>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div class="h-24" style="background-color: #F0BCD7;"></div>
+            <div class="p-4">
+              <p class="font-bold text-gray-900">Light Pink</p>
+              <p class="text-sm text-gray-500 mt-0.5">Fill & background</p>
+              <code class="block mt-2 text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">#F0BCD7</code>
+            </div>
+          </div>
+          <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+            <div class="h-24" style="background-color: #FFDB00;"></div>
+            <div class="p-4">
+              <p class="font-bold text-gray-900">Lightning Yellow</p>
+              <p class="text-sm text-gray-500 mt-0.5">Lightning bolt accent</p>
+              <code class="block mt-2 text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">#FFDB00</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rationale -->
+      <div class="p-6 bg-gray-50 rounded-2xl text-center">
+        <p class="text-gray-600 text-sm">
+          <strong>LightningPiggy</strong> provides a strong, unique, brandable identity for open-source software and community use.
+          <strong>Lightning Piggy</strong> improves readability for non-technical audiences.
+          This follows conventions used by other open-source mascot projects.
+        </p>
+        <p class="text-gray-400 text-xs mt-3">
+          Proposed changes to this guide should be discussed via a <a href="https://github.com/LightningPiggy" class="text-pink hover:underline">pull request</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -1,0 +1,91 @@
+---
+import SectionHeading from '../ui/SectionHeading.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Pull all community photos from the wild album
+const wildDir = path.join(process.cwd(), 'public', 'images', 'wild');
+const allImages = fs.readdirSync(wildDir)
+  .filter((f: string) => /\.(jpe?g|png|webp|gif)$/i.test(f));
+---
+
+<section class="py-20 bg-gray-50">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <SectionHeading
+      title="In the wild"
+      subtitle="Join a global community of builders, educators, and families saving in sats."
+    />
+
+    <!-- Photo Grid -->
+    <div class="mt-12 grid grid-cols-2 md:grid-cols-4 gap-4">
+      {[0,1,2,3].map(() => (
+        <div class="aspect-square overflow-hidden rounded-2xl bg-gray-200">
+          <img
+            src=""
+            alt="LightningPiggy in the wild"
+            class="w-full h-full object-cover hover:scale-105 transition-transform duration-300 wild-photo"
+            loading="lazy"
+          />
+        </div>
+      ))}
+    </div>
+
+    <script define:vars={{ allImages }}>
+      const pool = [...allImages];
+      for (let i = pool.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [pool[i], pool[j]] = [pool[j], pool[i]];
+      }
+      document.querySelectorAll('.wild-photo').forEach((img, idx) => {
+        img.src = '/images/wild/' + pool[idx];
+      });
+    </script>
+
+    <div class="mt-12 text-center">
+      <a
+        href="/community/wild"
+        class="inline-flex items-center text-pink font-semibold hover:text-gray-900 transition-colors"
+      >
+        See more community builds
+        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+        </svg>
+      </a>
+    </div>
+
+    <!-- Testimonial -->
+    <div class="mt-16 max-w-3xl mx-auto text-center">
+      <blockquote class="text-xl md:text-2xl text-gray-700 italic">
+        "Lightning Piggy is bringing the adoption of bitcoin to young people in a real and meaningful way."
+      </blockquote>
+      <div class="mt-6 flex items-center justify-center gap-4">
+        <img src="/images/mascot-head.png" alt="LightningPiggy" class="w-12 h-12 object-contain" />
+        <div class="text-left">
+          <div class="font-semibold text-gray-900">The Lightning Piggy Team</div>
+          <div class="text-sm text-gray-500">Built with love by bitcoiners</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mt-16 grid grid-cols-4 gap-8 text-center">
+      <div>
+        <div class="text-3xl md:text-4xl font-bold text-pink">Bitcoin</div>
+        <div class="text-sm text-gray-600 mt-1">Only</div>
+      </div>
+      <div>
+        <div class="text-3xl md:text-4xl font-bold text-pink">100%</div>
+        <div class="text-sm text-gray-600 mt-1">Open Source</div>
+      </div>
+      <div>
+        <div class="text-3xl md:text-4xl font-bold text-pink">2</div>
+        <div class="text-sm text-gray-600 mt-1">Hardware Versions</div>
+      </div>
+      <div>
+        <div class="text-3xl md:text-4xl font-bold text-pink">Global</div>
+        <div class="text-sm text-gray-600 mt-1">Community</div>
+      </div>
+    </div>
+
+  </div>
+</section>

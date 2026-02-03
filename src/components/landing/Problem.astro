@@ -1,0 +1,54 @@
+---
+import SectionHeading from '../ui/SectionHeading.astro';
+---
+
+<section class="py-20 bg-white">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <SectionHeading
+      title="Why satoshis?"
+      subtitle="Traditional savings accounts lose value over time. Bitcoin offers a different path."
+    />
+
+    <div class="mt-16 grid md:grid-cols-2 gap-8 lg:gap-16">
+      <!-- Problem -->
+      <div class="relative bg-gray-50 rounded-3xl p-8 lg:p-10">
+        <div class="absolute -top-4 left-8 bg-gray-200 text-gray-600 px-4 py-1 rounded-full text-sm font-medium">
+          The Problem
+        </div>
+        <div class="mt-4">
+          <div class="text-6xl mb-4">💸</div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Fiat savings lose value</h3>
+          <p class="text-gray-600 mb-6">
+            The world's 2.4 billion children are growing up on a fiat standard. Even the US dollar has lost over 90% of its purchasing power against Bitcoin in recent years.
+          </p>
+          <div class="flex items-center gap-3 text-gray-500">
+            <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
+            </svg>
+            <span class="text-sm">Purchasing power decreases over time</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Solution -->
+      <div class="relative bg-gradient-to-br from-pink-light/30 to-yellow-light/30 rounded-3xl p-8 lg:p-10 border border-pink/20">
+        <div class="absolute -top-4 left-8 bg-pink text-white px-4 py-1 rounded-full text-sm font-medium">
+          The Solution
+        </div>
+        <div class="mt-4">
+          <div class="text-6xl mb-4">⚡</div>
+          <h3 class="text-2xl font-bold text-gray-900 mb-4">Save in satoshis</h3>
+          <p class="text-gray-600 mb-6">
+            Give children a head start with sound money. Lightning Piggy makes saving in Bitcoin fun, visual, and educational - building financial literacy from an early age.
+          </p>
+          <div class="flex items-center gap-3 text-gray-600">
+            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+            </svg>
+            <span class="text-sm">Sound money for future generations</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

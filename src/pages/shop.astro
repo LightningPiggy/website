@@ -1,0 +1,88 @@
+---
+import ContentLayout from '../layouts/ContentLayout.astro';
+import Button from '../components/ui/Button.astro';
+---
+
+<ContentLayout
+  title="Shop"
+  description="Buy a Lightning Piggy - Bitcoin piggy bank for kids"
+  heroImage="/images/pages/robotechy-pigs.jpeg"
+>
+  <div class="not-prose mb-12 p-8 bg-gradient-to-br from-pink-light/30 to-yellow-light/30 rounded-2xl border border-pink/20 text-center">
+    <h2 class="text-2xl font-bold text-gray-900 mb-4">Lightning Piggy v2 is here!</h2>
+    <p class="text-gray-600 mb-6">
+      Get the latest edition directly from our foundation.
+    </p>
+    <Button
+      href="https://btcpay.ideasarelikeflames.org/apps/2tGWUJdP3FrKb7aFg5qEQTXrzB4z/pos"
+      variant="primary"
+      size="lg"
+    >
+      Buy Lightning Piggy v2
+    </Button>
+  </div>
+
+  <h2>Retail Partners</h2>
+  <p>
+    We're grateful to our trusted retail partners who support the Lightning Piggy community
+    and help bring sats-saving piggies to homes around the world.
+  </p>
+
+  <div class="grid md:grid-cols-2 gap-6 my-8 not-prose">
+    <!-- Robotechy -->
+    <a
+      href="https://robotechy.com"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="block p-6 bg-white rounded-xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+    >
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+          🇬🇧
+        </div>
+        <div>
+          <h3 class="font-bold text-gray-900">Robotechy</h3>
+          <p class="text-sm text-gray-500">UK | Global shipping</p>
+          <p class="text-sm text-gray-600 mt-2">
+            3D printing Bitcoin store with cases for Bitcoin Seed Signers and other accessories.
+          </p>
+        </div>
+      </div>
+    </a>
+
+    <!-- Bitcoin Stuff Store -->
+    <a
+      href="https://www.bitcoinstuffstore.com/nl_nl/product/lightningpiggy/"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="block p-6 bg-white rounded-xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+    >
+      <div class="flex items-start gap-4">
+        <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-2xl">
+          🇳🇱
+        </div>
+        <div>
+          <h3 class="font-bold text-gray-900">Bitcoin Stuff Store</h3>
+          <p class="text-sm text-gray-500">The Netherlands | Global shipping</p>
+          <p class="text-sm text-gray-600 mt-2">
+            Making saving fun and educational with Lightning Piggy for kids.
+          </p>
+        </div>
+      </div>
+    </a>
+  </div>
+
+  <hr class="my-8 border-gray-200" />
+
+  <h2>Prefer to Build Your Own?</h2>
+  <p>
+    Lightning Piggy is fully open source. Source the parts yourself and follow our
+    step-by-step build guide.
+  </p>
+
+  <div class="not-prose mt-6">
+    <Button href="/build" variant="outline">
+      View Build Guide →
+    </Button>
+  </div>
+</ContentLayout>

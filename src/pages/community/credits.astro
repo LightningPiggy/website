@@ -1,0 +1,214 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+// Helper to extract username and avatar from various URL formats
+function parseProfile(name: string, url?: string, avatar?: string): { displayName: string; username: string; avatar: string; url?: string } {
+  const cleanName = name.replace(/^⭐️\s*/, '').trim();
+
+  // If avatar is explicitly provided, use it
+  if (avatar) {
+    return { displayName: cleanName, username: cleanName, avatar, url };
+  }
+
+  if (!url) {
+    return { displayName: cleanName, username: cleanName, avatar: '' };
+  }
+
+  // Twitter URLs
+  const twitterMatch = url.match(/twitter\.com\/([^\/\?]+)/i);
+  if (twitterMatch) {
+    return {
+      displayName: cleanName,
+      username: `@${twitterMatch[1]}`,
+      avatar: `https://unavatar.io/twitter/${twitterMatch[1]}`,
+      url
+    };
+  }
+
+  // Fallback - no avatar
+  return {
+    displayName: cleanName,
+    username: cleanName,
+    avatar: '',
+    url
+  };
+}
+
+const contributors = [
+  { name: '₿arekev', url: 'https://njump.me/npub1s3wrhlcdjjmtp7n4m0y36dnqyljfzsr4xah36gelx6d870un5jvsnqtfhs', contribution: 'Visual content creation', avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fblossom.primal.net%2Fa1dbd673df81741914b80db89a662d5568c3ebf121a4eb0ebda3e98974ac5e24.jpg' },
+  { name: 'Ben Weeks', url: 'https://njump.me/npub1jutptdc2m8kgjmudtws095qk2tcale0eemvp4j2xnjnl4nh6669slrf04x', contribution: 'App, dev, case design, R&D, sales', avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2Fp%2Fnostr.build_9841ac0b1902a46e9ecae4cd72f9caa2c20216b43838d1fb7c8dcb113ac98258.gif' },
+  { name: 'Bitko Yinowsky', url: 'https://njump.me/nprofile1qqstdp3mrrh5ttnvjjvx6psufgwjf5l8c6hxw7y5ej4r4sy2p8s4vmqzu55tu', contribution: 'Logo and character design', avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2F4e32070eeb530473a682a6a33b3a0b2711d161586274d8986b5c1beaac45a425.jpg' },
+  { name: 'DJ Valerie', url: 'https://twitter.com/djvalerieblove', contribution: 'Bitcoin Kids' },
+  { name: 'GA₿RI丰L', contribution: 'Prototype testing' },
+  { name: 'Jurjen de Vries', url: 'https://twitter.com/jurjendevries', contribution: 'Workshop, documentation enhancements & prototype testing' },
+  { name: 'Janine', url: 'https://twitter.com/JanineGriesser', contribution: 'Merch design and development' },
+  { name: 'lonerookie', contribution: 'Dev & case design and production' },
+  { name: 'Isaac Weeks', url: 'https://njump.me/npub17dfg3tynlv39m0e9z8a0t558e7plet96xg9g4uu6q84caykq8jtqwdy09f', contribution: 'Dev, case design, R&D, sales', isBitcoinKid: true, avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fpbs.twimg.com%2Fprofile_images%2F1481346550345437186%2F_gwMpWzo_400x400.jpg' },
+  { name: 'Orange Surf btc', url: 'https://primal.net/p/npub18h0w55nsp839ezxnggf00jd2xc6yl0ht62mf5p8wwllu8s80wdcs83ws8m', contribution: 'Design', avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fm.primal.net%2FHxpV.png' },
+  { name: 'Piertrt', contribution: 'Workshop' },
+  { name: 'TheKingRol', url: 'https://twitter.com/TheKingRol', contribution: 'Case design' },
+  { name: 'Yvette', url: 'https://twitter.com/arbadacarbaYK', contribution: 'Project & Dev' },
+  { name: 'Zobroj', url: 'https://primal.net/p/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a', contribution: 'Design' },
+  { name: 'Valentina Picozzi', url: 'https://twitter.com/satoshigallery', contribution: 'Character design' },
+];
+
+const coreTeam = [
+  { name: 'BlackCoffee', url: 'https://primal.net/p/npub1dqepr0g4t3ahvnjtnxazvws4rkqjpxl854n29wcew8wph0fmw90qlsmmgt', contribution: 'Project & Dev', avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fpfp.nostr.build%2F3dd8345047ac7c730e6207327f790b95c86760cafe1df04c9337dd7566087703.png' },
+  { name: 'Marina', url: 'https://twitter.com/LadyM_BTC', contribution: 'Finance' },
+  { name: 'Jake', url: 'https://primal.net/p/npub1a8us7vr738n7cvdxh0gdtnt5qzrk4qe3qklhmsrs45llq2k48agqjkrvn3', contribution: 'Project', avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fi.postimg.cc%2Fd01BSf4G%2Fbill-laser-eyes.jpg' },
+  { name: 'Richard', url: 'https://primal.net/p/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel', contribution: 'Project', avatar: 'https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fblossom.primal.net%2Fed9e059fd831ad8ed440a7413c2c5a4fd98244fa17f8ec6c9f0dedf7e04db06f.jpg' },
+  { name: 'Thomas Farstrike', url: 'https://twitter.com/ThomasFarstrike', contribution: 'Project & Dev' },
+];
+
+const specialThanks = [
+  { name: 'Adopting Bitcoin ES 2024', url: 'https://www.adoptingbitcoin.org', note: 'For continuing to support the FOSS project with hands-on workshops.' },
+  { name: 'Learning Bitcoin 2024', url: 'https://www.learningbitcoin.ca/', note: 'For welcoming Lightning Piggy be a part of this pioneering educational event.' },
+  { name: 'Bitcoin 2024 Satoshi Summer Camp & BSTEM', url: 'https://bstem.co', note: 'For having Lightning Piggy be a part of this historic event involving 80 bitcoin kids.' },
+  { name: 'Bitcoin Atlantis 2024', url: 'https://bitcoinatlantis.com', note: 'For embracing the project and providing the perfect family-friendly environment for learning and building.' },
+  { name: 'Adopting Bitcoin 2023', url: 'https://www.adoptingbitcoin.org', note: 'For continuing to support the FOSS project with hands-on workshops.' },
+  { name: 'Adopting Bitcoin 2022', url: 'https://www.adoptingbitcoin.org', note: 'For being there every step of the way from providing a platform for the first pitch, project presentation, and now hands-on workshops.' },
+  { name: 'Ben de Waal', url: 'https://twitter.com/Ben_deWaal', note: 'For graciously taking the time to build one of the early prototypes.' },
+  { name: 'Geyser.fund', url: 'https://geyser.fund/project/lightningpiggy', note: 'For creating the best crowdfunding platform ever and the amazing people on this platform who have contributed sats to support the project.' },
+  { name: 'Samatha de Waal', url: 'https://twitter.com/SamTheBTCKid', note: 'For her inspirational speech at BTC Prague 2023 where she gave praise to the project.' },
+  { name: 'Bolt.fun', url: 'https://bolt.fun/', note: 'For providing the impetus to get building.' },
+];
+---
+
+<BaseLayout title="Credits" description="The team and contributors behind Lightning Piggy">
+  <section class="py-12 md:py-16">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="mb-12 text-center">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Credits</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          We extend our heartfelt gratitude to everyone who has played a role in bringing this little piggy to market.
+        </p>
+      </header>
+
+      <!-- Core Team -->
+      <section class="mb-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Core Team</h2>
+        <p class="text-gray-600 mb-6">Those who have taken on a voluntary role and are actively making a significant contribution of their time to the project.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+          {coreTeam.map((person) => {
+            const profile = parseProfile(person.name, person.url, person.avatar);
+            return (
+              <a
+                href={profile.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="bg-white rounded-xl border border-gray-200 p-4 text-center hover:shadow-lg hover:border-pink transition-all group"
+              >
+                <div class="w-16 h-16 mx-auto mb-3 rounded-full bg-gray-100 overflow-hidden">
+                  {profile.avatar ? (
+                    <img
+                      src={profile.avatar}
+                      alt={profile.displayName}
+                      class="w-full h-full object-cover"
+                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                    />
+                  ) : null}
+                  <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink text-xl font-bold" style={profile.avatar ? "display: none;" : ""}>
+                    {profile.displayName.charAt(0).toUpperCase()}
+                  </div>
+                </div>
+                <h3 class="font-semibold text-gray-900 group-hover:text-pink transition-colors text-sm">{profile.displayName}</h3>
+                <p class="text-xs text-gray-500 mt-1">{person.contribution}</p>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+
+      <!-- Contributors -->
+      <section class="mb-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Contributors</h2>
+        <p class="text-gray-600 mb-6">Volunteers who have contributed their expertise and knowledge to help develop the project.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {contributors.map((person) => {
+            const profile = parseProfile(person.name, person.url, person.avatar);
+            const CardWrapper = profile.url ? 'a' : 'div';
+            return (
+              <div
+                class={`bg-white rounded-xl border border-gray-200 p-4 text-center transition-all ${profile.url ? 'hover:shadow-lg hover:border-pink group cursor-pointer' : ''} ${person.isBitcoinKid ? 'ring-2 ring-yellow-400' : ''}`}
+              >
+                {profile.url ? (
+                  <a href={profile.url} target="_blank" rel="noopener noreferrer" class="block">
+                    <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-gray-100 overflow-hidden relative">
+                      {profile.avatar ? (
+                        <img
+                          src={profile.avatar}
+                          alt={profile.displayName}
+                          class="w-full h-full object-cover"
+                          onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                        />
+                      ) : null}
+                      <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink text-lg font-bold" style={profile.avatar ? "display: none;" : ""}>
+                        {profile.displayName.charAt(0).toUpperCase()}
+                      </div>
+                    </div>
+                    <h3 class="font-semibold text-gray-900 group-hover:text-pink transition-colors text-sm">
+                      {person.isBitcoinKid && <span class="mr-1">⭐️</span>}
+                      {profile.displayName}
+                    </h3>
+                    <p class="text-xs text-gray-500 mt-1">{person.contribution}</p>
+                  </a>
+                ) : (
+                  <>
+                    <div class="w-14 h-14 mx-auto mb-3 rounded-full bg-pink/10 flex items-center justify-center text-pink text-lg font-bold">
+                      {profile.displayName.charAt(0).toUpperCase()}
+                    </div>
+                    <h3 class="font-semibold text-gray-900 text-sm">{profile.displayName}</h3>
+                    <p class="text-xs text-gray-500 mt-1">{person.contribution}</p>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <p class="text-sm text-gray-500 mt-4">⭐️ = Bitcoin Kids</p>
+      </section>
+
+      <!-- Special Thanks -->
+      <section class="mb-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Special Thanks To...</h2>
+        <div class="space-y-3">
+          {specialThanks.map((item) => (
+            <div class="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition-shadow">
+              <a href={item.url} target="_blank" rel="noopener noreferrer" class="font-semibold text-pink hover:underline">
+                {item.name}
+              </a>
+              <span class="text-gray-600"> — {item.note}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <!-- The Spark -->
+      <section class="mb-16">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">The Spark</h2>
+        <div class="bg-gradient-to-r from-pink/5 to-yellow/5 rounded-2xl p-6 border border-gray-200">
+          <p class="text-gray-700 leading-relaxed">
+            Lightning Piggy was born in an Amsterdam bar during Bitcoin 2022. Bitcoin3us was looking for an LNbits developer to build the first lightning enabled piggy bank for a <a href="http://www.bolt.fun/" target="_blank" rel="noopener" class="text-pink hover:underline">Bolt.fun</a> competition that was running at the time. BlackCoffee had been meaning to build something similar for his kids and that's how Lightning Piggy entered the world.
+          </p>
+        </div>
+      </section>
+
+      <!-- Want to Contribute -->
+      <section class="text-center">
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Want to Contribute?</h2>
+        <p class="text-gray-600 mb-6">
+          Lightning Piggy is open source and we welcome contributions!
+        </p>
+        <a
+          href="https://github.com/LightningPiggy"
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-2 bg-pink text-white px-6 py-3 rounded-full font-semibold hover:bg-pink/90 transition-colors"
+        >
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+      </section>
+    </div>
+  </section>
+</BaseLayout>

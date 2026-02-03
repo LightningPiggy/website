@@ -1,0 +1,28 @@
+---
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+const posts = await getCollection('guides');
+const lnbitsPost = posts.find(p => p.data.slug === 'lnbits');
+
+let Content = null;
+if (lnbitsPost) {
+  const rendered = await render(lnbitsPost);
+  Content = rendered.Content;
+}
+---
+
+<ContentLayout
+  title="LNbits Setup Guide"
+  description="How to set up LNbits wallet for your Lightning Piggy"
+>
+  <div class="not-prose mb-8 p-4 bg-gray-100 rounded-xl">
+    <p class="text-sm text-gray-700">
+      <strong>Note:</strong> LNbits provides a self-custodial wallet option.
+      For simpler setup, you can also use any wallet supporting Nostr Wallet Connect (NWC),
+      such as <a href="https://albyhub.com/" target="_blank" rel="noopener" class="text-pink">Alby Hub</a>.
+    </p>
+  </div>
+
+  {Content && <Content />}
+</ContentLayout>

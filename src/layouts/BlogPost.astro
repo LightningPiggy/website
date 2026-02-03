@@ -1,0 +1,69 @@
+---
+import BaseLayout from './BaseLayout.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  pubDate: Date;
+  updatedDate?: Date;
+  heroImage?: string;
+  tags?: string[];
+}
+
+const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
+
+const formattedPubDate = pubDate.toLocaleDateString('en-us', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+
+const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<BaseLayout title={title} description={description} image={heroImage}>
+  <article class="py-12 md:py-16">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      {heroImage && (
+        <div class="mb-8 -mx-4 sm:mx-0">
+          <img
+            src={heroImage}
+            alt={title}
+            class="w-full rounded-none sm:rounded-2xl object-cover max-h-96"
+          />
+        </div>
+      )}
+
+      <header class="mb-8">
+        <div class="flex items-center gap-3 text-sm text-gray-500 mb-4">
+          <time datetime={pubDate.toISOString()}>{formattedPubDate}</time>
+          {updatedDate && (
+            <span>
+              · Updated <time datetime={updatedDate.toISOString()}>{formattedUpdatedDate}</time>
+            </span>
+          )}
+        </div>
+
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{title}</h1>
+
+        {tags && tags.length > 0 && (
+          <div class="flex gap-2 flex-wrap">
+            {tags.map((tag) => (
+              <span class="px-3 py-1 bg-pink-light/50 text-pink text-sm font-medium rounded-full">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <div class="prose max-w-none">
+        <slot />
+      </div>
+    </div>
+  </article>
+</BaseLayout>

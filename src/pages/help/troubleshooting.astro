@@ -1,0 +1,29 @@
+---
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+const posts = await getCollection('guides');
+const troublePost = posts.find(p => p.data.slug === 'troubleshooting');
+
+let Content = null;
+if (troublePost) {
+  const rendered = await render(troublePost);
+  Content = rendered.Content;
+}
+---
+
+<ContentLayout
+  title="Troubleshooting"
+  description="Common issues and solutions for Lightning Piggy"
+>
+  {Content && <Content />}
+
+  <hr class="my-12 border-gray-200" />
+
+  <h2>Need more help?</h2>
+  <p>
+    If you're still having issues, reach out to our community on{' '}
+    <a href="https://t.me/LightningPiggy" target="_blank" rel="noopener" class="text-pink">Telegram</a>{' '}
+    or check the <a href="https://github.com/LightningPiggy/lightning-piggy/issues" target="_blank" rel="noopener" class="text-pink">GitHub issues</a>.
+  </p>
+</ContentLayout>

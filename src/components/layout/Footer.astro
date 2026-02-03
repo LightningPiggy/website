@@ -1,0 +1,122 @@
+---
+const footerLinks = {
+  product: [
+    { label: 'About', href: '/about' },
+    { label: 'Shop', href: '/shop' },
+    { label: 'Build Guide', href: '/build' },
+    { label: 'Cases', href: '/build/cases' },
+  ],
+  community: [
+    { label: 'In the Wild', href: '/community/wild' },
+    { label: 'Educators', href: '/community/educators' },
+    { label: 'Credits', href: '/community/credits' },
+    { label: 'Donate', href: 'https://geyser.fund/project/lightningpiggy' },
+  ],
+  news: [
+    { label: 'News Hub', href: '/news' },
+  ],
+};
+
+const socialLinks = [
+  { label: 'GitHub', href: 'https://github.com/LightningPiggy', icon: 'github' },
+  { label: 'Telegram', href: 'https://t.me/LightningPiggy', icon: 'telegram' },
+  { label: 'Nostr', href: 'https://primal.net/p/npub1piggy', icon: 'nostr' },
+];
+---
+
+<footer class="bg-gray-900 text-gray-300">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-2 md:grid-cols-6 gap-8">
+      <!-- Brand Column -->
+      <div class="col-span-2">
+        <a href="/" class="flex items-center gap-2 mb-4">
+          <img src="/images/mascot.png" alt="LightningPiggy" class="w-10 h-10 rounded-lg" />
+          <span class="text-xl font-bold text-white">LightningPiggy</span>
+        </a>
+        <p class="text-sm text-gray-400 mb-4 max-w-xs">
+          Make sats the savings standard for every child. An open source Bitcoin piggy bank for the next generation.
+        </p>
+        <div class="flex gap-4">
+          {socialLinks.map((link) => (
+            <a
+              href={link.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-gray-400 hover:text-white transition-colors"
+              aria-label={link.label}
+            >
+              {link.icon === 'github' && (
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+                </svg>
+              )}
+              {link.icon === 'telegram' && (
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+              )}
+              {link.icon === 'nostr' && (
+                <svg class="w-5 h-5" fill="currentColor" viewBox="40 38 185 180">
+                  <path d="M210.8 199.4c0 3.1-2.5 5.7-5.7 5.7h-68c-3.1 0-5.7-2.5-5.7-5.7v-15.5c.3-19 2.3-37.2 6.5-45.5 2.5-5 6.7-7.7 11.5-9.1 9.1-2.7 24.9-.9 31.7-1.2 0 0 20.4.8 20.4-10.7s-9.1-8.6-9.1-8.6c-10 .3-17.7-.4-22.6-2.4-8.3-3.3-8.6-9.2-8.6-11.2-.4-23.1-34.5-25.9-64.5-20.1-32.8 6.2.4 53.3.4 116.1v8.4c0 3.1-2.6 5.6-5.7 5.6H57.7c-3.1 0-5.7-2.5-5.7-5.7v-144c0-3.1 2.5-5.7 5.7-5.7h31.7c3.1 0 5.7 2.5 5.7 5.7 0 4.7 5.2 7.2 9 4.5 11.4-8.2 26-12.5 42.4-12.5 36.6 0 64.4 21.4 64.4 68.7v83.2ZM150 99.3c0-6.7-5.4-12.1-12.1-12.1s-12.1 5.4-12.1 12.1 5.4 12.1 12.1 12.1S150 106 150 99.3Z"/>
+                </svg>
+              )}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <!-- Product Links -->
+      <div>
+        <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Product</h3>
+        <ul class="space-y-2">
+          {footerLinks.product.map((link) => (
+            <li>
+              <a href={link.href} class="text-sm hover:text-white transition-colors">
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- Community Links -->
+      <div>
+        <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Community</h3>
+        <ul class="space-y-2">
+          {footerLinks.community.map((link) => (
+            <li>
+              <a href={link.href} class="text-sm hover:text-white transition-colors">
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <!-- News Links -->
+      <div>
+        <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">News</h3>
+        <ul class="space-y-2">
+          {footerLinks.news.map((link) => (
+            <li>
+              <a href={link.href} class="text-sm hover:text-white transition-colors">
+                {link.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- Bottom Bar -->
+    <div class="mt-12 pt-8 border-t border-gray-800 flex flex-col sm:flex-row justify-between items-center gap-4">
+      <p class="text-sm text-gray-400">
+        &copy; {new Date().getFullYear()} LightningPiggy. Open source, built with love.
+      </p>
+      <p class="text-sm text-gray-500">
+        Bitcoin only. Open source everything.
+      </p>
+    </div>
+  </div>
+</footer>

@@ -1,0 +1,188 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Button from '../../components/ui/Button.astro';
+---
+
+<BaseLayout title="About" description="The story behind Lightning Piggy - an open source Bitcoin piggy bank teaching the next generation about sound money.">
+  <article>
+
+    <!-- Hero -->
+    <div class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 flex flex-col md:flex-row items-center gap-10">
+        <div class="flex-1 text-center md:text-left">
+          <h1 class="text-4xl md:text-5xl font-bold mb-6">About Lightning Piggy</h1>
+          <p class="text-xl text-gray-300 leading-relaxed">
+            An open source electronic piggy bank that accepts Bitcoin over the Lightning Network and displays savings in satoshis.
+          </p>
+        </div>
+        <div class="flex-shrink-0">
+          <img
+            src="/images/characters/lightningpiggy-sunglasses.png"
+            alt="LightningPiggy mascot"
+            class="w-48 md:w-64 drop-shadow-2xl rounded-2xl"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Why we exist -->
+    <section class="py-16 md:py-24 bg-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Why we exist</h2>
+        <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
+          <p>The vast majority of the world's 2.4 billion children are growing up on a fiat standard. Even in the US, the issuer of the global reserve currency, the dollar has lost 93% of its purchasing power against Bitcoin in the last five years. Kids' fiat money savings become worthless by the time they reach adulthood.</p>
+          <p>From an early age, we're programmed to think in fiat terms. Depending on our cultural upbringing, in many parts of the world our first encounter with money is when the "tooth fairy" visits, followed by being gifted a piggy bank that gets filled with coins for doing good deeds. This money is rapidly losing its purchasing power, and is therefore useless at storing value.</p>
+          <p>Lightning Piggy was created to change that. By saving in satoshis from an early age, children grow up understanding sound money. This is a golden opportunity to give the children of the world a head start in life, and to onboard the next generation of bitcoiners and builders.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- What it does -->
+    <section class="py-16 md:py-24 bg-gray-50">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">What Lightning Piggy does</h2>
+        <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
+          <p>Lightning Piggy is an electronic piggy bank for children that accepts Bitcoin sent over the Lightning Network. It displays an onscreen QR code for receiving payments, shows the satoshi balance, recent transactions, and messages. Balances refresh automatically when new payments arrive.</p>
+          <p>The device is simple and low cost, with no subscription fees. It supports flexible wallet backends: you can choose a full self-custodial LNbits setup or connect to a Nostr Wallet Connect (NWC) compatible wallet. It runs on low power and can even be battery or solar powered.</p>
+          <p>Setup is straightforward with a browser-based installer. No app downloads, no accounts to create. Just connect to WiFi, enter your wallet details, and you're ready to stack sats.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- How kids earn and save -->
+    <section class="py-16 md:py-24 bg-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">How kids earn and save</h2>
+        <p class="text-lg text-gray-600 leading-relaxed mb-8">Lightning Piggy creates practical opportunities for children to earn and save Bitcoin:</p>
+        <div class="grid sm:grid-cols-2 gap-6">
+          <div class="p-6 bg-gray-50 rounded-2xl">
+            <h3 class="font-bold text-gray-900 mb-2">Receive Bitcoin instantly</h3>
+            <p class="text-gray-600">Share the onscreen QR code with family and friends.</p>
+          </div>
+          <div class="p-6 bg-gray-50 rounded-2xl">
+            <h3 class="font-bold text-gray-900 mb-2">Printable QR codes</h3>
+            <p class="text-gray-600">For chores, rewards, homework goals, achievements, and visual reminders around the house.</p>
+          </div>
+          <div class="p-6 bg-gray-50 rounded-2xl">
+            <h3 class="font-bold text-gray-900 mb-2">Recurring pocket money</h3>
+            <p class="text-gray-600">Payments in sats, set up by parents.</p>
+          </div>
+          <div class="p-6 bg-gray-50 rounded-2xl">
+            <h3 class="font-bold text-gray-900 mb-2">Auto-swap savings</h3>
+            <p class="text-gray-600">Thresholds from Lightning to on-chain for long-term hodling.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Learning by building -->
+    <section class="py-16 md:py-24 bg-gray-50">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Learning by building</h2>
+        <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
+          <p>Beyond saving, Lightning Piggy is a hands-on STEM learning platform. The project uses a beginner-friendly open source codebase, with a MicroPython based OS and app introduced in Lightning Piggy v2. Kids and makers can explore the code, modify it, and learn real programming skills.</p>
+          <p>The hardware side is equally accessible. Builders can make their own enclosure using card, cardboard, LEGO, repurposed objects, or 3D print and laser cut a custom housing. There are self-build options for those who want the full maker experience, or you can buy a ready-made device from the shop.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Mission & Values -->
+    <section class="py-16 md:py-24 bg-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">Our mission</h2>
+          <p class="text-2xl text-pink font-bold">Make sats the savings standard for every child.</p>
+          <p class="text-lg text-gray-600 leading-relaxed mt-6 max-w-2xl mx-auto">Our vision is enabling every child to save for their future on a Bitcoin standard in a fun, friendly, and educational way. Lightning Piggy is bringing the adoption of Bitcoin to young people in a real and meaningful way. Later in life, Bitcoin will be the obvious first choice of money &mdash; anything else will simply not make sense.</p>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-8">
+          <div class="p-8 border border-gray-200 rounded-2xl">
+            <h3 class="text-xl font-bold text-gray-900 mb-3">Bitcoin only</h3>
+            <p class="text-gray-600">We believe in sound money. No distractions.</p>
+          </div>
+          <div class="p-8 border border-gray-200 rounded-2xl">
+            <h3 class="text-xl font-bold text-gray-900 mb-3">Open source everything</h3>
+            <p class="text-gray-600">Hardware, software, and education. Inspect it, modify it, make it yours.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Road ahead -->
+    <section class="py-16 md:py-24 bg-gray-50">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">The road ahead</h2>
+        <p class="text-lg text-gray-600 leading-relaxed mb-8">Lightning Piggy is an active and evolving project. Here's what we're working towards:</p>
+        <ul class="space-y-4 text-lg text-gray-600">
+          <li class="flex items-start gap-3">
+            <span class="text-pink font-bold mt-1">&rarr;</span>
+            <span>Integrated cold storage wallet link enabling both spending and saving account balances.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-pink font-bold mt-1">&rarr;</span>
+            <span>Custom open source PCB hat for additional maker capabilities.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-pink font-bold mt-1">&rarr;</span>
+            <span>Workshop kit collaboration with the Plan B Network team.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-pink font-bold mt-1">&rarr;</span>
+            <span>Simplified onboarding: enabling manufacturers to pre-flash devices for plug-and-play field configuration.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-pink font-bold mt-1">&rarr;</span>
+            <span>Global distribution strategy to reach families everywhere.</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <span class="text-pink font-bold mt-1">&rarr;</span>
+            <span>Partnerships with community hubs to onboard more households to Bitcoin.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Community -->
+    <section class="py-16 md:py-24 bg-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Community powered</h2>
+        <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
+          <p>Lightning Piggy is supported by a thriving global community of bitcoiners, makers, educators, and families. It is built with love by bitcoiners, for young newcoiners. Everything is free and open source as standard.</p>
+          <p>Want to get involved? Join us on <a href="https://t.me/LightningPiggy" class="text-pink hover:underline font-semibold">Telegram</a>, contribute on <a href="https://github.com/LightningPiggy" class="text-pink hover:underline font-semibold">GitHub</a>, or check out the <a href="/community" class="text-pink hover:underline font-semibold">community page</a>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Origin Story teaser -->
+    <section class="py-16 md:py-24 bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p class="text-pink text-sm font-semibold uppercase tracking-widest mb-4">Once upon a time...</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">The Origin Story</h2>
+        <p class="text-gray-400 text-lg italic mb-8">How Lightning Piggy found freedom down the rabbit hole.</p>
+        <a
+          href="/about/origin-story"
+          class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-white hover:text-gray-900 transition-colors"
+        >
+          Read the story
+        </a>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="py-16 md:py-24 bg-gray-50">
+      <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Ready to get started?</h2>
+        <p class="text-gray-600 mb-8 text-lg">Build your own Lightning Piggy or buy one ready-made.</p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button href="/build" variant="primary">
+            Build Your Own
+          </Button>
+          <Button href="/shop" variant="outline">
+            Buy Ready-Made
+          </Button>
+        </div>
+      </div>
+    </section>
+
+  </article>
+</BaseLayout>

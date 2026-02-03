@@ -1,0 +1,28 @@
+---
+import ContentLayout from '../../layouts/ContentLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+const posts = await getCollection('guides');
+const buildPost = posts.find(p => p.data.slug === 'build');
+
+let Content = null;
+if (buildPost) {
+  const rendered = await render(buildPost);
+  Content = rendered.Content;
+}
+---
+
+<ContentLayout
+  title="Build Lightning Piggy 1.0"
+  description="Step-by-step guide to building the E-paper edition Lightning Piggy"
+  heroImage={buildPost?.data.heroImage}
+>
+  <div class="not-prose mb-8 p-4 bg-yellow-light/50 border border-yellow rounded-xl">
+    <p class="text-sm text-gray-700">
+      <strong>Note:</strong> This is the guide for Lightning Piggy 1.0 (E-paper edition).
+      For the latest LCD version, see the <a href="/build/2.0" class="text-pink underline">2.0 Build Guide</a>.
+    </p>
+  </div>
+
+  {Content && <Content />}
+</ContentLayout>

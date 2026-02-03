@@ -1,0 +1,27 @@
+{
+  "name": "web-lightningpiggy",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "admin": "cd tools/admin && npm start"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^4.0.0",
+    "@astrojs/rss": "^4.0.0",
+    "@astrojs/sitemap": "^3.2.0",
+    "astro": "^5.1.0"
+  },
+  "devDependencies": {
+    "@astrojs/tailwind": "^6.0.2",
+    "autoprefixer": "^10.4.23",
+    "bech32": "^2.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "ws": "^8.19.0"
+  }
+}

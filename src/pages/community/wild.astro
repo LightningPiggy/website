@@ -1,0 +1,81 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const wildDir = path.join(process.cwd(), 'public/images/wild');
+const images = fs.readdirSync(wildDir)
+  .filter((f: string) => /\.(jpe?g|png|webp|gif)$/i.test(f))
+  .sort()
+  .reverse()
+  .map((f: string) => `/images/wild/${f}`);
+---
+
+<BaseLayout title="In the Wild" description="Lightning Piggy builds and sightings from around the world">
+  <section class="py-12 md:py-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">In the Wild</h1>
+        <p class="text-lg text-gray-600">
+          The Vogue of piggy banks: Showcase your creations here to help inspire other builders.
+          Whether your Lightning Piggy is 3D printed or handmade, every unique build adds to the
+          creativity of the community.
+        </p>
+      </header>
+
+      <!-- Gallery Grid -->
+      <div class="columns-2 sm:columns-3 gap-3 space-y-3">
+        {images.map((src, i) => (
+          <div class="gallery-item break-inside-avoid">
+            <input type="checkbox" id={`lightbox-${i}`} class="lightbox-toggle hidden" />
+            <label for={`lightbox-${i}`} class="cursor-pointer block">
+              <img
+                src={src}
+                alt={`LightningPiggy in the wild ${i + 1}`}
+                class="w-full rounded-lg hover:opacity-90 transition-opacity"
+                loading="lazy"
+              />
+            </label>
+            <!-- Lightbox overlay -->
+            <label for={`lightbox-${i}`} class="lightbox-overlay">
+              <img
+                src={src}
+                alt={`LightningPiggy in the wild ${i + 1}`}
+                class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+
+      <!-- CTA -->
+      <div class="mt-16 max-w-3xl text-center mx-auto">
+        <hr class="mb-12 border-gray-200" />
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Share Your Piggy</h2>
+        <p class="text-gray-600">
+          Built a Lightning Piggy? We'd love to see it! Share on social media with
+          <strong>#LightningPiggy</strong> or email us at
+          <a href="mailto:oink@lightningpiggy.com" class="text-pink underline">oink@lightningpiggy.com</a>.
+          Bonus zaps if you include a scannable payment QR in the image.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: pointer;
+  }
+
+  .lightbox-toggle:checked ~ .lightbox-overlay {
+    display: flex;
+  }
+</style>

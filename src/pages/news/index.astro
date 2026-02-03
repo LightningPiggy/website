@@ -1,0 +1,175 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const sections = [
+  {
+    id: 'breaking-news',
+    title: 'Breaking News',
+    description: 'The latest announcements from the Freedom Farm.',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" /></svg>',
+    items: [
+      { title: 'One Sat Still Equals One Sat!' },
+      { title: 'There Will Only Ever Be 21,000,000 Bitcoins!' },
+      { title: 'Chancellor on Brink of n+1 Bailout for Banks' },
+    ],
+  },
+  {
+    id: 'in-the-news',
+    title: 'In the News',
+    description: 'Lightning Piggy coverage from around the web.',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" /></svg>',
+    items: [
+      { title: 'Lightning Piggy: The Piggy Bank That Beats Inflation', href: 'https://lightning.news/lightningpiggy-the-piggy-bank-that-beats-inflation/', meta: 'by Kirubai — Lightning News' },
+      { title: 'Leveraging LNbits and LNURLpay for Lightning Piggy', href: 'https://news.lnbits.com/news/leveraging-lnbits-and-lnurlpay-for-lightningpiggy', meta: 'by Tal — LNBits News' },
+      { title: '#353 Bitcoinfeest in Arnhem', href: 'https://bitcoinfocus.nl/2024/05/28/353-bitcoinfeest-in-arnhem/', meta: 'by Arnold Hubach — Bitcoin Focus NL' },
+    ],
+  },
+  {
+    id: 'software-updates',
+    title: 'Software Updates',
+    description: 'Release notes and changelogs for Lightning Piggy firmware.',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>',
+    items: [
+      { title: 'Software Update v6.3.0', href: '/news/so' },
+      { title: 'Software Update v6.2.0', href: '/news/software-update-v6-2-0' },
+      { title: 'Software Update V4.3.x', href: '/news/whats-new-rollup-of-recent-changes-made-up-to-v4-3-x' },
+      { title: 'Software Update v4.x', href: '/news/software-upate-v4' },
+      { title: 'Software Update V3.0.3', href: '/news/v303' },
+      { title: 'Software Updates V2.1.1 & V2.0.0', href: '/news/software-updates' },
+      { title: 'Lightning Piggy v2 Operating System Update', href: '/news/lightningpiggy-2-0-operating-system-update' },
+      { title: 'Massive updates for Lightning Piggy v2', href: '/news/massive-updates-for-lightningpiggy-2-0-are-here' },
+    ],
+  },
+];
+---
+
+<BaseLayout title="Freedom Farm News" description="News, updates, appearances, and community challenges from the Lightning Piggy project.">
+  <section class="py-16 md:py-24">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="text-center mb-16">
+        <img
+          src="/images/characters/lightningpiggy-tractor.png"
+          alt="LightningPiggy on a tractor"
+          class="w-40 h-auto mx-auto mb-6 rounded-2xl"
+        />
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Freedom Farm News</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          News, software updates, and announcements from the Lightning Piggy project.
+        </p>
+      </header>
+
+      <div id="headlines" class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-8 mb-10 scroll-mt-20">
+        <h2 class="text-xl font-bold text-white mb-6">Headlines</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          {sections.filter(s => s.items.length > 0).map((section) => {
+            const latest = section.items[0];
+            const hasLink = !!latest.href;
+            const isExternal = hasLink && latest.href.startsWith('http');
+            const Tag = hasLink ? 'a' : 'div';
+            return (
+              <Tag
+                href={hasLink ? latest.href : undefined}
+                target={isExternal ? '_blank' : undefined}
+                rel={isExternal ? 'noopener noreferrer' : undefined}
+                class="group block p-4 bg-white/10 rounded-xl hover:bg-white/20 transition-colors"
+              >
+                <span class="text-xs text-pink font-semibold uppercase tracking-wider">{section.title}</span>
+                <span class="block text-white font-medium mt-1 group-hover:text-pink transition-colors">{latest.title}</span>
+                {latest.meta && (
+                  <span class="block text-sm text-gray-400 mt-1">{latest.meta}</span>
+                )}
+              </Tag>
+            );
+          })}
+        </div>
+      </div>
+
+      <div class="space-y-10">
+        {sections.filter(s => s.items.length > 0).map((section) => (
+          <div id={section.id} class="bg-white rounded-2xl border border-gray-200 overflow-hidden scroll-mt-20">
+            <div class="flex items-start gap-4 p-6 border-b border-gray-100">
+              <div class="w-12 h-12 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0">
+                <Fragment set:html={section.icon} />
+              </div>
+              <div>
+                <h2 class="text-xl font-bold text-gray-900">{section.title}</h2>
+                <p class="text-gray-500 text-sm mt-1">{section.description}</p>
+              </div>
+            </div>
+            {(() => {
+              const limit = 3;
+              const hasMore = section.items.length > limit;
+              return (
+                <>
+                  <ul class="divide-y divide-gray-100">
+                    {section.items.map((item, idx) => {
+                      const hasLink = !!item.href;
+                      const isExternal = hasLink && item.href.startsWith('http');
+                      const Tag = hasLink ? 'a' : 'div';
+                      return (
+                        <li class={hasMore && idx >= limit ? 'expandable-item hidden' : ''} data-section={section.id}>
+                          <Tag
+                            href={hasLink ? item.href : undefined}
+                            target={isExternal ? '_blank' : undefined}
+                            rel={isExternal ? 'noopener noreferrer' : undefined}
+                            class={`group flex items-center justify-between px-6 py-4 ${hasLink ? 'hover:bg-gray-50' : ''} transition-colors`}
+                          >
+                            <div class="min-w-0">
+                              <span class={`text-gray-900 font-medium ${hasLink ? 'group-hover:text-pink' : ''} transition-colors`}>{item.title}</span>
+                              {item.meta && (
+                                <span class="block text-sm text-gray-400 mt-0.5">{item.meta}</span>
+                              )}
+                            </div>
+                            {hasLink && (
+                              <svg class="w-5 h-5 text-gray-300 group-hover:text-pink transition-colors flex-shrink-0 ml-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {isExternal ? (
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                ) : (
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                )}
+                              </svg>
+                            )}
+                          </Tag>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                  {hasMore && (
+                    <button
+                      type="button"
+                      class="expand-btn w-full px-6 py-3 text-sm font-medium text-pink hover:bg-gray-50 transition-colors border-t border-gray-100 flex items-center justify-center gap-1.5"
+                      data-section={section.id}
+                      data-count={section.items.length - limit}
+                    >
+                      <span class="expand-label">Show {section.items.length - limit} more</span>
+                      <svg class="w-4 h-4 expand-chevron transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+                    </button>
+                  )}
+                </>
+              );
+            })()}
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+  <script is:inline>
+    document.querySelectorAll('.expand-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var section = btn.dataset.section;
+        var items = document.querySelectorAll('.expandable-item[data-section="' + section + '"]');
+        var expanded = !items[0].classList.contains('hidden');
+        items.forEach(function (el) { el.classList.toggle('hidden', expanded); });
+        var label = btn.querySelector('.expand-label');
+        var chevron = btn.querySelector('.expand-chevron');
+        if (expanded) {
+          label.textContent = 'Show ' + btn.dataset.count + ' more';
+          chevron.style.transform = '';
+        } else {
+          label.textContent = 'Show less';
+          chevron.style.transform = 'rotate(180deg)';
+        }
+      });
+    });
+  </script>
+</BaseLayout>

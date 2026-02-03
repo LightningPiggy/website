@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Enable branch deploys for testing
+[context.branch-deploy]
+  command = "npm run build"
+
+# Deploy previews for pull requests
+[context.deploy-preview]
+  command = "npm run build"
+
+[[redirects]]
+  from = "/.well-known/lnurlp/oink"
+  to = "https://getalby.com/.well-known/lnurlp/LightningPiggy"
+  status = 200
+  force = true

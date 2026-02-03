@@ -1,0 +1,104 @@
+---
+import SectionHeading from '../ui/SectionHeading.astro';
+
+const appearances = [
+  { title: 'Bitcoin Centre Berlín', href: 'https://beacons.ai/bitcoinberlinsv', logo: '/images/friend-logos/bitcoin-berlin-logo.png' },
+  { title: 'Adopting Bitcoin', href: 'https://www.adoptingbitcoin.org', logo: '/images/friend-logos/adopting-bitcoin.svg' },
+  { title: 'NodeRunners Conference', href: 'https://noderunners.network/en/conference' },
+  { title: 'Sats Conf', href: 'https://satsconf.com.br/', logo: '/images/friend-logos/sats-conf.png' },
+  { title: 'Learning Bitcoin', href: 'https://www.learningbitcoin.ca', logo: '/images/friend-logos/learning-bitcoin.png' },
+  { title: 'Satoshi Summer Camp', href: 'https://b.tc/conference/2024/summer-camp', logo: '/images/friend-logos/satoshi-summer-camp.svg' },
+  { title: 'BTC Prague', href: 'https://btcprague.com', logo: '/images/friend-logos/btc-prague.svg' },
+  { title: 'Bitcoin Atlantis', href: 'https://bitcoinatlantis.com', logo: '/images/friend-logos/bitcoin-atlantis.svg' },
+  { title: 'Adopting Bitcoin Arnhem', href: 'https://www.adoptingbitcoinarnhem.com/', logo: '/images/friend-logos/adopting-bitcoin-arnhem-logo.svg' },
+  { title: 'Bitcoin 2024', href: 'https://b.tc/conference/2024', logo: '/images/friend-logos/bitcoin2024.svg' },
+];
+---
+
+<section class="py-20">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <SectionHeading
+      title="Friends & Family"
+      subtitle="We're grateful to these fine organisations for supporting our mission."
+    />
+
+    <!-- Education Partners -->
+    <div class="mt-16">
+      <h3 class="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">Education Partners</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
+        <a href="https://bitcoinjuniorclub.com/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
+          <img src="/images/friend-logos/bitcoin-junior-club-logo.png" alt="Bitcoin Junior Club" class="h-10" />
+          <span class="text-xs text-gray-500">Bitcoin Junior Club</span>
+        </a>
+        <a href="https://econokidz.com/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
+          <img src="/images/friend-logos/econo-kidz-logo.png" alt="EconoKidz" class="h-10" />
+          <span class="text-xs text-gray-500">EconoKidz</span>
+        </a>
+        <div class="flex flex-col items-center gap-2 opacity-40">
+          <div class="h-10 flex items-center text-gray-400 text-sm">Partner 3</div>
+        </div>
+        <div class="flex flex-col items-center gap-2 opacity-40">
+          <div class="h-10 flex items-center text-gray-400 text-sm">Partner 4</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Technology Partners -->
+    <div class="mt-16">
+      <h3 class="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">Technology Partners</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-8 items-center justify-items-center">
+        <a href="https://micropythonos.com/" target="_blank" rel="noopener noreferrer" class="flex flex-col items-center gap-2 hover:opacity-80 transition-opacity">
+          <img src="/images/friend-logos/micropythonos-logo.svg" alt="MicroPythonOS" class="h-10" />
+          <span class="text-xs text-gray-500">Built on MicroPythonOS</span>
+        </a>
+        <div class="flex flex-col items-center gap-2 opacity-40">
+          <div class="h-10 flex items-center text-gray-400 text-sm">Partner 2</div>
+        </div>
+        <div class="flex flex-col items-center gap-2 opacity-40">
+          <div class="h-10 flex items-center text-gray-400 text-sm">Partner 3</div>
+        </div>
+        <div class="flex flex-col items-center gap-2 opacity-40">
+          <div class="h-10 flex items-center text-gray-400 text-sm">Partner 4</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Appearances -->
+    <div class="mt-16">
+      <h3 class="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">Appearances</h3>
+      <div class="flex flex-wrap items-center justify-center gap-8">
+        {appearances.map((item) => (
+          <a
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={item.title}
+            class="group flex items-center justify-center h-16 px-4"
+          >
+            {item.logo ? (
+              <img src={item.logo} alt={item.title} class="h-12 max-w-[160px] object-contain" />
+            ) : (
+              <span class="text-sm font-semibold text-gray-500 group-hover:text-gray-900 transition-colors">{item.title}</span>
+            )}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <!-- In the News -->
+    <div class="mt-16">
+      <h3 class="text-center text-sm font-semibold text-gray-400 uppercase tracking-wider mb-8">In the News</h3>
+      <div class="flex flex-wrap items-center justify-center gap-8">
+        <a href="https://bitcoinfocus.nl/" target="_blank" rel="noopener noreferrer" title="Bitcoin Focus" class="group flex items-center justify-center h-16 px-4">
+          <img src="/images/friend-logos/bitcoin-focus-logo.png" alt="Bitcoin Focus" class="h-12 max-w-[160px] object-contain" />
+        </a>
+        <a href="https://news.lnbits.com/" target="_blank" rel="noopener noreferrer" title="LNbits News" class="group flex items-center justify-center h-16 px-4">
+          <img src="/images/friend-logos/lnbits-news-logo.png" alt="LNbits News" class="h-12 max-w-[160px] object-contain" />
+        </a>
+        <a href="https://lightning.news/" target="_blank" rel="noopener noreferrer" title="Lightning News" class="group flex items-center justify-center h-16 px-4">
+          <img src="/images/friend-logos/lightning-news-logo.jpg" alt="Lightning News" class="h-12 max-w-[160px] object-contain" />
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,319 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const cases = [
+  {
+    name: 'ZapBox!',
+    tag: 'LightningPiggy v2',
+    description: "The 'ZapBox!' pocket-size edition is engineered to be ultra-compact. Made from a single part and held together with four screws, it's perfect for travel. In fact, the team carries these very piggies on the road — an entire sounder of them fits neatly into a single backpack for workshops.",
+    images: ['/images/cases/zapbox-lcd-01.png'],
+    specs: {
+      board: 'S3 2inch',
+      material: 'PLA or PETG',
+      printing: 'Camera face down. Add rafts to secure the two buttons to the printer bed.',
+      screws: 'M2x8mm qty4',
+    },
+    creator: { name: 'Richard', url: 'https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel' },
+    licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+    downloads: [
+      { label: 'Download Model File', url: '/downloads/cases/lightningpiggy-v2-zapbox.3mf' },
+    ],
+  },
+  {
+    name: 'ROBOTECHY',
+    tag: 'LightningPiggy v1',
+    description: "Free range, grass fed, and wholesome, this little piggy is the most beautiful we've ever seen. Designed, printed, assembled and sold by enterprising young bitcoiners with a little help from mum & dad.",
+    images: [
+      '/images/cases/robotechy-01.jpeg',
+      '/images/cases/robotechy-02.jpeg',
+      '/images/cases/robotechy-03.jpeg',
+      '/images/cases/robotechy-04.jpeg',
+      '/images/cases/robotechy-05.jpeg',
+      '/images/cases/robotechy-06.jpeg',
+    ],
+    specs: {
+      board: '2.13 inch',
+      material: 'PLA or PETG',
+      printing: 'TBC',
+    },
+    creator: { name: 'Isaac Weeks, Ben Weeks and family', url: 'https://njump.me/npub17dfg3tynlv39m0e9z8a0t558e7plet96xg9g4uu6q84caykq8jtqwdy09f' },
+    downloads: [
+      { label: 'Ready Printed', url: 'https://www.robotechy.com/' },
+      { label: 'Download Model Files (10K sats)', url: 'https://demo.lnpiggy.com/paywall/UudjL343C7rR3H3nU8DBws' },
+    ],
+  },
+  {
+    name: 'GenesisPiggy',
+    tag: 'LightningPiggy v1',
+    description: "BlackCoffee's original cardboard pig has been reimagined in filament and can now be printed as easily, and cheaply, as fiat money. This is a draft design so expect some tweaks and please do share any ideas you may have to improve it.",
+    images: [
+      '/images/cases/genesispiggy-01.png',
+      '/images/cases/genesispiggy-02.png',
+      '/images/cases/genesispiggy-03.png',
+      '/images/cases/genesispiggy-04.png',
+    ],
+    specs: {
+      board: '2.13 inch',
+      material: 'PLA or PETG',
+      printing: 'Print back down (trotters up). Add supports for everything except the tail. Remove all support materials from around where the board sits.',
+    },
+    creator: { name: 'Richard', url: 'https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel' },
+    licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+    downloads: [
+      { label: 'Download Model File', url: 'https://github.com/LightningPiggy/cases/tree/main/GenesisPiggy' },
+    ],
+  },
+  {
+    name: 'ZapBox!',
+    tag: 'LightningPiggy v1',
+    description: "The \"ZapBox!\" edition has been created to be as compact as possible, while maintaining easy access to the charging port and buttons. It's constructed from two parts, the main case and lid. No screws are necessary, everything fits together nice and snug, like a pig in a blanket.",
+    images: [
+      '/images/cases/zapbox-epaper-01.jpeg',
+      '/images/cases/zapbox-epaper-02.jpeg',
+      '/images/cases/zapbox-epaper-03.jpeg',
+    ],
+    specs: {
+      board: '2.13 inch',
+      material: 'PLA or PETG',
+      printing: 'Add supports to the charging port and buttons slot. Ensure no supports interfere with the four lid/case fixing points.',
+    },
+    creator: { name: 'Richard', url: 'https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel' },
+    licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+    downloads: [
+      { label: 'Download Model File', url: '/downloads/cases/lightningpiggy-v1-zapbox.3mf' },
+    ],
+  },
+  {
+    name: 'MineLightningPiggy',
+    tag: 'LightningPiggy v1',
+    description: 'This amazing piggy has been designed by super talented 11-year old "Mixter the Boyster" who loves Minecraft and 3D printing.',
+    images: [
+      '/images/cases/minepiggy-01.jpg',
+      '/images/cases/minepiggy-02.jpg',
+      '/images/cases/minepiggy-03.jpg',
+    ],
+    specs: {
+      board: '2.13 inch',
+      material: 'PLA or PETG',
+      printing: '10% infill. Tree supports. Adhesion enabled.',
+      paint: 'Gold Rub\'n\'buff paint.',
+    },
+    creator: { name: 'Mikkel the Boyster' },
+    licence: { name: 'CC BY', url: 'https://creativecommons.org/licenses/by/4.0/' },
+    downloads: [
+      { label: 'Pig (Thingiverse)', url: 'https://www.thingiverse.com/thing:4377817/files' },
+      { label: 'Bitcoin Logo (Cults3D)', url: 'https://cults3d.com/en/3d-model/art/bitcoin-gomarebasa' },
+      { label: 'Case (Thingiverse)', url: 'https://www.thingiverse.com/thing:4543101/files' },
+    ],
+  },
+  {
+    name: 'LightningPiggy Block Lamp',
+    tag: 'LightningPiggy v1',
+    description: "Shining a light on sound money: This Minecraft-inspired savings lamp, a first of its kind, was ingeniously crafted by Silexperience and his son. The project was sparked by a curious question: \"Can bitcoin be in a piggy bank?\" This led to integrating a Lightning Piggy device inside a block shaped lamp.",
+    images: [
+      '/images/cases/blocklamp-01.jpg',
+      '/images/cases/blocklamp-02.jpg',
+    ],
+    specs: {
+      board: '2.13 inch',
+      material: 'PLA or PETG',
+      printing: 'No support needed except for the main cube. 20% filling, supports 5% (cube only).',
+      notes: 'Power is provided using a 1,800 mAh lithium battery connected directly to the T5\'s USB port. The LED strip and the Lilygo are independent.',
+    },
+    creator: { name: 'Silexperience', url: 'https://njump.me/npub1zn99rseq50npesxs0zh0m396h9anz9h8u7ju5vc44c3n5m7ptuws8k7lrh' },
+    licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+    downloads: [
+      { label: 'BASE2.stl', url: '/blog/content/files/2024/01/BASE2.stl' },
+      { label: 'DOme.stl', url: '/blog/content/files/2024/01/DOme.stl' },
+      { label: 'Embase.stl', url: '/blog/content/files/2024/01/Embase.stl' },
+      { label: 'interieur.stl', url: '/blog/content/files/2024/01/interieur.stl' },
+      { label: 'Superieur.stl', url: '/blog/content/files/2024/01/Superieur.stl' },
+      { label: 'Supportbertical.stl', url: '/blog/content/files/2024/01/Supportbertical.stl' },
+    ],
+  },
+  {
+    name: 'LegoBlock',
+    tag: 'LightningPiggy v1',
+    description: 'A compact Lego-inspired block case for the Lightning Piggy.',
+    images: [
+      '/images/cases/legoblock-01.jpeg',
+      '/images/cases/legoblock-02.jpeg',
+    ],
+    specs: {
+      board: '2.13 and 2.66 inch',
+      material: 'PLA or PETG',
+      printing: 'Add supports to the charging port and buttons slot.',
+    },
+    creator: { name: 'Richard', url: 'https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel' },
+    licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+    downloads: [
+      { label: 'LegoBlock.3mf', url: '/blog/content/files/2024/03/LegoBlock.3mf' },
+      { label: 'LegoBlock.stl', url: '/blog/content/files/2024/03/LegoBlock.stl' },
+    ],
+  },
+  {
+    name: 'LaserEngraved Piggy',
+    tag: 'LightningPiggy v1',
+    description: 'A laser-cut plywood piggy designed and built with the help of two 11-year-old makers.',
+    images: [
+      '/images/cases/laserengraved-01.png',
+      '/images/cases/laserengraved-02.jpeg',
+    ],
+    specs: {
+      board: '2.13 inch',
+      material: 'Plywood',
+      software: 'Lightburn',
+    },
+    creator: { name: 'lonerookie & two 11-year-old helpers' },
+    licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
+    downloads: [
+      { label: 'Download Model File', url: 'https://github.com/LightningPiggy/cases/tree/main/Lasercut%20Piggy%20for%202.13%20inch%20ePaper' },
+    ],
+  },
+];
+
+// Global image counter for unique lightbox IDs
+let imgCounter = 0;
+---
+
+<BaseLayout title="Cases & Enclosures" description="Community-designed cases and enclosures for your Lightning Piggy">
+  <section class="py-12 md:py-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Cases & Enclosures</h1>
+        <p class="text-lg text-gray-600">
+          Browse community-designed cases or create your own. 3D printable STL files,
+          laser-cut templates, and DIY inspiration included.
+        </p>
+      </header>
+
+      <div class="space-y-10">
+        {cases.map((c) => {
+          const startIdx = imgCounter;
+          imgCounter += c.images.length;
+          return (
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+              {/* Image gallery */}
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
+                {c.images.map((src, i) => {
+                  const id = startIdx + i;
+                  return (
+                    <div class="relative aspect-square overflow-hidden rounded-lg">
+                      <input type="checkbox" id={`case-lb-${id}`} class="lightbox-toggle hidden" />
+                      <label for={`case-lb-${id}`} class="cursor-pointer block w-full h-full">
+                        <img
+                          src={src}
+                          alt={`${c.name} - image ${i + 1}`}
+                          class="w-full h-full object-cover hover:opacity-90 transition-opacity"
+                          loading="lazy"
+                        />
+                      </label>
+                      <label for={`case-lb-${id}`} class="lightbox-overlay">
+                        <img
+                          src={src}
+                          alt={`${c.name} - image ${i + 1}`}
+                          class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                        />
+                      </label>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Content */}
+              <div class="p-6">
+                <div class="flex items-center gap-3 mb-3">
+                  <h2 class="text-xl font-bold text-gray-900">{c.name}</h2>
+                  <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.tag === 'LightningPiggy v2' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
+                    {c.tag}
+                  </span>
+                </div>
+
+                <p class="text-gray-600 mb-4">{c.description}</p>
+
+                {/* Specs */}
+                <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
+                  <div><span class="font-medium text-gray-900">Display:</span> <span class="text-gray-600">{c.specs.board}</span></div>
+                  <div><span class="font-medium text-gray-900">Material:</span> <span class="text-gray-600">{c.specs.material}</span></div>
+                  {c.specs.printing && (
+                    <div class="col-span-2"><span class="font-medium text-gray-900">Printing:</span> <span class="text-gray-600">{c.specs.printing}</span></div>
+                  )}
+                  {c.specs.paint && (
+                    <div class="col-span-2"><span class="font-medium text-gray-900">Paint:</span> <span class="text-gray-600">{c.specs.paint}</span></div>
+                  )}
+                  {c.specs.software && (
+                    <div><span class="font-medium text-gray-900">Software:</span> <span class="text-gray-600">{c.specs.software}</span></div>
+                  )}
+                  {c.specs.notes && (
+                    <div class="col-span-2"><span class="font-medium text-gray-900">Notes:</span> <span class="text-gray-600">{c.specs.notes}</span></div>
+                  )}
+                </div>
+
+                {/* Creator & licence */}
+                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mb-4">
+                  <span>
+                    Creator: {c.creator.url
+                      ? <a href={c.creator.url} target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">{c.creator.name}</a>
+                      : c.creator.name
+                    }
+                  </span>
+                  {c.licence && (
+                    <span>
+                      Licence: <a href={c.licence.url} target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">{c.licence.name}</a>
+                    </span>
+                  )}
+                </div>
+
+                {/* Download links */}
+                <div class="flex flex-wrap gap-2">
+                  {c.downloads.map((d) => (
+                    <a
+                      href={d.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      {d.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* CTA */}
+      <div class="mt-16 max-w-3xl text-center mx-auto">
+        <hr class="mb-12 border-gray-200" />
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Share Your Design</h2>
+        <p class="text-gray-600">
+          Created a unique case? We'd love to feature it! Email your creation to
+          <a href="mailto:oink@lightningpiggy.com" class="text-pink underline">oink@lightningpiggy.com</a>
+          including the creator's name, piggy name, model files, printing advice, and your Creative Commons licence.
+          Bonus zaps if you include a scannable payment QR in the image.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .lightbox-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.85);
+    cursor: pointer;
+  }
+
+  .lightbox-toggle:checked ~ .lightbox-overlay {
+    display: flex;
+  }
+</style>

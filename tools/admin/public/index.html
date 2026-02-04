@@ -13,6 +13,7 @@
       <button class="tab active" data-tab="wild">In the Wild</button>
       <button class="tab" data-tab="showcase">Showcase</button>
       <button class="tab" data-tab="news">News Post</button>
+      <button class="tab" data-tab="credits">Credits</button>
     </nav>
   </header>
 
@@ -100,6 +101,135 @@
       </form>
 
       <div id="news-result" class="result" hidden></div>
+    </section>
+
+    <!-- Credits -->
+    <section id="credits" class="panel">
+      <h2>Credits Database</h2>
+      <p class="hint">Manage credits for people and businesses to show on the website. Data stored in ~/.lightningpiggy/</p>
+
+      <div class="credits-header">
+        <div class="credits-actions">
+          <button id="add-credit-btn" class="btn primary">+ Add Credit</button>
+          <button id="sync-credits-btn" class="btn">Sync to Website</button>
+        </div>
+        <input type="text" id="credits-search" placeholder="Search credits..." class="search-input">
+      </div>
+
+      <!-- Section Toggles -->
+      <div class="section-toggles">
+        <span class="toggle-label">Sync sections:</span>
+        <label class="section-toggle">
+          <input type="checkbox" id="sync-core-team" checked>
+          <span>Core Team</span>
+        </label>
+        <label class="section-toggle">
+          <input type="checkbox" id="sync-contributor" checked>
+          <span>Contributor</span>
+        </label>
+        <label class="section-toggle">
+          <input type="checkbox" id="sync-special-thanks" checked>
+          <span>Special Thanks</span>
+        </label>
+      </div>
+
+      <div id="sync-result" class="result" hidden></div>
+
+      <div id="credits-list" class="credits-list"></div>
+
+      <!-- Add/Edit Credit Modal -->
+      <div id="credit-modal" class="modal" hidden>
+        <div class="modal-content">
+          <h3 id="modal-title">Add Credit</h3>
+          <form id="credit-form">
+            <input type="hidden" id="credit-id">
+
+            <div class="form-row">
+              <label>
+                Name
+                <input type="text" id="credit-name" required placeholder="John Doe">
+              </label>
+              <label>
+                Role/Contribution
+                <input type="text" id="credit-role" placeholder="Developer, Designer, etc.">
+              </label>
+            </div>
+
+            <label>
+              Email
+              <input type="email" id="credit-email" placeholder="john@example.com">
+            </label>
+
+            <label>
+              Lightning Address
+              <input type="text" id="credit-lightning" placeholder="john@getalby.com">
+            </label>
+
+            <div class="form-row">
+              <label>
+                Nostr npub
+                <input type="text" id="credit-nostr-npub" placeholder="npub1...">
+              </label>
+              <label>
+                Nostr Hex
+                <input type="text" id="credit-nostr-hex" placeholder="hex pubkey">
+              </label>
+            </div>
+
+            <label>
+              Nostr Profile Picture URL
+              <input type="url" id="credit-nostr-pic" placeholder="https://...">
+            </label>
+
+            <div class="form-row">
+              <label>
+                X Profile URL
+                <input type="url" id="credit-x-url" placeholder="https://x.com/username">
+              </label>
+              <label>
+                X Profile Picture URL
+                <input type="url" id="credit-x-pic" placeholder="https://...">
+              </label>
+            </div>
+
+            <label>
+              Notes
+              <textarea id="credit-notes" rows="3" placeholder="For Special Thanks, this becomes the note shown on the website..."></textarea>
+            </label>
+
+            <div class="switch-row">
+              <span class="switch-label">Show on Website</span>
+              <label class="switch">
+                <input type="checkbox" id="credit-show-on-website">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <label>
+              Website Section
+              <select id="credit-website-section">
+                <option value="">Not on website</option>
+                <option value="Core Team">Core Team</option>
+                <option value="Contributor">Contributor</option>
+                <option value="Special Thanks">Special Thanks</option>
+              </select>
+            </label>
+
+            <div class="switch-row">
+              <span class="switch-label">Bitcoin Kid</span>
+              <label class="switch">
+                <input type="checkbox" id="credit-bitcoin-kid">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="modal-actions">
+              <button type="button" id="cancel-credit-btn" class="btn">Cancel</button>
+              <button type="submit" class="btn primary">Save Credit</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </section>
   </main>
 

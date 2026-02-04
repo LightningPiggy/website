@@ -4,12 +4,16 @@ import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
+import crypto from 'crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
 const WILD_DIR = path.join(ROOT, 'public', 'images', 'wild');
 const SHOWCASE_DIR = path.join(ROOT, 'public', 'images', 'showcase');
 const NEWS_DIR = path.join(ROOT, 'src', 'content', 'news');
+const CREDITS_FILE = path.join(os.homedir(), '.lightningpiggy', 'credits.json');
+const CREDITS_EXPORT_FILE = path.join(ROOT, 'src', 'data', 'credits.json');
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -129,6 +133,169 @@ app.post('/api/news/publish', upload.single('heroImage'), async (req, res) => {
   }
 });
 
+// --- Credits Endpoints ---
+
+function loadCredits() {
+  try {
+    if (!fs.existsSync(CREDITS_FILE)) {
+      const dir = path.dirname(CREDITS_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(CREDITS_FILE, JSON.stringify({ credits: [], schema_version: 1 }, null, 2));
+    }
+    return JSON.parse(fs.readFileSync(CREDITS_FILE, 'utf-8'));
+  } catch (err) {
+    return { credits: [], schema_version: 1 };
+  }
+}
+
+function saveCredits(data) {
+  const dir = path.dirname(CREDITS_FILE);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(CREDITS_FILE, JSON.stringify(data, null, 2));
+}
+
+// Get all credits
+app.get('/api/credits', (req, res) => {
+  const data = loadCredits();
+  res.json(data.credits);
+});
+
+// Add a new credit
+app.post('/api/credits', (req, res) => {
+  try {
+    const data = loadCredits();
+    const credit = {
+      id: crypto.randomUUID(),
+      name: req.body.name || '',
+      email: req.body.email || '',
+      role: req.body.role || '',
+      lightningAddress: req.body.lightningAddress || '',
+      nostrNpub: req.body.nostrNpub || '',
+      nostrHex: req.body.nostrHex || '',
+      nostrProfilePic: req.body.nostrProfilePic || '',
+      xProfileUrl: req.body.xProfileUrl || '',
+      xProfilePic: req.body.xProfilePic || '',
+      notes: req.body.notes || '',
+      showOnWebsite: req.body.showOnWebsite ?? false,
+      websiteSection: req.body.websiteSection || '',
+      isBitcoinKid: req.body.isBitcoinKid ?? false,
+      dateAdded: req.body.dateAdded || new Date().toISOString().split('T')[0],
+    };
+    data.credits.push(credit);
+    saveCredits(data);
+    res.json({ success: true, credit });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update a credit
+app.put('/api/credits/:id', (req, res) => {
+  try {
+    const data = loadCredits();
+    const index = data.credits.findIndex(c => c.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Credit not found' });
+    }
+    data.credits[index] = {
+      ...data.credits[index],
+      name: req.body.name ?? data.credits[index].name,
+      email: req.body.email ?? data.credits[index].email,
+      role: req.body.role ?? data.credits[index].role,
+      lightningAddress: req.body.lightningAddress ?? data.credits[index].lightningAddress,
+      nostrNpub: req.body.nostrNpub ?? data.credits[index].nostrNpub,
+      nostrHex: req.body.nostrHex ?? data.credits[index].nostrHex,
+      nostrProfilePic: req.body.nostrProfilePic ?? data.credits[index].nostrProfilePic,
+      xProfileUrl: req.body.xProfileUrl ?? data.credits[index].xProfileUrl,
+      xProfilePic: req.body.xProfilePic ?? data.credits[index].xProfilePic,
+      notes: req.body.notes ?? data.credits[index].notes,
+      showOnWebsite: req.body.showOnWebsite ?? data.credits[index].showOnWebsite ?? false,
+      websiteSection: req.body.websiteSection ?? data.credits[index].websiteSection ?? '',
+      isBitcoinKid: req.body.isBitcoinKid ?? data.credits[index].isBitcoinKid ?? false,
+    };
+    saveCredits(data);
+    res.json({ success: true, credit: data.credits[index] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a credit
+app.delete('/api/credits/:id', (req, res) => {
+  try {
+    const data = loadCredits();
+    const index = data.credits.findIndex(c => c.id === req.params.id);
+    if (index === -1) {
+      return res.status(404).json({ error: 'Credit not found' });
+    }
+    const deleted = data.credits.splice(index, 1)[0];
+    saveCredits(data);
+    res.json({ success: true, deleted });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Sync credits to website (export only showOnWebsite: true entries)
+app.post('/api/credits/sync', (req, res) => {
+  try {
+    const data = loadCredits();
+    const sections = req.body.sections || ['Core Team', 'Contributor', 'Special Thanks'];
+
+    // Filter credits that should appear on website and are in enabled sections
+    const websiteCredits = data.credits.filter(c =>
+      c.showOnWebsite && sections.includes(c.websiteSection)
+    );
+
+    // Group by section
+    const grouped = {
+      coreTeam: websiteCredits
+        .filter(c => c.websiteSection === 'Core Team')
+        .map(c => ({
+          name: c.name,
+          contribution: c.role.replace(/^Core Team\s*-\s*/i, ''),
+          url: c.nostrNpub ? `https://njump.me/${c.nostrNpub}` : c.xProfileUrl || '',
+          avatar: c.nostrProfilePic || c.xProfilePic || '',
+        })),
+      contributors: websiteCredits
+        .filter(c => c.websiteSection === 'Contributor')
+        .map(c => ({
+          name: c.name,
+          contribution: c.role.replace(/^Contributor\s*-\s*/i, ''),
+          url: c.nostrNpub ? `https://njump.me/${c.nostrNpub}` : c.xProfileUrl || '',
+          avatar: c.nostrProfilePic || c.xProfilePic || '',
+          isBitcoinKid: c.isBitcoinKid || false,
+        })),
+      specialThanks: websiteCredits
+        .filter(c => c.websiteSection === 'Special Thanks')
+        .map(c => ({
+          name: c.name,
+          url: c.nostrNpub ? `https://njump.me/${c.nostrNpub}` : c.xProfileUrl || '',
+          note: c.notes || '',
+        })),
+    };
+
+    // Ensure data directory exists
+    const exportDir = path.dirname(CREDITS_EXPORT_FILE);
+    if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
+
+    // Write to website data file
+    fs.writeFileSync(CREDITS_EXPORT_FILE, JSON.stringify(grouped, null, 2));
+
+    res.json({
+      success: true,
+      exported: {
+        coreTeam: grouped.coreTeam.length,
+        contributors: grouped.contributors.length,
+        specialThanks: grouped.specialThanks.length,
+      },
+      path: 'src/data/credits.json',
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Start Server ---
 
 const PORT = 3000;
@@ -137,5 +304,7 @@ app.listen(PORT, () => {
   console.log(`  ➜  http://localhost:${PORT}\n`);
   console.log(`  Project root: ${ROOT}`);
   console.log(`  Wild photos:  ${WILD_DIR}`);
-  console.log(`  News posts:   ${NEWS_DIR}\n`);
+  console.log(`  News posts:   ${NEWS_DIR}`);
+  console.log(`  Credits:      ${CREDITS_FILE}`);
+  console.log(`  Export to:    ${CREDITS_EXPORT_FILE}\n`);
 });

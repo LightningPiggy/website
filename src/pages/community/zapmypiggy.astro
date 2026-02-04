@@ -1,0 +1,287 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="ZapMyPiggy" description="Recent Nostr notes from the #ZapMyPiggy community">
+  <section class="py-12 md:py-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="mb-8">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">#ZapMyPiggy</h1>
+        <p class="text-lg text-gray-600">
+          Recent posts from the Nostr community using the <strong>#ZapMyPiggy</strong> hashtag.
+          Share your Lightning Piggy moments and zap others!
+        </p>
+      </header>
+
+      <!-- Loading state -->
+      <div id="loading" class="text-center py-12">
+        <div class="inline-block w-8 h-8 border-4 border-pink border-t-transparent rounded-full animate-spin"></div>
+        <p class="mt-4 text-gray-500">Loading notes from Nostr...</p>
+      </div>
+
+      <!-- Error state -->
+      <div id="error" class="hidden text-center py-12">
+        <p class="text-gray-500">Unable to load notes. Please try again later.</p>
+      </div>
+
+      <!-- Notes container -->
+      <div id="notes" class="grid gap-6 hidden"></div>
+
+      <!-- Empty state -->
+      <div id="empty" class="hidden text-center py-12">
+        <p class="text-gray-500">No recent notes found with #ZapMyPiggy.</p>
+      </div>
+
+      <!-- CTA -->
+      <div class="mt-16 max-w-3xl text-center mx-auto">
+        <hr class="mb-12 border-gray-200" />
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Join the Conversation</h2>
+        <p class="text-gray-600">
+          Post on Nostr with <strong>#ZapMyPiggy</strong> to appear here!
+          Show off your piggy bank, share zap rewards, or celebrate savings milestones.
+        </p>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<script>
+  const RELAYS = [
+    'wss://relay.damus.io',
+    'wss://relay.nostr.band',
+    'wss://nos.lol',
+    'wss://relay.snort.social',
+    'wss://relay.primal.net',
+  ];
+
+  const MAX_NOTES = 6;
+  const HASHTAGS = ['zapmypiggy', 'zapmypiggy!', 'zapmypig', 'zapmypig!'];
+
+  interface NostrEvent {
+    id: string;
+    pubkey: string;
+    created_at: number;
+    kind: number;
+    tags: string[][];
+    content: string;
+    sig: string;
+  }
+
+  interface NostrProfile {
+    name?: string;
+    display_name?: string;
+    picture?: string;
+    nip05?: string;
+  }
+
+  const notes = new Map<string, NostrEvent>();
+  const profiles = new Map<string, NostrProfile>();
+  let connectedRelays = 0;
+  let closedRelays = 0;
+
+  function formatDate(timestamp: number): string {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  function formatContent(content: string): string {
+    // Escape HTML
+    let formatted = content
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    // Convert URLs to links
+    formatted = formatted.replace(
+      /(https?:\/\/[^\s]+)/g,
+      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-pink underline break-all">$1</a>'
+    );
+
+    // Highlight hashtags
+    formatted = formatted.replace(
+      /#(\w+)/g,
+      '<span class="text-pink font-medium">#$1</span>'
+    );
+
+    // Convert newlines to breaks
+    formatted = formatted.replace(/\n/g, '<br>');
+
+    return formatted;
+  }
+
+  function getDisplayName(pubkey: string): string {
+    const profile = profiles.get(pubkey);
+    if (profile?.display_name) return profile.display_name;
+    if (profile?.name) return profile.name;
+    return pubkey.slice(0, 8) + '...' + pubkey.slice(-4);
+  }
+
+  function getProfilePicture(pubkey: string): string {
+    const profile = profiles.get(pubkey);
+    return profile?.picture || `https://robohash.org/${pubkey}?set=set4&size=48x48`;
+  }
+
+  function renderNotes() {
+    const container = document.getElementById('notes');
+    const loading = document.getElementById('loading');
+    const empty = document.getElementById('empty');
+    const error = document.getElementById('error');
+
+    if (!container || !loading || !empty || !error) return;
+
+    const sortedNotes = Array.from(notes.values())
+      .sort((a, b) => b.created_at - a.created_at)
+      .slice(0, MAX_NOTES);
+
+    if (sortedNotes.length === 0) {
+      loading.classList.add('hidden');
+      empty.classList.remove('hidden');
+      return;
+    }
+
+    loading.classList.add('hidden');
+    container.classList.remove('hidden');
+
+    container.innerHTML = sortedNotes
+      .map((note) => {
+        const njumpUrl = `https://njump.me/${note.id}`;
+        return `
+          <article class="bg-white rounded-2xl border border-gray-200 p-6 hover:border-pink hover:shadow-lg transition-all">
+            <div class="flex items-start gap-4">
+              <img
+                src="${getProfilePicture(note.pubkey)}"
+                alt=""
+                class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0"
+                loading="lazy"
+              />
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="font-semibold text-gray-900 truncate">${getDisplayName(note.pubkey)}</span>
+                  <span class="text-gray-400 text-sm flex-shrink-0">${formatDate(note.created_at)}</span>
+                </div>
+                <div class="text-gray-700 leading-relaxed break-words">${formatContent(note.content)}</div>
+                <a
+                  href="${njumpUrl}"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1 mt-4 text-sm text-gray-500 hover:text-pink transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  View on Nostr
+                </a>
+              </div>
+            </div>
+          </article>
+        `;
+      })
+      .join('');
+  }
+
+  function fetchProfiles(pubkeys: string[], ws: WebSocket) {
+    const uniquePubkeys = [...new Set(pubkeys)].filter((pk) => !profiles.has(pk));
+    if (uniquePubkeys.length === 0) return;
+
+    const profileReq = JSON.stringify([
+      'REQ',
+      'profiles',
+      {
+        kinds: [0],
+        authors: uniquePubkeys,
+      },
+    ]);
+    ws.send(profileReq);
+  }
+
+  function connectToRelay(relayUrl: string) {
+    try {
+      const ws = new WebSocket(relayUrl);
+
+      ws.onopen = () => {
+        connectedRelays++;
+        // Request notes with #zapmypiggy and similar hashtags (kind 1 = text notes)
+        const req = JSON.stringify([
+          'REQ',
+          'zapmypiggy',
+          {
+            kinds: [1],
+            '#t': HASHTAGS,
+            limit: MAX_NOTES,
+          },
+        ]);
+        ws.send(req);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data[0] === 'EVENT') {
+            const nostrEvent = data[2] as NostrEvent;
+            if (nostrEvent.kind === 0) {
+              // Profile metadata
+              try {
+                const profile = JSON.parse(nostrEvent.content) as NostrProfile;
+                profiles.set(nostrEvent.pubkey, profile);
+                renderNotes();
+              } catch {
+                // Invalid profile JSON
+              }
+            } else if (nostrEvent.kind === 1) {
+              // Text note
+              if (!notes.has(nostrEvent.id)) {
+                notes.set(nostrEvent.id, nostrEvent);
+                fetchProfiles([nostrEvent.pubkey], ws);
+                renderNotes();
+              }
+            }
+          } else if (data[0] === 'EOSE') {
+            // End of stored events - fetch profiles for all notes
+            const pubkeys = Array.from(notes.values()).map((n) => n.pubkey);
+            fetchProfiles(pubkeys, ws);
+          }
+        } catch {
+          // Invalid JSON
+        }
+      };
+
+      ws.onerror = () => {
+        closedRelays++;
+        checkAllRelaysClosed();
+      };
+
+      ws.onclose = () => {
+        closedRelays++;
+        checkAllRelaysClosed();
+      };
+
+      // Close connection after 10 seconds
+      setTimeout(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      }, 10000);
+    } catch {
+      closedRelays++;
+      checkAllRelaysClosed();
+    }
+  }
+
+  function checkAllRelaysClosed() {
+    if (closedRelays >= RELAYS.length && notes.size === 0) {
+      const loading = document.getElementById('loading');
+      const error = document.getElementById('error');
+      if (loading && error) {
+        loading.classList.add('hidden');
+        error.classList.remove('hidden');
+      }
+    }
+  }
+
+  // Connect to all relays
+  RELAYS.forEach(connectToRelay);
+</script>

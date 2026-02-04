@@ -177,3 +177,209 @@ newsForm.addEventListener('submit', async e => {
   submitBtn.disabled = false;
   submitBtn.textContent = 'Publish';
 });
+
+// --- Credits ---
+const creditsList = document.getElementById('credits-list');
+const creditModal = document.getElementById('credit-modal');
+const creditForm = document.getElementById('credit-form');
+const modalTitle = document.getElementById('modal-title');
+const addCreditBtn = document.getElementById('add-credit-btn');
+const cancelCreditBtn = document.getElementById('cancel-credit-btn');
+const creditsSearch = document.getElementById('credits-search');
+const syncCreditsBtn = document.getElementById('sync-credits-btn');
+const syncResult = document.getElementById('sync-result');
+
+let allCredits = [];
+
+async function loadCredits() {
+  try {
+    const resp = await fetch('/api/credits');
+    allCredits = await resp.json();
+    renderCredits(allCredits);
+  } catch (err) {
+    creditsList.innerHTML = `<p class="error">Failed to load credits: ${err.message}</p>`;
+  }
+}
+
+function renderCredits(credits) {
+  if (credits.length === 0) {
+    creditsList.innerHTML = '<p class="empty">No credits yet. Click "Add Credit" to create one.</p>';
+    return;
+  }
+
+  creditsList.innerHTML = credits.map(c => `
+    <div class="credit-card" data-id="${c.id}">
+      <div class="credit-avatar">
+        ${c.nostrProfilePic || c.xProfilePic
+          ? `<img src="${c.nostrProfilePic || c.xProfilePic}" alt="${c.name}" onerror="this.style.display='none'">`
+          : `<span>${(c.name || '?')[0].toUpperCase()}</span>`
+        }
+      </div>
+      <div class="credit-info">
+        <div class="credit-name">
+          ${c.isBitcoinKid ? '<span class="bitcoin-kid-star">⭐</span>' : ''}
+          ${c.name || 'Unnamed'}
+          ${c.showOnWebsite ? `<span class="credit-badge on-website">${c.websiteSection || 'On Website'}</span>` : ''}
+        </div>
+        <div class="credit-role">${c.role || ''}</div>
+        <div class="credit-details">
+          ${c.email ? `<span title="Email">${c.email}</span>` : ''}
+          ${c.lightningAddress ? `<span title="Lightning">⚡ ${c.lightningAddress}</span>` : ''}
+        </div>
+        <div class="credit-links">
+          ${c.nostrNpub ? `<a href="https://njump.me/${c.nostrNpub}" target="_blank" title="Nostr">Nostr</a>` : ''}
+          ${c.xProfileUrl ? `<a href="${c.xProfileUrl}" target="_blank" title="X">X</a>` : ''}
+        </div>
+      </div>
+      <div class="credit-actions">
+        <button class="btn-icon edit-credit" title="Edit">✏️</button>
+        <button class="btn-icon delete-credit" title="Delete">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+
+  // Attach event listeners
+  creditsList.querySelectorAll('.edit-credit').forEach(btn => {
+    btn.addEventListener('click', () => editCredit(btn.closest('.credit-card').dataset.id));
+  });
+  creditsList.querySelectorAll('.delete-credit').forEach(btn => {
+    btn.addEventListener('click', () => deleteCredit(btn.closest('.credit-card').dataset.id));
+  });
+}
+
+function openModal(credit = null) {
+  modalTitle.textContent = credit ? 'Edit Credit' : 'Add Credit';
+  document.getElementById('credit-id').value = credit?.id || '';
+  document.getElementById('credit-name').value = credit?.name || '';
+  document.getElementById('credit-email').value = credit?.email || '';
+  document.getElementById('credit-role').value = credit?.role || '';
+  document.getElementById('credit-lightning').value = credit?.lightningAddress || '';
+  document.getElementById('credit-nostr-npub').value = credit?.nostrNpub || '';
+  document.getElementById('credit-nostr-hex').value = credit?.nostrHex || '';
+  document.getElementById('credit-nostr-pic').value = credit?.nostrProfilePic || '';
+  document.getElementById('credit-x-url').value = credit?.xProfileUrl || '';
+  document.getElementById('credit-x-pic').value = credit?.xProfilePic || '';
+  document.getElementById('credit-notes').value = credit?.notes || '';
+  document.getElementById('credit-show-on-website').checked = credit?.showOnWebsite || false;
+  document.getElementById('credit-website-section').value = credit?.websiteSection || '';
+  document.getElementById('credit-bitcoin-kid').checked = credit?.isBitcoinKid || false;
+  creditModal.hidden = false;
+}
+
+function closeModal() {
+  creditModal.hidden = true;
+  creditForm.reset();
+}
+
+function editCredit(id) {
+  const credit = allCredits.find(c => c.id === id);
+  if (credit) openModal(credit);
+}
+
+async function deleteCredit(id) {
+  const credit = allCredits.find(c => c.id === id);
+  if (!confirm(`Delete credit "${credit?.name || 'Unnamed'}"?`)) return;
+
+  try {
+    await fetch(`/api/credits/${id}`, { method: 'DELETE' });
+    loadCredits();
+  } catch (err) {
+    alert('Failed to delete: ' + err.message);
+  }
+}
+
+addCreditBtn.addEventListener('click', () => openModal());
+cancelCreditBtn.addEventListener('click', closeModal);
+creditModal.addEventListener('click', e => {
+  if (e.target === creditModal) closeModal();
+});
+
+creditForm.addEventListener('submit', async e => {
+  e.preventDefault();
+  const id = document.getElementById('credit-id').value;
+  const data = {
+    name: document.getElementById('credit-name').value,
+    email: document.getElementById('credit-email').value,
+    role: document.getElementById('credit-role').value,
+    lightningAddress: document.getElementById('credit-lightning').value,
+    nostrNpub: document.getElementById('credit-nostr-npub').value,
+    nostrHex: document.getElementById('credit-nostr-hex').value,
+    nostrProfilePic: document.getElementById('credit-nostr-pic').value,
+    xProfileUrl: document.getElementById('credit-x-url').value,
+    xProfilePic: document.getElementById('credit-x-pic').value,
+    notes: document.getElementById('credit-notes').value,
+    showOnWebsite: document.getElementById('credit-show-on-website').checked,
+    websiteSection: document.getElementById('credit-website-section').value,
+    isBitcoinKid: document.getElementById('credit-bitcoin-kid').checked,
+  };
+
+  try {
+    if (id) {
+      await fetch(`/api/credits/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    } else {
+      await fetch('/api/credits', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+    }
+    closeModal();
+    loadCredits();
+  } catch (err) {
+    alert('Failed to save: ' + err.message);
+  }
+});
+
+creditsSearch.addEventListener('input', () => {
+  const query = creditsSearch.value.toLowerCase();
+  const filtered = allCredits.filter(c =>
+    (c.name || '').toLowerCase().includes(query) ||
+    (c.email || '').toLowerCase().includes(query) ||
+    (c.role || '').toLowerCase().includes(query) ||
+    (c.notes || '').toLowerCase().includes(query)
+  );
+  renderCredits(filtered);
+});
+
+// Sync credits to website
+syncCreditsBtn.addEventListener('click', async () => {
+  syncCreditsBtn.disabled = true;
+  syncCreditsBtn.textContent = 'Syncing...';
+
+  // Get enabled sections from checkboxes
+  const sections = [];
+  if (document.getElementById('sync-core-team').checked) sections.push('Core Team');
+  if (document.getElementById('sync-contributor').checked) sections.push('Contributor');
+  if (document.getElementById('sync-special-thanks').checked) sections.push('Special Thanks');
+
+  try {
+    const resp = await fetch('/api/credits/sync', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sections }),
+    });
+    const data = await resp.json();
+
+    if (data.success) {
+      syncResult.className = 'result success';
+      syncResult.innerHTML = `Synced to <strong>${data.path}</strong>: ${data.exported.coreTeam} Core Team, ${data.exported.contributors} Contributors, ${data.exported.specialThanks} Special Thanks`;
+    } else {
+      syncResult.className = 'result error';
+      syncResult.textContent = data.error;
+    }
+  } catch (err) {
+    syncResult.className = 'result error';
+    syncResult.textContent = err.message;
+  }
+
+  syncResult.hidden = false;
+  syncCreditsBtn.disabled = false;
+  syncCreditsBtn.textContent = 'Sync to Website';
+});
+
+// Load credits when tab is clicked
+document.querySelector('[data-tab="credits"]').addEventListener('click', loadCredits);

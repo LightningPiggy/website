@@ -25,11 +25,16 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       </div>
 
       <!-- Notes container -->
-      <div id="notes" class="grid gap-6 hidden"></div>
+      <div id="notes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 hidden"></div>
 
       <!-- Empty state -->
       <div id="empty" class="hidden text-center py-12">
         <p class="text-gray-500">No recent notes found with #ZapMyPiggy.</p>
+      </div>
+
+      <!-- Lightbox -->
+      <div id="lightbox" class="fixed inset-0 bg-black/90 z-50 hidden items-center justify-center p-4 cursor-pointer">
+        <img id="lightbox-img" src="" alt="Expanded image" class="max-w-full max-h-full object-contain cursor-pointer" />
       </div>
 
       <!-- CTA -->
@@ -44,6 +49,15 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </div>
   </section>
 </BaseLayout>
+
+<style>
+  .line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+</style>
 
 <script>
   const RELAYS = [
@@ -88,18 +102,106 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     });
   }
 
-  function formatContent(content: string): string {
+  // Bech32 encoding for hex to npub conversion
+  const BECH32_CHARSET = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+
+  function bech32Polymod(values: number[]): number {
+    const GEN = [0x3b6a57b2, 0x26508e6d, 0x1ea119fa, 0x3d4233dd, 0x2a1462b3];
+    let chk = 1;
+    for (const v of values) {
+      const top = chk >> 25;
+      chk = ((chk & 0x1ffffff) << 5) ^ v;
+      for (let i = 0; i < 5; i++) {
+        if ((top >> i) & 1) chk ^= GEN[i];
+      }
+    }
+    return chk;
+  }
+
+  function bech32Checksum(hrp: string, data: number[]): number[] {
+    const hrpExpanded = [...hrp].map(c => c.charCodeAt(0) >> 5)
+      .concat([0])
+      .concat([...hrp].map(c => c.charCodeAt(0) & 31));
+    const polymod = bech32Polymod(hrpExpanded.concat(data).concat([0, 0, 0, 0, 0, 0])) ^ 1;
+    const checksum = [];
+    for (let i = 0; i < 6; i++) {
+      checksum.push((polymod >> (5 * (5 - i))) & 31);
+    }
+    return checksum;
+  }
+
+  function hexToNpub(hex: string): string {
+    // Convert hex to bytes
+    const bytes: number[] = [];
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes.push(parseInt(hex.slice(i, i + 2), 16));
+    }
+
+    // Convert 8-bit bytes to 5-bit values
+    const data: number[] = [];
+    let acc = 0;
+    let bits = 0;
+    for (const byte of bytes) {
+      acc = (acc << 8) | byte;
+      bits += 8;
+      while (bits >= 5) {
+        bits -= 5;
+        data.push((acc >> bits) & 31);
+      }
+    }
+    if (bits > 0) {
+      data.push((acc << (5 - bits)) & 31);
+    }
+
+    // Add checksum and encode
+    const checksum = bech32Checksum('npub', data);
+    const encoded = data.concat(checksum).map(v => BECH32_CHARSET[v]).join('');
+    return 'npub1' + encoded;
+  }
+
+  function formatContent(content: string): { text: string; images: string[] } {
+    // Extract image URLs before escaping
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg)(\?[^\s]*)?$/i;
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const images: string[] = [];
+
+    // Find all URLs and separate images from regular links
+    const urls = content.match(urlRegex) || [];
+    urls.forEach(url => {
+      // Clean URL (remove trailing punctuation)
+      const cleanUrl = url.replace(/[,.)]+$/, '');
+      if (imageExtensions.test(cleanUrl) ||
+          cleanUrl.includes('nostr.build') ||
+          cleanUrl.includes('imgur.com') ||
+          cleanUrl.includes('primal.net/media') ||
+          cleanUrl.includes('image.nostr.build')) {
+        images.push(cleanUrl);
+      }
+    });
+
     // Escape HTML
     let formatted = content
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
 
-    // Convert URLs to links
+    // Remove image URLs from text content (they'll be displayed separately)
+    images.forEach(img => {
+      const escapedImg = img.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      formatted = formatted.replace(new RegExp(escapedImg.replace(/&/g, '&amp;'), 'g'), '');
+    });
+
+    // Convert remaining URLs to links
     formatted = formatted.replace(
       /(https?:\/\/[^\s]+)/g,
       '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-pink underline break-all">$1</a>'
     );
+
+    // Remove nostr: references (npub, nprofile, note, nevent) from display
+    formatted = formatted.replace(/nostr:(npub1[a-z0-9]+)/gi, '');
+    formatted = formatted.replace(/nostr:(nprofile1[a-z0-9]+)/gi, '');
+    formatted = formatted.replace(/nostr:(note1[a-z0-9]+)/gi, '');
+    formatted = formatted.replace(/nostr:(nevent1[a-z0-9]+)/gi, '');
 
     // Highlight hashtags
     formatted = formatted.replace(
@@ -107,10 +209,12 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       '<span class="text-pink font-medium">#$1</span>'
     );
 
-    // Convert newlines to breaks
+    // Convert newlines to breaks and clean up extra breaks
     formatted = formatted.replace(/\n/g, '<br>');
+    formatted = formatted.replace(/(<br>\s*)+/g, '<br>');
+    formatted = formatted.replace(/^(<br>)+|(<br>)+$/g, '');
 
-    return formatted;
+    return { text: formatted, images };
   }
 
   function getDisplayName(pubkey: string): string {
@@ -149,33 +253,66 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     container.innerHTML = sortedNotes
       .map((note) => {
         const njumpUrl = `https://njump.me/${note.id}`;
+        const npub = hexToNpub(note.pubkey);
+        const { text, images } = formatContent(note.content);
+        const imagesHtml = images.length > 0 ? `
+          <div class="-mx-3 mt-2">
+            ${images.map(img => `
+              <button class="lightbox-trigger block w-full cursor-zoom-in" data-src="${img}">
+                <img
+                  src="${img}"
+                  alt="Note image"
+                  class="w-full h-auto max-h-48 object-cover"
+                  loading="lazy"
+                  onerror="this.parentElement.style.display='none'"
+                />
+              </button>
+            `).join('')}
+          </div>
+        ` : '';
         return `
-          <article class="bg-white rounded-2xl border border-gray-200 p-6 hover:border-pink hover:shadow-lg transition-all">
-            <div class="flex items-start gap-4">
+          <article class="bg-white rounded-xl border border-gray-200 overflow-hidden hover:border-pink hover:shadow-md transition-all flex flex-col">
+            <!-- Header -->
+            <div class="flex items-center gap-2 p-3 pb-0">
               <img
                 src="${getProfilePicture(note.pubkey)}"
                 alt=""
-                class="w-12 h-12 rounded-full bg-gray-100 flex-shrink-0"
+                class="w-8 h-8 rounded-full bg-gray-100 flex-shrink-0"
                 loading="lazy"
               />
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2 mb-2">
-                  <span class="font-semibold text-gray-900 truncate">${getDisplayName(note.pubkey)}</span>
-                  <span class="text-gray-400 text-sm flex-shrink-0">${formatDate(note.created_at)}</span>
-                </div>
-                <div class="text-gray-700 leading-relaxed break-words">${formatContent(note.content)}</div>
-                <a
-                  href="${njumpUrl}"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-1 mt-4 text-sm text-gray-500 hover:text-pink transition-colors"
-                >
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  View on Nostr
-                </a>
+                <div class="font-medium text-gray-900 text-sm truncate">${getDisplayName(note.pubkey)}</div>
+                <div class="text-gray-400 text-xs">${formatDate(note.created_at)}</div>
               </div>
+            </div>
+            <!-- Content -->
+            <div class="px-3 py-2 flex-1">
+              <div class="text-gray-700 text-sm leading-relaxed break-words line-clamp-4">${text}</div>
+              ${imagesHtml}
+            </div>
+            <!-- Footer -->
+            <div class="flex items-center justify-between px-3 py-2 border-t border-gray-100 bg-gray-50 mt-auto">
+              <button
+                class="npub-copy inline-flex items-center gap-1 text-xs text-gray-500 hover:text-purple-600 transition-colors"
+                data-npub="${npub}"
+                title="Copy npub to clipboard"
+              >
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="40 38 185 180">
+                  <path d="M210.8 199.4c0 3.1-2.5 5.7-5.7 5.7h-68c-3.1 0-5.7-2.5-5.7-5.7v-15.5c.3-19 2.3-37.2 6.5-45.5 2.5-5 6.7-7.7 11.5-9.1 9.1-2.7 24.9-.9 31.7-1.2 0 0 20.4.8 20.4-10.7s-9.1-8.6-9.1-8.6c-10 .3-17.7-.4-22.6-2.4-8.3-3.3-8.6-9.2-8.6-11.2-.4-23.1-34.5-25.9-64.5-20.1-32.8 6.2.4 53.3.4 116.1v8.4c0 3.1-2.6 5.6-5.7 5.6H57.7c-3.1 0-5.7-2.5-5.7-5.7v-144c0-3.1 2.5-5.7 5.7-5.7h31.7c3.1 0 5.7 2.5 5.7 5.7 0 4.7 5.2 7.2 9 4.5 11.4-8.2 26-12.5 42.4-12.5 36.6 0 64.4 21.4 64.4 68.7v83.2ZM150 99.3c0-6.7-5.4-12.1-12.1-12.1s-12.1 5.4-12.1 12.1 5.4 12.1 12.1 12.1S150 106 150 99.3Z"/>
+                </svg>
+                <span class="npub-label">npub</span>
+              </button>
+              <a
+                href="${njumpUrl}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-pink transition-colors"
+              >
+                View
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
             </div>
           </article>
         `;
@@ -284,4 +421,73 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   // Connect to all relays
   RELAYS.forEach(connectToRelay);
+
+  // Lightbox functionality
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img') as HTMLImageElement;
+
+  function openLightbox(src: string) {
+    if (!lightbox || !lightboxImg) return;
+    lightboxImg.src = src;
+    lightbox.classList.remove('hidden');
+    lightbox.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    if (!lightbox || !lightboxImg) return;
+    lightbox.classList.add('hidden');
+    lightbox.classList.remove('flex');
+    lightboxImg.src = '';
+    document.body.style.overflow = '';
+  }
+
+  // Close lightbox on any click (background or image)
+  lightbox?.addEventListener('click', closeLightbox);
+
+  // Close on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeLightbox();
+  });
+
+  // Handle npub copy and lightbox clicks using event delegation
+  document.getElementById('notes')?.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+
+    // Lightbox trigger
+    const lightboxTrigger = target.closest('.lightbox-trigger') as HTMLElement;
+    if (lightboxTrigger) {
+      const src = lightboxTrigger.dataset.src;
+      if (src) openLightbox(src);
+      return;
+    }
+
+    // Npub copy
+    const copyBtn = target.closest('.npub-copy') as HTMLElement;
+    if (!copyBtn) return;
+
+    const npub = copyBtn.dataset.npub;
+    if (!npub) return;
+
+    const label = copyBtn.querySelector('.npub-label');
+    try {
+      await navigator.clipboard.writeText(npub);
+      if (label) {
+        label.textContent = 'Copied!';
+        setTimeout(() => { label.textContent = 'npub'; }, 1500);
+      }
+    } catch {
+      // Fallback
+      const textarea = document.createElement('textarea');
+      textarea.value = npub;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      if (label) {
+        label.textContent = 'Copied!';
+        setTimeout(() => { label.textContent = 'npub'; }, 1500);
+      }
+    }
+  });
 </script>

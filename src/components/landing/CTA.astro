@@ -1,5 +1,6 @@
 ---
 import Button from '../ui/Button.astro';
+import NewsletterForm from '../ui/NewsletterForm.astro';
 ---
 
 <section class="py-20 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
@@ -53,7 +54,15 @@ import Button from '../ui/Button.astro';
       </div>
     </div>
 
-    <div class="pt-4">
+    <!-- Newsletter signup -->
+    <div class="pt-8 border-t border-gray-700">
+      <p class="text-sm text-gray-400 mb-4">Stay updated with project news and community updates</p>
+      <div class="max-w-md mx-auto">
+        <NewsletterForm variant="dark" />
+      </div>
+    </div>
+
+    <div class="pt-8">
       <p class="text-sm text-gray-400 mb-4">
         Questions? Resources for different audiences:
       </p>

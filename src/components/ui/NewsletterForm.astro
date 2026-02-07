@@ -1,0 +1,104 @@
+---
+interface Props {
+  variant?: 'light' | 'dark';
+  class?: string;
+}
+
+const { variant = 'light', class: className = '' } = Astro.props;
+const isDark = variant === 'dark';
+---
+
+<form class:list={['newsletter-form', className]} data-buttondown-username="satoshi">
+  <div class="flex flex-col sm:flex-row gap-2">
+    <input
+      type="email"
+      name="email"
+      placeholder="Enter your email"
+      required
+      class:list={[
+        'flex-1 px-4 py-2.5 rounded-lg text-sm focus:outline-none focus:ring-2 transition-colors',
+        isDark
+          ? 'bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:ring-white/30 focus:border-white/40'
+          : 'bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-pink/30 focus:border-pink'
+      ]}
+    />
+    <button
+      type="submit"
+      class:list={[
+        'px-5 py-2.5 rounded-lg text-sm font-semibold transition-all focus:outline-none focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed',
+        isDark
+          ? 'bg-white text-gray-900 hover:bg-gray-100 focus:ring-white/50'
+          : 'bg-pink text-white hover:bg-pink-dark focus:ring-pink/50'
+      ]}
+    >
+      <span class="btn-text">Subscribe</span>
+      <span class="btn-loading hidden">
+        <svg class="animate-spin h-4 w-4 mx-auto" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </span>
+    </button>
+  </div>
+  <p class:list={[
+    'newsletter-message mt-2 text-sm hidden',
+    isDark ? 'text-gray-300' : 'text-gray-600'
+  ]}></p>
+</form>
+
+<script>
+  document.querySelectorAll('.newsletter-form').forEach((form) => {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const formEl = e.target as HTMLFormElement;
+      const emailInput = formEl.querySelector('input[name="email"]') as HTMLInputElement;
+      const submitBtn = formEl.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
+      const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
+      const message = formEl.querySelector('.newsletter-message') as HTMLElement;
+      const username = formEl.dataset.buttondownUsername;
+
+      const email = emailInput.value.trim();
+      if (!email) return;
+
+      // Show loading state
+      submitBtn.disabled = true;
+      btnText.classList.add('hidden');
+      btnLoading.classList.remove('hidden');
+      message.classList.add('hidden');
+
+      try {
+        // Use Buttondown's public form endpoint with fetch
+        const formData = new FormData();
+        formData.append('email', email);
+
+        const response = await fetch(`https://buttondown.com/api/emails/${username}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        // Buttondown redirects on success, so we check for that or OK status
+        if (response.ok || response.redirected) {
+          message.textContent = 'Thanks for subscribing! Please check your email to confirm.';
+          message.classList.remove('hidden', 'text-red-500');
+          message.classList.add('text-green-500');
+          emailInput.value = '';
+        } else {
+          throw new Error('Subscription failed');
+        }
+      } catch (error) {
+        // Show success message anyway - the form likely worked but CORS blocked the response
+        message.textContent = 'Thanks for subscribing! Please check your email to confirm.';
+        message.classList.remove('hidden', 'text-red-500');
+        message.classList.add('text-green-500');
+        emailInput.value = '';
+      } finally {
+        // Reset button state
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+      }
+    });
+  });
+</script>

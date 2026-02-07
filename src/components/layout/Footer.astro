@@ -1,4 +1,6 @@
 ---
+import NewsletterForm from '../ui/NewsletterForm.astro';
+
 const footerLinks = {
   product: [
     { label: 'About', href: '/about' },
@@ -112,6 +114,13 @@ const socialLinks = [
             </li>
           ))}
         </ul>
+      </div>
+
+      <!-- Newsletter -->
+      <div>
+        <h3 class="text-sm font-semibold text-white uppercase tracking-wider mb-4">Newsletter</h3>
+        <p class="text-sm text-gray-400 mb-3">Get updates on new features and community news.</p>
+        <NewsletterForm variant="dark" />
       </div>
 
     </div>

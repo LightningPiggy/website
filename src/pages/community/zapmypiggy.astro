@@ -6,7 +6,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   <section class="py-12 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">#ZapMyPiggy</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">#ZapMyPiggy!</h1>
         <p class="text-lg text-gray-600">
           Recent posts from the Nostr community using the <strong>#ZapMyPiggy</strong> hashtag.
           Share your Lightning Piggy moments and zap others!
@@ -37,8 +37,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <hr class="mb-12 border-gray-200" />
         <h2 class="text-2xl font-bold text-gray-900 mb-4">Join the Conversation</h2>
         <p class="text-gray-600">
-          Post on Nostr with <strong>#ZapMyPiggy</strong> to appear here!
-          Show off your piggy bank, share zap rewards, or celebrate savings milestones.
+          Post on Nostr with <strong>#ZapMyPiggy</strong> or <strong>#ZapMyPig</strong> to appear here!
+          Show off your piggy bank, zap other piggies, or simply join the ZapMyPiggy! craze.
         </p>
       </div>
     </div>
@@ -55,7 +55,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
   ];
 
   const MAX_NOTES = 6;
-  const HASHTAGS = ['zapmypiggy', 'zapmypiggy!', 'zapmypig', 'zapmypig!'];
+  const HASHTAGS = ['zapmypiggy', 'ZapMyPiggy', 'zapmypig', 'ZapMyPig', 'ZAPMYPIGGY', 'ZAPMYPIG'];
 
   interface NostrEvent {
     id: string;

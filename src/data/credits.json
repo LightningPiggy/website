@@ -2,192 +2,258 @@
   "coreTeam": [
     {
       "name": "BlackCoffee",
-      "contribution": "Project & Dev",
       "url": "https://njump.me/npub1dqepr0g4t3ahvnjtnxazvws4rkqjpxl854n29wcew8wph0fmw90qlsmmgt",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fpfp.nostr.build%2F3dd8345047ac7c730e6207327f790b95c86760cafe1df04c9337dd7566087703.png"
+      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fpfp.nostr.build%2F3dd8345047ac7c730e6207327f790b95c86760cafe1df04c9337dd7566087703.png",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": "Founder & Dev"
     },
     {
       "name": "Jake",
-      "contribution": "Project",
       "url": "https://njump.me/npub1a8us7vr738n7cvdxh0gdtnt5qzrk4qe3qklhmsrs45llq2k48agqjkrvn3",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fi.postimg.cc%2Fd01BSf4G%2Fbill-laser-eyes.jpg"
+      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fi.postimg.cc%2Fd01BSf4G%2Fbill-laser-eyes.jpg",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": "Founder"
     },
     {
       "name": "Richard",
-      "contribution": "Project",
       "url": "https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fblossom.primal.net%2Fed9e059fd831ad8ed440a7413c2c5a4fd98244fa17f8ec6c9f0dedf7e04db06f.jpg"
+      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fblossom.primal.net%2Fed9e059fd831ad8ed440a7413c2c5a4fd98244fa17f8ec6c9f0dedf7e04db06f.jpg",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": "Founder"
     },
     {
       "name": "Thomas Farstrike",
-      "contribution": "Project & Dev",
       "url": "https://twitter.com/ThomasFarstrike",
-      "avatar": "https://unavatar.io/twitter/ThomasFarstrike"
+      "avatar": "https://unavatar.io/twitter/ThomasFarstrike",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": "Founder & Dev"
     }
   ],
   "contributors": [
     {
       "name": "Marina",
-      "contribution": "Core Team - Finance",
       "url": "https://twitter.com/LadyM_BTC",
       "avatar": "https://unavatar.io/twitter/LadyM_BTC",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "₿arekev",
-      "contribution": "Visual content creation",
       "url": "https://njump.me/npub1s3wrhlcdjjmtp7n4m0y36dnqyljfzsr4xah36gelx6d870un5jvsnqtfhs",
       "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fblossom.primal.net%2Fa1dbd673df81741914b80db89a662d5568c3ebf121a4eb0ebda3e98974ac5e24.jpg",
-      "isBitcoinKid": false
-    },
-    {
-      "name": "Ben Weeks",
-      "contribution": "App, dev, case design, R&D, sales",
-      "url": "https://njump.me/npub1jutptdc2m8kgjmudtws095qk2tcale0eemvp4j2xnjnl4nh6669slrf04x",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2Fp%2Fnostr.build_9841ac0b1902a46e9ecae4cd72f9caa2c20216b43838d1fb7c8dcb113ac98258.gif",
-      "isBitcoinKid": false
-    },
-    {
-      "name": "Bitko Yinowsky",
-      "contribution": "Logo and character design",
-      "url": "https://njump.me/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2F4e32070eeb530473a682a6a33b3a0b2711d161586274d8986b5c1beaac45a425.jpg",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "DJ Valerie",
-      "contribution": "Bitcoin Kids",
       "url": "https://twitter.com/djvalerieblove",
       "avatar": "https://unavatar.io/twitter/djvalerieblove",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "GA₿RI丰L",
-      "contribution": "Prototype testing",
       "url": "",
       "avatar": "",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "Jurjen de Vries",
-      "contribution": "Workshop, documentation & prototype testing",
       "url": "https://twitter.com/jurjendevries",
       "avatar": "https://unavatar.io/twitter/jurjendevries",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "Janine",
-      "contribution": "Merch design and development",
       "url": "https://twitter.com/JanineGriesser",
       "avatar": "https://unavatar.io/twitter/JanineGriesser",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "lonerookie",
-      "contribution": "Dev & case design and production",
       "url": "",
       "avatar": "",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "Isaac Weeks",
-      "contribution": "Dev, case design, R&D, sales",
       "url": "https://njump.me/npub17dfg3tynlv39m0e9z8a0t558e7plet96xg9g4uu6q84caykq8jtqwdy09f",
       "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fpbs.twimg.com%2Fprofile_images%2F1481346550345437186%2F_gwMpWzo_400x400.jpg",
-      "isBitcoinKid": true
+      "isBitcoinKid": true,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": "Bitcoin Kid ⭐️"
     },
     {
       "name": "Orange Surf btc",
-      "contribution": "Design",
       "url": "https://njump.me/npub18h0w55nsp839ezxnggf00jd2xc6yl0ht62mf5p8wwllu8s80wdcs83ws8m",
       "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fm.primal.net%2FHxpV.png",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "Piertrt",
-      "contribution": "Workshop",
       "url": "",
       "avatar": "",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "TheKingRol",
-      "contribution": "Case design",
       "url": "https://twitter.com/TheKingRol",
       "avatar": "https://unavatar.io/twitter/TheKingRol",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "Yvette",
-      "contribution": "Project & Dev",
       "url": "https://twitter.com/arbadacarbaYK",
       "avatar": "https://unavatar.io/twitter/arbadacarbaYK",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     },
     {
       "name": "Zobroj",
-      "contribution": "Design",
       "url": "https://njump.me/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a",
       "avatar": "",
-      "isBitcoinKid": false
-    },
-    {
-      "name": "Valentina Picozzi",
-      "contribution": "Character design",
-      "url": "https://twitter.com/satoshigallery",
-      "avatar": "https://unavatar.io/twitter/satoshigallery",
-      "isBitcoinKid": false
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "contribution": ""
     }
   ],
   "specialThanks": [
     {
-      "name": "Adopting Bitcoin ES 2024",
+      "name": "Ben Weeks",
+      "url": "https://njump.me/npub1jutptdc2m8kgjmudtws095qk2tcale0eemvp4j2xnjnl4nh6669slrf04x",
+      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2Fp%2Fnostr.build_9841ac0b1902a46e9ecae4cd72f9caa2c20216b43838d1fb7c8dcb113ac98258.gif",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "note": "Creator of the incredibly cute piggy case and Lighting Piggy mobile phone app."
+    },
+    {
+      "name": "Bitko Yinowsky",
+      "url": "https://bitko.cc/",
+      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2F4e32070eeb530473a682a6a33b3a0b2711d161586274d8986b5c1beaac45a425.jpg",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a",
+      "xUrl": "",
+      "note": "Creator of the stunning Lightning Piggy logo."
+    },
+    {
+      "name": "Valentina Picozzi",
+      "url": "https://www.satoshigallery.com/",
+      "avatar": "https://unavatar.io/twitter/satoshigallery",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "https://twitter.com/satoshigallery",
+      "note": "For sharing early ideas for how Lightning Piggy could look."
+    },
+    {
+      "name": "Adopting Bitcoin",
       "url": "https://www.adoptingbitcoin.org",
-      "note": "For continuing to support the FOSS project with hands-on workshops."
+      "avatar": "https://m.primal.net/PvTZ.png",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
+      "xUrl": "https://x.com/AdoptingBTC",
+      "note": "For being there every step of the way."
     },
     {
       "name": "Learning Bitcoin 2024",
       "url": "https://www.learningbitcoin.ca/",
+      "avatar": "https://coinos.io/api/public/d80a2a90a086792668a4dd016a0309e77037b81a5d237b08edb7d984ce65d89c.webp",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1ku3r3n4hau650a5cjudhtja2pdfsr7yxjzda9lx2py4knr3ld69s7j4wnw",
+      "xUrl": "https://www.learningbitcoin.ca/",
       "note": "For welcoming Lightning Piggy be a part of this pioneering educational event."
     },
     {
-      "name": "Bitcoin 2024 Satoshi Summer Camp & BSTEM",
+      "name": "Satoshi Summer Camp & BSTEM",
       "url": "https://bstem.co",
+      "avatar": "",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
       "note": "For having Lightning Piggy be a part of this historic event involving 80 bitcoin kids."
     },
     {
-      "name": "Bitcoin Atlantis 2024",
-      "url": "https://bitcoinatlantis.com",
+      "name": "Bitcoin Atlantis",
+      "url": "https://bitcoinatlantis.com/",
+      "avatar": "https://cdn.nostr.build/i/056965d642f2c648c43b4b18cee2af0c028305d25b8556e2c4d562dde06aba0c.jpg",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1h493d0qgwhu95s82zd9sxrt3ckn3ttgvaf04z02neckadxw5fkvqte4cwz",
+      "xUrl": "https://bitcoinatlantis.com",
       "note": "For embracing the project and providing the perfect family-friendly environment for learning and building."
-    },
-    {
-      "name": "Adopting Bitcoin 2023",
-      "url": "https://www.adoptingbitcoin.org",
-      "note": "For continuing to support the FOSS project with hands-on workshops."
-    },
-    {
-      "name": "Adopting Bitcoin 2022",
-      "url": "https://www.adoptingbitcoin.org",
-      "note": "For being there every step of the way from providing a platform for the first pitch, project presentation, and now hands-on workshops."
     },
     {
       "name": "Ben de Waal",
       "url": "https://twitter.com/Ben_deWaal",
+      "avatar": "https://unavatar.io/twitter/Ben_deWaal",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
       "note": "For graciously taking the time to build one of the early prototypes."
     },
     {
       "name": "Geyser.fund",
       "url": "https://geyser.fund/project/lightningpiggy",
-      "note": "For creating the best crowdfunding platform ever and the amazing people on this platform who have contributed sats to support the project."
+      "avatar": "https://storage.googleapis.com/geyser-images-distribution-prod-us/2fe4ee74-f21e-4b63-8d1c-5c5679201e04_1.2/image_medium.webp",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1kmwdmhuxvafg05dyap3qmy42jpwztrv9p0uvey3a8803ahlwtmnsnhxqk9",
+      "xUrl": "",
+      "note": "Awesome crowdfunding platform!"
     },
     {
       "name": "Samatha de Waal",
       "url": "https://twitter.com/SamTheBTCKid",
+      "avatar": "https://unavatar.io/twitter/SamTheBTCKid",
+      "isBitcoinKid": true,
+      "nostrUrl": "",
+      "xUrl": "",
       "note": "For her inspirational speech at BTC Prague 2023 where she gave praise to the project."
     },
     {
       "name": "Bolt.fun",
       "url": "https://bolt.fun/",
+      "avatar": "https://imagedelivery.net/wyrwp3c-j0gDDUWgnE7lig/f494848b-9baa-4262-a948-301df5b9c500/public",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1funq0ywh32faz0sf7xt97japu8uk687tsysj8gndj4ehe825sq4s70gs0p",
+      "xUrl": "",
       "note": "For providing the impetus to get building."
     }
   ]

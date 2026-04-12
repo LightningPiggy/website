@@ -168,7 +168,7 @@ app.use('/images/showcase', express.static(SHOWCASE_DIR));
 
 app.post('/api/news/publish', upload.single('heroImage'), async (req, res) => {
   try {
-    const { title, slug, description, pubDate, tags, content } = req.body;
+    const { title, slug, description, pubDate, tags, content, category, url } = req.body;
 
     if (!title || !slug || !content) {
       return res.status(400).json({ error: 'Title, slug, and content are required' });
@@ -198,6 +198,8 @@ app.post('/api/news/publish', upload.single('heroImage'), async (req, res) => {
     frontmatter += `pubDate: ${pubDate || new Date().toISOString().split('T')[0]}\n`;
     if (heroFilename) frontmatter += `heroImage: './${heroFilename}'\n`;
     if (tagsList.length) frontmatter += `tags: [${tagsList.map(t => `"${t}"`).join(', ')}]\n`;
+    if (category) frontmatter += `category: ${category}\n`;
+    if (url) frontmatter += `url: "${url}"\n`;
     frontmatter += `---\n\n`;
 
     fs.writeFileSync(path.join(postDir, 'index.md'), frontmatter + content);

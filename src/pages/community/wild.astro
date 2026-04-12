@@ -6,11 +6,8 @@ import path from 'node:path';
 const wildDir = path.join(process.cwd(), 'public/images/wild');
 const images = fs.readdirSync(wildDir)
   .filter((f: string) => /\.(jpe?g|png|webp|gif)$/i.test(f))
-  .sort((a: string, b: string) => {
-    const statA = fs.statSync(path.join(wildDir, a));
-    const statB = fs.statSync(path.join(wildDir, b));
-    return statB.mtimeMs - statA.mtimeMs;
-  })
+  .sort()
+  .reverse()
   .map((f: string) => `/images/wild/${f}`);
 ---
 

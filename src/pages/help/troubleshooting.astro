@@ -15,6 +15,7 @@ const sections = [
     items: [
       {
         title: 'Creating an LNbits Wallet',
+        tags: ['lnbits'],
         problem: null,
         solution: 'We recommend setting up LNbits on your own node such as a <a href="https://raspiblitz.org" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Raspiblitz</a>, <a href="https://start9.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Start 9</a> or an <a href="https://umbrel.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Umbrel</a>. Please follow the set-up instructions provided by the node provider.',
       },
@@ -68,7 +69,7 @@ const sections = [
     ],
   },
   {
-    title: 'Connectivity & Configuration',
+    title: 'Connectivity',
     slug: 'connectivity',
     items: [
       {
@@ -78,7 +79,7 @@ const sections = [
       },
       {
         title: 'Connection errors when fetching balance',
-        tags: mpos,
+        tags: ['mpos', 'lnbits'],
         problem: 'The device shows errors such as <code>-202</code>, <code>29312</code>, or <code>ECONNRESET</code> when trying to connect to your LNbits server.',
         solution: 'The ESP32\'s TLS library (mbedTLS) does not support ECDSA certificates, which some servers issue by default. If your LNbits server uses a reverse proxy like Caddy, you may need to force RSA certificates. In your Caddyfile, add a <code>tls</code> block with <code>key_type rsa2048</code> to the relevant site:',
         code: `your-lnbits-domain.com {\n    tls {\n        key_type rsa2048\n    }\n    reverse_proxy ...\n}`,
@@ -90,6 +91,12 @@ const sections = [
         problem: 'The device fails to reconnect to WiFi after waking from sleep mode.',
         solution: 'Ensure your WiFi access point is stable and within range. If the device shows connection errors after waking, press the reset button to force a fresh connection attempt. You can also try positioning the Piggy closer to your router. See <a href="https://github.com/LightningPiggy/lightning-piggy/issues/34" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">GitHub #34</a>',
       },
+    ],
+  },
+  {
+    title: 'Configuration',
+    slug: 'configuration',
+    items: [
       {
         title: 'Default configuration login credentials',
         tags: classic,
@@ -103,6 +110,12 @@ const sections = [
         problem: 'Device won\'t connect to wallet after configuration.',
         solution: 'When configuring your Piggy, enter only the hostname (not the full URL with <code>https://</code>). Note: For MicroPythonOS piggies the full <code>https://</code> URL is used. Settings are case-sensitive — use <code>YES</code> not <code>Yes</code>. Apply case sensitivity to timezone and currency fields too.',
       },
+      {
+        title: 'Lightning address use (e.g. satoshi@lnbits.com)',
+        tags: ['classic', 'lnbits'],
+        problem: 'Some wallets can\'t scan a Lightning Address QR code.',
+        solution: 'You may need to type it in manually. If you leave this field blank, the device falls back to the LNURL QR, which is compatible with most Lightning wallets.',
+      },
     ],
   },
   {
@@ -111,7 +124,7 @@ const sections = [
     items: [
       {
         title: 'Device Display Information',
-        tags: classic,
+        tags: ['classic', 'lnbits'],
         problem: 'The screen only displays "0 sats" i.e. there is no QR code on the screen to scan.',
         solution: 'If using LNbits, check that you enabled and configured the LNURLp extension during the wallet set-up.',
         extra: {
@@ -121,7 +134,7 @@ const sections = [
       },
       {
         title: 'LNBits QR code does not change to Lightning Address',
-        tags: classic,
+        tags: ['classic', 'lnbits', 'nwc'],
         problem: 'After configuring NWC with a Lightning Address, the display still shows the old LNBits QR code.',
         solution: 'This can occur when both LNBits and NWC credentials are configured. To display your Lightning Address QR code, ensure only NWC credentials are set. Access the Piggy Config interface (connect to the device\'s WiFi access point) and clear the LNBits server URL and invoice key fields, then save and restart. See <a href="https://github.com/LightningPiggy/LightningPiggyApp/issues/1" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">GitHub #1</a>',
       },
@@ -188,17 +201,24 @@ const sections = [
   title="Troubleshooting"
   description="Common issues and solutions for Lightning Piggy"
 >
-  <div class="text-sm text-gray-500 mb-6">
+  <div class="not-prose text-sm text-gray-500 mb-6 space-y-1 [&>p]:m-0">
     <p><span class="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full font-medium align-middle">Classic</span> refers to the original e-paper Lightning Piggy running C++ firmware.</p>
-    <p class="mt-1"><span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-medium align-middle">MicroPythonOS</span> refers to the newer touchscreen version running MicroPythonOS.</p>
+    <p><span class="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-0.5 rounded-full font-medium align-middle">MicroPythonOS</span> refers to the newer touchscreen version running MicroPythonOS.</p>
+    <p><span class="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded-full font-medium align-middle">LNbits</span> relates to the LNbits wallet backend.</p>
+    <p><span class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full font-medium align-middle">NWC</span> relates to Nostr Wallet Connect.</p>
   </div>
   <div class="flex gap-2 mb-8 flex-wrap" id="ts-filters">
     <button data-filter="all" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 bg-gray-900 text-white">All</button>
+    <span class="w-px bg-gray-300 mx-1 self-stretch"></span>
     <button data-filter="classic" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">Classic</button>
     <button data-filter="mpos" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">MicroPythonOS</button>
     <span class="w-px bg-gray-300 mx-1 self-stretch"></span>
+    <button data-filter="lnbits" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">LNbits</button>
+    <button data-filter="nwc" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">NWC</button>
+    <span class="w-px bg-gray-300 mx-1 self-stretch"></span>
     <button data-filter="section:getting-started" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">Getting Started</button>
     <button data-filter="section:connectivity" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">Connectivity</button>
+    <button data-filter="section:configuration" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">Configuration</button>
     <button data-filter="section:display" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">Display & QR</button>
     <button data-filter="section:app-firmware" class="ts-filter-btn px-4 py-1.5 rounded-full text-sm font-medium border border-gray-300 text-gray-600 hover:bg-gray-100">App & Firmware</button>
   </div>
@@ -226,6 +246,12 @@ const sections = [
                     )}
                     {tags.includes('mpos') && (
                       <span class="inline-block bg-yellow-100 text-yellow-800 text-[0.55em] px-2.5 py-0.5 rounded-full font-medium align-middle ml-2">MicroPythonOS</span>
+                    )}
+                    {tags.includes('lnbits') && (
+                      <span class="inline-block bg-purple-100 text-purple-800 text-[0.55em] px-2.5 py-0.5 rounded-full font-medium align-middle ml-2">LNbits</span>
+                    )}
+                    {tags.includes('nwc') && (
+                      <span class="inline-block bg-blue-100 text-blue-800 text-[0.55em] px-2.5 py-0.5 rounded-full font-medium align-middle ml-2">NWC</span>
                     )}
                   </h3>
                   {item.problem && <p data-ts-cats={cats} data-ts-section={section.slug} set:html={item.problem} />}
@@ -264,9 +290,34 @@ const sections = [
       const buttons = document.querySelectorAll('.ts-filter-btn');
       if (!content) return;
 
-      function applyFilter(filter: string) {
+      // Filter groups: tags within a group are OR, groups combine with AND
+      const groups: Record<string, string[]> = {
+        device: ['classic', 'mpos'],
+        wallet: ['lnbits', 'nwc'],
+        section: ['section:getting-started', 'section:connectivity', 'section:configuration', 'section:display', 'section:app-firmware'],
+      };
+
+      // Active filters per group
+      const active: Record<string, Set<string>> = {
+        device: new Set(),
+        wallet: new Set(),
+        section: new Set(),
+      };
+
+      function getGroup(filter: string): string | null {
+        for (const [group, filters] of Object.entries(groups)) {
+          if (filters.includes(filter)) return group;
+        }
+        return null;
+      }
+
+      function updateButtons() {
+        const anyActive = Object.values(active).some(s => s.size > 0);
         buttons.forEach(btn => {
-          if (btn.getAttribute('data-filter') === filter) {
+          const f = btn.getAttribute('data-filter') || '';
+          const isAll = f === 'all';
+          const isActive = isAll ? !anyActive : Object.values(active).some(s => s.has(f));
+          if (isActive) {
             btn.classList.add('bg-gray-900', 'text-white');
             btn.classList.remove('text-gray-600', 'hover:bg-gray-100');
           } else {
@@ -274,40 +325,86 @@ const sections = [
             btn.classList.add('text-gray-600', 'hover:bg-gray-100');
           }
         });
+      }
 
+      function itemMatchesFilters(cats: string, section: string): boolean {
+        const catList = cats.split(',');
+        // Device group: if any device filter active, item must match at least one
+        if (active.device.size > 0) {
+          let match = false;
+          active.device.forEach(f => { if (catList.includes(f)) match = true; });
+          if (!match) return false;
+        }
+        // Wallet group: if any wallet filter active, item must match at least one
+        if (active.wallet.size > 0) {
+          let match = false;
+          active.wallet.forEach(f => { if (catList.includes(f)) match = true; });
+          if (!match) return false;
+        }
+        // Section group: if any section filter active, item must be in one of those sections
+        if (active.section.size > 0) {
+          let match = false;
+          active.section.forEach(f => { if (f === 'section:' + section) match = true; });
+          if (!match) return false;
+        }
+        return true;
+      }
+
+      function applyFilters() {
+        updateButtons();
         const allEls = content!.querySelectorAll('[data-ts-section]');
+        const anyActive = Object.values(active).some(s => s.size > 0);
 
-        if (filter === 'all') {
+        if (!anyActive) {
           allEls.forEach(el => (el as HTMLElement).style.display = '');
-        } else if (filter.startsWith('section:')) {
-          const sectionSlug = filter.replace('section:', '');
-          allEls.forEach(el => {
-            const elSection = el.getAttribute('data-ts-section') || '';
-            (el as HTMLElement).style.display = elSection === sectionSlug ? '' : 'none';
-          });
-        } else {
-          // Tag filter (classic/mpos)
-          allEls.forEach(el => {
-            const cats = el.getAttribute('data-ts-cats');
-            if (!cats) {
-              // h2 headings and hrs without cats — show if any item in their section matches
-              const section = el.getAttribute('data-ts-section') || '';
+          return;
+        }
+
+        allEls.forEach(el => {
+          const cats = el.getAttribute('data-ts-cats');
+          const section = el.getAttribute('data-ts-section') || '';
+          if (!cats) {
+            // h2 headings and hrs — show if any item in their section matches
+            // But first check section filter
+            if (active.section.size > 0) {
+              let sectionMatch = false;
+              active.section.forEach(f => { if (f === 'section:' + section) sectionMatch = true; });
+              if (!sectionMatch) { (el as HTMLElement).style.display = 'none'; return; }
+            }
+            // Check if any item in section matches tag filters
+            if (active.device.size > 0 || active.wallet.size > 0) {
               const sectionItems = content!.querySelectorAll(`[data-ts-section="${section}"][data-ts-cats]`);
               let hasMatch = false;
               sectionItems.forEach(item => {
-                if ((item.getAttribute('data-ts-cats') || '').split(',').includes(filter)) hasMatch = true;
+                if (itemMatchesFilters(item.getAttribute('data-ts-cats') || '', section)) hasMatch = true;
               });
               (el as HTMLElement).style.display = hasMatch ? '' : 'none';
             } else {
-              (el as HTMLElement).style.display = cats.split(',').includes(filter) ? '' : 'none';
+              (el as HTMLElement).style.display = '';
             }
-          });
-        }
+          } else {
+            (el as HTMLElement).style.display = itemMatchesFilters(cats, section) ? '' : 'none';
+          }
+        });
       }
 
       buttons.forEach(btn => {
         btn.addEventListener('click', () => {
-          applyFilter(btn.getAttribute('data-filter') || 'all');
+          const filter = btn.getAttribute('data-filter') || 'all';
+          if (filter === 'all') {
+            // Clear all filters
+            Object.values(active).forEach(s => s.clear());
+          } else {
+            const group = getGroup(filter);
+            if (group) {
+              if (active[group].has(filter)) {
+                active[group].delete(filter);
+              } else {
+                active[group].add(filter);
+              }
+            }
+          }
+          applyFilters();
         });
       });
     }

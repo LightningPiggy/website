@@ -399,6 +399,26 @@ const newsDate = document.getElementById('news-date');
 const newsForm = document.getElementById('news-form');
 const newsResult = document.getElementById('news-result');
 
+// Category buttons
+const categoryBtns = document.querySelectorAll('.category-btn');
+const categoryInput = document.getElementById('news-category');
+const urlField = document.getElementById('news-url-field');
+
+categoryBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const wasActive = btn.classList.contains('primary');
+    categoryBtns.forEach(b => b.classList.remove('primary'));
+    if (wasActive) {
+      categoryInput.value = '';
+      urlField.style.display = 'none';
+    } else {
+      btn.classList.add('primary');
+      categoryInput.value = btn.dataset.category;
+      urlField.style.display = btn.dataset.category === 'in-the-news' ? '' : 'none';
+    }
+  });
+});
+
 // Auto-set today's date
 newsDate.value = new Date().toISOString().split('T')[0];
 

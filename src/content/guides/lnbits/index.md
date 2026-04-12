@@ -88,6 +88,12 @@ Next we need to flash the piggy with the latest software. Click the pertinent li
 > Return to this window when you have installed the firmware.
 Now the piggy firmware is installed, click on your wallet name (13) and expand the API docs list on the righthand side of the page (14).
 
-We need to add the *Node URL* and the*Invoice/Read key* (15) for this wallet to the physical piggy. The easiest way to do this is by having the piggy scan a QR code for each data point - unless you're good at typing on the tiny onscreen keyboard.
+We need to add the *Node URL* and the*Invoice/Read key* (15) for this wallet to the physical piggy. If you're running MPOS and have a built in camera, the easiest way to do this is by scanning the QR code for each data point - unless you're good at typing on the tiny onscreen keyboard.
 
-![](./LNbits_Guide_07-1.png)Congratulations! 🥳 If everything has gone to plan, your piggy is now ready to receive zaps and display your sat balance. If you run into any issues or have questions, feel free to reach out in our community [Telegram group](https://t.me/LightningPiggy), we’re always happy to help.
+![](./LNbits_Guide_07-1.png)Congratulations! 🥳 Your wallet is set up and ready to receive zaps on your piggy. Next, follow the links below to continue your build.
+
+👉 [Lightning Piggy Classic](/build/classic#4-connect-to-and-configure-your-piggy)
+
+👉 [Lightning Piggy MPOS](/build/p1#4-connect-to-wi-fi-and-configure-your-piggy)
+
+If you run into any issues or have questions, feel free to reach out in our community [Telegram group](https://t.me/LightningPiggy), we’re always happy to help.

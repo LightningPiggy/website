@@ -10,7 +10,7 @@ Making your very own Lightning Piggy is squealy easy. Here are the steps you nee
 
 1. Source the parts.
 2. Create a wallet.
-3. [Flash](https://lightningpiggy.github.io/?ref=lightningpiggy.com) the firmware.
+3. [Flash the firmware](#3-flash-the-firmware).
 4. Connect to and configure your piggy.
 5. Make a [case](/build/cases) and assemble the parts.
 
@@ -28,7 +28,7 @@ If you already have the single board computer, follow these steps:
 
    Once your wallet is set up, copy your **Lightning Address** and **NWC link** — you'll need both in the next step.
 
-2. Flash the firmware using our [Web Installer](https://lightningpiggy.github.io/). You'll need a Wi-Fi enabled computer with Chrome, Brave, Opera, or Edge browser.
+2. [Flash the firmware](#3-flash-the-firmware) using the installer below. You'll need a Wi-Fi enabled computer with Chrome, Brave, Opera, or Edge browser.
 
 3. Connect to and configure your Piggy (see [Accessing Piggy's Configuration Settings](#accessing-piggys-configuration-settings) below).
 
@@ -112,9 +112,35 @@ If you wish to run a LNbits wallet, please refer to our detailed [guide](/build/
 
 ### 3. Flash the firmware
 
-You'll need a Wi-Fi enabled laptop/desktop computer, a browser that supports the Web Serial API (such as Google Chrome, Brave, Opera, or Microsoft Edge), and a USB cable that can transmit data (some USB cables just supply power).
+Connect your Lightning Piggy to your computer with a USB data cable (some USB cables only supply power — if nothing happens, try a different cable).
 
-Use our custom-built [web Installer](https://lightningpiggy.github.io/) to flash the firmware onto your device. Once installed, the device will automatically reboot with its Wi-Fi access point enabled for approximately 20 seconds, allowing you to connect and configure the software.
+<div id="flash-browser-check"></div>
+
+<script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
+
+<div style="text-align:center; margin: 1.5em 0;">
+  <esp-web-install-button manifest="https://lightningpiggy.github.io/manifests/manifest_ttgo_lilygo_2.13_and_2.66_inch_epaper_6.x.json"></esp-web-install-button>
+</div>
+
+<script>
+(function() {
+  var el = document.getElementById('flash-browser-check');
+  if (!el) return;
+  if ('serial' in navigator) {
+    el.innerHTML = '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px 16px;margin-bottom:1em;font-size:14px;color:#166534;display:flex;align-items:center;gap:8px;"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg> Your browser supports the Web Serial API. You\'re good to go!</div>';
+  } else {
+    var ua = navigator.userAgent;
+    var name = 'Your browser';
+    if (ua.includes('Firefox')) name = 'Firefox';
+    else if (ua.includes('Safari') && !ua.includes('Chrome')) name = 'Safari';
+    el.innerHTML = '<div style="background:#fefce8;border:1px solid #fde68a;border-radius:12px;padding:12px 16px;margin-bottom:1em;font-size:14px;color:#92400e;display:flex;align-items:center;gap:8px;"><svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> <strong>' + name + '</strong> does not support the Web Serial API. Please use <a href="https://www.google.com/chrome/" style="color:#92400e;text-decoration:underline;">Chrome</a>, <a href="https://www.microsoft.com/edge" style="color:#92400e;text-decoration:underline;">Edge</a>, or <a href="https://brave.com/" style="color:#92400e;text-decoration:underline;">Brave</a> to flash firmware.</div>';
+  }
+})();
+</script>
+
+When prompted, select the serial port — usually the one labelled "CP210" (that's the USB-to-Serial chip in the device). Click **Install** and wait for the process to complete. Don't unplug your device during installation.
+
+Once installed, the device will automatically reboot with its Wi-Fi access point enabled for approximately 20 seconds, allowing you to connect and configure the software.
 
 ### 4. Connect to and configure your piggy
 

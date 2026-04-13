@@ -78,6 +78,20 @@ import ContentLayout from '../../layouts/ContentLayout.astro';
         Send
       </button>
     </div>
+
+    <!-- Quick command buttons -->
+    <div class="mt-2 flex gap-1.5 flex-wrap">
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='help()'>Help</button>
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='import gc; print(gc.mem_free())'>Free Memory</button>
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='import network; print(network.WLAN(0).ifconfig())'>WiFi Info</button>
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='import os; print(os.listdir())'>List Files</button>
+      <span class="w-px bg-gray-300 mx-0.5 self-stretch"></span>
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='from mpos import SharedPreferences; p=SharedPreferences("com.micropythonos.settings"); p.edit().put_string("theme_light_dark","dark").apply(); from mpos import AppearanceManager; AppearanceManager.init(p)'>Dark Mode</button>
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='from mpos import SharedPreferences; p=SharedPreferences("com.micropythonos.settings"); p.edit().put_string("theme_light_dark","light").apply(); from mpos import AppearanceManager; AppearanceManager.init(p)'>Light Mode</button>
+      <span class="w-px bg-gray-300 mx-0.5 self-stretch"></span>
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='import machine; machine.reset()'>Reboot</button>
+      <button class="cmd-quick px-2.5 py-1 rounded-md text-xs font-mono border border-gray-200 text-gray-500 hover:border-pink hover:text-pink transition-colors" data-cmd='import os; os.remove("/data/com.micropythonos.settings/config.json")' style="border-color:#fca5a5;color:#dc2626;">Clear Settings</button>
+    </div>
   </div>
 
   <script>
@@ -272,6 +286,14 @@ import ContentLayout from '../../layouts/ContentLayout.astro';
       btnSend.addEventListener('click', sendCommand);
       cmdInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') sendCommand();
+      });
+
+      // Quick command buttons — populate input field
+      document.querySelectorAll('.cmd-quick').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          cmdInput.value = (btn as HTMLElement).dataset.cmd || '';
+          cmdInput.focus();
+        });
       });
     }
 

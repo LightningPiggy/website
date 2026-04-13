@@ -119,8 +119,23 @@ Connect your Lightning Piggy to your computer with a USB data cable (some USB ca
 <script type="module" src="https://unpkg.com/esp-web-tools@10/dist/web/install-button.js?module"></script>
 
 <div style="text-align:center; margin: 1.5em 0;">
+  <div id="flash-version" style="font-size:14px;color:#666;margin-bottom:8px;"></div>
   <esp-web-install-button manifest="https://lightningpiggy.github.io/manifests/manifest_ttgo_lilygo_2.13_and_2.66_inch_epaper_6.x.json"></esp-web-install-button>
 </div>
+
+<script>
+(function() {
+  fetch('https://lightningpiggy.github.io/manifests/manifest_ttgo_lilygo_2.13_and_2.66_inch_epaper_6.x.json')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var el = document.getElementById('flash-version');
+      if (el && data.version) {
+        el.textContent = 'Firmware ' + data.version + ' — ' + data.name;
+      }
+    })
+    .catch(function() {});
+})();
+</script>
 
 <script>
 (function() {

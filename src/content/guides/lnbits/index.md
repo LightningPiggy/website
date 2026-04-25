@@ -58,7 +58,6 @@ This is the quickest and easiest way to get started with LNbits. It's great for 
 
 How: Visit [LNbits](https://lnbits.com/) or [egg](https://www.eggstr.com/) or any other trusted public instance and start using it without any complicated set-up or maintenance.
 
-> **For testing (with small amounts) here is a **[**LNbits demo server**](https://demo.lnpiggy.com/?ref=lightningpiggy.com)** instance.**
 
 ---
 Select *create a new wallet*, give it a name (we'll use Satoshi in this example), and follow the on screen instructions.

@@ -2486,3 +2486,208 @@ document.getElementById('vendor-nostr-npub').addEventListener('input', async e =
     picField.value = '';
   }
 });
+
+// --- Serial Monitor + Live Screen ---
+const smDevice = document.getElementById('serial-device');
+const smBaud = document.getElementById('serial-baud');
+const smConnectBtn = document.getElementById('serial-connect-btn');
+const smStatus = document.getElementById('serial-status');
+const smOutput = document.getElementById('serial-output');
+const smAutoscroll = document.getElementById('serial-autoscroll');
+const smMaxLines = document.getElementById('serial-max-lines');
+const smClearBtn = document.getElementById('serial-clear-btn');
+
+const smCaptureBtn = document.getElementById('serial-capture-btn');
+const smCapturePath = document.getElementById('serial-capture-path');
+const smCaptureFolder = document.getElementById('serial-capture-folder');
+const smCaptureFilename = document.getElementById('serial-capture-filename');
+const smCaptureTimestamp = document.getElementById('serial-capture-timestamp');
+
+// Restore saved preferences
+try {
+  const savedFolder = localStorage.getItem('sm_capture_folder');
+  if (savedFolder && smCaptureFolder) smCaptureFolder.value = savedFolder;
+  const savedFilename = localStorage.getItem('sm_capture_filename');
+  if (savedFilename && smCaptureFilename) smCaptureFilename.value = savedFilename;
+  const savedTs = localStorage.getItem('sm_capture_timestamp');
+  if (savedTs === '1' && smCaptureTimestamp) smCaptureTimestamp.checked = true;
+} catch {}
+
+function smBuildCapturePath() {
+  let folder = (smCaptureFolder?.value || '~/Downloads').trim().replace(/\/$/, '');
+  let filename = (smCaptureFilename?.value || 'device_screen.png').trim();
+  if (!filename.toLowerCase().endsWith('.png')) filename += '.png';
+  if (smCaptureTimestamp?.checked) {
+    const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const dot = filename.lastIndexOf('.');
+    filename = filename.slice(0, dot) + '-' + ts + filename.slice(dot);
+  }
+  const full = folder + '/' + filename;
+  if (smCapturePath) smCapturePath.value = full;
+  return full;
+}
+
+// Native macOS folder picker via backend
+const smFolderBrowseBtn = document.getElementById('serial-folder-browse');
+if (smFolderBrowseBtn) {
+  smFolderBrowseBtn.addEventListener('click', async () => {
+    smFolderBrowseBtn.disabled = true;
+    const originalText = smFolderBrowseBtn.textContent;
+    smFolderBrowseBtn.textContent = 'Opening…';
+    try {
+      const res = await fetch('/api/fs/pick-folder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ defaultPath: smCaptureFolder.value || '~' }),
+      });
+      if (res.status === 204) return; // user cancelled
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed');
+      smCaptureFolder.value = data.display;
+      try { localStorage.setItem('sm_capture_folder', data.display); } catch {}
+    } catch (err) {
+      alert('Folder picker error: ' + err.message);
+    } finally {
+      smFolderBrowseBtn.disabled = false;
+      smFolderBrowseBtn.textContent = originalText;
+    }
+  });
+}
+
+// Persist preferences on change
+if (smCaptureFolder) smCaptureFolder.addEventListener('change', () => {
+  try { localStorage.setItem('sm_capture_folder', smCaptureFolder.value); } catch {}
+});
+if (smCaptureFilename) smCaptureFilename.addEventListener('change', () => {
+  try { localStorage.setItem('sm_capture_filename', smCaptureFilename.value); } catch {}
+});
+if (smCaptureTimestamp) smCaptureTimestamp.addEventListener('change', () => {
+  try { localStorage.setItem('sm_capture_timestamp', smCaptureTimestamp.checked ? '1' : '0'); } catch {}
+});
+const smScreenAuto = document.getElementById('serial-screen-auto');
+const smScreenInterval = document.getElementById('serial-screen-interval');
+const smScreenImg = document.getElementById('serial-screen-img');
+const smScreenStatus = document.getElementById('serial-screen-status');
+
+let smSocket = null;
+let smScreenTimer = null;
+
+function smSetStatus(text, kind) {
+  smStatus.textContent = text;
+  smStatus.style.color = kind === 'err' ? '#991b1b' : kind === 'ok' ? '#065f46' : '#666';
+}
+
+function smAppend(text) {
+  smOutput.appendChild(document.createTextNode(text));
+  // Trim to max-lines
+  const cap = parseInt(smMaxLines.value, 10) || 500;
+  const lines = smOutput.textContent.split('\n');
+  if (lines.length > cap) {
+    smOutput.textContent = lines.slice(lines.length - cap).join('\n');
+  }
+  if (smAutoscroll.checked) smOutput.scrollTop = smOutput.scrollHeight;
+}
+
+function smConnect() {
+  smDisconnect();
+  const device = smDevice.value.trim();
+  const baud = parseInt(smBaud.value, 10) || 115200;
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const url = `${proto}://${location.host}/api/device/serial?device=${encodeURIComponent(device)}&baud=${baud}`;
+  smSetStatus('Connecting…');
+  try {
+    smSocket = new WebSocket(url);
+  } catch (err) {
+    smSetStatus('Connect failed: ' + err.message, 'err');
+    return;
+  }
+  smSocket.addEventListener('open', () => {
+    smSetStatus(`Connected to ${device} @ ${baud}`, 'ok');
+    smConnectBtn.textContent = 'Disconnect';
+  });
+  smSocket.addEventListener('close', () => {
+    smSetStatus('Disconnected');
+    smConnectBtn.textContent = 'Connect';
+    smSocket = null;
+  });
+  smSocket.addEventListener('error', () => {
+    smSetStatus('Socket error', 'err');
+  });
+  smSocket.addEventListener('message', (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    if (msg.type === 'data') {
+      smAppend(msg.text);
+    } else if (msg.type === 'status') {
+      if (msg.state === 'open') smSetStatus(`Connected to ${msg.device} @ ${msg.baud}`, 'ok');
+      else if (msg.state === 'closed') smSetStatus('Port closed');
+      else if (msg.state === 'suspended') smSetStatus('Port released for screenshot…');
+    } else if (msg.type === 'error') {
+      smSetStatus('Error: ' + msg.message, 'err');
+    }
+  });
+}
+
+function smDisconnect() {
+  if (smSocket) {
+    try { smSocket.close(); } catch {}
+    smSocket = null;
+  }
+}
+
+smConnectBtn.addEventListener('click', () => {
+  if (smSocket && smSocket.readyState === WebSocket.OPEN) smDisconnect();
+  else smConnect();
+});
+
+smClearBtn.addEventListener('click', () => { smOutput.textContent = ''; });
+
+async function smCaptureScreenshot() {
+  smScreenStatus.hidden = false;
+  smScreenStatus.className = 'result';
+  smScreenStatus.textContent = 'Capturing screenshot… (5–60s)';
+  smCaptureBtn.disabled = true;
+  try {
+    const res = await fetch('/api/device/capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device: smDevice.value.trim(),
+        savePath: smBuildCapturePath(),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    smScreenImg.src = '/api/device/screenshot.png?ts=' + Date.now();
+    smScreenImg.hidden = false;
+    smScreenStatus.className = 'result success';
+    smScreenStatus.textContent = `Saved to ${data.savedAt} (${data.size.toLocaleString()} bytes) at ${new Date().toLocaleTimeString()}`;
+  } catch (err) {
+    smScreenStatus.className = 'result error';
+    smScreenStatus.textContent = 'Error: ' + err.message;
+  } finally {
+    smCaptureBtn.disabled = false;
+  }
+}
+
+smCaptureBtn.addEventListener('click', smCaptureScreenshot);
+
+function smToggleScreenAuto() {
+  if (smScreenTimer) { clearInterval(smScreenTimer); smScreenTimer = null; }
+  if (smScreenAuto.checked) {
+    const ms = (parseInt(smScreenInterval.value, 10) || 10) * 1000;
+    smScreenTimer = setInterval(smCaptureScreenshot, ms);
+    smCaptureScreenshot();
+  }
+}
+smScreenAuto.addEventListener('change', smToggleScreenAuto);
+smScreenInterval.addEventListener('change', smToggleScreenAuto);
+
+// Auto-connect on first tab open
+let smFirstOpen = true;
+document.querySelector('[data-tab="serial-monitor"]').addEventListener('click', () => {
+  if (smFirstOpen) {
+    smFirstOpen = false;
+    smConnect();
+  }
+});

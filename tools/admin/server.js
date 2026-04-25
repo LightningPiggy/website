@@ -6,7 +6,12 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import crypto from 'crypto';
-import WebSocket from 'ws';
+import WebSocket, { WebSocketServer } from 'ws';
+import { SerialPort } from 'serialport';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..', '..');
@@ -24,6 +29,12 @@ const TESTIMONIALS_EXPORT_FILE = path.join(ROOT, 'src', 'data', 'testimonials.js
 const VENDORS_FILE = path.join(os.homedir(), '.lightningpiggy', 'vendors.json');
 const VENDORS_EXPORT_FILE = path.join(ROOT, 'src', 'data', 'vendors.json');
 
+// Device screenshot helper from MicroPythonOS/scripts. Override with
+// LP_DEVICE_SCREENSHOT_SCRIPT env var if your MicroPythonOS checkout lives elsewhere.
+const DEVICE_SCREENSHOT_SCRIPT = process.env.LP_DEVICE_SCREENSHOT_SCRIPT
+  || path.join(os.homedir(), 'MicroPythonOS', 'MicroPythonOS', 'scripts', 'device_screenshot.sh');
+const DEVICE_SCREENSHOT_FILE = path.join(os.homedir(), '.lightningpiggy', 'device_screenshot.png');
+
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
@@ -31,6 +42,63 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/branding', express.static(path.join(ROOT, 'public', 'images', 'branding')));
 app.use('/images/testimonials', express.static(path.join(ROOT, 'public', 'images', 'testimonials')));
 app.use(express.json());
+
+// --- Filesystem browsing (for save-folder picker) ---
+function expandPath(p) {
+  if (!p) return os.homedir();
+  if (p === '~' || p.startsWith('~/')) return path.join(os.homedir(), p.slice(1).replace(/^\//, ''));
+  return path.resolve(p);
+}
+
+// Native macOS folder picker via osascript
+app.post('/api/fs/pick-folder', async (req, res) => {
+  try {
+    if (process.platform !== 'darwin') {
+      return res.status(400).json({ error: 'Native folder picker only supported on macOS' });
+    }
+    const defaultPath = req.body?.defaultPath ? `default location POSIX file "${req.body.defaultPath.replace(/^~/, os.homedir())}"` : '';
+    const script = `tell application "System Events" to activate
+POSIX path of (choose folder with prompt "Select save folder for captures" ${defaultPath})`;
+    const { stdout } = await execFileAsync('osascript', ['-e', script]);
+    let folder = stdout.trim().replace(/\/$/, '');
+    const home = os.homedir();
+    const display = folder === home ? '~' : folder.startsWith(home + '/') ? '~' + folder.slice(home.length) : folder;
+    res.json({ path: folder, display });
+  } catch (err) {
+    // User cancelled — osascript exits with error
+    if (err.stderr && err.stderr.includes('User canceled')) {
+      return res.status(204).end();
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Admin control ---
+// Ping endpoint used by the launcher app to check if the server is running.
+app.get('/api/admin/ping', (req, res) => res.json({ ok: true, ts: Date.now() }));
+
+app.get('/api/fs/ls', (req, res) => {
+  try {
+    const reqPath = (req.query.path || '~').toString();
+    const abs = expandPath(reqPath);
+    const entries = fs.readdirSync(abs, { withFileTypes: true })
+      .filter(e => e.isDirectory() && !e.name.startsWith('.'))
+      .map(e => e.name)
+      .sort((a, b) => a.localeCompare(b));
+    const home = os.homedir();
+    const display = abs === home ? '~' : abs.startsWith(home + '/') ? '~' + abs.slice(home.length) : abs;
+    const parent = path.dirname(abs);
+    const parentDisplay = parent === home ? '~' : parent.startsWith(home + '/') ? '~' + parent.slice(home.length) : parent;
+    res.json({
+      path: abs,
+      display,
+      parent: parent === abs ? null : parentDisplay,
+      folders: entries,
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 
 // --- Wild Photo Endpoints ---
 
@@ -1338,10 +1406,199 @@ app.get('/api/nip05/verify', async (req, res) => {
   }
 });
 
+// --- Serial Monitor + Device Screenshot ---
+
+const VALID_DEVICE_RE = /^\/dev\/[a-zA-Z0-9._-]+$/;
+
+/**
+ * Single-port serial monitor that fans out incoming bytes to any number of
+ * WebSocket clients. The port is opened on first client, closed when the last
+ * client leaves. Can be temporarily released so mpremote (screenshot) can take
+ * exclusive access.
+ */
+class SerialMonitor {
+  constructor() {
+    this.port = null;
+    this.clients = new Set();   // ws -> ws
+    this.devicePath = null;
+    this.baudRate = 115200;
+    this.suspended = false;     // true while screenshot is borrowing the port
+  }
+
+  attach(ws, devicePath, baudRate) {
+    if (!VALID_DEVICE_RE.test(devicePath)) {
+      ws.close(1008, 'invalid device path');
+      return;
+    }
+    // If a different port is requested, switch all clients to it.
+    if (this.port && (this.devicePath !== devicePath || this.baudRate !== baudRate)) {
+      this._closePort();
+    }
+    this.devicePath = devicePath;
+    this.baudRate = baudRate;
+    this.clients.add(ws);
+    ws.on('close', () => this._detach(ws));
+    ws.on('error', () => this._detach(ws));
+    if (!this.port && !this.suspended) {
+      this._openPort();
+    } else if (this.suspended) {
+      this._sendOne(ws, { type: 'status', state: 'suspended' });
+    } else if (this.port && this.port.isOpen) {
+      this._sendOne(ws, { type: 'status', state: 'open', device: this.devicePath, baud: this.baudRate });
+    }
+  }
+
+  _detach(ws) {
+    this.clients.delete(ws);
+    if (this.clients.size === 0) {
+      this._closePort();
+    }
+  }
+
+  _openPort() {
+    if (this.port) return;
+    try {
+      this.port = new SerialPort({ path: this.devicePath, baudRate: this.baudRate, autoOpen: true });
+    } catch (err) {
+      this._broadcast({ type: 'error', message: 'open failed: ' + err.message });
+      this.port = null;
+      return;
+    }
+    this.port.on('open', () => {
+      // mpremote may have left the device in raw REPL mode where print() output
+      // is captured into the protocol response instead of streaming to CDC.
+      // Ctrl+B drops the device back to friendly REPL, after which background
+      // print() statements (e.g. from running asyncio tasks) flow normally.
+      try { this.port.write(Buffer.from([0x02])); } catch (e) { /* ignore */ }
+      this._broadcast({ type: 'status', state: 'open', device: this.devicePath, baud: this.baudRate });
+    });
+    this.port.on('error', (err) => this._broadcast({ type: 'error', message: err.message }));
+    this.port.on('close', () => this._broadcast({ type: 'status', state: 'closed' }));
+    this.port.on('data', (data) => this._broadcast({ type: 'data', text: data.toString('utf8') }));
+  }
+
+  _closePort() {
+    if (!this.port) return;
+    const p = this.port;
+    this.port = null;
+    try { p.close(() => {}); } catch (e) { /* ignore */ }
+  }
+
+  _broadcast(msg) {
+    const payload = JSON.stringify(msg);
+    for (const ws of this.clients) {
+      if (ws.readyState === WebSocket.OPEN) ws.send(payload);
+    }
+  }
+
+  _sendOne(ws, msg) {
+    if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+  }
+
+  /** Release the serial port so mpremote can take it. Returns when the port is fully closed. */
+  async suspend() {
+    this.suspended = true;
+    if (!this.port) return;
+    this._broadcast({ type: 'status', state: 'suspended' });
+    return new Promise((resolve) => {
+      const p = this.port;
+      this.port = null;
+      try {
+        p.close((err) => resolve());
+      } catch (e) {
+        resolve();
+      }
+    });
+  }
+
+  /** Reopen the serial port if any clients are still watching. */
+  resume() {
+    this.suspended = false;
+    if (this.clients.size > 0 && this.devicePath) {
+      this._openPort();
+    }
+  }
+}
+
+const serialMonitor = new SerialMonitor();
+
+// Tracks the file location of the most recent capture so /api/device/screenshot.png
+// can serve it back to the browser regardless of where the user chose to save it.
+let lastScreenshotPath = DEVICE_SCREENSHOT_FILE;
+
+function expandHome(p) {
+  if (!p) return p;
+  if (p === '~') return os.homedir();
+  if (p.startsWith('~/')) return path.join(os.homedir(), p.slice(2));
+  return p;
+}
+
+function validateSavePath(raw) {
+  const expanded = expandHome((raw || '').trim());
+  if (!expanded) return DEVICE_SCREENSHOT_FILE;
+  if (!path.isAbsolute(expanded)) {
+    throw new Error('save path must be absolute or start with ~');
+  }
+  // Block obvious traversal tricks (after expansion ~/foo/../bar would still be valid,
+  // so just check the literal expansion).
+  if (expanded.split(path.sep).includes('..')) {
+    throw new Error('save path must not contain ..');
+  }
+  if (!expanded.toLowerCase().endsWith('.png')) {
+    throw new Error('save path must end with .png');
+  }
+  return expanded;
+}
+
+app.post('/api/device/capture', async (req, res) => {
+  const device = (req.body && req.body.device) || '/dev/cu.usbmodem101';
+  if (!VALID_DEVICE_RE.test(device)) {
+    return res.status(400).json({ error: 'invalid device path' });
+  }
+  let savePath;
+  try {
+    savePath = validateSavePath(req.body && req.body.savePath);
+  } catch (err) {
+    return res.status(400).json({ error: err.message });
+  }
+  if (!fs.existsSync(DEVICE_SCREENSHOT_SCRIPT)) {
+    return res.status(500).json({
+      error: `screenshot helper not found at ${DEVICE_SCREENSHOT_SCRIPT}. Set LP_DEVICE_SCREENSHOT_SCRIPT to override.`,
+    });
+  }
+  // Hand the port over to mpremote temporarily.
+  await serialMonitor.suspend();
+  try {
+    fs.mkdirSync(path.dirname(savePath), { recursive: true });
+    await execFileAsync(DEVICE_SCREENSHOT_SCRIPT, [device, savePath], {
+      timeout: 120000,
+      maxBuffer: 4 * 1024 * 1024,
+    });
+    const stat = fs.statSync(savePath);
+    lastScreenshotPath = savePath;
+    res.json({ ok: true, savedAt: savePath, size: stat.size, mtime: stat.mtimeMs });
+  } catch (err) {
+    const detail = (err.stderr || '').toString().trim() || err.message;
+    res.status(500).json({ error: detail });
+  } finally {
+    serialMonitor.resume();
+  }
+});
+
+app.get('/api/device/screenshot.png', (req, res) => {
+  if (!lastScreenshotPath || !fs.existsSync(lastScreenshotPath)) {
+    return res.status(404).type('text/plain').send('no screenshot yet — click Capture');
+  }
+  res.set('Cache-Control', 'no-cache, no-store');
+  res.sendFile(lastScreenshotPath);
+});
+
 // --- Start Server ---
 
 const PORT = 3000;
-app.listen(PORT, () => {
+const wss = new WebSocketServer({ noServer: true });
+
+const server = app.listen(PORT, () => {
   console.log(`\n  🐷 LightningPiggy Admin`);
   console.log(`  ➜  http://localhost:${PORT}\n`);
   console.log(`  Project root: ${ROOT}`);
@@ -1354,5 +1611,19 @@ app.listen(PORT, () => {
   console.log(`  Export to:    ${CREDITS_EXPORT_FILE}`);
   console.log(`  Partners to:  ${PARTNERS_EXPORT_FILE}`);
   console.log(`  Testimonials: ${TESTIMONIALS_EXPORT_FILE}`);
-  console.log(`  Vendors to:   ${VENDORS_EXPORT_FILE}\n`);
+  console.log(`  Vendors to:   ${VENDORS_EXPORT_FILE}`);
+  console.log(`  Device shot:  ${DEVICE_SCREENSHOT_SCRIPT}\n`);
+});
+
+server.on('upgrade', (req, socket, head) => {
+  const { pathname, searchParams } = new URL(req.url, 'http://localhost');
+  if (pathname !== '/api/device/serial') {
+    socket.destroy();
+    return;
+  }
+  const device = searchParams.get('device') || '/dev/cu.usbmodem101';
+  const baud = parseInt(searchParams.get('baud') || '115200', 10);
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    serialMonitor.attach(ws, device, baud);
+  });
 });

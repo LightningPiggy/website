@@ -113,7 +113,7 @@ Next, you'll need your wallet's NWC or LNbits credentials — ideally as a QR co
 | Connection | Required Credentials |
 |------------|---------------------|
 | **NWC** | NWC link (e.g., `nostr+walletconnect://...`), Lightning address |
-| **or LNbits** | Server name (e.g., `https://demo.lnpiggy.com`), Invoice/read key |
+| **or LNbits** | Server name (e.g., `https://my.lnbits.com/`), Invoice/read key |
 
 <br>
 Now to configure your wallet. In the Lightning Piggy app, tap the settings cog and select your wallet type (NWC or LNbits), then scan your credentials QR code using the built-in camera — or enter them manually via the keyboard if you prefer (though this requires some patience).

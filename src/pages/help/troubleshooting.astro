@@ -20,6 +20,18 @@ const sections = [
         solution: 'We recommend setting up LNbits on your own node such as a <a href="https://raspiblitz.org" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Raspiblitz</a>, <a href="https://start9.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Start 9</a> or an <a href="https://umbrel.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Umbrel</a>. Please follow the set-up instructions provided by the node provider.',
       },
       {
+        title: 'Primal NWC wallet not working',
+        tags: ['classic', 'mpos', 'nwc'],
+        problem: '<a href="https://primal.net" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Primal</a> NWC wallet currently doesn\'t work with Lightning Piggy.',
+        solution: 'Primal uses a Spark backend, which Lightning Piggy doesn\'t currently support. Use a different NWC-compatible wallet (e.g. <a href="https://albyhub.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby Hub</a> or <a href="https://coinos.io" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Coinos</a>) until Spark support is added.',
+      },
+      {
+        title: 'Update MicroPythonOS before installing the Lightning Piggy app',
+        tags: mpos,
+        problem: null,
+        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases — installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
+      },
+      {
         title: 'Connecting your device',
         problem: 'Nothing happens when I plug the device into the computer.',
         solution: 'Ensure you are using a USB cable that can transmit data. Many micro USB cables only supply power and lack data transmission capabilities. Often, these cables have no distinguishing markings, so the simplest method to determine if your cable supports data transfer is to connect a memory device (like a data drive) to the computer using the cable and check if the computer recognizes the data drive.',
@@ -116,6 +128,12 @@ const sections = [
         problem: 'Some wallets can\'t scan a Lightning Address QR code.',
         solution: 'You may need to type it in manually. If you leave this field blank, the device falls back to the LNURL QR, which is compatible with most Lightning wallets.',
       },
+      {
+        title: 'Primal NWC wallet not working',
+        tags: ['classic', 'mpos', 'nwc'],
+        problem: '<a href="https://primal.net" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Primal</a> NWC wallet currently doesn\'t work with Lightning Piggy.',
+        solution: 'Primal uses a Spark backend, which Lightning Piggy doesn\'t currently support. Use a different NWC-compatible wallet (e.g. <a href="https://albyhub.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby Hub</a> or <a href="https://coinos.io" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Coinos</a>) until Spark support is added.',
+      },
     ],
   },
   {
@@ -157,6 +175,12 @@ const sections = [
     title: 'App & Firmware',
     slug: 'app-firmware',
     items: [
+      {
+        title: 'Update MicroPythonOS before installing the Lightning Piggy app',
+        tags: mpos,
+        problem: null,
+        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases — installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
+      },
       {
         title: 'MicroPythonOS app store fails to install Lightning Piggy',
         tags: mpos,

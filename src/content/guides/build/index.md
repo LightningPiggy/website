@@ -170,7 +170,7 @@ Please note, since the piggy's access point doesn't provide internet access, the
 |------------|---------------------|
 | **WiFi** | SSID, Password |
 | **NWC** | NWC link (e.g., `nostr+walletconnect://...`), Lightning address |
-| **or LNBits** | Server name (e.g., `https://demo.lnpiggy.com`), Invoice/read key |
+| **or LNBits** | Server name (e.g., `https://my.lnbits.com/`), Invoice/read key |
 
 ---
 

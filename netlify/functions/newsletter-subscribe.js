@@ -39,6 +39,61 @@ async function fetchWithRetry(url, options, maxRetries) {
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+// --- Spam-prevention helpers ---
+
+// Silent-success response — never tell bots they were caught.
+// Logs server-side so we can monitor rejection patterns.
+function silentSuccess(event, reason, detail) {
+  console.log('[spam] ' + reason + (detail ? ' — ' + detail : '') + ' from ' + (event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown'));
+  return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true }) };
+}
+
+// Count dots in the local part of an email (used for Gmail dot-trick detection).
+function localPartDotCount(email) {
+  var at = email.lastIndexOf('@');
+  if (at === -1) return 0;
+  return (email.slice(0, at).match(/\./g) || []).length;
+}
+
+// Canonicalize an email address. Gmail/Googlemail strip dots and +alias; other
+// providers just get lowercased so we don't break legitimate aliasing.
+function canonicalEmail(email) {
+  var lower = email.trim().toLowerCase();
+  var at = lower.lastIndexOf('@');
+  if (at === -1) return lower;
+  var local = lower.slice(0, at);
+  var domain = lower.slice(at + 1);
+  if (domain === 'gmail.com' || domain === 'googlemail.com') {
+    local = local.split('+')[0].replace(/\./g, '');
+    return local + '@gmail.com'; // normalize googlemail → gmail
+  }
+  return local + '@' + domain;
+}
+
+// In-memory rate limiter. Netlify functions can warm-cache this between
+// invocations; on cold starts the map resets (acceptable trade-off — burst
+// limit still slows attackers significantly).
+var _rateBuckets = new Map();
+function rateLimitHit(ip, maxPerMinute, maxPerHour) {
+  if (!ip) return false;
+  var now = Date.now();
+  var bucket = _rateBuckets.get(ip) || { minute: [], hour: [] };
+  bucket.minute = bucket.minute.filter(function (t) { return now - t < 60 * 1000; });
+  bucket.hour = bucket.hour.filter(function (t) { return now - t < 60 * 60 * 1000; });
+  if (bucket.minute.length >= maxPerMinute) return true;
+  if (bucket.hour.length >= maxPerHour) return true;
+  bucket.minute.push(now);
+  bucket.hour.push(now);
+  _rateBuckets.set(ip, bucket);
+  // Periodically clean stale buckets to bound memory
+  if (_rateBuckets.size > 1000) {
+    for (var entry of _rateBuckets) {
+      if (entry[1].hour.length === 0) _rateBuckets.delete(entry[0]);
+    }
+  }
+  return false;
+}
+
 // Send welcome email to new subscriber
 async function sendWelcomeEmail(apiKey, subscriberEmail) {
   var html = [
@@ -199,6 +254,27 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: 'Invalid JSON body' }) };
   }
 
+  // --- Spam-prevention layers (silent rejection — return 200 success but don't process) ---
+
+  // Layer 1: Honeypot field — bots fill this, humans don't see it.
+  if (body.website && String(body.website).trim()) {
+    return silentSuccess(event, 'honeypot');
+  }
+
+  // Layer 2: Time-to-fill check — humans take >3s to read+fill+click.
+  if (typeof body.startedAt === 'number') {
+    var elapsed = Date.now() - body.startedAt;
+    if (elapsed >= 0 && elapsed < 3000) {
+      return silentSuccess(event, 'too-fast', elapsed + 'ms');
+    }
+  }
+
+  // Layer 3: Rate limit per IP (1/min burst, 5/hr sustained).
+  var ip = (event.headers['x-forwarded-for'] || event.headers['client-ip'] || '').split(',')[0].trim();
+  if (rateLimitHit(ip, 1, 5)) {
+    return silentSuccess(event, 'rate-limited');
+  }
+
   var email = (body.email || '').trim().toLowerCase();
 
   if (!email) {
@@ -213,6 +289,15 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: 'Please enter a valid email address.' }) };
   }
 
+  // Layer 4: Gmail dot-trick filter — 3+ dots in Gmail local part is essentially always spam.
+  var isGmail = email.endsWith('@gmail.com') || email.endsWith('@googlemail.com');
+  if (isGmail && localPartDotCount(email) >= 3) {
+    return silentSuccess(event, 'gmail-dot-trick', email);
+  }
+
+  // Layer 5: Canonicalize — dedupes Gmail dot-trick variants in the audience.
+  var canonical = canonicalEmail(email);
+
   // Add contact to Resend audience
   try {
     var res = await fetch('https://api.resend.com/audiences/' + audienceId + '/contacts', {
@@ -222,7 +307,7 @@ exports.handler = async function (event) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        email: email,
+        email: canonical,
         unsubscribed: false
       })
     });
@@ -230,9 +315,9 @@ exports.handler = async function (event) {
     if (res.ok) {
       // Send emails sequentially with a gap to stay under 2 req/s rate limit.
       // Each function has its own retry with exponential backoff on 429.
-      await sendWelcomeEmail(apiKey, email);
+      await sendWelcomeEmail(apiKey, canonical);
       await sleep(600);
-      await sendOwnerNotification(apiKey, email);
+      await sendOwnerNotification(apiKey, canonical);
 
       return {
         statusCode: 200,

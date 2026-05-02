@@ -9,6 +9,12 @@ const isDark = variant === 'dark';
 ---
 
 <form class:list={['newsletter-form', className]} data-variant={variant}>
+  <!-- Honeypot field — bots fill this, humans can't see it -->
+  <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;">
+    <label>Website (leave blank)
+      <input type="text" name="website" tabindex="-1" autocomplete="off" />
+    </label>
+  </div>
   <div class="flex flex-col sm:flex-row gap-2">
     <input
       type="email"
@@ -50,6 +56,9 @@ const isDark = variant === 'dark';
   document.querySelectorAll('.newsletter-form').forEach((form) => {
     const formEl = form as HTMLFormElement;
 
+    // Capture when the form rendered (used as a time-to-fill check on the server)
+    const formLoadedAt = Date.now();
+
     const isDark = formEl.dataset.variant === 'dark';
     const successClass = isDark ? 'text-green-400' : 'text-green-600';
     const errorClass = isDark ? 'text-red-400' : 'text-red-500';
@@ -58,6 +67,7 @@ const isDark = variant === 'dark';
       e.preventDefault();
 
       const emailInput = formEl.querySelector('input[name="email"]') as HTMLInputElement;
+      const honeypotInput = formEl.querySelector('input[name="website"]') as HTMLInputElement;
       const submitBtn = formEl.querySelector('button[type="submit"]') as HTMLButtonElement;
       const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
       const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
@@ -76,7 +86,11 @@ const isDark = variant === 'dark';
         const res = await fetch('/.netlify/functions/newsletter-subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
+          body: JSON.stringify({
+            email,
+            website: honeypotInput?.value || '',
+            startedAt: formLoadedAt,
+          })
         });
 
         const data = await res.json();

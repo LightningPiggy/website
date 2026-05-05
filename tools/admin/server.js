@@ -77,6 +77,100 @@ POSIX path of (choose folder with prompt "Select save folder for captures" ${def
 // Ping endpoint used by the launcher app to check if the server is running.
 app.get('/api/admin/ping', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// --- Deploy (git push to trigger Netlify build) ---
+
+async function gitCmd(args, opts = {}) {
+  const { stdout, stderr } = await execFileAsync('git', args, { cwd: ROOT, ...opts });
+  return { stdout: stdout.toString(), stderr: stderr.toString() };
+}
+
+app.get('/api/deploy/status', async (req, res) => {
+  try {
+    // Get current branch and ahead/behind status
+    const branch = (await gitCmd(['rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
+    let ahead = 0, behind = 0;
+    try {
+      const counts = (await gitCmd(['rev-list', '--left-right', '--count', 'HEAD...@{u}'])).stdout.trim();
+      const [a, b] = counts.split(/\s+/).map(n => parseInt(n, 10));
+      ahead = a || 0; behind = b || 0;
+    } catch {}
+
+    // Parse porcelain status
+    const status = (await gitCmd(['status', '--porcelain'])).stdout;
+    const modified = []; // tracked files that are modified/deleted/etc
+    const untracked = []; // new files not yet tracked
+    status.split('\n').filter(Boolean).forEach(line => {
+      const code = line.slice(0, 2);
+      const path = line.slice(3);
+      if (code.startsWith('??')) {
+        untracked.push({ code, path });
+      } else {
+        modified.push({ code, path });
+      }
+    });
+
+    res.json({ branch, ahead, behind, modified, untracked });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Push-only (no new commits) — for when there are unpushed commits already
+app.post('/api/deploy/push-only', async (req, res) => {
+  try {
+    const log = ['$ git push'];
+    const { stdout, stderr } = await gitCmd(['push']);
+    if (stdout) log.push(stdout.trim());
+    if (stderr) log.push(stderr.trim());
+    res.json({ success: true, output: log.join('\n') });
+  } catch (err) {
+    res.status(500).json({ error: err.message, output: (err.stdout || '') + (err.stderr || '') });
+  }
+});
+
+app.post('/api/deploy/push', async (req, res) => {
+  try {
+    const { message, files } = req.body || {};
+    if (!message || !message.trim()) {
+      return res.status(400).json({ error: 'Commit message is required' });
+    }
+    if (!Array.isArray(files) || files.length === 0) {
+      return res.status(400).json({ error: 'No files selected to commit' });
+    }
+
+    const log = [];
+    const run = async (args) => {
+      log.push('$ git ' + args.join(' '));
+      try {
+        const { stdout, stderr } = await gitCmd(args);
+        if (stdout) log.push(stdout.trim());
+        if (stderr) log.push(stderr.trim());
+      } catch (e) {
+        log.push('ERROR: ' + e.message);
+        throw e;
+      }
+    };
+
+    // Stage the selected files. Use -f to allow gitignored files (e.g. tools/admin/*).
+    for (const f of files) {
+      await run(['add', '-f', f]);
+    }
+
+    // Commit
+    await run(['commit', '-m', message]);
+
+    // Push
+    await run(['push']);
+
+    res.json({ success: true, output: log.join('\n') });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      output: (err.stdout || '') + (err.stderr || ''),
+    });
+  }
+});
+
 app.get('/api/fs/ls', (req, res) => {
   try {
     const reqPath = (req.query.path || '~').toString();

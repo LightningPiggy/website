@@ -234,6 +234,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'wild') loadWildGallery();
     if (tab.dataset.tab === 'email') loadResendData();
     if (tab.dataset.tab === 'nip05') loadNip05Verified();
+    if (tab.dataset.tab === 'deploy') loadDeployStatus();
   });
 });
 
@@ -2691,3 +2692,232 @@ document.querySelector('[data-tab="serial-monitor"]').addEventListener('click', 
     smConnect();
   }
 });
+
+// --- Deploy Panel ---
+const deployStatusEl = document.getElementById('deploy-status');
+const deployBranchEl = document.getElementById('deploy-branch-info');
+const deployMessageEl = document.getElementById('deploy-message');
+const deployBtn = document.getElementById('deploy-btn');
+const deployRefreshBtn = document.getElementById('deploy-refresh-btn');
+const deployResultEl = document.getElementById('deploy-result');
+const deployOutputEl = document.getElementById('deploy-output');
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+}
+
+function statusCodeLabel(code) {
+  const c = code.trim();
+  if (c === 'M' || c === 'AM' || c === 'MM') return 'modified';
+  if (c === 'D') return 'deleted';
+  if (c === 'A') return 'added';
+  if (c === 'R') return 'renamed';
+  if (c === '??') return 'untracked';
+  return c;
+}
+
+// Generate a sensible commit message from a list of selected file paths
+function generateCommitMessage(files) {
+  if (!files || files.length === 0) return '';
+  const groups = new Set();
+  for (const f of files) {
+    if (f.startsWith('src/content/pages/')) {
+      const m = f.match(/src\/content\/pages\/([^/]+)\.md$/);
+      groups.add(m ? `${m[1]} page` : 'pages');
+    } else if (f.startsWith('src/content/guides/')) {
+      const m = f.match(/src\/content\/guides\/([^/]+)/);
+      groups.add(m ? `${m[1]} guide` : 'guides');
+    } else if (f.startsWith('src/content/news/')) {
+      groups.add('news');
+    } else if (f.startsWith('src/pages/help/')) {
+      groups.add('help pages');
+    } else if (f.startsWith('src/pages/build/')) {
+      groups.add('build pages');
+    } else if (f.startsWith('src/pages/community/')) {
+      groups.add('community pages');
+    } else if (f.startsWith('src/pages/market/')) {
+      groups.add('market pages');
+    } else if (f.startsWith('src/pages/')) {
+      groups.add('pages');
+    } else if (f.startsWith('src/components/')) {
+      groups.add('components');
+    } else if (f.startsWith('src/data/')) {
+      groups.add('data');
+    } else if (f.startsWith('src/layouts/')) {
+      groups.add('layouts');
+    } else if (f.startsWith('public/images/wild/')) {
+      groups.add('wild gallery');
+    } else if (f.startsWith('public/images/showcase/')) {
+      groups.add('showcase images');
+    } else if (f.startsWith('public/images/email/')) {
+      groups.add('email icons');
+    } else if (f.startsWith('public/images/')) {
+      groups.add('images');
+    } else if (f.startsWith('public/')) {
+      groups.add('public assets');
+    } else if (f.startsWith('netlify/functions/')) {
+      groups.add('netlify functions');
+    } else if (f.startsWith('tools/admin/')) {
+      groups.add('admin tool');
+    } else if (f.startsWith('tools/')) {
+      groups.add('tools');
+    } else if (f === '.gitignore') {
+      groups.add('gitignore');
+    } else if (f === 'CLAUDE.md') {
+      groups.add('CLAUDE.md');
+    } else if (f === 'netlify.toml') {
+      groups.add('netlify config');
+    } else if (f === 'package.json' || f === 'package-lock.json') {
+      groups.add('dependencies');
+    } else {
+      groups.add(f);
+    }
+  }
+  const list = Array.from(groups);
+  if (list.length === 1) return `Update ${list[0]}`;
+  if (list.length === 2) return `Update ${list[0]} and ${list[1]}`;
+  return `Update ${list.slice(0, -1).join(', ')}, and ${list[list.length - 1]}`;
+}
+
+// Track whether the user has manually edited the commit message
+let _deployMessageEdited = false;
+
+async function loadDeployStatus() {
+  if (!deployStatusEl) return;
+  deployStatusEl.innerHTML = '<em style="color:#6b7280;">Loading status…</em>';
+  try {
+    const res = await fetch('/api/deploy/status');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+
+    const branchText = `Branch: <strong>${escapeHtml(data.branch)}</strong>` +
+      (data.ahead ? ` · ${data.ahead} commit(s) ahead of remote` : '') +
+      (data.behind ? ` · ${data.behind} behind` : '');
+    if (deployBranchEl) deployBranchEl.innerHTML = branchText;
+
+    const total = data.modified.length + data.untracked.length;
+    if (total === 0) {
+      deployStatusEl.innerHTML = '<em style="color:#16a34a;">✓ Working tree clean — nothing to commit.</em>' +
+        (data.ahead ? '<br><strong>You have ' + data.ahead + ' unpushed commit(s).</strong> Click Deploy to push.' : '');
+      return;
+    }
+
+    const renderRow = (item, defaultChecked) => {
+      const label = statusCodeLabel(item.code);
+      const colour = item.code.includes('D') ? '#dc2626' : item.code.includes('?') ? '#6b7280' : '#0891b2';
+      return `
+        <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-family:ui-monospace,monospace; font-size:12px;">
+          <input type="checkbox" class="deploy-file" data-path="${escapeHtml(item.path)}" ${defaultChecked ? 'checked' : ''}>
+          <span style="display:inline-block; width:80px; color:${colour};">${label}</span>
+          <span>${escapeHtml(item.path)}</span>
+        </label>`;
+    };
+
+    let html = '';
+    if (data.modified.length) {
+      html += `<div style="font-weight:600; margin-bottom:6px;">Modified (${data.modified.length}) — recommended</div>`;
+      html += data.modified.map(item => renderRow(item, true)).join('');
+    }
+    if (data.untracked.length) {
+      html += `<div style="font-weight:600; margin-top:12px; margin-bottom:6px;">Untracked (${data.untracked.length}) — review carefully</div>`;
+      html += data.untracked.map(item => renderRow(item, false)).join('');
+    }
+    html += `<div style="margin-top:12px; padding-top:12px; border-top:1px solid #e5e7eb;">
+      <button type="button" id="deploy-select-all" class="btn" style="font-size:12px; padding:4px 10px; margin-right:6px;">Select all</button>
+      <button type="button" id="deploy-select-none" class="btn" style="font-size:12px; padding:4px 10px;">Select none</button>
+    </div>`;
+    deployStatusEl.innerHTML = html;
+
+    document.getElementById('deploy-select-all')?.addEventListener('click', () => {
+      document.querySelectorAll('.deploy-file').forEach(el => { el.checked = true; });
+      autoFillCommitMessage();
+    });
+    document.getElementById('deploy-select-none')?.addEventListener('click', () => {
+      document.querySelectorAll('.deploy-file').forEach(el => { el.checked = false; });
+      autoFillCommitMessage();
+    });
+    document.querySelectorAll('.deploy-file').forEach(el => {
+      el.addEventListener('change', autoFillCommitMessage);
+    });
+
+    // Initial auto-populate based on default selections
+    autoFillCommitMessage();
+  } catch (err) {
+    deployStatusEl.innerHTML = `<span style="color:#b91c1c;">Error loading status: ${escapeHtml(err.message)}</span>`;
+  }
+}
+
+function autoFillCommitMessage() {
+  if (_deployMessageEdited || !deployMessageEl) return;
+  const checked = Array.from(document.querySelectorAll('.deploy-file:checked')).map(el => el.dataset.path);
+  deployMessageEl.value = generateCommitMessage(checked);
+}
+
+if (deployMessageEl) {
+  deployMessageEl.addEventListener('input', () => { _deployMessageEdited = true; });
+  deployMessageEl.addEventListener('focus', () => {
+    // If user clears the field, allow auto-fill again
+    if (!deployMessageEl.value.trim()) _deployMessageEdited = false;
+  });
+}
+
+if (deployRefreshBtn) deployRefreshBtn.addEventListener('click', loadDeployStatus);
+
+if (deployBtn) {
+  deployBtn.addEventListener('click', async () => {
+    const message = (deployMessageEl?.value || '').trim();
+    const files = Array.from(document.querySelectorAll('.deploy-file:checked')).map(el => el.dataset.path);
+
+    if (!message) {
+      alert('Please enter a commit message.');
+      deployMessageEl?.focus();
+      return;
+    }
+    if (files.length === 0) {
+      // Allow push-only if there are unpushed commits but nothing to commit
+      if (!confirm('No files selected. Push existing commits to GitHub anyway?')) return;
+    }
+    if (!confirm(`Deploy ${files.length} file(s) with message "${message}"?\n\nThis will commit, push to GitHub, and trigger a Netlify build.`)) return;
+
+    deployBtn.disabled = true;
+    const orig = deployBtn.textContent;
+    deployBtn.textContent = '⏳ Deploying…';
+    deployResultEl.hidden = true;
+    deployOutputEl.style.display = 'none';
+
+    try {
+      let res, data;
+      if (files.length > 0) {
+        res = await fetch('/api/deploy/push', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, files }),
+        });
+      } else {
+        // Push only
+        res = await fetch('/api/deploy/push-only', { method: 'POST' });
+      }
+      data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      deployResultEl.hidden = false;
+      deployResultEl.className = 'result success';
+      deployResultEl.innerHTML = `✓ Deployed! Netlify will build and publish in 1-2 minutes. <a href="https://app.netlify.com/sites/lightningpiggy/deploys" target="_blank" rel="noopener">View deploy →</a>`;
+      if (data.output) {
+        deployOutputEl.textContent = data.output;
+        deployOutputEl.style.display = 'block';
+      }
+      deployMessageEl.value = '';
+      _deployMessageEdited = false;
+      // Reload status
+      setTimeout(loadDeployStatus, 500);
+    } catch (err) {
+      deployResultEl.hidden = false;
+      deployResultEl.className = 'result error';
+      deployResultEl.textContent = '✗ Deploy failed: ' + err.message;
+    } finally {
+      deployBtn.disabled = false;
+      deployBtn.textContent = orig;
+    }
+  });
+}

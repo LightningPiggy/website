@@ -147,3 +147,15 @@ tools/admin/
 
 # Local Netlify folder
 .netlify
+
+# Astro build cache
+.astro/
+
+# Claude Code local config
+.claude/
+
+# Deno lock (not used in this Astro project)
+deno.lock
+
+# Local VPS scripts/notes
+vps/

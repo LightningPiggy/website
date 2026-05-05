@@ -185,6 +185,15 @@
       "nostrUrl": "https://njump.me/npub1rwh33t5x8n7czknhts5fg0v0fml8mkl7neaarksumkkf8d679qrqcz7avv",
       "xUrl": "https://x.com/TheBitcoinConf",
       "githubUrl": ""
+    },
+    {
+      "name": "Bitcoin Copenhagen",
+      "description": "",
+      "url": "https://bitcoincopenhagen.dk/",
+      "logo": "https://unavatar.io/twitter/BTCCPH",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/BTCCPH",
+      "githubUrl": ""
     }
   ],
   "inTheNews": [

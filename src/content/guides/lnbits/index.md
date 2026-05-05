@@ -24,7 +24,7 @@ This option is ideal for users comfortable with the technical aspects of managin
 
 How: Install bitcoin, lightning and LNbits on your dedicated hardware device such as your own computer/server, [Raspiblitz](https://raspiblitz.org), [Start 9](https://start9.com) or [Umbrel](https://umbrel.com) device. Please refer to the set-up and configuration instructions provided by your hardware node supplier.
 
-**b) Running LNbits on Someone Else’s Hardware While Retaining Custody of Your Funds.**Recommended!
+**b) Running LNbits on Someone Else's Hardware While Retaining Custody of Your Funds.** *Recommended!*
 
 This setup strikes a balance between control and convenience and is ideal for those who want a simpler yet sovereign solution, with the added flexibility and power of a VPS. In fact, we use this configuration for our demo server.
 
@@ -57,7 +57,6 @@ This is the quickest and easiest way to get started with LNbits. It's great for 
 - Service fees: Some providers may charge fees for usage.
 
 How: Visit [LNbits](https://lnbits.com/) or [egg](https://www.eggstr.com/) or any other trusted public instance and start using it without any complicated set-up or maintenance.
-
 
 ---
 Select *create a new wallet*, give it a name (we'll use Satoshi in this example), and follow the on screen instructions.

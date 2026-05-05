@@ -1,8 +1,8 @@
 {
   "vendors": [
     {
-      "name": "Danish Bacon 🇩🇰",
-      "country": "Denmark 🇩🇰",
+      "name": "Danish Bacon",
+      "country": "Denmark",
       "shippingRegions": [
         "Worldwide"
       ],
@@ -15,7 +15,7 @@
     },
     {
       "name": "Robotechy",
-      "country": "United Kingdom 🇬🇧",
+      "country": "United Kingdom",
       "shippingRegions": [
         "Worldwide"
       ],
@@ -28,7 +28,7 @@
     },
     {
       "name": "The Bitcoin Hardware Store",
-      "country": "El Salvador 🇸🇻",
+      "country": "El Salvador",
       "shippingRegions": [],
       "shopType": "physical",
       "description": "Physical stores located in Bitcoin Beach, El Zonte and Bitcoin Berlín, Usulután.",
@@ -38,15 +38,17 @@
       "xUrl": "https://x.com/tbhs_sv"
     },
     {
-      "name": "NIP-05 Handles ⚡",
-      "country": "Global 🌍",
-      "shippingRegions": [],
+      "name": "SatoshiStore.io",
+      "country": "Austria",
+      "shippingRegions": [
+        "Worldwide"
+      ],
       "shopType": "online",
-      "description": "Get yourname@lightningpiggy.com as your Nostr identity. Pay what you want with Bitcoin!",
-      "url": "/market/nip05",
-      "logo": "",
-      "nostrUrl": "",
-      "xUrl": ""
+      "description": "Wonderful merch, piggies incoming.",
+      "url": "https://satoshistore.io/collections/lightning-piggy",
+      "logo": "https://void.cat/d/TDctRbPWDha5pBmMTkYfqn.webp",
+      "nostrUrl": "https://njump.me/npub1eclyv67suswsx5q0guyds43uzaj0ymkgvkr5chmuwsxsj9229zms8tankk",
+      "xUrl": "https://x.com/satoshistoreio"
     }
   ]
 }

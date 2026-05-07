@@ -49,7 +49,16 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
 });
 ---
 
-<BaseLayout title={title} description={description} image={heroImage}>
+<BaseLayout
+  title={title}
+  description={description}
+  image={heroImage}
+  imageAlt={title}
+  pageType="article"
+  pubDate={pubDate}
+  updatedDate={updatedDate}
+  tags={tags}
+>
   <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
   <article class="py-8 md:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

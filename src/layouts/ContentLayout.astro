@@ -5,12 +5,15 @@ interface Props {
   title: string;
   description?: string;
   heroImage?: string;
+  imageAlt?: string;
 }
 
-const { title, description, heroImage } = Astro.props;
+const { title, description, heroImage, imageAlt } = Astro.props;
+// When a hero image is set, default the alt to the page title
+const ogImageAlt = imageAlt || (heroImage ? title : undefined);
 ---
 
-<BaseLayout title={title} description={description} image={heroImage}>
+<BaseLayout title={title} description={description} image={heroImage} imageAlt={ogImageAlt}>
   <article class="py-8 md:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       {heroImage && (

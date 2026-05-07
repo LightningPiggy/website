@@ -7,16 +7,33 @@ interface Props {
   title: string;
   description?: string;
   image?: string;
+  imageAlt?: string;
+  pageType?: 'website' | 'article';
+  pubDate?: Date;
+  updatedDate?: Date;
+  tags?: string[];
+  author?: string;
 }
+
+const DEFAULT_OG_IMAGE = '/images/og-image.png';
+const DEFAULT_OG_ALT = 'Lightning Piggy — Bitcoin savings for the next generation';
 
 const {
   title,
   description = 'Lightning Piggy - An open source Bitcoin piggy bank for kids. Save in satoshis over the Lightning Network.',
-  image = '/images/mascot.png'
+  image = DEFAULT_OG_IMAGE,
+  imageAlt,
+  pageType = 'website',
+  pubDate,
+  updatedDate,
+  tags,
+  author = 'Lightning Piggy Foundation',
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 const absoluteImage = image.startsWith('http') ? image : new URL(image, Astro.site).href;
+const isDefaultImage = image === DEFAULT_OG_IMAGE;
+const ogImageAlt = imageAlt || (isDefaultImage ? DEFAULT_OG_ALT : title);
 
 const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPiggy`;
 ---
@@ -27,6 +44,14 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta name="theme-color" content="#EC008C" />
+    <meta name="apple-mobile-web-app-title" content="Lightning Piggy" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -38,15 +63,41 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <meta property="og:title" content={siteTitle} />
     <meta property="og:description" content={description} />
     <meta property="og:image" content={absoluteImage} />
+    <meta property="og:image:secure_url" content={absoluteImage} />
+    {isDefaultImage && (
+      <>
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+      </>
+    )}
+    <meta property="og:image:alt" content={ogImageAlt} />
     <meta property="og:url" content={canonicalUrl} />
-    <meta property="og:type" content="website" />
+    <meta property="og:type" content={pageType} />
     <meta property="og:site_name" content="LightningPiggy" />
+    <meta property="og:locale" content="en_GB" />
+
+    {pageType === 'article' && pubDate && (
+      <meta property="article:published_time" content={pubDate.toISOString()} />
+    )}
+    {pageType === 'article' && updatedDate && (
+      <meta property="article:modified_time" content={updatedDate.toISOString()} />
+    )}
+    {pageType === 'article' && (
+      <meta property="article:author" content={author} />
+    )}
+    {pageType === 'article' && tags && tags.map((tag) => (
+      <meta property="article:tag" content={tag} />
+    ))}
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@lightningpiggy" />
+    <meta name="twitter:creator" content="@lightningpiggy" />
     <meta name="twitter:title" content={siteTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={absoluteImage} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
 
     <!-- Canonical -->
     <link rel="canonical" href={canonicalUrl} />

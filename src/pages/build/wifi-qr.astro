@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import QrToolsNav from '../../components/ui/QrToolsNav.astro';
 ---
 
 <BaseLayout title="WiFi QR Code Generator" description="Generate a QR code to share your WiFi network instantly">
@@ -107,6 +108,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           </div>
         </div>
       </div>
+
+      <QrToolsNav current="/build/wifi-qr" />
     </div>
   </section>
 

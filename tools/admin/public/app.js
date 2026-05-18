@@ -2921,3 +2921,261 @@ if (deployBtn) {
     }
   });
 }
+
+// ─── OG Previews ──────────────────────────────────────────────────────────
+let _ogPreviewCache = null;
+const _ogFilters = { group: 'all', issues: 'all', search: '' };
+const PROD_HOSTNAME = 'lightningpiggy.com';
+
+function ogEscapeAttr(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function ogEscapeHtml(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function ogPageHasIssues(r) {
+  const og = r.og || {};
+  if (og.image && og.imageOk === false) return true;
+  if (!og.image) return true;
+  if (!og.title) return true;
+  if (!og.description) return true;
+  return false;
+}
+
+function ogResultMatchesFilters(r) {
+  if (_ogFilters.group !== 'all' && r.group !== _ogFilters.group) return false;
+  if (_ogFilters.issues === 'issues' && !ogPageHasIssues(r)) return false;
+  if (_ogFilters.issues === 'ok' && ogPageHasIssues(r)) return false;
+  if (_ogFilters.search) {
+    const q = _ogFilters.search;
+    const hay = ((r.label || '') + ' ' + (r.path || '') + ' ' + (r.og?.title || '')).toLowerCase();
+    if (!hay.includes(q)) return false;
+  }
+  return true;
+}
+
+async function loadOgPreview(force = false) {
+  const list = document.getElementById('og-preview-list');
+  const summary = document.getElementById('og-preview-summary');
+  if (!list) return;
+  if (!force && _ogPreviewCache) {
+    renderOgPreview(_ogPreviewCache);
+    return;
+  }
+  list.innerHTML = '<p style="color:#888; text-align:center; padding:40px; grid-column:1/-1;">Scraping every page&hellip;</p>';
+  if (summary) summary.textContent = '';
+  try {
+    const res = await fetch('/api/og-preview');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed');
+    _ogPreviewCache = data.results;
+    renderOgPreview(data.results);
+  } catch (err) {
+    list.innerHTML = `<p style="color:#b91c1c; text-align:center; padding:40px; grid-column:1/-1;">Failed to load: ${ogEscapeHtml(err.message)}</p><p style="color:#666; text-align:center; font-size:13px;">Make sure the Astro dev server is running on port 4321.</p>`;
+  }
+}
+
+function renderOgPreview(results) {
+  const list = document.getElementById('og-preview-list');
+  const summary = document.getElementById('og-preview-summary');
+  if (!list) return;
+
+  const ok = results.filter(r => r.og?.imageOk).length;
+  const broken = results.filter(r => r.og?.image && r.og.imageOk === false).length;
+  const noImg = results.filter(r => !r.og?.image).length;
+  const noTitle = results.filter(r => !r.og?.title).length;
+  const needsDeploy = results.filter(r => {
+    const og = r.og || {};
+    if (!og.imageOk) return false;
+    if (og.liveImageOk === false) return true;
+    if (typeof og.localImageBytes === 'number' && typeof og.liveImageBytes === 'number'
+        && og.localImageBytes !== og.liveImageBytes) return true;
+    return false;
+  }).length;
+
+  const filtered = results.filter(ogResultMatchesFilters);
+  const filterSuffix = filtered.length !== results.length
+    ? ` &nbsp;<span style="color:#e91e8c;">${filtered.length} match current filters.</span>`
+    : '';
+
+  if (summary) {
+    summary.innerHTML = `
+      <strong>${results.length}</strong> pages.
+      <span style="color:#16a34a;">${ok} local images OK</span>
+      ${broken > 0 ? `· <span style="color:#b91c1c;">${broken} broken locally</span>` : ''}
+      ${noImg > 0 ? `· <span style="color:#92400e;">${noImg} no og:image</span>` : ''}
+      ${noTitle > 0 ? `· <span style="color:#92400e;">${noTitle} no og:title</span>` : ''}
+      ${needsDeploy > 0 ? `· <span style="color:#92400e;">${needsDeploy} need deploy</span>` : ''}
+      ${filterSuffix}
+      &nbsp;&nbsp;<span style="color:#999;">Click any card for raw tags &amp; JSON-LD.</span>
+    `;
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="og-grid-empty">No pages match the current filters.</div>';
+    return;
+  }
+
+  const groups = {};
+  for (const r of filtered) {
+    const g = r.group || 'Other';
+    (groups[g] = groups[g] || []).push(r);
+  }
+  list.innerHTML = Object.entries(groups).map(([group, items]) => `
+    <div class="og-group-header">${ogEscapeHtml(group)} (${items.length})</div>
+    ${items.map(renderOgCard).join('')}
+  `).join('');
+
+  list.querySelectorAll('.og-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.og-card-link')) return;
+      const idx = parseInt(card.dataset.idx, 10);
+      if (Number.isFinite(idx)) showOgDetail(_ogPreviewCache[idx]);
+    });
+  });
+}
+
+function ogCardKind(r) {
+  if (r.group === 'News') return { label: 'Article', cls: 'og-card-kind-article' };
+  return { label: r.label || 'Page', cls: 'og-card-kind-page' };
+}
+
+function renderOgCard(r) {
+  const og = r.og || {};
+  const cacheIdx = _ogPreviewCache.indexOf(r);
+  const titleLen = (og.title || '').length;
+  const descLen = (og.description || '').length;
+  const kind = ogCardKind(r);
+
+  const badges = [];
+  if (og.image && og.imageOk) badges.push('<span class="og-badge og-badge-ok">img ok</span>');
+  else if (og.image && og.imageOk === false) badges.push(`<span class="og-badge og-badge-err">img ${og.imageStatus || '404'}</span>`);
+  else badges.push('<span class="og-badge og-badge-warn">no img</span>');
+
+  const localBytes = og.localImageBytes;
+  const liveBytes = og.liveImageBytes;
+  const liveStale = og.imageOk && (
+    og.liveImageOk === false ||
+    (typeof localBytes === 'number' && typeof liveBytes === 'number' && localBytes !== liveBytes)
+  );
+  if (liveStale) {
+    badges.push('<span class="og-badge og-badge-warn" title="The local copy differs from production — Deploy to push it live">needs deploy</span>');
+  }
+  if (!og.title) badges.push('<span class="og-badge og-badge-warn">no title</span>');
+  else if (titleLen > 60) badges.push(`<span class="og-badge og-badge-warn">title ${titleLen}c</span>`);
+  if (!og.description) badges.push('<span class="og-badge og-badge-warn">no desc</span>');
+  else if (descLen > 200) badges.push(`<span class="og-badge og-badge-warn">desc ${descLen}c</span>`);
+  if (og.jsonLd && og.jsonLd.length > 1) badges.push(`<span class="og-badge og-badge-info">JSON-LD ×${og.jsonLd.length}</span>`);
+  if (og.twitterCard) badges.push(`<span class="og-badge og-badge-info">${og.twitterCard}</span>`);
+
+  const cardImage = og.displayImage || og.image;
+  const imgStyle = cardImage && og.imageOk
+    ? `background-image: url('${ogEscapeAttr(cardImage)}');`
+    : '';
+  const imgClass = cardImage && og.imageOk === false ? 'og-card-image broken' : 'og-card-image';
+  let imgFallback = '';
+  if (!cardImage) {
+    imgFallback = 'no og:image';
+  } else if (og.imageOk === false) {
+    imgFallback = `image ${og.imageStatus || '404'}<br><span class="og-image-url">${ogEscapeHtml(cardImage)}</span>`;
+  }
+
+  return `
+    <div class="og-card" data-idx="${cacheIdx}">
+      <div class="${imgClass}" style="${imgStyle}">${imgFallback}</div>
+      <span class="og-card-kind ${kind.cls}" title="${ogEscapeAttr(kind.label)}">${ogEscapeHtml(kind.label)}</span>
+      <div class="og-card-body">
+        <div class="og-card-domain">${ogEscapeHtml(PROD_HOSTNAME + (r.path || '/'))}</div>
+        <div class="og-card-title">${ogEscapeHtml(og.title || '(no title)')}</div>
+        <div class="og-card-desc">${ogEscapeHtml(og.description || '(no description)')}</div>
+      </div>
+      <div class="og-card-footer">
+        <div class="og-card-badges">${badges.join('')}</div>
+        <a class="og-card-link" href="${ogEscapeAttr(r.url || '#')}" target="_blank" rel="noopener">open ↗</a>
+      </div>
+    </div>
+  `;
+}
+
+function showOgDetail(r) {
+  if (!r) return;
+  const og = r.og || {};
+  let modal = document.getElementById('og-detail-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'og-detail-modal';
+    modal.className = 'og-detail-modal';
+    modal.setAttribute('aria-hidden', 'true');
+    modal.innerHTML = `
+      <div class="og-detail-content">
+        <button class="og-detail-close" type="button" aria-label="Close">&times;</button>
+        <div id="og-detail-body"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => {
+      if (e.target === modal || e.target.closest('.og-detail-close')) {
+        modal.setAttribute('aria-hidden', 'true');
+      }
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') modal.setAttribute('aria-hidden', 'true');
+    });
+  }
+  const body = document.getElementById('og-detail-body');
+  body.innerHTML = `
+    <h3>${ogEscapeHtml(r.label || og.title || r.path)}</h3>
+    <div class="url">${ogEscapeHtml(r.url)}</div>
+    <dl>
+      <dt>og:title</dt><dd>${ogEscapeHtml(og.title || '—')}</dd>
+      <dt>og:description</dt><dd>${ogEscapeHtml(og.description || '—')}</dd>
+      <dt>og:image</dt><dd>
+        ${og.image ? `<a href="${ogEscapeAttr(og.image)}" target="_blank" style="color:#e91e8c;">${ogEscapeHtml(og.image)}</a>` : '—'}
+        ${og.image ? `<div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
+          <span class="og-badge ${og.imageOk ? 'og-badge-ok' : 'og-badge-err'}">local ${og.imageOk ? 'ok' : (og.imageStatus || '404')}</span>
+          ${og.liveImageStatus !== undefined ? `<span class="og-badge ${og.liveImageOk ? 'og-badge-ok' : 'og-badge-err'}">live ${og.liveImageOk ? 'ok' : (og.liveImageStatus || '404')}</span>` : ''}
+        </div>` : ''}
+      </dd>
+      <dt>og:image:alt</dt><dd>${ogEscapeHtml(og.imageAlt || '—')}</dd>
+      <dt>og:type</dt><dd>${ogEscapeHtml(og.type || '—')}</dd>
+      <dt>og:site_name</dt><dd>${ogEscapeHtml(og.siteName || '—')}</dd>
+      <dt>twitter:card</dt><dd>${ogEscapeHtml(og.twitterCard || '—')}</dd>
+    </dl>
+    ${(og.jsonLd || []).map((block, i) => `
+      <div style="font-size:12px; color:#888; margin-bottom:4px;">JSON-LD #${i + 1} — ${ogEscapeHtml(block['@type'] || 'unknown')}</div>
+      <pre>${ogEscapeHtml(JSON.stringify(block, null, 2))}</pre>
+    `).join('')}
+  `;
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function _ogActivatePill(groupEl, btn) {
+  groupEl.querySelectorAll('.og-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+}
+document.getElementById('og-filter-group')?.addEventListener('click', e => {
+  const btn = e.target.closest('.og-filter-btn');
+  if (!btn) return;
+  _ogFilters.group = btn.dataset.filter;
+  _ogActivatePill(btn.parentElement, btn);
+  if (_ogPreviewCache) renderOgPreview(_ogPreviewCache);
+});
+document.getElementById('og-filter-issues')?.addEventListener('click', e => {
+  const btn = e.target.closest('.og-filter-btn');
+  if (!btn) return;
+  _ogFilters.issues = btn.dataset.issues;
+  _ogActivatePill(btn.parentElement, btn);
+  if (_ogPreviewCache) renderOgPreview(_ogPreviewCache);
+});
+document.getElementById('og-filter-search')?.addEventListener('input', e => {
+  _ogFilters.search = (e.target.value || '').trim().toLowerCase();
+  if (_ogPreviewCache) renderOgPreview(_ogPreviewCache);
+});
+document.getElementById('og-refresh-btn')?.addEventListener('click', () => loadOgPreview(true));
+
+// Hook into existing tab listener
+document.querySelectorAll('.tab').forEach(tab => {
+  if (tab.dataset.tab === 'og-preview') tab.addEventListener('click', () => loadOgPreview(false));
+});

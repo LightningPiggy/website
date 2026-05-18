@@ -1,0 +1,52 @@
+---
+// Small "Related QR tools" footer for any QR generator page.
+// Pass the current page path as `current` to hide its own link.
+interface Props {
+  current: string;
+}
+const { current } = Astro.props;
+
+const tools = [
+  {
+    href: '/build/wifi-qr',
+    title: 'WiFi QR Code Generator',
+    description: 'Share your WiFi network with a scannable QR code.',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>',
+  },
+  {
+    href: '/build/lnurl-qr',
+    title: 'LNbits ZapRewards QR Generator',
+    description: 'Branded QR codes for your LNbits LNURL pay links.',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>',
+  },
+  {
+    href: '/build/nwc-qr',
+    title: 'NWC & Lightning Address QR Generator',
+    description: 'QR codes for NWC strings or Lightning Addresses.',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>',
+  },
+];
+
+const others = tools.filter(t => t.href !== current);
+---
+
+<div class="mt-12 pt-8 border-t border-gray-200">
+  <h2 class="text-xl font-bold text-gray-900 mb-1">Other QR tools</h2>
+  <p class="text-gray-600 text-sm mb-6">More browser-based QR generators for your Lightning Piggy build.</p>
+  <div class="grid gap-4 sm:grid-cols-2">
+    {others.map((tool) => (
+      <a
+        href={tool.href}
+        class="group flex items-start gap-4 p-4 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-md transition-all"
+      >
+        <div class="w-12 h-12 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+          <Fragment set:html={tool.icon} />
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3 class="text-base font-bold text-gray-900 group-hover:text-pink transition-colors">{tool.title}</h3>
+          <p class="text-sm text-gray-600 mt-0.5">{tool.description}</p>
+        </div>
+      </a>
+    ))}
+  </div>
+</div>

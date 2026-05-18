@@ -77,10 +77,187 @@ POSIX path of (choose folder with prompt "Select save folder for captures" ${def
 // Ping endpoint used by the launcher app to check if the server is running.
 app.get('/api/admin/ping', (req, res) => res.json({ ok: true, ts: Date.now() }));
 
+// --- OG Preview ----------------------------------------------------
+// Internal validator that fetches every public URL and parses its OG tags so
+// we can see exactly what Facebook/LinkedIn/X will see, without bouncing
+// through external validators.
+const ASTRO_DEV_URL = 'http://localhost:4321';
+const PROD_HOSTNAMES = ['lightningpiggy.com', 'www.lightningpiggy.com'];
+
+function extractMetaContent(html, key) {
+  const patterns = [
+    new RegExp(`<meta[^>]*?(?:property|name)=["']${key}["'][^>]*?content=["']([^"']*)["']`, 'i'),
+    new RegExp(`<meta[^>]*?content=["']([^"']*)["'][^>]*?(?:property|name)=["']${key}["']`, 'i'),
+  ];
+  for (const re of patterns) {
+    const m = html.match(re);
+    if (m) return m[1];
+  }
+  return '';
+}
+
+function extractJsonLdBlocks(html) {
+  const blocks = [];
+  const re = /<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/g;
+  let m;
+  while ((m = re.exec(html)) !== null) {
+    try { blocks.push(JSON.parse(m[1])); } catch { /* skip malformed */ }
+  }
+  return blocks;
+}
+
+function _toLocalUrl(absUrl) {
+  if (!absUrl) return '';
+  try {
+    const u = new URL(absUrl);
+    if (PROD_HOSTNAMES.includes(u.hostname)) {
+      return ASTRO_DEV_URL + u.pathname + u.search + u.hash;
+    }
+    return absUrl;
+  } catch {
+    return absUrl;
+  }
+}
+
+function listPreviewablePaths() {
+  const paths = [
+    { path: '/',                                label: 'Home',              group: 'Main' },
+    { path: '/about/',                          label: 'About',             group: 'Main' },
+    { path: '/about/origin-story/',             label: 'Origin Story',      group: 'Main' },
+    { path: '/donate/',                         label: 'Donate',            group: 'Main' },
+
+    { path: '/build/',                          label: 'Build',             group: 'Build' },
+    { path: '/build/classic/',                  label: 'Build Classic',     group: 'Build' },
+    { path: '/build/p1/',                       label: 'Build p1',          group: 'Build' },
+    { path: '/build/cases/',                    label: 'Cases',             group: 'Build' },
+    { path: '/build/lnbits/',                   label: 'LNbits Guide',      group: 'Build' },
+    { path: '/build/wifi-qr/',                  label: 'WiFi QR',           group: 'Build' },
+    { path: '/build/lnurl-qr/',                 label: 'LNURL QR',          group: 'Build' },
+
+    { path: '/market/',                         label: 'Market',            group: 'Market' },
+    { path: '/market/nip05/',                   label: 'NIP-05 Handles',    group: 'Market' },
+
+    { path: '/community/',                      label: 'Community',         group: 'Community' },
+    { path: '/community/wild/',                 label: 'In the Wild',       group: 'Community' },
+    { path: '/community/educators/',            label: 'Educators',         group: 'Community' },
+    { path: '/community/bitcoinkids/',          label: 'Bitcoin Kids',      group: 'Community' },
+    { path: '/community/zapmypiggy/',           label: 'ZapMyPiggy',        group: 'Community' },
+    { path: '/community/credits/',              label: 'Credits',           group: 'Community' },
+
+    { path: '/help/',                           label: 'Help',              group: 'Help' },
+    { path: '/help/troubleshooting/',           label: 'Troubleshooting',   group: 'Help' },
+    { path: '/help/serial-monitor/',            label: 'Serial Monitor',    group: 'Help' },
+    { path: '/help/faqs/',                      label: 'FAQs',              group: 'Help' },
+
+    { path: '/news/',                           label: 'News',              group: 'News' },
+  ];
+
+  // Discover news posts from the content collection
+  try {
+    const newsDir = path.join(ROOT, 'src', 'content', 'news');
+    for (const entry of fs.readdirSync(newsDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const indexPath = path.join(newsDir, entry.name, 'index.md');
+      if (fs.existsSync(indexPath)) {
+        paths.push({
+          path: `/news/${entry.name}/`,
+          label: entry.name.replace(/-/g, ' '),
+          group: 'News',
+        });
+      }
+    }
+  } catch (err) {
+    console.error('og-preview: failed to enumerate news:', err.message);
+  }
+
+  return paths;
+}
+
+async function fetchOgInfo(absUrl) {
+  try {
+    const res = await fetch(absUrl, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return { ok: false, status: res.status, error: `HTTP ${res.status}` };
+    const html = await res.text();
+    const ogImage = extractMetaContent(html, 'og:image');
+    const localImage = _toLocalUrl(ogImage);
+    const result = {
+      ok: true,
+      status: res.status,
+      title: extractMetaContent(html, 'og:title') || extractMetaContent(html, 'twitter:title') || '',
+      description: extractMetaContent(html, 'og:description') || extractMetaContent(html, 'twitter:description') || '',
+      image: ogImage,
+      displayImage: localImage,
+      imageAlt: extractMetaContent(html, 'og:image:alt') || '',
+      type: extractMetaContent(html, 'og:type') || 'website',
+      siteName: extractMetaContent(html, 'og:site_name') || '',
+      twitterCard: extractMetaContent(html, 'twitter:card') || '',
+      jsonLd: extractJsonLdBlocks(html),
+    };
+
+    if (localImage) {
+      try {
+        const head = await fetch(localImage, { method: 'HEAD', signal: AbortSignal.timeout(4000) });
+        result.imageStatus = head.status;
+        result.imageOk = head.ok;
+      } catch {
+        result.imageStatus = 0;
+        result.imageOk = false;
+      }
+    }
+
+    if (ogImage && ogImage !== localImage) {
+      try {
+        const head = await fetch(ogImage, { method: 'HEAD', signal: AbortSignal.timeout(4000) });
+        result.liveImageStatus = head.status;
+        result.liveImageOk = head.ok;
+        const lenHeader = head.headers.get('content-length');
+        if (lenHeader) result.liveImageBytes = parseInt(lenHeader, 10);
+      } catch {
+        result.liveImageStatus = 0;
+        result.liveImageOk = false;
+      }
+    }
+
+    if (localImage) {
+      try {
+        const localPath = new URL(localImage).pathname;
+        const fsPath = path.join(ROOT, 'public', localPath.replace(/^\//, ''));
+        if (fs.existsSync(fsPath)) {
+          result.localImageBytes = fs.statSync(fsPath).size;
+        }
+      } catch { /* ignore */ }
+    }
+
+    return result;
+  } catch (err) {
+    return { ok: false, error: err.message };
+  }
+}
+
+app.get('/api/og-preview', async (req, res) => {
+  try {
+    const paths = listPreviewablePaths();
+    const results = await Promise.all(paths.map(async (p) => ({
+      ...p,
+      url: ASTRO_DEV_URL + p.path,
+      og: await fetchOgInfo(ASTRO_DEV_URL + p.path),
+    })));
+    res.json({ success: true, count: results.length, results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // --- Deploy (git push to trigger Netlify build) ---
 
 async function gitCmd(args, opts = {}) {
-  const { stdout, stderr } = await execFileAsync('git', args, { cwd: ROOT, ...opts });
+  // Husky pre-commit hooks call npm/node, which live in /opt/homebrew/bin.
+  // Child processes from execFile inherit a stripped PATH, so we extend it.
+  const env = {
+    ...process.env,
+    PATH: ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].filter(Boolean).join(':'),
+  };
+  const { stdout, stderr } = await execFileAsync('git', args, { cwd: ROOT, env, ...opts });
   return { stdout: stdout.toString(), stderr: stderr.toString() };
 }
 

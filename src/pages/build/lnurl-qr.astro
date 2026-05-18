@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import QrToolsNav from '../../components/ui/QrToolsNav.astro';
 ---
 
 <BaseLayout title="LNURL Pay QR Code Generator" description="Generate QR codes for your LNbits LNURL pay links">
@@ -79,6 +80,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           </div>
         </div>
       </div>
+
+      <QrToolsNav current="/build/lnurl-qr" />
     </div>
   </section>
 

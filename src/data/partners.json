@@ -46,6 +46,15 @@
       "nostrUrl": "",
       "xUrl": "https://x.com/AmityAge",
       "githubUrl": ""
+    },
+    {
+      "name": "My First Bitcoin",
+      "description": "",
+      "url": "https://myfirstbitcoin.org/",
+      "logo": "https://blossom.primal.net/41c44c97ed9e756991165312bb4df5576aa8bed4bca170d5a81fc26e020f769d.jpg",
+      "nostrUrl": "https://njump.me/npub17cyatz6z2dzcw6xehtcm9z45m76lde5smxdmyasvs00r4pqv863qrs4ml3",
+      "xUrl": "https://x.com/MyfirstBitcoin_",
+      "githubUrl": "https://github.com/MyFirstBitcoin"
     }
   ],
   "technologyPartners": [

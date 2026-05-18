@@ -1,0 +1,247 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import QrToolsNav from '../../components/ui/QrToolsNav.astro';
+---
+
+<BaseLayout title="NWC & Lightning Address QR Generator" description="Generate a scannable QR code for an NWC string or Lightning Address. Runs entirely in your browser.">
+  <section class="py-10 md:py-16">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <header class="text-center mb-12">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">NWC & Lightning Address QR Generator</h1>
+        <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+          Generate a QR code from a Nostr Wallet Connect (NWC) string or a Lightning Address. Useful for sharing wallet connection details or accepting payments.
+        </p>
+        <div class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          Everything runs in your browser — no data is sent to any server.
+        </div>
+      </header>
+
+      <div class="mb-10 bg-gray-50 rounded-2xl border border-gray-200 p-6 md:p-8 text-left max-w-3xl mx-auto">
+        <h2 class="text-xl font-bold text-gray-900 mb-3">What can I encode?</h2>
+        <ul class="list-disc pl-5 text-gray-600 space-y-2 mb-2">
+          <li><strong>NWC string</strong> — e.g. <code class="text-pink">nostr+walletconnect://&hellip;</code> Used to connect a wallet to apps and devices that support Nostr Wallet Connect.</li>
+          <li><strong>Lightning Address</strong> — e.g. <code class="text-pink">satoshi@walletofsatoshi.com</code>. A reusable, human-friendly identifier that resolves to LNURL-pay.</li>
+        </ul>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+        <form id="qr-form" class="space-y-6">
+          <div>
+            <label for="qr-input" class="block text-sm font-semibold text-gray-900 mb-1.5">NWC string or Lightning Address</label>
+            <textarea
+              id="qr-input"
+              name="qr-input"
+              required
+              rows="3"
+              placeholder="nostr+walletconnect://… or satoshi@walletofsatoshi.com"
+              autocapitalize="none"
+              autocomplete="off"
+              spellcheck="false"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400 font-mono text-sm"
+            ></textarea>
+            <span id="input-status" class="block text-xs mt-1.5 h-4"></span>
+          </div>
+
+          <div>
+            <label for="qr-label" class="block text-sm font-semibold text-gray-900 mb-1.5">Label <span class="text-gray-400 font-normal">(optional, shown above QR)</span></label>
+            <input
+              type="text"
+              id="qr-label"
+              name="qr-label"
+              placeholder="e.g. Tip Jar"
+              class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full py-3 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors"
+          >
+            Generate QR Code
+          </button>
+        </form>
+
+        <div id="qr-output" class="hidden mt-8 text-center">
+          <div class="inline-block">
+            <div id="qr-card" class="relative border-[3px] border-pink rounded-2xl p-4 pt-3 pb-6 bg-white">
+              <p id="qr-name" class="text-lg font-bold text-gray-900 mb-0.5"></p>
+              <p id="qr-subtitle" class="text-sm font-medium text-gray-400 mb-3"></p>
+              <div id="qr-holder" class="inline-block"></div>
+              <div class="absolute -bottom-[12px] left-1/2 -translate-x-1/2 bg-white px-3">
+                <img src="/images/branding/lightningpiggy-logo.svg" alt="LightningPiggy" class="h-6 w-auto" />
+              </div>
+            </div>
+          </div>
+          <div class="mt-6">
+            <button
+              id="download-btn"
+              class="inline-flex items-center gap-2 py-2.5 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Download PNG
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <QrToolsNav current="/build/nwc-qr" />
+    </div>
+  </section>
+
+  <canvas id="export-canvas" style="display:none;"></canvas>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" is:inline></script>
+  <script is:inline>
+    document.addEventListener('DOMContentLoaded', function () {
+      var form = document.getElementById('qr-form');
+      var input = document.getElementById('qr-input');
+      var labelInput = document.getElementById('qr-label');
+      var inputStatus = document.getElementById('input-status');
+      var qrOutput = document.getElementById('qr-output');
+      var qrHolder = document.getElementById('qr-holder');
+      var qrName = document.getElementById('qr-name');
+      var qrSubtitle = document.getElementById('qr-subtitle');
+      var downloadBtn = document.getElementById('download-btn');
+      var exportCanvas = document.getElementById('export-canvas');
+      var logoImg = new Image();
+      logoImg.src = '/images/branding/lightningpiggy-logo.svg';
+
+      // Loose regex for Lightning Address (user@domain.tld)
+      var LIGHTNING_ADDRESS_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+      function detectType(val) {
+        var v = val.trim();
+        if (!v) return { kind: 'empty' };
+        if (v.toLowerCase().startsWith('nostr+walletconnect://') || v.toLowerCase().startsWith('nostrwalletconnect://')) {
+          return { kind: 'nwc', subtitle: 'Nostr Wallet Connect' };
+        }
+        if (LIGHTNING_ADDRESS_RE.test(v)) {
+          return { kind: 'lnaddr', subtitle: 'Lightning Address' };
+        }
+        return { kind: 'unknown' };
+      }
+
+      input.addEventListener('input', function () {
+        var info = detectType(input.value);
+        input.classList.remove('border-red-300', 'border-green-300', 'border-gray-200');
+        if (info.kind === 'empty') {
+          inputStatus.textContent = '';
+          input.classList.add('border-gray-200');
+        } else if (info.kind === 'unknown') {
+          inputStatus.textContent = 'Not a recognised NWC string or Lightning Address — will still encode the text as a QR.';
+          inputStatus.className = 'block text-xs mt-1.5 h-4 text-amber-600';
+          input.classList.add('border-gray-200');
+        } else {
+          inputStatus.textContent = info.subtitle + ' detected';
+          inputStatus.className = 'block text-xs mt-1.5 h-4 text-green-600';
+          input.classList.add('border-green-300');
+        }
+      });
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var data = input.value.trim();
+        if (!data) return;
+
+        var info = detectType(data);
+        var defaultName = info.kind === 'nwc' ? 'Wallet Connect' : info.kind === 'lnaddr' ? data : 'QR Code';
+        var name = (labelInput.value || '').trim() || defaultName;
+        var subtitle = info.subtitle || 'QR Code';
+
+        qrName.textContent = name;
+        qrSubtitle.textContent = subtitle;
+        qrHolder.innerHTML = '';
+        new QRCode(qrHolder, {
+          text: data,
+          width: 220,
+          height: 220,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+        qrOutput.classList.remove('hidden');
+        setTimeout(function () {
+          qrOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      });
+
+      downloadBtn.addEventListener('click', function () {
+        var qrCanvas = qrHolder.querySelector('canvas');
+        if (!qrCanvas) return;
+
+        var scale = 2;
+        var padding = 30;
+        var border = 3;
+        var qrSize = 220;
+        var topTextHeight = 60;
+        var cardW = qrSize + padding * 2 + border * 2;
+        var cardH = topTextHeight + qrSize + padding + border * 2 + 16;
+
+        exportCanvas.width = cardW * scale;
+        exportCanvas.height = cardH * scale;
+        var ctx = exportCanvas.getContext('2d');
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, cardW, cardH);
+
+        var pink = '#EC008C';
+        var r = 12;
+        var bx = border / 2;
+        var by = border / 2;
+        var bw = cardW - border;
+        var bh = cardH - border - 16;
+        ctx.strokeStyle = pink;
+        ctx.lineWidth = border;
+        ctx.beginPath();
+        ctx.moveTo(bx + r, by);
+        ctx.lineTo(bx + bw - r, by);
+        ctx.arcTo(bx + bw, by, bx + bw, by + r, r);
+        ctx.lineTo(bx + bw, by + bh - r);
+        ctx.arcTo(bx + bw, by + bh, bx + bw - r, by + bh, r);
+        ctx.lineTo(bx + r, by + bh);
+        ctx.arcTo(bx, by + bh, bx, by + bh - r, r);
+        ctx.lineTo(bx, by + r);
+        ctx.arcTo(bx, by, bx + r, by, r);
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.fillStyle = '#111827';
+        ctx.font = 'bold 16px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(qrName.textContent, cardW / 2, border + 26);
+
+        ctx.fillStyle = '#9CA3AF';
+        ctx.font = '500 11px Inter, system-ui, sans-serif';
+        ctx.fillText(qrSubtitle.textContent, cardW / 2, border + 44);
+
+        var qrX = (cardW - qrSize) / 2;
+        var qrY = border + topTextHeight;
+        ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+
+        var logoAspect = 467.716 / 190.193;
+        var logoHeight = 24;
+        var logoWidth = logoHeight * logoAspect;
+        var logoX = (cardW - logoWidth) / 2;
+        var logoY = by + bh - logoHeight / 2;
+
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(logoX - 8, logoY - 2, logoWidth + 16, logoHeight + 4);
+
+        if (logoImg.complete && logoImg.naturalWidth > 0) {
+          ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+        }
+
+        var safeName = qrName.textContent.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+        var link = document.createElement('a');
+        link.download = (info_isLnAddr() ? 'lightning-address-' : 'nwc-') + safeName + '-qr.png';
+        link.href = exportCanvas.toDataURL('image/png');
+        link.click();
+      });
+
+      function info_isLnAddr() {
+        return qrSubtitle.textContent === 'Lightning Address';
+      }
+    });
+  </script>
+</BaseLayout>

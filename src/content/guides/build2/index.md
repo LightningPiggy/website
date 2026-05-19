@@ -120,6 +120,13 @@ Now to configure your wallet. In the Lightning Piggy app, tap the settings cog a
 
 Once saved, your device will connect to your wallet and update the screen to show your balance, recent transactions, and payment QR code. This typically takes about a minute.
 
+**📸 QR scanning tips:**
+
+- **Make the QR as large as possible** — aim for 4-12cm (about 1.5-4.7in) on the source screen or print.
+- **Scan distance** — hold the piggy around 10-25cm (about 4-10in) from the QR code.
+- **Hold still** — small wobbles can confuse the scanner.
+- **Black on white only** — the QR needs to be dark on a light background. Inverted QRs (for example, those shown on a device in dark mode) won't scan.
+
 ---
 
 ### 5. Make a Case and Assemble the Parts

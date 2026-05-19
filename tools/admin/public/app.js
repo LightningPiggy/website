@@ -2873,11 +2873,6 @@ if (deployBtn) {
       deployMessageEl?.focus();
       return;
     }
-    if (files.length === 0) {
-      // Allow push-only if there are unpushed commits but nothing to commit
-      if (!confirm('No files selected. Push existing commits to GitHub anyway?')) return;
-    }
-    if (!confirm(`Deploy ${files.length} file(s) with message "${message}"?\n\nThis will commit, push to GitHub, and trigger a Netlify build.`)) return;
 
     deployBtn.disabled = true;
     const orig = deployBtn.textContent;

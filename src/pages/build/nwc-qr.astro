@@ -3,13 +3,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import QrToolsNav from '../../components/ui/QrToolsNav.astro';
 ---
 
-<BaseLayout title="NWC & Lightning Address QR Generator" description="Generate a scannable QR code for an NWC string or Lightning Address. Runs entirely in your browser.">
+<BaseLayout title="NWC, Lightning Address, xpub & LNbits URL QR Generator" description="Generate a scannable QR code for an NWC string, Lightning Address, extended public key (xpub/ypub/zpub), or LNbits node URL. Runs entirely in your browser.">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="text-center mb-12">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">NWC & Lightning Address QR Generator</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">NWC, Lightning Address, xpub &amp; LNbits URL QR Generator</h1>
         <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-          Generate a QR code from a Nostr Wallet Connect (NWC) string or a Lightning Address. Useful for sharing wallet connection details or accepting payments.
+          Generate a QR code from a Nostr Wallet Connect (NWC) string, a Lightning Address, an extended public key (xpub), or an LNbits node URL. Useful for sharing wallet connection details, accepting payments, importing a watch-only wallet, or configuring your Lightning Piggy.
         </p>
         <div class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium text-sm">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
@@ -22,19 +22,22 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
         <ul class="list-disc pl-5 text-gray-600 space-y-2 mb-2">
           <li><strong>NWC string</strong> — e.g. <code class="text-pink">nostr+walletconnect://&hellip;</code> Used to connect a wallet to apps and devices that support Nostr Wallet Connect.</li>
           <li><strong>Lightning Address</strong> — e.g. <code class="text-pink">satoshi@walletofsatoshi.com</code>. A reusable, human-friendly identifier that resolves to LNURL-pay.</li>
+          <li><strong>Extended public key</strong> — <code class="text-pink">xpub&hellip;</code>, <code class="text-pink">ypub&hellip;</code>, <code class="text-pink">zpub&hellip;</code>, or testnet variants (<code class="text-pink">tpub</code>/<code class="text-pink">upub</code>/<code class="text-pink">vpub</code>). Useful for importing a watch-only wallet into another app.</li>
+          <li><strong>LNbits node URL</strong> — e.g. <code class="text-pink">https://my.lnbits.com/</code>. Scan during Lightning Piggy setup to enter your LNbits server URL without typing.</li>
+          <li><strong>LNbits Invoice/Read key</strong> — a 32-character hex string, e.g. <code class="text-pink">fd92e3f8168ba314dc22e54182784045</code>. Used together with the LNbits URL during Lightning Piggy setup.</li>
         </ul>
       </div>
 
       <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
         <form id="qr-form" class="space-y-6">
           <div>
-            <label for="qr-input" class="block text-sm font-semibold text-gray-900 mb-1.5">NWC string or Lightning Address</label>
+            <label for="qr-input" class="block text-sm font-semibold text-gray-900 mb-1.5">NWC string, Lightning Address, xpub, or LNbits URL</label>
             <textarea
               id="qr-input"
               name="qr-input"
               required
               rows="3"
-              placeholder="nostr+walletconnect://… or satoshi@walletofsatoshi.com"
+              placeholder="nostr+walletconnect://… · satoshi@walletofsatoshi.com · zpub6jftahH18ngZx… · https://my.lnbits.com/ · fd92e3f8168ba314dc22e54182784045"
               autocapitalize="none"
               autocomplete="off"
               spellcheck="false"
@@ -110,6 +113,48 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
       // Loose regex for Lightning Address (user@domain.tld)
       var LIGHTNING_ADDRESS_RE = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 
+      // Extended public key prefixes — BIP32/BIP49/BIP84 across mainnet & testnet
+      // mainnet: xpub (legacy), ypub (P2SH-SegWit), zpub (native SegWit)
+      // testnet: tpub, upub, vpub
+      // multisig variants: Ypub, Zpub, Upub, Vpub (uppercase first letter)
+      var XPUB_PREFIXES = ['xpub', 'ypub', 'zpub', 'tpub', 'upub', 'vpub', 'Ypub', 'Zpub', 'Upub', 'Vpub'];
+      // Real xpubs are base58 encoded — 111 chars long. Allow some slack for newer formats.
+      var XPUB_RE = /^([xyzXYZtTuUvV])pub[1-9A-HJ-NP-Za-km-z]{100,115}$/;
+
+      function detectXpub(v) {
+        if (!XPUB_RE.test(v)) return null;
+        var prefix = v.slice(0, 4);
+        var label = 'Extended Public Key';
+        if (prefix === 'xpub') label = 'Extended Public Key (BIP32, legacy)';
+        else if (prefix === 'ypub') label = 'Extended Public Key (BIP49, P2SH-SegWit)';
+        else if (prefix === 'zpub') label = 'Extended Public Key (BIP84, native SegWit)';
+        else if (prefix === 'tpub') label = 'Extended Public Key (testnet, legacy)';
+        else if (prefix === 'upub') label = 'Extended Public Key (testnet, P2SH-SegWit)';
+        else if (prefix === 'vpub') label = 'Extended Public Key (testnet, native SegWit)';
+        else if (prefix === 'Ypub') label = 'Extended Public Key (multisig P2SH-SegWit)';
+        else if (prefix === 'Zpub') label = 'Extended Public Key (multisig native SegWit)';
+        else if (prefix === 'Upub') label = 'Extended Public Key (testnet multisig P2SH-SegWit)';
+        else if (prefix === 'Vpub') label = 'Extended Public Key (testnet multisig native SegWit)';
+        return { kind: 'xpub', subtitle: label, prefix: prefix };
+      }
+
+      // HTTPS URL — typically an LNbits node URL like https://my.lnbits.com/
+      function detectUrl(v) {
+        var lower = v.toLowerCase();
+        if (!lower.startsWith('https://') && !lower.startsWith('http://')) return null;
+        try {
+          var u = new URL(v);
+          var host = u.hostname.toLowerCase();
+          var subtitle = host.indexOf('lnbits') !== -1 ? 'LNbits Node URL' : 'Server URL';
+          return { kind: 'url', subtitle: subtitle, host: host };
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // LNbits Invoice/Read key — 32-char hex string (e.g. fd92e3f8168ba314dc22e54182784045)
+      var LNBITS_KEY_RE = /^[a-f0-9]{32}$/i;
+
       function detectType(val) {
         var v = val.trim();
         if (!v) return { kind: 'empty' };
@@ -118,6 +163,13 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
         }
         if (LIGHTNING_ADDRESS_RE.test(v)) {
           return { kind: 'lnaddr', subtitle: 'Lightning Address' };
+        }
+        var xpub = detectXpub(v);
+        if (xpub) return xpub;
+        var url = detectUrl(v);
+        if (url) return url;
+        if (LNBITS_KEY_RE.test(v)) {
+          return { kind: 'lnbits-key', subtitle: 'LNbits Invoice/Read Key' };
         }
         return { kind: 'unknown' };
       }
@@ -129,7 +181,7 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
           inputStatus.textContent = '';
           input.classList.add('border-gray-200');
         } else if (info.kind === 'unknown') {
-          inputStatus.textContent = 'Not a recognised NWC string or Lightning Address — will still encode the text as a QR.';
+          inputStatus.textContent = 'Not a recognised NWC string, Lightning Address, xpub, URL, or LNbits key — will still encode the text as a QR.';
           inputStatus.className = 'block text-xs mt-1.5 h-4 text-amber-600';
           input.classList.add('border-gray-200');
         } else {
@@ -145,7 +197,12 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
         if (!data) return;
 
         var info = detectType(data);
-        var defaultName = info.kind === 'nwc' ? 'Wallet Connect' : info.kind === 'lnaddr' ? data : 'QR Code';
+        var defaultName = info.kind === 'nwc' ? 'Wallet Connect'
+          : info.kind === 'lnaddr' ? data
+          : info.kind === 'xpub' ? 'Wallet'
+          : info.kind === 'url' ? (info.host || data)
+          : info.kind === 'lnbits-key' ? 'LNbits Key'
+          : 'QR Code';
         var name = (labelInput.value || '').trim() || defaultName;
         var subtitle = info.subtitle || 'QR Code';
 
@@ -234,13 +291,21 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
 
         var safeName = qrName.textContent.replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
         var link = document.createElement('a');
-        link.download = (info_isLnAddr() ? 'lightning-address-' : 'nwc-') + safeName + '-qr.png';
+        link.download = filenamePrefix() + safeName + '-qr.png';
         link.href = exportCanvas.toDataURL('image/png');
         link.click();
       });
 
-      function info_isLnAddr() {
-        return qrSubtitle.textContent === 'Lightning Address';
+      // Pick a sensible filename prefix based on what kind of QR was generated
+      function filenamePrefix() {
+        var sub = qrSubtitle.textContent;
+        if (sub === 'Lightning Address') return 'lightning-address-';
+        if (sub === 'Nostr Wallet Connect') return 'nwc-';
+        if (sub === 'LNbits Node URL') return 'lnbits-url-';
+        if (sub === 'LNbits Invoice/Read Key') return 'lnbits-key-';
+        if (sub === 'Server URL') return 'server-url-';
+        if (sub && sub.indexOf('Extended Public Key') === 0) return 'xpub-';
+        return 'qr-';
       }
     });
   </script>

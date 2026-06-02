@@ -25,7 +25,7 @@ If you already have the single board computer, follow these steps:
 
 1. Choose a wallet that supports Nostr Wallet Connect (NWC).
    - **For beginners:** We recommend [Coinos](https://coinos.io) — it's simple and custodial (with the option to auto-withdraw to cold storage), so you can get started quickly.
-   - **For a non-custodial setup:** We recommend [Alby Hub](https://albyhub.com/) — it supports multiple friends and family accounts and is easy to use.
+   - **For a non-custodial setup:** We recommend [LNbits](https://lnbits.com/) or [Alby Hub](https://albyhub.com/) — both support multiple friends and family accounts and are easy to use.
 
    Once your wallet is set up, copy your **Lightning Address** and **NWC link**.
 

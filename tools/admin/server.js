@@ -261,6 +261,101 @@ async function gitCmd(args, opts = {}) {
   return { stdout: stdout.toString(), stderr: stderr.toString() };
 }
 
+// --- Sync from GitHub (pull) ---
+
+// Fetch the remote, then return ahead/behind counts plus a list of remote
+// commits not yet local. Run on demand so the user controls when network IO happens.
+app.get('/api/sync/status', async (req, res) => {
+  try {
+    // Fetch latest refs from remote
+    await gitCmd(['fetch', '--quiet', 'origin']);
+
+    const branch = (await gitCmd(['rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
+
+    let ahead = 0, behind = 0;
+    try {
+      const counts = (await gitCmd(['rev-list', '--left-right', '--count', 'HEAD...@{u}'])).stdout.trim();
+      const [a, b] = counts.split(/\s+/).map(n => parseInt(n, 10));
+      ahead = a || 0; behind = b || 0;
+    } catch {}
+
+    // Get commits on remote that aren't on local
+    let remoteCommits = [];
+    if (behind > 0) {
+      try {
+        const log = (await gitCmd([
+          'log',
+          '--pretty=format:%H%x1f%h%x1f%an%x1f%ar%x1f%s',
+          '@{u}',
+          '^HEAD',
+        ])).stdout.trim();
+        remoteCommits = log.split('\n').filter(Boolean).map(line => {
+          const [sha, shortSha, author, when, subject] = line.split('\x1f');
+          return { sha, shortSha, author, when, subject };
+        });
+      } catch {}
+    }
+
+    // Check if there are uncommitted local changes that would block a clean pull
+    const localChanges = (await gitCmd(['status', '--porcelain'])).stdout.trim();
+    const hasLocalChanges = localChanges.length > 0;
+
+    res.json({ branch, ahead, behind, remoteCommits, hasLocalChanges });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/sync/pull', async (req, res) => {
+  try {
+    const log = [];
+    const run = async (args) => {
+      log.push('$ git ' + args.join(' '));
+      try {
+        const { stdout, stderr } = await gitCmd(args);
+        if (stdout) log.push(stdout.trim());
+        if (stderr) log.push(stderr.trim());
+      } catch (e) {
+        log.push('ERROR: ' + e.message);
+        throw e;
+      }
+    };
+
+    // Detect uncommitted changes; auto-stash + restore so the pull works cleanly
+    const dirty = (await gitCmd(['status', '--porcelain'])).stdout.trim().length > 0;
+    let stashed = false;
+    if (dirty) {
+      await run(['stash', 'push', '-u', '-m', 'admin-sync-auto-stash']);
+      stashed = true;
+    }
+
+    try {
+      await run(['pull', '--ff-only']);
+    } catch (e) {
+      if (stashed) {
+        // Try to restore the stash even if pull failed
+        try { await run(['stash', 'pop']); } catch {}
+      }
+      throw e;
+    }
+
+    if (stashed) {
+      try {
+        await run(['stash', 'pop']);
+      } catch (e) {
+        log.push('WARNING: stash pop failed — your changes are saved in git stash. Run `git stash pop` manually.');
+      }
+    }
+
+    res.json({ success: true, output: log.join('\n'), stashed });
+  } catch (err) {
+    res.status(500).json({
+      error: err.message,
+      output: (err.stdout || '') + (err.stderr || ''),
+    });
+  }
+});
+
 app.get('/api/deploy/status', async (req, res) => {
   try {
     // Get current branch and ahead/behind status

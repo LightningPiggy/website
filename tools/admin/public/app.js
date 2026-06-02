@@ -234,7 +234,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'wild') loadWildGallery();
     if (tab.dataset.tab === 'email') loadResendData();
     if (tab.dataset.tab === 'nip05') loadNip05Verified();
-    if (tab.dataset.tab === 'deploy') loadDeployStatus();
+    if (tab.dataset.tab === 'deploy') { loadDeployStatus(); loadSyncStatus(); }
   });
 });
 
@@ -2693,6 +2693,102 @@ document.querySelector('[data-tab="serial-monitor"]').addEventListener('click', 
   }
 });
 
+// --- Sync from GitHub Panel ---
+const syncStatusEl = document.getElementById('sync-status');
+const syncInfoEl = document.getElementById('sync-info');
+const syncRefreshBtn = document.getElementById('sync-refresh-btn');
+const syncPullBtn = document.getElementById('sync-pull-btn');
+const syncResultEl = document.getElementById('sync-result');
+const syncOutputEl = document.getElementById('sync-output');
+
+async function loadSyncStatus() {
+  if (!syncStatusEl) return;
+  syncStatusEl.innerHTML = '<em style="color:#6b7280;">Fetching remote…</em>';
+  if (syncInfoEl) syncInfoEl.textContent = '';
+  if (syncPullBtn) syncPullBtn.disabled = true;
+  try {
+    const res = await fetch('/api/sync/status');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed');
+    renderSyncStatus(data);
+  } catch (err) {
+    syncStatusEl.innerHTML = `<span style="color:#b91c1c;">Error: ${escapeHtml(err.message)}</span>`;
+  }
+}
+
+function renderSyncStatus(data) {
+  if (syncInfoEl) {
+    let info = `Branch: <strong>${escapeHtml(data.branch)}</strong>`;
+    if (data.ahead) info += ` · ${data.ahead} ahead`;
+    if (data.behind) info += ` · ${data.behind} behind`;
+    syncInfoEl.innerHTML = info;
+  }
+
+  if (data.behind === 0) {
+    syncStatusEl.innerHTML = '<em style="color:#16a34a;">✓ Local is up to date with GitHub.</em>';
+    if (syncPullBtn) syncPullBtn.disabled = true;
+    return;
+  }
+
+  let html = `<div style="font-weight:600; margin-bottom:8px;">${data.behind} new commit(s) on GitHub not yet local:</div>`;
+  html += '<div style="display:flex; flex-direction:column; gap:6px;">';
+  for (const c of data.remoteCommits) {
+    html += `
+      <div style="display:flex; gap:8px; align-items:start; padding:6px; background:white; border-radius:6px;">
+        <code style="font-size:11px; color:#0891b2; flex-shrink:0;">${escapeHtml(c.shortSha)}</code>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; color:#111827;">${escapeHtml(c.subject)}</div>
+          <div style="font-size:11px; color:#6b7280; margin-top:2px;">${escapeHtml(c.author)} · ${escapeHtml(c.when)}</div>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
+
+  if (data.hasLocalChanges) {
+    html += `<div style="margin-top:12px; padding:8px 12px; background:#fef3c7; border:1px solid #fde68a; border-radius:6px; font-size:12px; color:#92400e;">
+      ⚠️ You have local uncommitted changes. They'll be auto-stashed and restored around the pull.
+    </div>`;
+  }
+
+  syncStatusEl.innerHTML = html;
+  if (syncPullBtn) syncPullBtn.disabled = false;
+}
+
+if (syncRefreshBtn) syncRefreshBtn.addEventListener('click', loadSyncStatus);
+
+if (syncPullBtn) {
+  syncPullBtn.addEventListener('click', async () => {
+    syncPullBtn.disabled = true;
+    const orig = syncPullBtn.textContent;
+    syncPullBtn.textContent = '⏳ Pulling…';
+    syncResultEl.hidden = true;
+    syncOutputEl.style.display = 'none';
+
+    try {
+      const res = await fetch('/api/sync/pull', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+      syncResultEl.hidden = false;
+      syncResultEl.className = 'result success';
+      syncResultEl.innerHTML = '✓ Pulled latest changes from GitHub.' + (data.stashed ? ' Your local changes were auto-stashed and restored.' : '');
+      if (data.output) {
+        syncOutputEl.textContent = data.output;
+        syncOutputEl.style.display = 'block';
+      }
+      // Reload sync status and deploy status (since local commits may have changed)
+      setTimeout(() => { loadSyncStatus(); loadDeployStatus(); }, 500);
+    } catch (err) {
+      syncResultEl.hidden = false;
+      syncResultEl.className = 'result error';
+      syncResultEl.textContent = '✗ Pull failed: ' + err.message;
+    } finally {
+      syncPullBtn.disabled = false;
+      syncPullBtn.textContent = orig;
+    }
+  });
+}
+
 // --- Deploy Panel ---
 const deployStatusEl = document.getElementById('deploy-status');
 const deployBranchEl = document.getElementById('deploy-branch-info');
@@ -2805,11 +2901,12 @@ async function loadDeployStatus() {
     const renderRow = (item, defaultChecked) => {
       const label = statusCodeLabel(item.code);
       const colour = item.code.includes('D') ? '#dc2626' : item.code.includes('?') ? '#6b7280' : '#0891b2';
+      // Override the global label CSS (margin-bottom:1rem + label input { width:100%; margin-top:.25rem })
       return `
-        <label style="display:flex; align-items:center; gap:8px; padding:4px 0; font-family:ui-monospace,monospace; font-size:12px;">
-          <input type="checkbox" class="deploy-file" data-path="${escapeHtml(item.path)}" ${defaultChecked ? 'checked' : ''}>
-          <span style="display:inline-block; width:80px; color:${colour};">${label}</span>
-          <span>${escapeHtml(item.path)}</span>
+        <label style="display:flex; align-items:center; gap:8px; padding:2px 0; margin:0; font-family:ui-monospace,monospace; font-size:12px; font-weight:normal;">
+          <input type="checkbox" class="deploy-file" data-path="${escapeHtml(item.path)}" ${defaultChecked ? 'checked' : ''} style="width:auto; margin:0; padding:0; border:none; border-radius:0; flex-shrink:0;">
+          <span style="display:inline-block; width:70px; color:${colour}; flex-shrink:0;">${label}</span>
+          <span style="word-break:break-all;">${escapeHtml(item.path)}</span>
         </label>`;
     };
 

@@ -3,13 +3,13 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import QrToolsNav from '../../components/ui/QrToolsNav.astro';
 ---
 
-<BaseLayout title="NWC, Lightning Address, xpub, npub & LNbits URL QR Generator" description="Generate a scannable QR code for an NWC string, Lightning Address, extended public key (xpub/ypub/zpub), Nostr public key (npub), or LNbits node URL. Runs entirely in your browser.">
+<BaseLayout title="Multi-Purpose QR Generator" description="Generate a scannable QR code for a Bitcoin address, Lightning Address, NWC string, extended public key (xpub), Nostr public key (npub), LNbits URL, or LNbits Invoice/Read key. Runs entirely in your browser.">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="text-center mb-12">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Multi-Purpose QR Generator</h1>
         <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-          Generate a QR code from an NWC string, Lightning Address, extended public key (xpub), Nostr public key (npub), LNbits node URL, or LNbits Invoice/Read key. Useful for sharing wallet details, accepting payments, importing a watch-only wallet, or configuring your Lightning Piggy.
+          Generate a QR code from a Bitcoin address, Lightning Address, NWC string, extended public key (xpub), Nostr public key (npub), LNbits node URL, or LNbits Invoice/Read key. Useful for receiving Bitcoin, sharing wallet details, accepting Lightning payments, importing a watch-only wallet, or configuring your Lightning Piggy.
         </p>
         <div class="mt-6 inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium text-sm">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
@@ -20,6 +20,7 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
       <div class="mb-10 bg-gray-50 rounded-2xl border border-gray-200 p-6 md:p-8 text-left max-w-3xl mx-auto">
         <h2 class="text-xl font-bold text-gray-900 mb-3">What can I encode?</h2>
         <ul class="list-disc pl-5 text-gray-600 space-y-2 mb-2">
+          <li><strong>Bitcoin address</strong> — any format: legacy P2PKH (<code class="text-pink">1&hellip;</code>), P2SH (<code class="text-pink">3&hellip;</code>), SegWit bech32 (<code class="text-pink">bc1q&hellip;</code>), Taproot bech32m (<code class="text-pink">bc1p&hellip;</code>), or testnet/regtest variants. Plus <strong>BIP21 payment URIs</strong> like <code class="text-pink">bitcoin:bc1q…?amount=0.001</code> for pre-filled amounts.</li>
           <li><strong>NWC string</strong> — e.g. <code class="text-pink">nostr+walletconnect://&hellip;</code> Used to connect a wallet to apps and devices that support Nostr Wallet Connect.</li>
           <li><strong>Lightning Address</strong> — e.g. <code class="text-pink">satoshi@walletofsatoshi.com</code>. A reusable, human-friendly identifier that resolves to LNURL-pay.</li>
           <li><strong>Extended public key</strong> — <code class="text-pink">xpub&hellip;</code>, <code class="text-pink">ypub&hellip;</code>, <code class="text-pink">zpub&hellip;</code>, or testnet variants (<code class="text-pink">tpub</code>/<code class="text-pink">upub</code>/<code class="text-pink">vpub</code>). Useful for importing a watch-only wallet into another app.</li>
@@ -32,13 +33,13 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
       <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
         <form id="qr-form" class="space-y-6">
           <div>
-            <label for="qr-input" class="block text-sm font-semibold text-gray-900 mb-1.5">NWC, Lightning Address, xpub, npub, LNbits URL, or LNbits key</label>
+            <label for="qr-input" class="block text-sm font-semibold text-gray-900 mb-1.5">Bitcoin address, NWC, Lightning Address, xpub, npub, LNbits URL, or LNbits key</label>
             <textarea
               id="qr-input"
               name="qr-input"
               required
               rows="3"
-              placeholder="nostr+walletconnect://… · satoshi@walletofsatoshi.com · zpub6jftahH18ngZx… · npub1… · https://my.lnbits.com/ · fd92e3f8168ba314dc22e54182784045"
+              placeholder="bc1q… · 3J98t1…  · nostr+walletconnect://… · satoshi@walletofsatoshi.com · zpub6jftahH18ngZx… · npub1… · https://my.lnbits.com/ · fd92e3f8168ba314dc22e54182784045"
               autocapitalize="none"
               autocomplete="off"
               spellcheck="false"
@@ -160,6 +161,36 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
       // bech32 charset: qpzry9x8gf2tvdw0s3jn54khce6mua7l
       var NPUB_RE = /^npub1[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{58}$/;
 
+      // Bitcoin address detection.
+      // Bech32/Bech32m must be all-lowercase or all-uppercase per spec — we normalise to lowercase before testing.
+      var BTC_BECH32_RE = /^(bc1|tb1|bcrt1)([qp])[qpzry9x8gf2tvdw0s3jn54khce6mua7l]{6,87}$/;
+      var BTC_LEGACY_MAIN_RE = /^[13][1-9A-HJ-NP-Za-km-z]{25,34}$/;     // P2PKH (1…) or P2SH (3…)
+      var BTC_LEGACY_TESTNET_RE = /^[2mn][1-9A-HJ-NP-Za-km-z]{25,34}$/; // testnet P2PKH (m/n) or P2SH (2)
+
+      function detectBitcoin(v) {
+        if (/^bitcoin:/i.test(v)) {
+          return { kind: 'btc-uri', subtitle: 'Bitcoin Payment URI (BIP21)' };
+        }
+        var lower = v.toLowerCase();
+        var bechMatch = lower.match(BTC_BECH32_RE);
+        if (bechMatch && (v === lower || v === v.toUpperCase())) {
+          var hrp = bechMatch[1];
+          var ver = bechMatch[2];
+          var label;
+          if (hrp === 'bc1')        label = ver === 'p' ? 'Bitcoin Address (Taproot)' : 'Bitcoin Address (SegWit)';
+          else if (hrp === 'tb1')   label = ver === 'p' ? 'Bitcoin Address (testnet Taproot)' : 'Bitcoin Address (testnet SegWit)';
+          else                      label = ver === 'p' ? 'Bitcoin Address (regtest Taproot)' : 'Bitcoin Address (regtest SegWit)';
+          return { kind: 'btc', subtitle: label };
+        }
+        if (BTC_LEGACY_MAIN_RE.test(v)) {
+          return { kind: 'btc', subtitle: v[0] === '1' ? 'Bitcoin Address (legacy P2PKH)' : 'Bitcoin Address (P2SH/multisig)' };
+        }
+        if (BTC_LEGACY_TESTNET_RE.test(v)) {
+          return { kind: 'btc', subtitle: v[0] === '2' ? 'Bitcoin Address (testnet P2SH)' : 'Bitcoin Address (testnet P2PKH)' };
+        }
+        return null;
+      }
+
       function detectType(val) {
         var v = val.trim();
         if (!v) return { kind: 'empty' };
@@ -171,6 +202,8 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
         }
         var xpub = detectXpub(v);
         if (xpub) return xpub;
+        var btc = detectBitcoin(v);
+        if (btc) return btc;
         var url = detectUrl(v);
         if (url) return url;
         if (NPUB_RE.test(v)) {
@@ -189,7 +222,7 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
           inputStatus.textContent = '';
           input.classList.add('border-gray-200');
         } else if (info.kind === 'unknown') {
-          inputStatus.textContent = 'Not a recognised NWC, Lightning Address, xpub, npub, URL, or LNbits key — will still encode the text as a QR.';
+          inputStatus.textContent = 'Not a recognised Bitcoin address, NWC, Lightning Address, xpub, npub, URL, or LNbits key — will still encode the text as a QR.';
           inputStatus.className = 'block text-xs mt-1.5 h-4 text-amber-600';
           input.classList.add('border-gray-200');
         } else {
@@ -211,6 +244,8 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
           : info.kind === 'url' ? (info.host || data)
           : info.kind === 'lnbits-key' ? 'LNbits Key'
           : info.kind === 'npub' ? 'Nostr Profile'
+          : info.kind === 'btc' ? 'Bitcoin Address'
+          : info.kind === 'btc-uri' ? 'Bitcoin Payment'
           : 'QR Code';
         var name = (labelInput.value || '').trim() || defaultName;
         var subtitle = info.subtitle || 'QR Code';
@@ -315,6 +350,8 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
         if (sub === 'LNbits Invoice/Read Key') return 'lnbits-key-';
         if (sub === 'Server URL') return 'server-url-';
         if (sub && sub.indexOf('Extended Public Key') === 0) return 'xpub-';
+        if (sub === 'Bitcoin Payment URI (BIP21)') return 'bitcoin-uri-';
+        if (sub && sub.indexOf('Bitcoin Address') === 0) return 'bitcoin-';
         return 'qr-';
       }
     });

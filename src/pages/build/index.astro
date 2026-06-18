@@ -158,7 +158,11 @@ import Button from '../../components/ui/Button.astro';
       <!-- Tools section -->
       <div id="tools" class="mt-16 scroll-mt-20">
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Tools</h2>
-        <p class="text-gray-600 mb-6">Handy utilities for your Lightning Piggy build.</p>
+        <p class="text-gray-600 mb-4">Handy utilities for your Lightning Piggy build.</p>
+        <div class="mb-6 inline-flex items-center gap-2 px-5 py-2.5 bg-green-50 border border-green-200 rounded-xl text-green-700 font-medium text-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+          Everything runs in your browser — no data is sent to any server.
+        </div>
         <div class="grid gap-6">
           <a
             href="/build/wifi-qr"
@@ -178,23 +182,6 @@ import Button from '../../components/ui/Button.astro';
             </svg>
           </a>
           <a
-            href="/build/lnurl-qr"
-            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
-          >
-            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
-              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-            </div>
-            <div class="flex-1">
-              <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
-                LNbits ZapRewards! - QR Code Generator
-              </h3>
-              <p class="text-gray-600 mt-1">Generate scannable QR codes for your LNbits LNURL pay links.</p>
-            </div>
-            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </a>
-          <a
             href="/build/nwc-qr"
             class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
           >
@@ -206,6 +193,23 @@ import Button from '../../components/ui/Button.astro';
                 NWC & Lightning Address QR Generator
               </h3>
               <p class="text-gray-600 mt-1">Generate a QR code from a Nostr Wallet Connect string or a Lightning Address.</p>
+            </div>
+            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </a>
+          <a
+            href="/build/lnurl-qr"
+            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+          >
+            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                LNbits ZapRewards! - QR Code Generator
+              </h3>
+              <p class="text-gray-600 mt-1">Generate scannable QR codes for your LNbits LNURL pay links.</p>
             </div>
             <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />

@@ -39,6 +39,16 @@
       "xUrl": "https://twitter.com/ThomasFarstrike",
       "githubUrl": "https://github.com/ThomasFarstrike",
       "contribution": "Founder & Dev"
+    },
+    {
+      "name": "Ben Weeks",
+      "url": "https://njump.me/npub1jutptdc2m8kgjmudtws095qk2tcale0eemvp4j2xnjnl4nh6669slrf04x",
+      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2Fp%2Fnostr.build_9841ac0b1902a46e9ecae4cd72f9caa2c20216b43838d1fb7c8dcb113ac98258.gif",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1jutptdc2m8kgjmudtws095qk2tcale0eemvp4j2xnjnl4nh6669slrf04x",
+      "xUrl": "",
+      "githubUrl": "https://github.com/BenGWeeks",
+      "contribution": "Creator of the Lightning Piggy mobile phone app and cute piggy case."
     }
   ],
   "contributors": [
@@ -51,16 +61,6 @@
       "xUrl": "",
       "githubUrl": "",
       "contribution": "Creator of the stunning Lightning Piggy logo."
-    },
-    {
-      "name": "Ben Weeks",
-      "url": "https://njump.me/npub1jutptdc2m8kgjmudtws095qk2tcale0eemvp4j2xnjnl4nh6669slrf04x",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fnostr.build%2Fi%2Fp%2Fnostr.build_9841ac0b1902a46e9ecae4cd72f9caa2c20216b43838d1fb7c8dcb113ac98258.gif",
-      "isBitcoinKid": false,
-      "nostrUrl": "https://njump.me/npub1jutptdc2m8kgjmudtws095qk2tcale0eemvp4j2xnjnl4nh6669slrf04x",
-      "xUrl": "",
-      "githubUrl": "https://github.com/BenGWeeks",
-      "contribution": "Creator of the cute piggy case and mobile phone app."
     },
     {
       "name": "Isaac Weeks",

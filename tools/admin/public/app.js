@@ -582,10 +582,13 @@ function renderCredits(credits) {
     return;
   }
 
-  // Group credits by section (Special Thanks merged into Contributors)
-  const coreTeam = credits.filter(c => c.websiteSection === 'Core Team');
-  const contributors = credits.filter(c => c.websiteSection === 'Contributor' || c.websiteSection === 'Special Thanks');
-  const other = credits.filter(c => !c.websiteSection || !['Core Team', 'Contributor', 'Special Thanks'].includes(c.websiteSection));
+  // Group credits by section (Special Thanks merged into Contributors).
+  // Bitcoin Kids are pulled into their own group and excluded from the others,
+  // mirroring the public credits page.
+  const bitcoinKids = credits.filter(c => c.isBitcoinKid);
+  const coreTeam = credits.filter(c => !c.isBitcoinKid && c.websiteSection === 'Core Team');
+  const contributors = credits.filter(c => !c.isBitcoinKid && (c.websiteSection === 'Contributor' || c.websiteSection === 'Special Thanks'));
+  const other = credits.filter(c => !c.isBitcoinKid && (!c.websiteSection || !['Core Team', 'Contributor', 'Special Thanks'].includes(c.websiteSection)));
 
   let html = '';
 
@@ -594,6 +597,15 @@ function renderCredits(credits) {
       <div class="credits-section">
         <h3 class="credits-section-title">Core Team <span class="credits-section-count">(${coreTeam.length})</span></h3>
         <div class="credits-section-list">${coreTeam.map((c, i, arr) => renderCreditCard(c, i, arr)).join('')}</div>
+      </div>
+    `;
+  }
+
+  if (bitcoinKids.length > 0) {
+    html += `
+      <div class="credits-section">
+        <h3 class="credits-section-title">⭐ Bitcoin Kids <span class="credits-section-count">(${bitcoinKids.length})</span></h3>
+        <div class="credits-section-list">${bitcoinKids.map((c, i, arr) => renderCreditCard(c, i, arr)).join('')}</div>
       </div>
     `;
   }

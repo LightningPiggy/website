@@ -1,0 +1,355 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// The "oink" wallet on the live LNbits server. The Invoice/Read key is
+// read-only (it can see incoming payments but cannot spend), so it is safe to
+// expose client-side — the original ZapNotify tool did the same.
+const LNBITS_HOST = 'lnbits.lightningpiggy.com';
+const OINK_READ_KEY = 'ed6438475ede36f8111a942fd415f7a1';
+const LIGHTNING_ADDRESS = 'oink@lightningpiggy.com';
+// bech32 LNURL for the oink pay link (encodes
+// https://lightningpiggy.com/.well-known/lnurlp/oink). The LNURL form is the
+// most universally scannable "pay" format across Lightning wallets.
+const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66MWDAMKUTMVDE6HYMRS9AHKJMNTHY5ZGV';
+---
+
+<BaseLayout
+  title="Give us an Oink!"
+  description="Send a zap to Lightning Piggy and hear it oink in real time. A fun donation notifier powered by the Lightning Network."
+>
+  <!-- Full-screen celebration overlay -->
+  <div id="oink-overlay" class="fixed inset-0 z-[9999] hidden items-center justify-center bg-gradient-to-br from-pink/95 to-yellow/90 p-6 text-center">
+    <div id="oink-pop" class="oink-pop">
+      <video
+        id="oink-video"
+        src="/videos/oink-party.mp4"
+        muted
+        loop
+        playsinline
+        preload="auto"
+        class="w-56 h-56 md:w-72 md:h-72 mx-auto mb-4 rounded-2xl shadow-xl select-none"
+      ></video>
+      <div id="oink-overlay-message" class="text-3xl md:text-5xl font-extrabold text-white leading-tight max-w-3xl mx-auto drop-shadow-lg"></div>
+    </div>
+  </div>
+  <!-- Confetti canvas (sits above the overlay) -->
+  <canvas id="oink-confetti" class="fixed inset-0 z-[10000] hidden pointer-events-none"></canvas>
+
+  <style>
+    @keyframes oinkPop {
+      0%   { transform: scale(0.3); opacity: 0; }
+      55%  { transform: scale(1.12); opacity: 1; }
+      75%  { transform: scale(0.95); }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .oink-pop { animation: oinkPop 0.55s cubic-bezier(0.18, 0.89, 0.32, 1.28) both; }
+    @media (prefers-reduced-motion: reduce) {
+      .oink-pop { animation: none; }
+    }
+  </style>
+
+  <section class="py-12 md:py-20">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <img src="/images/branding/lightningpiggy-logo.svg" alt="Lightning Piggy" class="w-56 max-w-full mx-auto mb-8" />
+
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Give us an Oink! 🐽</h1>
+      <p class="text-lg text-gray-600 mb-8">
+        Send a zap to Lightning Piggy and hear him Oink! in real time. Turn your volume up, enable notifications, then scan to send some sats.
+      </p>
+
+      <!-- Donation details -->
+      <div class="mt-2 bg-white border border-gray-200 rounded-2xl p-6 md:p-8">
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Send some sats to hear the oinks!</h2>
+        <p class="text-gray-500 text-sm mb-6">Scan with any Lightning wallet, or tap the address to open it.</p>
+
+        <!-- This banner IS the enable/disable toggle -->
+        <button
+          id="oink-toggle"
+          class="oink-toggle mb-2 w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold text-sm transition-colors bg-yellow-light/60 border border-yellow text-yellow-900 hover:bg-yellow-light"
+        >
+          <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+          <span id="oink-toggle-text">Enable audio &amp; visual notifications first, before zapping!</span>
+        </button>
+        <p id="oink-status" class="text-xs text-gray-500 mb-6 h-4"></p>
+
+        <div id="oink-qr" class="block mx-auto w-fit p-3 bg-white border border-gray-200 rounded-xl"></div>
+
+        <div class="mt-5">
+          <a href={`lightning:${OINK_LNURL}`} class="text-lg font-mono font-semibold text-pink hover:underline break-all">
+            {LIGHTNING_ADDRESS}
+          </a>
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-400 mt-6">
+        Tip: you can install this page as an app — in Chrome, open the menu and choose “Install”.
+      </p>
+    </div>
+  </section>
+
+  <audio id="oink-sound" src="/sounds/oink.mp3" preload="auto"></audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" is:inline></script>
+  <script
+    is:inline
+    define:vars={{ LNBITS_HOST, OINK_READ_KEY, LIGHTNING_ADDRESS, OINK_LNURL }}
+  >
+    document.addEventListener('DOMContentLoaded', function () {
+      var WS_URL = 'wss://' + LNBITS_HOST + '/api/v1/ws/' + OINK_READ_KEY;
+
+      var toggleBtn = document.getElementById('oink-toggle');
+      var toggleText = document.getElementById('oink-toggle-text');
+      var statusEl = document.getElementById('oink-status');
+      var overlay = document.getElementById('oink-overlay');
+      var overlayPop = document.getElementById('oink-pop');
+      var overlayMsg = document.getElementById('oink-overlay-message');
+      var overlayVideo = document.getElementById('oink-video');
+      var sound = document.getElementById('oink-sound');
+      var qrHolder = document.getElementById('oink-qr');
+
+      var TOGGLE_OFF_CLASSES = ['bg-yellow-light/60', 'border-yellow', 'text-yellow-900', 'hover:bg-yellow-light'];
+      var TOGGLE_ON_CLASSES = ['bg-pink', 'border-pink', 'text-white', 'hover:bg-pink/90'];
+
+      function setToggleState(on) {
+        if (on) {
+          toggleBtn.classList.remove.apply(toggleBtn.classList, TOGGLE_OFF_CLASSES);
+          toggleBtn.classList.add.apply(toggleBtn.classList, TOGGLE_ON_CLASSES);
+          toggleText.textContent = 'Turn your volume up and Zap away!';
+        } else {
+          toggleBtn.classList.remove.apply(toggleBtn.classList, TOGGLE_ON_CLASSES);
+          toggleBtn.classList.add.apply(toggleBtn.classList, TOGGLE_OFF_CLASSES);
+          toggleText.textContent = 'Enable audio & visual notifications first, before zapping!';
+        }
+      }
+
+      // --- Confetti engine (self-contained canvas, no dependencies) ---
+      var confettiCanvas = document.getElementById('oink-confetti');
+      var cctx = confettiCanvas.getContext('2d');
+      var confettiParticles = [];
+      var confettiRAF = null;
+      var CONFETTI_COLORS = ['#EC008C', '#FBDC05', '#ffffff', '#FF7AC6', '#FFE45C', '#FF4081'];
+      var prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function resizeConfetti() {
+        confettiCanvas.width = window.innerWidth;
+        confettiCanvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeConfetti);
+
+      function launchConfetti(burst) {
+        if (prefersReducedMotion) return;
+        resizeConfetti();
+        confettiCanvas.classList.remove('hidden');
+        var count = burst || 160;
+        var w = confettiCanvas.width;
+        for (var i = 0; i < count; i++) {
+          confettiParticles.push({
+            x: Math.random() * w,
+            y: -20 - Math.random() * (confettiCanvas.height * 0.3),
+            w: 6 + Math.random() * 8,
+            h: 8 + Math.random() * 12,
+            color: CONFETTI_COLORS[(Math.random() * CONFETTI_COLORS.length) | 0],
+            vx: -2.5 + Math.random() * 5,
+            vy: 2 + Math.random() * 4,
+            rot: Math.random() * Math.PI * 2,
+            vr: -0.25 + Math.random() * 0.5,
+          });
+        }
+        if (!confettiRAF) confettiRAF = requestAnimationFrame(stepConfetti);
+      }
+
+      function stepConfetti() {
+        cctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+        for (var i = confettiParticles.length - 1; i >= 0; i--) {
+          var p = confettiParticles[i];
+          p.vy += 0.08; // gravity
+          p.vx *= 0.99; // air drag
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.vr;
+          if (p.y > confettiCanvas.height + 40) { confettiParticles.splice(i, 1); continue; }
+          cctx.save();
+          cctx.translate(p.x, p.y);
+          cctx.rotate(p.rot);
+          cctx.fillStyle = p.color;
+          cctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          cctx.restore();
+        }
+        if (confettiParticles.length > 0) {
+          confettiRAF = requestAnimationFrame(stepConfetti);
+        } else {
+          confettiRAF = null;
+          confettiCanvas.classList.add('hidden');
+        }
+      }
+
+      // Restart the pop animation on the overlay each time it shows
+      function replayPop() {
+        if (prefersReducedMotion) return;
+        overlayPop.style.animation = 'none';
+        // force reflow so the animation can restart
+        void overlayPop.offsetWidth;
+        overlayPop.style.animation = '';
+      }
+
+      // Render the donation QR from the lightning address
+      try {
+        new QRCode(qrHolder, {
+          text: 'lightning:' + OINK_LNURL,
+          width: 200,
+          height: 200,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+      } catch (e) {
+        console.error('QR render failed', e);
+      }
+
+      var active = false;       // user has enabled notifications
+      var socket = null;
+      var reconnectDelay = 1000; // backoff, capped
+      var reconnectTimer = null;
+      var overlayQueue = [];
+      var overlayShowing = false;
+
+      function setStatus(text) { statusEl.textContent = text || ''; }
+
+      function escapeHtml(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+      }
+
+      // LNbits sends comment as a string or an array of strings
+      function normaliseComment(c) {
+        if (Array.isArray(c)) return c.join(' ');
+        return c == null ? '' : String(c);
+      }
+
+      function formatSats(n) {
+        try { return Number(n).toLocaleString(); } catch (e) { return String(n); }
+      }
+
+      function connect() {
+        socket = new WebSocket(WS_URL);
+
+        socket.onopen = function () {
+          reconnectDelay = 1000;
+          setStatus('Connected — notifications are live. 🔊');
+        };
+
+        socket.onmessage = function (event) {
+          var data;
+          try { data = JSON.parse(event.data); } catch (e) {
+            console.error('Bad JSON from LNbits', e);
+            return;
+          }
+          if (!data || typeof data !== 'object' || !data.payment) return;
+          var payment = data.payment;
+          if (typeof payment.amount !== 'number') return;
+
+          var sats = Math.round(payment.amount / 1000);
+          var comment = '';
+          if (payment.extra) comment = normaliseComment(payment.extra.comment);
+          enqueueOverlay(sats, comment);
+        };
+
+        socket.onclose = function () {
+          if (active) {
+            // Unexpected drop while active — auto-reconnect with backoff (stay pink)
+            setStatus('Reconnecting…');
+            reconnectTimer = setTimeout(connect, reconnectDelay);
+            reconnectDelay = Math.min(reconnectDelay * 2, 30000);
+          } else {
+            setStatus('Notifications off.');
+          }
+        };
+
+        socket.onerror = function () {
+          console.error('WebSocket error');
+        };
+      }
+
+      function enqueueOverlay(sats, comment) {
+        overlayQueue.push({ sats: sats, comment: comment });
+        if (!overlayShowing) showNextOverlay();
+      }
+
+      function showNextOverlay() {
+        if (overlayQueue.length === 0) { overlayShowing = false; return; }
+        overlayShowing = true;
+        var item = overlayQueue.shift();
+
+        var html = 'Oink! Wow, ' + escapeHtml(formatSats(item.sats)) + ' sats — thank you so much!';
+        if (item.comment) {
+          html += '<br/><br/><span class="text-xl md:text-2xl font-semibold">“' + escapeHtml(item.comment) + '”</span>';
+        }
+        overlayMsg.innerHTML = html;
+        overlay.classList.remove('hidden');
+        overlay.classList.add('flex');
+        replayPop();
+
+        // Restart the party video from the beginning
+        if (overlayVideo) {
+          try {
+            overlayVideo.currentTime = 0;
+            var vp = overlayVideo.play();
+            if (vp && vp.catch) vp.catch(function () {});
+          } catch (e) {}
+        }
+
+        // 🎉 Confetti! Bigger zaps get more confetti.
+        var burst = Math.min(400, 140 + Math.round(item.sats / 50));
+        launchConfetti(burst);
+
+        // Play the oink (best-effort; only works after the user gesture)
+        try {
+          sound.currentTime = 0;
+          var sp = sound.play();
+          if (sp && sp.catch) sp.catch(function () {});
+        } catch (e) {}
+
+        setTimeout(function () {
+          overlay.classList.add('hidden');
+          overlay.classList.remove('flex');
+          if (overlayVideo) { try { overlayVideo.pause(); } catch (e) {} }
+          // brief gap before the next queued overlay
+          setTimeout(showNextOverlay, 400);
+        }, 8000);
+      }
+
+      function enable() {
+        active = true;
+        // Banner turns pink and invites zapping
+        setToggleState(true);
+        // Unlock audio within the user gesture
+        try {
+          sound.play().then(function () { sound.pause(); sound.currentTime = 0; }).catch(function () {});
+        } catch (e) {}
+        setStatus('Connecting…');
+        connect();
+      }
+
+      function disable() {
+        active = false;
+        // Back to the yellow "enable first" prompt
+        setToggleState(false);
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        if (socket) { try { socket.close(); } catch (e) {} }
+        setStatus('Notifications off.');
+      }
+
+      toggleBtn.addEventListener('click', function () {
+        if (active) disable(); else enable();
+      });
+
+      // Tap the overlay to dismiss early
+      overlay.addEventListener('click', function () {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+        if (overlayVideo) { try { overlayVideo.pause(); } catch (e) {} }
+      });
+    });
+  </script>
+</BaseLayout>

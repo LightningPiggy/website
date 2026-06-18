@@ -31,7 +31,7 @@ If you already have the single board computer, follow these steps:
 
 2. Flash the firmware using the [MicroPythonOS web installer](https://install.micropythonos.com/). You'll need a Wi-Fi enabled computer with Chrome, Brave, Opera, or Edge browser.
 
-3. Connect to Wi-Fi, install the Lightning Piggy app from the MicroPytonOS AppStore, then configure your NWC credentials in Settings.
+3. Connect to Wi-Fi, install the Lightning Piggy app from the MicroPytonOS AppStore, then configure your NWC credentials in Settings. You can turn your credentials into scannable QR codes with our [QR code generation tools](/build#tools).
 
 > 💡 *Tip:* To improve QR code detection when scanning, zoom in on the code in your browser to make it as large and clear as possible.
 

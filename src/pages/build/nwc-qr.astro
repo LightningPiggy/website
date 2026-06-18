@@ -18,16 +18,95 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
       </header>
 
       <div class="mb-10 bg-gray-50 rounded-2xl border border-gray-200 p-6 md:p-8 text-left max-w-3xl mx-auto">
-        <h2 class="text-xl font-bold text-gray-900 mb-3">What can I encode?</h2>
-        <ul class="list-disc pl-5 text-gray-600 space-y-2 mb-2">
-          <li><strong>Bitcoin address</strong> — any format: legacy P2PKH (<code class="text-pink">1&hellip;</code>), P2SH (<code class="text-pink">3&hellip;</code>), SegWit bech32 (<code class="text-pink">bc1q&hellip;</code>), Taproot bech32m (<code class="text-pink">bc1p&hellip;</code>), or testnet/regtest variants. Plus <strong>BIP21 payment URIs</strong> like <code class="text-pink">bitcoin:bc1q…?amount=0.001</code> for pre-filled amounts.</li>
-          <li><strong>NWC string</strong> — e.g. <code class="text-pink">nostr+walletconnect://&hellip;</code> Used to connect a wallet to apps and devices that support Nostr Wallet Connect.</li>
-          <li><strong>Lightning Address</strong> — e.g. <code class="text-pink">satoshi@walletofsatoshi.com</code>. A reusable, human-friendly identifier that resolves to LNURL-pay.</li>
-          <li><strong>Extended public key</strong> — <code class="text-pink">xpub&hellip;</code>, <code class="text-pink">ypub&hellip;</code>, <code class="text-pink">zpub&hellip;</code>, or testnet variants (<code class="text-pink">tpub</code>/<code class="text-pink">upub</code>/<code class="text-pink">vpub</code>). Useful for importing a watch-only wallet into another app.</li>
-          <li><strong>LNbits node URL</strong> — e.g. <code class="text-pink">https://my.lnbits.com/</code>. Scan during Lightning Piggy setup to enter your LNbits server URL without typing.</li>
-          <li><strong>LNbits Invoice/Read key</strong> — a 32-character hex string, e.g. <code class="text-pink">fd92e3f8168ba314dc22e54182784045</code>. Used together with the LNbits URL during Lightning Piggy setup.</li>
-          <li><strong>Nostr public key (npub)</strong> — e.g. <code class="text-pink">npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq</code>. Share your or someone else's Nostr identity (this one is Lightning Piggy's).</li>
-        </ul>
+        <h2 class="text-xl font-bold text-gray-900 mb-1">What can I encode?</h2>
+        <p class="text-gray-500 text-sm mb-4">Tap <strong>Play with this</strong> on any row to load the example into the generator and create its QR code.</p>
+        <div class="divide-y divide-gray-200">
+
+          <div class="encode-option py-3" data-kind="btc">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 text-gray-600 text-sm">
+                <strong class="text-gray-900">Bitcoin address</strong> — e.g. <code class="text-pink break-all">1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa</code> (the Genesis address)
+              </div>
+              <button type="button" class="encode-use flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-pink border border-pink/30 rounded-lg px-3 py-1.5 hover:bg-pink/5 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                Play with this
+              </button>
+            </div>
+          </div>
+
+          <div class="encode-option py-3" data-kind="nwc">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 text-gray-600 text-sm">
+                <strong class="text-gray-900">NWC string</strong> — e.g. <code class="text-pink">nostr+walletconnect://&hellip;</code> Connects a wallet to apps and devices that support Nostr Wallet Connect.
+              </div>
+              <button type="button" class="encode-use flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-pink border border-pink/30 rounded-lg px-3 py-1.5 hover:bg-pink/5 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                Play with this
+              </button>
+            </div>
+          </div>
+
+          <div class="encode-option py-3" data-kind="lnaddr">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 text-gray-600 text-sm">
+                <strong class="text-gray-900">Lightning Address</strong> — e.g. <code class="text-pink break-all">oink@lightningpiggy.com</code>. A reusable, human-friendly identifier that resolves to LNURL-pay.
+              </div>
+              <button type="button" class="encode-use flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-pink border border-pink/30 rounded-lg px-3 py-1.5 hover:bg-pink/5 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                Play with this
+              </button>
+            </div>
+          </div>
+
+          <div class="encode-option py-3" data-kind="xpub">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 text-gray-600 text-sm">
+                <strong class="text-gray-900">Extended public key</strong> — <code class="text-pink">xpub&hellip;</code>, <code class="text-pink">ypub&hellip;</code>, <code class="text-pink">zpub&hellip;</code>, or testnet variants (<code class="text-pink">tpub</code>/<code class="text-pink">upub</code>/<code class="text-pink">vpub</code>). Useful for importing a watch-only wallet into another app.
+              </div>
+              <button type="button" class="encode-use flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-pink border border-pink/30 rounded-lg px-3 py-1.5 hover:bg-pink/5 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                Play with this
+              </button>
+            </div>
+          </div>
+
+          <div class="encode-option py-3" data-kind="lnbits-url">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 text-gray-600 text-sm">
+                <strong class="text-gray-900">LNbits node URL</strong> — e.g. <code class="text-pink break-all">https://my.lnbits.com/</code>. Scan during Lightning Piggy setup to enter your LNbits server URL without typing.
+              </div>
+              <button type="button" class="encode-use flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-pink border border-pink/30 rounded-lg px-3 py-1.5 hover:bg-pink/5 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                Play with this
+              </button>
+            </div>
+          </div>
+
+          <div class="encode-option py-3" data-kind="lnbits-key">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 text-gray-600 text-sm">
+                <strong class="text-gray-900">LNbits Invoice/Read key</strong> — a 32-character hex string, e.g. <code class="text-pink break-all">fd92e3f8168ba314dc22e54182784045</code>. Used with the LNbits URL during setup.
+              </div>
+              <button type="button" class="encode-use flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-pink border border-pink/30 rounded-lg px-3 py-1.5 hover:bg-pink/5 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                Play with this
+              </button>
+            </div>
+          </div>
+
+          <div class="encode-option py-3" data-kind="npub">
+            <div class="flex items-start gap-4">
+              <div class="flex-1 text-gray-600 text-sm">
+                <strong class="text-gray-900">Nostr public key (npub)</strong> — e.g. <code class="text-pink break-all">npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq</code> (this one is Lightning Piggy's).
+              </div>
+              <button type="button" class="encode-use flex-shrink-0 inline-flex items-center gap-1.5 text-xs font-medium text-pink border border-pink/30 rounded-lg px-3 py-1.5 hover:bg-pink/5 transition-colors whitespace-nowrap">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" /></svg>
+                Play with this
+              </button>
+            </div>
+          </div>
+
+        </div>
       </div>
 
       <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
@@ -39,7 +118,7 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
               name="qr-input"
               required
               rows="3"
-              placeholder="bc1q… · 3J98t1…  · nostr+walletconnect://… · satoshi@walletofsatoshi.com · zpub6jftahH18ngZx… · npub1… · https://my.lnbits.com/ · fd92e3f8168ba314dc22e54182784045"
+              placeholder="Anything you like"
               autocapitalize="none"
               autocomplete="off"
               spellcheck="false"
@@ -354,6 +433,30 @@ import QrToolsNav from '../../components/ui/QrToolsNav.astro';
         if (sub && sub.indexOf('Bitcoin Address') === 0) return 'bitcoin-';
         return 'qr-';
       }
+
+      // --- "What can I encode?" example loaders ---
+      var ENCODE_EXAMPLES = {
+        'btc': '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
+        'nwc': 'nostr+walletconnect://f3a192b445cd7e8f2d4a60c578eb932a57b83d9265fa790042bd865937c2e5d9?relay=wss%3A%2F%2Frelay.example.com&secret=11d4fc982746ab5389f75efc3ddaa94761e35fb209ec8d7a4b3d248ac4e6f710&lud16=RandomWallet@domain.com',
+        'lnaddr': 'oink@lightningpiggy.com',
+        'xpub': 'zpub6jftahH18ngZxLmXaKw3GSZzZsszmt9WqedkyZdezFtWRFBZqsQH5hyUmb4pCEeZGmVfQuP5bedXTB8is6fTv19U1GQRyQUKQGUTzyHACMF',
+        'lnbits-url': 'https://my.lnbits.com/',
+        'lnbits-key': 'fd92e3f8168ba314dc22e54182784045',
+        'npub': 'npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq',
+      };
+
+      document.querySelectorAll('.encode-option').forEach(function (opt) {
+        var kind = opt.getAttribute('data-kind');
+        var example = ENCODE_EXAMPLES[kind];
+        var useBtn = opt.querySelector('.encode-use');
+        if (!example || !useBtn) return;
+
+        useBtn.addEventListener('click', function () {
+          input.value = example;
+          input.dispatchEvent(new Event('input'));
+          form.dispatchEvent(new Event('submit'));
+        });
+      });
     });
   </script>
 </BaseLayout>

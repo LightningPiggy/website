@@ -127,5 +127,51 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
       <slot />
     </main>
     <Footer />
+
+    <!--
+      Give every section heading a stable anchor id so deep links like
+      /page/#some-heading work site-wide (covers both .astro pages and
+      Markdown-rendered content). Skips headings that already have an id and
+      dedupes against ids already on the page. Because the ids are assigned at
+      runtime, we re-run the hash scroll once they exist.
+    -->
+    <script>
+      function slugifyHeading(text) {
+        return text.toLowerCase().trim()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/[\s_]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      }
+
+      function addHeadingAnchors() {
+        const main = document.getElementById('main-content');
+        if (!main) return;
+        const used = new Set();
+        document.querySelectorAll('[id]').forEach((el) => used.add(el.id));
+        main.querySelectorAll('h2, h3, h4').forEach((h) => {
+          if (h.id) { used.add(h.id); return; }
+          const base = slugifyHeading(h.textContent || '');
+          if (!base) return;
+          let id = base;
+          let n = 2;
+          while (used.has(id)) id = base + '-' + n++;
+          used.add(id);
+          h.id = id;
+        });
+      }
+
+      // Ids are assigned at runtime, after the browser's own initial hash-scroll
+      // attempt. Re-run the scroll now and again on full load, once images have
+      // settled the layout (a scroll fired mid-load can otherwise land short).
+      function scrollToHash() {
+        if (location.hash.length <= 1) return;
+        const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if (target) target.scrollIntoView();
+      }
+
+      addHeadingAnchors();
+      scrollToHash();
+      window.addEventListener('load', scrollToHash);
+    </script>
   </body>
 </html>

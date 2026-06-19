@@ -57,6 +57,10 @@ const sections = [
     ],
   },
 ];
+
+// Slug from a section title so each section has a stable anchor id,
+// e.g. "Colouring" -> "colouring" for /community/bitcoinkids/#colouring
+const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 ---
 
 <BaseLayout title="Bitcoin Kids" description="Educational projects for children of all ages focused on Bitcoin, economics, and freedom technology.">
@@ -76,7 +80,7 @@ const sections = [
       </header>
 
       {sections.map((section, i) => (
-        <div class={i < sections.length - 1 ? 'mb-14' : ''}>
+        <div id={slug(section.title)} class={`scroll-mt-24 ${i < sections.length - 1 ? 'mb-14' : ''}`}>
           <div class="mb-6">
             <h2 class="text-2xl font-bold text-gray-900">{section.title}</h2>
             <p class="text-gray-500 mt-1">{section.subtitle}</p>

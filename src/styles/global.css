@@ -95,3 +95,9 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 1.5rem;
   margin-bottom: 0.75rem;
 }
+
+/* Offset anchored section headings so they land below the sticky header
+   instead of being hidden underneath it when arriving via /page/#heading. */
+#main-content :is(h1, h2, h3, h4) {
+  scroll-margin-top: 5.5rem;
+}

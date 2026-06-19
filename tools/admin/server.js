@@ -14,6 +14,32 @@ import { promisify } from 'util';
 const execFileAsync = promisify(execFile);
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load secrets from a local-only tools/admin/.env file (gitignored). Lets the
+// admin server pick up values like LP_ADMIN_SYNC_TOKEN without exporting them in
+// the shell or the launcher. Minimal KEY=VALUE parser - no extra dependency.
+// Existing process.env values win (so a shell export still overrides the file).
+(function loadDotEnv() {
+  try {
+    const envPath = path.join(__dirname, '.env');
+    if (!fs.existsSync(envPath)) return;
+    for (const raw of fs.readFileSync(envPath, 'utf8').split('\n')) {
+      const line = raw.trim();
+      if (!line || line.startsWith('#')) continue;
+      const eq = line.indexOf('=');
+      if (eq === -1) continue;
+      const key = line.slice(0, eq).trim();
+      let val = line.slice(eq + 1).trim();
+      if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+        val = val.slice(1, -1);
+      }
+      if (key && process.env[key] === undefined) process.env[key] = val;
+    }
+  } catch (e) {
+    console.warn('[admin] Could not read .env:', e.message);
+  }
+})();
+
 const ROOT = path.resolve(__dirname, '..', '..');
 const WILD_DIR = path.join(ROOT, 'public', 'images', 'wild');
 const SHOWCASE_DIR = path.join(ROOT, 'public', 'images', 'showcase');
@@ -2072,7 +2098,7 @@ const PORT = 3000;
 const wss = new WebSocketServer({ noServer: true });
 
 const server = app.listen(PORT, () => {
-  console.log(`\n  🐷 LightningPiggy Admin`);
+  console.log(`\n  🐽 LightningPiggy Admin`);
   console.log(`  ➜  http://localhost:${PORT}\n`);
   console.log(`  Project root: ${ROOT}`);
   console.log(`  Wild photos:  ${WILD_DIR}`);

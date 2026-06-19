@@ -53,6 +53,20 @@
       "nostrUrl": "https://njump.me/npub1eclyv67suswsx5q0guyds43uzaj0ymkgvkr5chmuwsxsj9229zms8tankk",
       "xUrl": "https://x.com/satoshistoreio",
       "featured": false
+    },
+    {
+      "name": "Test 2",
+      "country": "El Salvador",
+      "shippingRegions": [
+        "Worldwide"
+      ],
+      "shopType": "online",
+      "description": "because it's fab!",
+      "url": "https://lightningpiggy.com",
+      "logo": "https://unavatar.io/twitter/LightningPiggy",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/LightningPiggy",
+      "featured": false
     }
   ]
 }

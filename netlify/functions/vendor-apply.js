@@ -117,7 +117,7 @@ function ownerEmailHtml(v) {
     '</td><td style="padding:6px 12px;color:#111;">' + escapeHtml(r[1]) + '</td></tr>'
   ).join('');
   return '<div style="font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111;">' +
-    '<h2 style="margin:0 0 4px;">New vendor application 🐷</h2>' +
+    '<h2 style="margin:0 0 4px;">New Lightning Piggy market vendor application</h2>' +
     '<p style="color:#666;margin:0 0 16px;">Submission ID: ' + escapeHtml(v.id) + ' · ' + escapeHtml(v.submittedAt) + '</p>' +
     '<table style="border-collapse:collapse;border:1px solid #eee;">' + rows + '</table>' +
     '<p style="color:#666;margin-top:16px;">Open the admin tool → Vendors → Pending Applications to review and import.</p>' +
@@ -127,7 +127,7 @@ function ownerEmailHtml(v) {
 function applicantEmailHtml(v) {
   return '<div style="font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111;">' +
     '<p>Hi' + (v.name ? ' from ' + escapeHtml(v.name) : '') + ',</p>' +
-    '<p>Thanks for applying to stock Lightning Piggy in our market! 🐷⚡</p>' +
+    '<p>Thanks for applying to stock Lightning Piggy in our market! 🐽⚡</p>' +
     '<p>We\'ve received your application and the team will review it shortly. ' +
     'If it\'s a good fit, we\'ll be in touch at this email address.</p>' +
     '<p>— Team Lightning Piggy</p>' +

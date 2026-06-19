@@ -55,18 +55,18 @@
       "featured": false
     },
     {
-      "name": "Test 2",
-      "country": "El Salvador",
+      "name": "BitcoinStuffStore",
+      "country": "Netherlands",
       "shippingRegions": [
-        "Worldwide"
+        "Europe"
       ],
-      "shopType": "online",
-      "description": "because it's fab!",
-      "url": "https://lightningpiggy.com",
-      "logo": "https://unavatar.io/twitter/LightningPiggy",
-      "nostrUrl": "",
-      "xUrl": "https://x.com/LightningPiggy",
-      "featured": false
+      "shopType": "both",
+      "description": "Bitcoin merchandise, miners, and gadgets\nfor the true Bitcoiner",
+      "url": "https://www.bitcoinstuffstore.com/product/lightning-piggy/",
+      "logo": "https://unavatar.io/twitter/ZijlstraMario",
+      "nostrUrl": "https://njump.me/npub135q6dvnjah9023xszmjs2wvd4gqhn2trku52wt2lv8cl4hc8ltjsk0w4sq",
+      "xUrl": "https://twitter.com/ZijlstraMario",
+      "featured": true
     }
   ]
 }

@@ -111,7 +111,8 @@ function ownerEmailHtml(v) {
     ['Website', v.websiteUrl],
     ['Nostr npub', v.nostrNpub || '—'],
     ['X profile', v.xProfileUrl || '—'],
-    ['Description', v.description],
+    ['Store description', v.storeDescription || '—'],
+    ['Why applying', v.description],
   ].map((r) =>
     '<tr><td style="padding:6px 12px;font-weight:600;vertical-align:top;color:#444;">' + escapeHtml(r[0]) +
     '</td><td style="padding:6px 12px;color:#111;">' + escapeHtml(r[1]) + '</td></tr>'
@@ -174,6 +175,7 @@ export default async (req, context) => {
   const name = str(body.name, 120);
   const contactEmail = str(body.contactEmail, 320).toLowerCase();
   const country = str(body.country, 80);
+  const storeDescription = str(body.storeDescription, 200);
   const description = str(body.description, 600);
   const websiteUrl = str(body.websiteUrl, 300);
   const shopType = SHOP_TYPES.indexOf(body.shopType) !== -1 ? body.shopType : 'online';
@@ -188,7 +190,8 @@ export default async (req, context) => {
   if (!name) return bad('Store name is required.');
   if (!contactEmail || !EMAIL_REGEX.test(contactEmail)) return bad('A valid contact email is required.');
   if (!country) return bad('Country is required.');
-  if (!description) return bad('Please add a short description.');
+  if (!storeDescription) return bad('Please add a short store description.');
+  if (!description) return bad('Please tell us why you are applying.');
   if (!websiteUrl || !URL_REGEX.test(websiteUrl)) return bad('A valid website URL (https://…) is required.');
   if (nostrNpub && !NPUB_REGEX.test(nostrNpub)) return bad('Nostr npub looks invalid (should start with npub1…).');
   if (xProfileUrl && !URL_REGEX.test(xProfileUrl)) return bad('X profile URL looks invalid.');
@@ -214,6 +217,7 @@ export default async (req, context) => {
     country,
     shopType,
     shippingRegions,
+    storeDescription,
     description,
     websiteUrl,
     nostrNpub,

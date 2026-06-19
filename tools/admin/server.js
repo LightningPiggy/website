@@ -1765,7 +1765,9 @@ app.post('/api/vendors/submissions/:id/import', async (req, res) => {
       country: s.country || '',
       shippingRegions: Array.isArray(s.shippingRegions) ? s.shippingRegions : [],
       shopType: s.shopType || 'online',
-      description: s.description || '',
+      // Public website description comes from the dedicated store-description
+      // field; fall back to the old combined description for legacy submissions.
+      description: s.storeDescription || s.description || '',
       websiteUrl: s.websiteUrl || '',
       nostrNpub: s.nostrNpub || '',
       nostrProfilePic: '',

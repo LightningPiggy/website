@@ -2164,14 +2164,19 @@ function renderVendorSubmissions() {
     const nostr = s.nostrNpub ? escapeHtmlAdmin(s.nostrNpub) : '—';
     const x = s.xProfileUrl ? `<a href="${escapeHtmlAdmin(s.xProfileUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtmlAdmin(s.xProfileUrl)}</a>` : '—';
     const when = s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '';
+    // Public store description (the website blurb); fall back to the old combined
+    // description for legacy submissions that predate the split.
+    const storeDesc = s.storeDescription || s.description || '';
+    const whyApplying = (s.storeDescription && s.description) ? s.description : '';
     return `
       <div class="submission-card" data-id="${escapeHtmlAdmin(s.id)}">
         <div class="submission-top">
           <span class="submission-name">${escapeHtmlAdmin(s.name)} <span class="vendor-shop-type">${SHOP_TYPE_LABELS[s.shopType] || s.shopType || ''}</span></span>
           <span class="submission-meta">${escapeHtmlAdmin(when)}</span>
         </div>
-        <div class="submission-desc">${escapeHtmlAdmin(s.description)}</div>
+        <div class="submission-desc">${escapeHtmlAdmin(storeDesc)}</div>
         <div class="submission-fields">
+          ${whyApplying ? `<div><strong>Why applying:</strong> ${escapeHtmlAdmin(whyApplying)}</div>` : ''}
           <div><strong>Contact:</strong> ${escapeHtmlAdmin(s.contactEmail)}</div>
           <div><strong>Country:</strong> ${escapeHtmlAdmin(s.country)} &nbsp;·&nbsp; <strong>Ships to:</strong> ${regions}</div>
           <div><strong>Website:</strong> ${website}</div>

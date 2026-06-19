@@ -63,7 +63,7 @@
       "shopType": "both",
       "description": "Bitcoin merchandise, miners, and gadgets\nfor the true Bitcoiner",
       "url": "https://www.bitcoinstuffstore.com/product/lightning-piggy/",
-      "logo": "https://unavatar.io/twitter/ZijlstraMario",
+      "logo": "/images/logos/bitcoinstuffstore.png",
       "nostrUrl": "https://njump.me/npub135q6dvnjah9023xszmjs2wvd4gqhn2trku52wt2lv8cl4hc8ltjsk0w4sq",
       "xUrl": "https://twitter.com/ZijlstraMario",
       "featured": true

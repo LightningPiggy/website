@@ -197,6 +197,7 @@ exports.handler = async function (event) {
   if (!websiteUrl || !URL_REGEX.test(websiteUrl)) return bad('A valid website URL (https://…) is required.');
   if (nostrNpub && !NPUB_REGEX.test(nostrNpub)) return bad('Nostr npub looks invalid (should start with npub1…).');
   if (xProfileUrl && !URL_REGEX.test(xProfileUrl)) return bad('X profile URL looks invalid.');
+  if (!nostrNpub && !xProfileUrl) return bad('Please add a Nostr npub or X profile URL — your store logo is downloaded from one of these.');
 
   // Layer 4: link-spam heuristic — reject obvious link dumps in the description.
   var urlCount = (description.match(/https?:\/\//gi) || []).length;

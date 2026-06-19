@@ -75,13 +75,15 @@ const regularVendors = vendors.filter((v) => !v.featured);
     const toggle = document.getElementById('vendor-apply-toggle');
     const panel = document.getElementById('vendor-apply-panel');
     if (toggle && panel) {
-      toggle.addEventListener('click', () => {
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
         panel.hidden = false;
         toggle.setAttribute('aria-expanded', 'true');
-        toggle.hidden = true;
-        // Focus the first field for keyboard users
+        toggle.style.display = 'none';
+        // Focus the first field for keyboard users, without yanking the
+        // page scroll (preventScroll stops the jump-to-top behaviour).
         const firstField = panel.querySelector('input, select, textarea');
-        if (firstField) (firstField as HTMLElement).focus();
+        if (firstField) (firstField as HTMLElement).focus({ preventScroll: true });
       });
     }
   </script>

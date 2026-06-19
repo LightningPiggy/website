@@ -31,7 +31,7 @@ const regions = ['Europe', 'North America', 'South America', 'Asia', 'Africa', '
   <div class="grid sm:grid-cols-2 gap-4 mt-4">
     <label class="block">
       <span class="block text-sm font-medium text-gray-700 mb-1">Country <span class="text-pink">*</span></span>
-      <input type="text" name="country" required maxlength="80" placeholder="e.g. United Kingdom"
+      <input type="text" name="country" required maxlength="80" placeholder="e.g. El Salvador"
         class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
     </label>
     <label class="block">
@@ -59,8 +59,11 @@ const regions = ['Europe', 'North America', 'South America', 'Asia', 'Africa', '
 
   <label class="block mt-4">
     <span class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-pink">*</span></span>
-    <textarea name="description" required rows="3" maxlength="600" placeholder="Briefly tell us what you sell and why you'd like to stock Lightning Piggy."
+    <textarea name="description" required rows="4" maxlength="600" placeholder="Briefly tell us what you sell and why you'd like to stock Lightning Piggy."
       class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors"></textarea>
+    <span class="block text-xs text-gray-500 mt-1">
+      Let us know if you'd like to be a <strong>Featured</strong> vendor by committing to donate at least 10% of your Lightning Piggy sales back to the project.
+    </span>
   </label>
 
   <div class="grid sm:grid-cols-2 gap-4 mt-4">
@@ -81,6 +84,10 @@ const regions = ['Europe', 'North America', 'South America', 'Asia', 'Africa', '
     <input type="url" name="xProfileUrl" maxlength="300" placeholder="https://x.com/yourstore"
       class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
   </label>
+
+  <p class="text-xs text-gray-500 mt-2">
+    💡 Your store logo will be downloaded automatically from your Nostr or X profile picture, so please add at least one.
+  </p>
 
   <div class="mt-6 flex items-center gap-4">
     <button type="submit"
@@ -138,6 +145,19 @@ const regions = ['Europe', 'North America', 'South America', 'Asia', 'Africa', '
         message.classList.remove('hidden', 'text-green-600', 'text-red-500');
         message.classList.add(ok ? 'text-green-600' : 'text-red-500');
       };
+
+      const resetButton = () => {
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+      };
+
+      // Require at least one logo source (Nostr npub or X profile URL)
+      if (!payload.nostrNpub && !payload.xProfileUrl) {
+        showMessage('Please add a Nostr npub or X profile URL — your store logo is downloaded from one of these.', false);
+        resetButton();
+        return;
+      }
 
       try {
         const res = await fetch('/.netlify/functions/vendor-apply', {

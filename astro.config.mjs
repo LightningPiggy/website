@@ -6,4 +6,5 @@ import tailwind from '@astrojs/tailwind';
 export default defineConfig({
   site: 'https://lightningpiggy.com',
   integrations: [mdx(), sitemap(), tailwind()],
+  vite: { cacheDir: "/tmp/vite-cache-lp4" },
 });

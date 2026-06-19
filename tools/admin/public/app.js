@@ -2295,28 +2295,25 @@ function renderVendors(vendors) {
     return;
   }
 
-  const visible = vendors.filter(v => v.showOnWebsite);
-  const hidden = vendors.filter(v => !v.showOnWebsite);
+  // Three sections mirroring the live market page + pending-approval state:
+  //   Featured = visible & featured (Pride of the Market)
+  //   Regular  = visible & not featured (Responsible Farmers)
+  //   Pending  = hidden (showOnWebsite=false, e.g. imported applications)
+  const featured = vendors.filter(v => v.showOnWebsite && v.featured);
+  const regular = vendors.filter(v => v.showOnWebsite && !v.featured);
+  const pending = vendors.filter(v => !v.showOnWebsite);
+
+  const section = (title, arr) => arr.length === 0 ? '' : `
+      <div class="credits-section">
+        <h3 class="credits-section-title">${title} <span class="credits-section-count">(${arr.length})</span></h3>
+        <div class="credits-section-list">${arr.map((v, i, a) => renderVendorCard(v, i, a)).join('')}</div>
+      </div>
+    `;
 
   let html = '';
-
-  if (visible.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Visible on Website <span class="credits-section-count">(${visible.length})</span></h3>
-        <div class="credits-section-list">${visible.map((v, i, arr) => renderVendorCard(v, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (hidden.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Hidden <span class="credits-section-count">(${hidden.length})</span></h3>
-        <div class="credits-section-list">${hidden.map((v, i, arr) => renderVendorCard(v, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
+  html += section('⭐ Featured', featured);
+  html += section('Regular', regular);
+  html += section('Pending Approval', pending);
 
   vendorsList.innerHTML = html;
 

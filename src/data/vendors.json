@@ -11,7 +11,8 @@
       "url": "/market/danish-bacon",
       "logo": "/images/logos/danish-bacon.png",
       "nostrUrl": "",
-      "xUrl": ""
+      "xUrl": "",
+      "featured": true
     },
     {
       "name": "Robotechy",
@@ -24,7 +25,8 @@
       "url": "https://robotechy.com",
       "logo": "https://m.primal.net/JdnO.jpg",
       "nostrUrl": "https://njump.me/npub1yy0nyk6nj6tg4sx8nd7q5qcdw6pqd5e2cc0e8u2rmcgjhpvm63hsk67xe5",
-      "xUrl": "https://x.com/IsaacWeeks"
+      "xUrl": "https://x.com/IsaacWeeks",
+      "featured": false
     },
     {
       "name": "The Bitcoin Hardware Store",
@@ -35,7 +37,8 @@
       "url": "https://tbhs.sv/",
       "logo": "https://unavatar.io/twitter/tbhs_sv",
       "nostrUrl": "",
-      "xUrl": "https://x.com/tbhs_sv"
+      "xUrl": "https://x.com/tbhs_sv",
+      "featured": false
     },
     {
       "name": "SatoshiStore.io",
@@ -46,9 +49,10 @@
       "shopType": "online",
       "description": "Wonderful merch, piggies incoming.",
       "url": "https://satoshistore.io/collections/lightning-piggy",
-      "logo": "https://void.cat/d/TDctRbPWDha5pBmMTkYfqn.webp",
+      "logo": "https://unavatar.io/twitter/satoshistoreio",
       "nostrUrl": "https://njump.me/npub1eclyv67suswsx5q0guyds43uzaj0ymkgvkr5chmuwsxsj9229zms8tankk",
-      "xUrl": "https://x.com/satoshistoreio"
+      "xUrl": "https://x.com/satoshistoreio",
+      "featured": false
     }
   ]
 }

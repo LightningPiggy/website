@@ -41,6 +41,7 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/branding', express.static(path.join(ROOT, 'public', 'images', 'branding')));
 app.use('/images/testimonials', express.static(path.join(ROOT, 'public', 'images', 'testimonials')));
+app.use('/images/logos', express.static(path.join(ROOT, 'public', 'images', 'logos')));
 app.use(express.json());
 
 // --- Filesystem browsing (for save-folder picker) ---
@@ -1524,6 +1525,7 @@ app.post('/api/vendors', (req, res) => {
       xProfilePic: req.body.xProfilePic || '',
       logoUrl: req.body.logoUrl || '',
       showOnWebsite: req.body.showOnWebsite ?? true,
+      featured: req.body.featured ?? false,
       dateAdded: req.body.dateAdded || new Date().toISOString().split('T')[0],
     };
     data.vendors.push(vendor);
@@ -1578,6 +1580,7 @@ app.put('/api/vendors/:id', (req, res) => {
       xProfilePic: req.body.xProfilePic ?? data.vendors[index].xProfilePic,
       logoUrl: req.body.logoUrl ?? data.vendors[index].logoUrl,
       showOnWebsite: req.body.showOnWebsite ?? data.vendors[index].showOnWebsite,
+      featured: req.body.featured ?? data.vendors[index].featured ?? false,
     };
     saveVendors(data);
     res.json({ success: true, vendor: data.vendors[index] });
@@ -1654,6 +1657,7 @@ app.post('/api/vendors/sync', (req, res) => {
           logo: v.logoUrl || v.nostrProfilePic || v.xProfilePic || '',
           nostrUrl,
           xUrl,
+          featured: !!v.featured,
         };
       });
 

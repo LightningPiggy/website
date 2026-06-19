@@ -2212,6 +2212,7 @@ function openVendorModal(vendor = null) {
     document.getElementById('vendor-x-pic').value = '';
   }
   document.getElementById('vendor-show-on-website').checked = vendor?.showOnWebsite !== false;
+  document.getElementById('vendor-featured').checked = !!vendor?.featured;
 
   // Set shipping region checkboxes
   const regions = vendor?.shippingRegions || [];
@@ -2219,19 +2220,29 @@ function openVendorModal(vendor = null) {
     cb.checked = regions.includes(cb.value);
   });
 
-  // Reset logo upload state
+  // Reset logo upload state and preview the effective logo
   pendingVendorLogoFile = null;
   document.getElementById('vendor-logo-file').value = '';
-  const vLogoPreview = document.getElementById('vendor-logo-preview');
-  const vLogoPreviewImg = document.getElementById('vendor-logo-preview-img');
-  if (vendor?.logoUrl) {
-    vLogoPreviewImg.src = vendor.logoUrl;
-    vLogoPreview.hidden = false;
-  } else {
-    vLogoPreview.hidden = true;
-  }
+  updateVendorLogoPreview();
 
   vendorModal.hidden = false;
+}
+
+// The logo shown for a vendor is logoUrl || nostrProfilePic || xProfilePic.
+// Keep the modal preview in sync with whichever source is currently set.
+function updateVendorLogoPreview() {
+  const preview = document.getElementById('vendor-logo-preview');
+  const img = document.getElementById('vendor-logo-preview-img');
+  if (pendingVendorLogoFile) return; // preview already shows the picked file
+  const url = (document.getElementById('vendor-logo-url').value || '').trim()
+    || (document.getElementById('vendor-nostr-pic').value || '').trim()
+    || (document.getElementById('vendor-x-pic').value || '').trim();
+  if (url && url !== 'Loading...') {
+    img.src = url;
+    preview.hidden = false;
+  } else {
+    preview.hidden = true;
+  }
 }
 
 function closeVendorModal() {
@@ -2363,6 +2374,7 @@ vendorForm.addEventListener('submit', async e => {
     xProfileUrl: document.getElementById('vendor-x-url').value,
     xProfilePic: document.getElementById('vendor-x-pic').value,
     showOnWebsite: document.getElementById('vendor-show-on-website').checked,
+    featured: document.getElementById('vendor-featured').checked,
   };
 
   try {
@@ -2416,23 +2428,51 @@ vendorLogoFileInput.addEventListener('change', () => {
   }
 });
 
+// Clear the logo source that's currently providing the preview, so the ✕
+// works whether the logo comes from logoUrl, the Nostr pic, or the X pic.
 vendorLogoClearBtn.addEventListener('click', () => {
-  pendingVendorLogoFile = null;
-  vendorLogoFileInput.value = '';
-  vendorLogoPreview.hidden = true;
-  vendorLogoUrlInput.value = '';
+  if (pendingVendorLogoFile) {
+    pendingVendorLogoFile = null;
+    vendorLogoFileInput.value = '';
+  } else if (vendorLogoUrlInput.value.trim()) {
+    vendorLogoUrlInput.value = '';
+  } else if (document.getElementById('vendor-nostr-pic').value.trim()) {
+    document.getElementById('vendor-nostr-pic').value = '';
+  } else if (document.getElementById('vendor-x-pic').value.trim()) {
+    document.getElementById('vendor-x-pic').value = '';
+  }
+  updateVendorLogoPreview();
 });
 
 vendorLogoUrlInput.addEventListener('input', () => {
-  const url = vendorLogoUrlInput.value.trim();
-  if (url) {
-    vendorLogoPreviewImg.src = url;
-    vendorLogoPreview.hidden = false;
+  if (vendorLogoUrlInput.value.trim()) {
     pendingVendorLogoFile = null;
     vendorLogoFileInput.value = '';
-  } else if (!pendingVendorLogoFile) {
-    vendorLogoPreview.hidden = true;
   }
+  updateVendorLogoPreview();
+});
+
+// Keep the preview live when the Nostr/X picture URLs are edited
+document.getElementById('vendor-nostr-pic').addEventListener('input', updateVendorLogoPreview);
+document.getElementById('vendor-x-pic').addEventListener('input', updateVendorLogoPreview);
+
+// Re-fetch the Nostr profile picture from the current npub (without retyping it)
+document.getElementById('vendor-nostr-refresh').addEventListener('click', async () => {
+  const npub = document.getElementById('vendor-nostr-npub').value.trim();
+  const picField = document.getElementById('vendor-nostr-pic');
+  const hex = npubToHex(npub);
+  if (!hex) { alert('Enter a valid npub first.'); return; }
+  picField.value = 'Loading...';
+  updateVendorLogoPreview();
+  try {
+    const resp = await fetch(`/api/nostr/profile/${hex}`);
+    const profile = await resp.json();
+    picField.value = profile.picture || '';
+  } catch (err) {
+    picField.value = '';
+    alert('Failed to fetch Nostr profile: ' + err.message);
+  }
+  updateVendorLogoPreview();
 });
 
 // Sync vendors to website
@@ -2488,6 +2528,7 @@ document.getElementById('vendor-nostr-npub').addEventListener('input', async e =
 
   if (hex) {
     picField.value = 'Loading...';
+    updateVendorLogoPreview();
     try {
       const resp = await fetch(`/api/nostr/profile/${hex}`);
       const profile = await resp.json();
@@ -2498,6 +2539,7 @@ document.getElementById('vendor-nostr-npub').addEventListener('input', async e =
   } else {
     picField.value = '';
   }
+  updateVendorLogoPreview();
 });
 
 // --- Serial Monitor + Live Screen ---

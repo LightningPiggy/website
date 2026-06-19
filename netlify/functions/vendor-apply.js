@@ -1,85 +1,84 @@
-// Netlify serverless function: receives a "become a vendor" application from
-// the market page, runs it through spam safeguards, stores it as a pending
+// Netlify function (V2): receives a "become a vendor" application from the
+// market page, runs it through spam safeguards, stores it as a pending
 // submission in Netlify Blobs (store: "vendor-submissions"), and notifies the
 // team (plus a confirmation to the applicant) via Resend.
+//
+// NOTE: this is a V2 function (default export). V2 is required so Netlify Blobs
+// auto-configures — legacy V1 (exports.handler) functions do not.
 //
 // The admin tool reads these pending submissions via the companion
 // `vendor-submissions` function and imports approved ones as vendors.
 //
 // Environment variables (set in Netlify):
 //   RESEND_API_KEY     — API key from resend.com (shared with other functions)
-//   ADMIN_SYNC_TOKEN   — shared secret; the admin tool uses it to list/import
-//                        submissions. Not required here, listed for context.
 
-const { getStore } = require('@netlify/blobs');
+import { getStore } from '@netlify/blobs';
 
-var ALLOWED_ORIGIN = 'https://lightningpiggy.com';
-var NOTIFICATION_EMAIL = 'oink@lightningpiggy.com';
-var FROM_EMAIL = 'Lightning Piggy <newsletter@mail.lightningpiggy.com>';
-var STORE_NAME = 'vendor-submissions';
+const NOTIFICATION_EMAIL = 'oink@lightningpiggy.com';
+const FROM_EMAIL = 'Lightning Piggy <newsletter@mail.lightningpiggy.com>';
+const STORE_NAME = 'vendor-submissions';
 
-var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-var URL_REGEX = /^https?:\/\/[^\s.]+\.[^\s]+$/i;
-var NPUB_REGEX = /^npub1[a-z0-9]{20,}$/i;
-var SHOP_TYPES = ['online', 'physical', 'both'];
-var VALID_REGIONS = ['Europe', 'North America', 'South America', 'Asia', 'Africa', 'Oceania', 'Worldwide'];
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const URL_REGEX = /^https?:\/\/[^\s.]+\.[^\s]+$/i;
+const NPUB_REGEX = /^npub1[a-z0-9]{20,}$/i;
+const SHOP_TYPES = ['online', 'physical', 'both'];
+const VALID_REGIONS = ['Europe', 'North America', 'South America', 'Asia', 'Africa', 'Oceania', 'Worldwide'];
 
-function corsHeaders(event) {
-  var origin = (event.headers || {}).origin || '';
-  var allowed = (origin === ALLOWED_ORIGIN || origin.endsWith('.netlify.app')) ? origin : ALLOWED_ORIGIN;
-  return {
-    'Access-Control-Allow-Origin': allowed,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
-  };
+function jsonResponse(status, obj) {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  });
 }
 
-function clientIp(event) {
-  return ((event.headers || {})['x-forwarded-for'] || (event.headers || {})['client-ip'] || '').split(',')[0].trim();
+function clientIp(req, context) {
+  if (context && context.ip) return context.ip;
+  const h = req.headers;
+  return (h.get('x-nf-client-connection-ip') || h.get('x-forwarded-for') || h.get('client-ip') || '')
+    .split(',')[0].trim();
 }
 
 // Silent-success — never tell bots they were caught; log for monitoring.
-function silentSuccess(event, reason, detail) {
-  console.log('[spam] ' + reason + (detail ? ' — ' + detail : '') + ' from ' + (clientIp(event) || 'unknown'));
-  return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true }) };
+function silentSuccess(ip, reason, detail) {
+  console.log('[spam] ' + reason + (detail ? ' — ' + detail : '') + ' from ' + (ip || 'unknown'));
+  return jsonResponse(200, { success: true });
 }
 
 // In-memory rate limiter (resets on cold start — acceptable, still slows bursts).
-var _rateBuckets = new Map();
+const _rateBuckets = new Map();
 function rateLimitHit(ip, maxPerMinute, maxPerHour) {
   if (!ip) return false;
-  var now = Date.now();
-  var bucket = _rateBuckets.get(ip) || { minute: [], hour: [] };
-  bucket.minute = bucket.minute.filter(function (t) { return now - t < 60 * 1000; });
-  bucket.hour = bucket.hour.filter(function (t) { return now - t < 60 * 60 * 1000; });
+  const now = Date.now();
+  const bucket = _rateBuckets.get(ip) || { minute: [], hour: [] };
+  bucket.minute = bucket.minute.filter((t) => now - t < 60 * 1000);
+  bucket.hour = bucket.hour.filter((t) => now - t < 60 * 60 * 1000);
   if (bucket.minute.length >= maxPerMinute) return true;
   if (bucket.hour.length >= maxPerHour) return true;
   bucket.minute.push(now);
   bucket.hour.push(now);
   _rateBuckets.set(ip, bucket);
   if (_rateBuckets.size > 1000) {
-    for (var entry of _rateBuckets) {
+    for (const entry of _rateBuckets) {
       if (entry[1].hour.length === 0) _rateBuckets.delete(entry[0]);
     }
   }
   return false;
 }
 
-function fetchWithRetry(url, options, maxRetries) {
-  maxRetries = maxRetries || 3;
-  var delay = 600;
-  return (async function () {
-    for (var attempt = 0; attempt <= maxRetries; attempt++) {
-      var res = await fetch(url, options);
-      if (res.status !== 429 || attempt === maxRetries) return res;
-      await new Promise(function (r) { setTimeout(r, delay); });
-      delay *= 2;
-    }
-  })();
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  let delay = 600;
+  let res;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    res = await fetch(url, options);
+    if (res.status !== 429 || attempt === maxRetries) return res;
+    await new Promise((r) => setTimeout(r, delay));
+    delay *= 2;
+  }
+  return res;
 }
 
 function escapeHtml(s) {
-  return String(s || '')
+  return String(s == null ? '' : s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
@@ -89,13 +88,13 @@ function str(v, max) {
 }
 
 async function sendEmail(apiKey, payload) {
-  var res = await fetchWithRetry('https://api.resend.com/emails', {
+  const res = await fetchWithRetry('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
+    body: JSON.stringify(payload),
   });
   if (!res.ok) {
-    var detail = '';
+    let detail = '';
     try { detail = JSON.stringify(await res.json()); } catch (e) {}
     console.error('Resend send failed: ' + res.status + ' ' + detail);
   }
@@ -103,7 +102,7 @@ async function sendEmail(apiKey, payload) {
 }
 
 function ownerEmailHtml(v) {
-  var rows = [
+  const rows = [
     ['Store name', v.name],
     ['Contact email', v.contactEmail],
     ['Country', v.country],
@@ -112,11 +111,11 @@ function ownerEmailHtml(v) {
     ['Website', v.websiteUrl],
     ['Nostr npub', v.nostrNpub || '—'],
     ['X profile', v.xProfileUrl || '—'],
-    ['Description', v.description]
-  ].map(function (r) {
-    return '<tr><td style="padding:6px 12px;font-weight:600;vertical-align:top;color:#444;">' + escapeHtml(r[0]) +
-      '</td><td style="padding:6px 12px;color:#111;">' + escapeHtml(r[1]) + '</td></tr>';
-  }).join('');
+    ['Description', v.description],
+  ].map((r) =>
+    '<tr><td style="padding:6px 12px;font-weight:600;vertical-align:top;color:#444;">' + escapeHtml(r[0]) +
+    '</td><td style="padding:6px 12px;color:#111;">' + escapeHtml(r[1]) + '</td></tr>'
+  ).join('');
   return '<div style="font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#111;">' +
     '<h2 style="margin:0 0 4px;">New vendor application 🐷</h2>' +
     '<p style="color:#666;margin:0 0 16px;">Submission ID: ' + escapeHtml(v.id) + ' · ' + escapeHtml(v.submittedAt) + '</p>' +
@@ -135,60 +134,56 @@ function applicantEmailHtml(v) {
     '</div>';
 }
 
-exports.handler = async function (event) {
-  if (event.httpMethod === 'OPTIONS') {
-    return { statusCode: 204, headers: corsHeaders(event), body: '' };
-  }
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, headers: corsHeaders(event), body: JSON.stringify({ error: 'Method not allowed' }) };
+export default async (req, context) => {
+  if (req.method !== 'POST') {
+    return jsonResponse(405, { error: 'Method not allowed' });
   }
 
-  var apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.RESEND_API_KEY;
 
-  var body;
+  let body;
   try {
-    body = JSON.parse(event.body);
+    body = await req.json();
   } catch (e) {
-    return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: 'Invalid JSON body' }) };
+    return jsonResponse(400, { error: 'Invalid JSON body' });
   }
+
+  const ip = clientIp(req, context);
 
   // --- Spam-prevention layers ---
 
   // Layer 1: Honeypot field — bots fill this, humans don't see it.
   if (body.website && String(body.website).trim()) {
-    return silentSuccess(event, 'honeypot');
+    return silentSuccess(ip, 'honeypot');
   }
 
   // Layer 2: Time-to-fill check — this form takes humans well over 4s to fill.
   if (typeof body.startedAt === 'number') {
-    var elapsed = Date.now() - body.startedAt;
+    const elapsed = Date.now() - body.startedAt;
     if (elapsed >= 0 && elapsed < 4000) {
-      return silentSuccess(event, 'too-fast', elapsed + 'ms');
+      return silentSuccess(ip, 'too-fast', elapsed + 'ms');
     }
   }
 
   // Layer 3: Rate limit per IP (2/min burst, 6/hr sustained).
-  var ip = clientIp(event);
   if (rateLimitHit(ip, 2, 6)) {
-    return silentSuccess(event, 'rate-limited');
+    return silentSuccess(ip, 'rate-limited');
   }
 
   // --- Validation (real errors — these get shown to the user) ---
-  var name = str(body.name, 120);
-  var contactEmail = str(body.contactEmail, 320).toLowerCase();
-  var country = str(body.country, 80);
-  var description = str(body.description, 600);
-  var websiteUrl = str(body.websiteUrl, 300);
-  var shopType = SHOP_TYPES.indexOf(body.shopType) !== -1 ? body.shopType : 'online';
-  var nostrNpub = str(body.nostrNpub, 80);
-  var xProfileUrl = str(body.xProfileUrl, 300);
-  var shippingRegions = Array.isArray(body.shippingRegions)
-    ? body.shippingRegions.filter(function (r) { return VALID_REGIONS.indexOf(r) !== -1; }).slice(0, VALID_REGIONS.length)
+  const name = str(body.name, 120);
+  const contactEmail = str(body.contactEmail, 320).toLowerCase();
+  const country = str(body.country, 80);
+  const description = str(body.description, 600);
+  const websiteUrl = str(body.websiteUrl, 300);
+  const shopType = SHOP_TYPES.indexOf(body.shopType) !== -1 ? body.shopType : 'online';
+  const nostrNpub = str(body.nostrNpub, 80);
+  const xProfileUrl = str(body.xProfileUrl, 300);
+  const shippingRegions = Array.isArray(body.shippingRegions)
+    ? body.shippingRegions.filter((r) => VALID_REGIONS.indexOf(r) !== -1).slice(0, VALID_REGIONS.length)
     : [];
 
-  function bad(msg) {
-    return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: msg }) };
-  }
+  const bad = (msg) => jsonResponse(400, { error: msg });
 
   if (!name) return bad('Store name is required.');
   if (!contactEmail || !EMAIL_REGEX.test(contactEmail)) return bad('A valid contact email is required.');
@@ -200,38 +195,38 @@ exports.handler = async function (event) {
   if (!nostrNpub && !xProfileUrl) return bad('Please add a Nostr npub or X profile URL — your store logo is downloaded from one of these.');
 
   // Layer 4: link-spam heuristic — reject obvious link dumps in the description.
-  var urlCount = (description.match(/https?:\/\//gi) || []).length;
+  const urlCount = (description.match(/https?:\/\//gi) || []).length;
   if (urlCount >= 3) {
-    return silentSuccess(event, 'link-spam', urlCount + ' urls');
+    return silentSuccess(ip, 'link-spam', urlCount + ' urls');
   }
 
-  var id = (typeof crypto !== 'undefined' && crypto.randomUUID)
+  const id = (typeof crypto !== 'undefined' && crypto.randomUUID)
     ? crypto.randomUUID()
     : 'sub_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
 
-  var submission = {
-    id: id,
+  const submission = {
+    id,
     status: 'pending',
     submittedAt: new Date().toISOString(),
     ip: ip || '',
-    name: name,
-    contactEmail: contactEmail,
-    country: country,
-    shopType: shopType,
-    shippingRegions: shippingRegions,
-    description: description,
-    websiteUrl: websiteUrl,
-    nostrNpub: nostrNpub,
-    xProfileUrl: xProfileUrl
+    name,
+    contactEmail,
+    country,
+    shopType,
+    shippingRegions,
+    description,
+    websiteUrl,
+    nostrNpub,
+    xProfileUrl,
   };
 
   // --- Store as a pending submission (Netlify Blobs) ---
   try {
-    var store = getStore(STORE_NAME);
+    const store = getStore(STORE_NAME);
     await store.setJSON(id, submission);
   } catch (err) {
     console.error('Blob store write failed:', err && err.message);
-    return { statusCode: 502, headers: corsHeaders(event), body: JSON.stringify({ error: 'Could not save your application. Please try again.' }) };
+    return jsonResponse(502, { error: 'Could not save your application. Please try again.' });
   }
 
   // --- Notify team + acknowledge applicant (best-effort; don't fail the request) ---
@@ -242,14 +237,14 @@ exports.handler = async function (event) {
         to: NOTIFICATION_EMAIL,
         reply_to: contactEmail,
         subject: 'New vendor application: ' + name,
-        html: ownerEmailHtml(submission)
+        html: ownerEmailHtml(submission),
       });
-      await new Promise(function (r) { setTimeout(r, 600); }); // stay under Resend 2 req/s
+      await new Promise((r) => setTimeout(r, 600)); // stay under Resend 2 req/s
       await sendEmail(apiKey, {
         from: FROM_EMAIL,
         to: contactEmail,
         subject: 'We received your Lightning Piggy vendor application',
-        html: applicantEmailHtml(submission)
+        html: applicantEmailHtml(submission),
       });
     } catch (err) {
       console.error('Email notification failed:', err && err.message);
@@ -258,5 +253,5 @@ exports.handler = async function (event) {
     console.warn('RESEND_API_KEY not set — submission stored but no emails sent.');
   }
 
-  return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true, id: id }) };
+  return jsonResponse(200, { success: true, id });
 };

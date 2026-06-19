@@ -42,9 +42,9 @@ Here’s the full change log:
 
 - Periodic auto-restart: The device now performs a daily (every 23 hours) restart to proactively avoid potential issues.
 
-- Cross-platform build support: The same firmware build now runs seamlessly on both physical and virtual (QEMU) ESP32 devices—no recompilation needed.
+- Cross-platform build support: The same firmware build now runs seamlessly on both physical and virtual (QEMU) ESP32 devices-no recompilation needed.
 
-You can install it using the **Web Installer**, which has now hit a milestone—**no known open issues**!
+You can install it using the **Web Installer**, which has now hit a milestone-**no known open issues**!
 
 If you’re already on version **5.x or later**, your existing configuration will be preserved during the upgrade.
 

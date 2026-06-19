@@ -3,7 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 // The "oink" wallet on the live LNbits server. The Invoice/Read key is
 // read-only (it can see incoming payments but cannot spend), so it is safe to
-// expose client-side — the original ZapNotify tool did the same.
+// expose client-side - the original ZapNotify tool did the same.
 const LNBITS_HOST = 'lnbits.lightningpiggy.com';
 const OINK_READ_KEY = 'ed6438475ede36f8111a942fd415f7a1';
 const LIGHTNING_ADDRESS = 'oink@lightningpiggy.com';
@@ -82,7 +82,7 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
       </div>
 
       <p class="text-xs text-gray-400 mt-6">
-        Tip: you can install this page as an app — in Chrome, open the menu and choose “Install”.
+        Tip: you can install this page as an app - in Chrome, open the menu and choose “Install”.
       </p>
     </div>
   </section>
@@ -236,7 +236,7 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
 
         socket.onopen = function () {
           reconnectDelay = 1000;
-          setStatus('Connected — notifications are live. 🔊');
+          setStatus('Connected - notifications are live. 🔊');
         };
 
         socket.onmessage = function (event) {
@@ -257,7 +257,7 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
 
         socket.onclose = function () {
           if (active) {
-            // Unexpected drop while active — auto-reconnect with backoff (stay pink)
+            // Unexpected drop while active - auto-reconnect with backoff (stay pink)
             setStatus('Reconnecting…');
             reconnectTimer = setTimeout(connect, reconnectDelay);
             reconnectDelay = Math.min(reconnectDelay * 2, 30000);
@@ -281,7 +281,7 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
         overlayShowing = true;
         var item = overlayQueue.shift();
 
-        var html = 'Oink! Wow, ' + escapeHtml(formatSats(item.sats)) + ' sats — thank you so much!';
+        var html = 'Oink! Wow, ' + escapeHtml(formatSats(item.sats)) + ' sats - thank you so much!';
         if (item.comment) {
           html += '<br/><br/><span class="text-xl md:text-2xl font-semibold">“' + escapeHtml(item.comment) + '”</span>';
         }

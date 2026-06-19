@@ -66,7 +66,7 @@ POSIX path of (choose folder with prompt "Select save folder for captures" ${def
     const display = folder === home ? '~' : folder.startsWith(home + '/') ? '~' + folder.slice(home.length) : folder;
     res.json({ path: folder, display });
   } catch (err) {
-    // User cancelled — osascript exits with error
+    // User cancelled - osascript exits with error
     if (err.stderr && err.stderr.includes('User canceled')) {
       return res.status(204).end();
     }
@@ -344,7 +344,7 @@ app.post('/api/sync/pull', async (req, res) => {
       try {
         await run(['stash', 'pop']);
       } catch (e) {
-        log.push('WARNING: stash pop failed — your changes are saved in git stash. Run `git stash pop` manually.');
+        log.push('WARNING: stash pop failed - your changes are saved in git stash. Run `git stash pop` manually.');
       }
     }
 
@@ -388,7 +388,7 @@ app.get('/api/deploy/status', async (req, res) => {
   }
 });
 
-// Push-only (no new commits) — for when there are unpushed commits already
+// Push-only (no new commits) - for when there are unpushed commits already
 app.post('/api/deploy/push-only', async (req, res) => {
   try {
     const log = ['$ git push'];
@@ -1678,6 +1678,109 @@ app.post('/api/vendors/sync', (req, res) => {
   }
 });
 
+// --- Pending Vendor Applications (synced from the live site) ---
+//
+// Prospective vendors apply via the market-page form, which stores submissions
+// in Netlify Blobs. These endpoints let the admin tool pull those pending
+// applications and import approved ones as vendors (created hidden, i.e.
+// "pending approval", until the operator flips "Show on Website").
+//
+// Configure with environment variables before launching the admin server:
+//   LP_SITE_URL            — site base URL (default https://lightningpiggy.com)
+//   LP_ADMIN_SYNC_TOKEN    — must match ADMIN_SYNC_TOKEN set in Netlify
+const SITE_URL = (process.env.LP_SITE_URL || 'https://lightningpiggy.com').replace(/\/$/, '');
+const ADMIN_SYNC_TOKEN = process.env.LP_ADMIN_SYNC_TOKEN || '';
+const SUBMISSIONS_ENDPOINT = `${SITE_URL}/.netlify/functions/vendor-submissions`;
+
+async function callSubmissionsApi(method, payload) {
+  if (!ADMIN_SYNC_TOKEN) {
+    const err = new Error('LP_ADMIN_SYNC_TOKEN is not set. Add it to the admin server environment to sync vendor applications.');
+    err.statusCode = 400;
+    throw err;
+  }
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${ADMIN_SYNC_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+  };
+  if (payload) opts.body = JSON.stringify(payload);
+  const resp = await fetch(SUBMISSIONS_ENDPOINT, opts);
+  let data = {};
+  try { data = await resp.json(); } catch {}
+  if (!resp.ok) {
+    const err = new Error(data.error || `Submissions API error (HTTP ${resp.status})`);
+    err.statusCode = resp.status;
+    throw err;
+  }
+  return data;
+}
+
+// List pending vendor applications from the live site
+app.get('/api/vendors/submissions', async (req, res) => {
+  try {
+    const data = await callSubmissionsApi('GET');
+    res.json({ submissions: data.submissions || [], configured: true });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message, configured: !!ADMIN_SYNC_TOKEN });
+  }
+});
+
+// Import a submission as a new (hidden / pending-approval) vendor, then mark
+// it imported on the server so it drops out of the pending list.
+app.post('/api/vendors/submissions/:id/import', async (req, res) => {
+  try {
+    const s = req.body || {};
+    const data = loadVendors();
+    const vendor = {
+      id: crypto.randomUUID(),
+      name: s.name || '',
+      country: s.country || '',
+      shippingRegions: Array.isArray(s.shippingRegions) ? s.shippingRegions : [],
+      shopType: s.shopType || 'online',
+      description: s.description || '',
+      websiteUrl: s.websiteUrl || '',
+      nostrNpub: s.nostrNpub || '',
+      nostrProfilePic: '',
+      xProfileUrl: s.xProfileUrl || '',
+      xProfilePic: '',
+      logoUrl: '',
+      contactEmail: s.contactEmail || '',
+      showOnWebsite: false, // pending approval until operator enables it
+      featured: false,
+      dateAdded: new Date().toISOString().split('T')[0],
+      sourceSubmissionId: req.params.id,
+    };
+    data.vendors.push(vendor);
+    saveVendors(data);
+
+    // Best-effort: mark imported on the server so it leaves the pending queue.
+    let serverUpdated = true;
+    let serverError = null;
+    try {
+      await callSubmissionsApi('POST', { id: req.params.id, action: 'imported' });
+    } catch (err) {
+      serverUpdated = false;
+      serverError = err.message;
+    }
+
+    res.json({ success: true, vendor, serverUpdated, serverError });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
+// Dismiss (delete) a submission without importing it
+app.post('/api/vendors/submissions/:id/dismiss', async (req, res) => {
+  try {
+    const data = await callSubmissionsApi('POST', { id: req.params.id, action: 'dismissed' });
+    res.json({ success: true, ...data });
+  } catch (err) {
+    res.status(err.statusCode || 500).json({ error: err.message });
+  }
+});
+
 // --- Resend CLI Endpoints ---
 
 import { execSync } from 'child_process';
@@ -1957,7 +2060,7 @@ app.post('/api/device/capture', async (req, res) => {
 
 app.get('/api/device/screenshot.png', (req, res) => {
   if (!lastScreenshotPath || !fs.existsSync(lastScreenshotPath)) {
-    return res.status(404).type('text/plain').send('no screenshot yet — click Capture');
+    return res.status(404).type('text/plain').send('no screenshot yet - click Capture');
   }
   res.set('Cache-Control', 'no-cache, no-store');
   res.sendFile(lastScreenshotPath);

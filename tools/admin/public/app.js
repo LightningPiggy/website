@@ -35,7 +35,7 @@ function showWildPreview(file) {
   selectedWildFile = file;
   const url = URL.createObjectURL(file);
   wildPreviewImg.src = url;
-  wildPreviewInfo.textContent = `${file.name} — ${(file.size / 1024).toFixed(0)}KB`;
+  wildPreviewInfo.textContent = `${file.name} - ${(file.size / 1024).toFixed(0)}KB`;
   wildPreview.hidden = false;
   wildUploadBtn.hidden = false;
   wildResult.hidden = true;
@@ -149,7 +149,7 @@ function showShowcasePreview(file) {
   selectedShowcaseFile = file;
   const url = URL.createObjectURL(file);
   showcasePreviewImg.src = url;
-  showcasePreviewInfo.textContent = `${file.name} — ${(file.size / 1024).toFixed(0)}KB`;
+  showcasePreviewInfo.textContent = `${file.name} - ${(file.size / 1024).toFixed(0)}KB`;
   showcasePreview.hidden = false;
   showcaseUploadBtn.hidden = false;
   showcaseResult.hidden = true;
@@ -235,6 +235,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'email') loadResendData();
     if (tab.dataset.tab === 'nip05') loadNip05Verified();
     if (tab.dataset.tab === 'deploy') { loadDeployStatus(); loadSyncStatus(); }
+    if (tab.dataset.tab === 'vendors') loadVendorSubmissions();
   });
 });
 
@@ -2100,6 +2101,148 @@ const SHOP_TYPE_LABELS = {
   both: '🌐🏪 Online & Physical',
 };
 
+// --- Pending vendor applications (from the public market-page form) ---
+
+const submissionsList = document.getElementById('submissions-list');
+const submissionsResult = document.getElementById('submissions-result');
+const pendingCountBadge = document.getElementById('pending-count');
+const refreshSubmissionsBtn = document.getElementById('refresh-submissions-btn');
+
+let pendingSubmissions = [];
+
+function escapeHtmlAdmin(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function setPendingBadge(n) {
+  if (!pendingCountBadge) return;
+  pendingCountBadge.textContent = String(n);
+  pendingCountBadge.hidden = n === 0;
+}
+
+function showSubmissionsResult(message, type) {
+  if (!submissionsResult) return;
+  submissionsResult.textContent = message;
+  submissionsResult.className = 'result' + (type ? ' ' + type : '');
+  submissionsResult.hidden = false;
+}
+
+async function loadVendorSubmissions() {
+  if (!submissionsList) return;
+  submissionsList.innerHTML = '<p class="empty">Checking…</p>';
+  try {
+    const resp = await fetch('/api/vendors/submissions');
+    const data = await resp.json();
+    if (!resp.ok) {
+      pendingSubmissions = [];
+      setPendingBadge(0);
+      submissionsList.innerHTML = '';
+      // A missing token is a configuration note, not a scary error.
+      showSubmissionsResult(data.error || 'Could not load applications.', data.configured === false ? '' : 'error');
+      return;
+    }
+    submissionsResult && (submissionsResult.hidden = true);
+    pendingSubmissions = data.submissions || [];
+    setPendingBadge(pendingSubmissions.length);
+    renderVendorSubmissions();
+  } catch (err) {
+    submissionsList.innerHTML = `<p class="error">Failed to load applications: ${escapeHtmlAdmin(err.message)}</p>`;
+  }
+}
+
+function renderVendorSubmissions() {
+  if (!submissionsList) return;
+  if (pendingSubmissions.length === 0) {
+    submissionsList.innerHTML = '<p class="empty">No pending applications.</p>';
+    return;
+  }
+  submissionsList.innerHTML = pendingSubmissions.map(s => {
+    const regions = (s.shippingRegions || []).map(escapeHtmlAdmin).join(', ') || '—';
+    const website = s.websiteUrl ? `<a href="${escapeHtmlAdmin(s.websiteUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtmlAdmin(s.websiteUrl)}</a>` : '—';
+    const nostr = s.nostrNpub ? escapeHtmlAdmin(s.nostrNpub) : '—';
+    const x = s.xProfileUrl ? `<a href="${escapeHtmlAdmin(s.xProfileUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtmlAdmin(s.xProfileUrl)}</a>` : '—';
+    const when = s.submittedAt ? new Date(s.submittedAt).toLocaleString() : '';
+    return `
+      <div class="submission-card" data-id="${escapeHtmlAdmin(s.id)}">
+        <div class="submission-top">
+          <span class="submission-name">${escapeHtmlAdmin(s.name)} <span class="vendor-shop-type">${SHOP_TYPE_LABELS[s.shopType] || s.shopType || ''}</span></span>
+          <span class="submission-meta">${escapeHtmlAdmin(when)}</span>
+        </div>
+        <div class="submission-desc">${escapeHtmlAdmin(s.description)}</div>
+        <div class="submission-fields">
+          <div><strong>Contact:</strong> ${escapeHtmlAdmin(s.contactEmail)}</div>
+          <div><strong>Country:</strong> ${escapeHtmlAdmin(s.country)} &nbsp;·&nbsp; <strong>Ships to:</strong> ${regions}</div>
+          <div><strong>Website:</strong> ${website}</div>
+          <div><strong>Nostr:</strong> ${nostr} &nbsp;·&nbsp; <strong>X:</strong> ${x}</div>
+        </div>
+        <div class="submission-actions">
+          <button class="btn primary import-submission">Import as vendor</button>
+          <button class="btn dismiss-submission">Dismiss</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  submissionsList.querySelectorAll('.import-submission').forEach(btn => {
+    btn.addEventListener('click', () => importSubmission(btn.closest('.submission-card').dataset.id, btn));
+  });
+  submissionsList.querySelectorAll('.dismiss-submission').forEach(btn => {
+    btn.addEventListener('click', () => dismissSubmission(btn.closest('.submission-card').dataset.id, btn));
+  });
+}
+
+async function importSubmission(id, btn) {
+  const submission = pendingSubmissions.find(s => s.id === id);
+  if (!submission) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Importing…'; }
+  try {
+    const resp = await fetch(`/api/vendors/submissions/${id}/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(submission),
+    });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) {
+      showSubmissionsResult(data.error || 'Import failed.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Import as vendor'; }
+      return;
+    }
+    pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
+    setPendingBadge(pendingSubmissions.length);
+    renderVendorSubmissions();
+    loadVendors(); // show the newly added (hidden) vendor in the list below
+    const warn = data.serverUpdated ? '' : ' (note: could not mark it imported on the server — it may reappear on next refresh)';
+    showSubmissionsResult(`Imported "${submission.name}" as a hidden vendor — review it below and enable "Show on Website" to publish.${warn}`, 'success');
+  } catch (err) {
+    showSubmissionsResult('Import failed: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Import as vendor'; }
+  }
+}
+
+async function dismissSubmission(id, btn) {
+  const submission = pendingSubmissions.find(s => s.id === id);
+  if (!confirm(`Dismiss the application from "${submission ? submission.name : id}"? This permanently deletes it.`)) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Dismissing…'; }
+  try {
+    const resp = await fetch(`/api/vendors/submissions/${id}/dismiss`, { method: 'POST' });
+    const data = await resp.json();
+    if (!resp.ok || !data.success) {
+      showSubmissionsResult(data.error || 'Dismiss failed.', 'error');
+      if (btn) { btn.disabled = false; btn.textContent = 'Dismiss'; }
+      return;
+    }
+    pendingSubmissions = pendingSubmissions.filter(s => s.id !== id);
+    setPendingBadge(pendingSubmissions.length);
+    renderVendorSubmissions();
+  } catch (err) {
+    showSubmissionsResult('Dismiss failed: ' + err.message, 'error');
+    if (btn) { btn.disabled = false; btn.textContent = 'Dismiss'; }
+  }
+}
+
+if (refreshSubmissionsBtn) refreshSubmissionsBtn.addEventListener('click', loadVendorSubmissions);
+
 async function loadVendors() {
   try {
     const resp = await fetch('/api/vendors');
@@ -2947,7 +3090,7 @@ async function loadDeployStatus() {
 
     const total = data.modified.length + data.untracked.length;
     if (total === 0) {
-      deployStatusEl.innerHTML = '<em style="color:#16a34a;">✓ Working tree clean — nothing to commit.</em>' +
+      deployStatusEl.innerHTML = '<em style="color:#16a34a;">✓ Working tree clean - nothing to commit.</em>' +
         (data.ahead ? '<br><strong>You have ' + data.ahead + ' unpushed commit(s).</strong> Click Deploy to push.' : '');
       return;
     }
@@ -2966,11 +3109,11 @@ async function loadDeployStatus() {
 
     let html = '';
     if (data.modified.length) {
-      html += `<div style="font-weight:600; margin-bottom:6px;">Modified (${data.modified.length}) — recommended</div>`;
+      html += `<div style="font-weight:600; margin-bottom:6px;">Modified (${data.modified.length}) - recommended</div>`;
       html += data.modified.map(item => renderRow(item, true)).join('');
     }
     if (data.untracked.length) {
-      html += `<div style="font-weight:600; margin-top:12px; margin-bottom:6px;">Untracked (${data.untracked.length}) — review carefully</div>`;
+      html += `<div style="font-weight:600; margin-top:12px; margin-bottom:6px;">Untracked (${data.untracked.length}) - review carefully</div>`;
       html += data.untracked.map(item => renderRow(item, false)).join('');
     }
     html += `<div style="margin-top:12px; padding-top:12px; border-top:1px solid #e5e7eb;">
@@ -3208,7 +3351,7 @@ function renderOgCard(r) {
     (typeof localBytes === 'number' && typeof liveBytes === 'number' && localBytes !== liveBytes)
   );
   if (liveStale) {
-    badges.push('<span class="og-badge og-badge-warn" title="The local copy differs from production — Deploy to push it live">needs deploy</span>');
+    badges.push('<span class="og-badge og-badge-warn" title="The local copy differs from production - Deploy to push it live">needs deploy</span>');
   }
   if (!og.title) badges.push('<span class="og-badge og-badge-warn">no title</span>');
   else if (titleLen > 60) badges.push(`<span class="og-badge og-badge-warn">title ${titleLen}c</span>`);
@@ -3276,22 +3419,22 @@ function showOgDetail(r) {
     <h3>${ogEscapeHtml(r.label || og.title || r.path)}</h3>
     <div class="url">${ogEscapeHtml(r.url)}</div>
     <dl>
-      <dt>og:title</dt><dd>${ogEscapeHtml(og.title || '—')}</dd>
-      <dt>og:description</dt><dd>${ogEscapeHtml(og.description || '—')}</dd>
+      <dt>og:title</dt><dd>${ogEscapeHtml(og.title || '-')}</dd>
+      <dt>og:description</dt><dd>${ogEscapeHtml(og.description || '-')}</dd>
       <dt>og:image</dt><dd>
-        ${og.image ? `<a href="${ogEscapeAttr(og.image)}" target="_blank" style="color:#e91e8c;">${ogEscapeHtml(og.image)}</a>` : '—'}
+        ${og.image ? `<a href="${ogEscapeAttr(og.image)}" target="_blank" style="color:#e91e8c;">${ogEscapeHtml(og.image)}</a>` : '-'}
         ${og.image ? `<div style="margin-top:6px; display:flex; gap:6px; flex-wrap:wrap;">
           <span class="og-badge ${og.imageOk ? 'og-badge-ok' : 'og-badge-err'}">local ${og.imageOk ? 'ok' : (og.imageStatus || '404')}</span>
           ${og.liveImageStatus !== undefined ? `<span class="og-badge ${og.liveImageOk ? 'og-badge-ok' : 'og-badge-err'}">live ${og.liveImageOk ? 'ok' : (og.liveImageStatus || '404')}</span>` : ''}
         </div>` : ''}
       </dd>
-      <dt>og:image:alt</dt><dd>${ogEscapeHtml(og.imageAlt || '—')}</dd>
-      <dt>og:type</dt><dd>${ogEscapeHtml(og.type || '—')}</dd>
-      <dt>og:site_name</dt><dd>${ogEscapeHtml(og.siteName || '—')}</dd>
-      <dt>twitter:card</dt><dd>${ogEscapeHtml(og.twitterCard || '—')}</dd>
+      <dt>og:image:alt</dt><dd>${ogEscapeHtml(og.imageAlt || '-')}</dd>
+      <dt>og:type</dt><dd>${ogEscapeHtml(og.type || '-')}</dd>
+      <dt>og:site_name</dt><dd>${ogEscapeHtml(og.siteName || '-')}</dd>
+      <dt>twitter:card</dt><dd>${ogEscapeHtml(og.twitterCard || '-')}</dd>
     </dl>
     ${(og.jsonLd || []).map((block, i) => `
-      <div style="font-size:12px; color:#888; margin-bottom:4px;">JSON-LD #${i + 1} — ${ogEscapeHtml(block['@type'] || 'unknown')}</div>
+      <div style="font-size:12px; color:#888; margin-bottom:4px;">JSON-LD #${i + 1} - ${ogEscapeHtml(block['@type'] || 'unknown')}</div>
       <pre>${ogEscapeHtml(JSON.stringify(block, null, 2))}</pre>
     `).join('')}
   `;

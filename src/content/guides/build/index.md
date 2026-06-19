@@ -23,10 +23,10 @@ Making your very own Lightning Piggy is squealy easy. Here are the steps you nee
 If you already have the single board computer, follow these steps:
 
 1. Choose a wallet that supports Nostr Wallet Connect (NWC).
-   - **For beginners:** We recommend [Coinos](https://coinos.io) — it's simple and custodial (with the option to auto-withdraw to cold storage), so you can get started quickly.
-   - **For a non-custodial setup:** We recommend [LNbits](https://lnbits.com/) or [Alby Hub](https://albyhub.com/) — both support multiple friends and family accounts and are easy to use.
+   - **For beginners:** We recommend [Coinos](https://coinos.io) - it's simple and custodial (with the option to auto-withdraw to cold storage), so you can get started quickly.
+   - **For a non-custodial setup:** We recommend [LNbits](https://lnbits.com/) or [Alby Hub](https://albyhub.com/) - both support multiple friends and family accounts and are easy to use.
 
-   Once your wallet is set up, copy your **Lightning Address** and **NWC link** — you'll need both in the next step.
+   Once your wallet is set up, copy your **Lightning Address** and **NWC link** - you'll need both in the next step.
 
 2. [Flash the firmware](#3-flash-the-firmware) using the installer below. You'll need a Wi-Fi enabled computer with Chrome, Brave, Opera, or Edge browser.
 
@@ -112,7 +112,7 @@ If you wish to run a LNbits wallet, please refer to our detailed [guide](/build/
 
 ### 3. Flash the firmware
 
-Connect your Lightning Piggy to your computer with a USB data cable (some USB cables only supply power — if nothing happens, try a different cable).
+Connect your Lightning Piggy to your computer with a USB data cable (some USB cables only supply power - if nothing happens, try a different cable).
 
 <div id="flash-browser-check"></div>
 
@@ -130,7 +130,7 @@ Connect your Lightning Piggy to your computer with a USB data cable (some USB ca
     .then(function(data) {
       var el = document.getElementById('flash-version');
       if (el && data.version) {
-        el.textContent = 'Firmware ' + data.version + ' — ' + data.name;
+        el.textContent = 'Firmware ' + data.version + ' - ' + data.name;
       }
     })
     .catch(function() {});
@@ -153,7 +153,7 @@ Connect your Lightning Piggy to your computer with a USB data cable (some USB ca
 })();
 </script>
 
-When prompted, select the serial port — usually the one labelled "CP210" (that's the USB-to-Serial chip in the device). Click **Install** and wait for the process to complete. Don't unplug your device during installation.
+When prompted, select the serial port - usually the one labelled "CP210" (that's the USB-to-Serial chip in the device). Click **Install** and wait for the process to complete. Don't unplug your device during installation.
 
 Once installed, the device will automatically reboot with its Wi-Fi access point enabled for approximately 20 seconds, allowing you to connect and configure the software.
 
@@ -187,7 +187,7 @@ After a few seconds, a new Wi-Fi network called **Piggy Config** will appear in 
 Piggy's screen will display:
 
 - The **web address** to open in your browser (e.g., `http://192.168.4.1/`)
-- The **login credentials** — username: `piggy`, password: `oinkoink`
+- The **login credentials** - username: `piggy`, password: `oinkoink`
 
 **3. Open the configuration page**
 

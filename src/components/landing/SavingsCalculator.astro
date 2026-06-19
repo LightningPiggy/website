@@ -74,22 +74,22 @@ import SectionHeading from '../ui/SectionHeading.astro';
           <!-- Total Sats -->
           <div>
             <p class="text-sm font-medium text-gray-500 mb-1">Total sats saved</p>
-            <p id="calc-sats" class="text-3xl font-bold text-gray-900">—</p>
+            <p id="calc-sats" class="text-3xl font-bold text-gray-900">-</p>
           </div>
           <!-- Current Value -->
           <div>
             <p class="text-sm font-medium text-gray-500 mb-1">Current USD value</p>
-            <p id="calc-value" class="text-3xl font-bold text-gray-900">—</p>
+            <p id="calc-value" class="text-3xl font-bold text-gray-900">-</p>
           </div>
           <!-- Total Invested -->
           <div>
             <p class="text-sm font-medium text-gray-500 mb-1">Total invested</p>
-            <p id="calc-invested" class="text-2xl font-bold text-gray-600">—</p>
+            <p id="calc-invested" class="text-2xl font-bold text-gray-600">-</p>
           </div>
           <!-- Gain -->
           <div>
             <p class="text-sm font-medium text-gray-500 mb-1">Gain</p>
-            <p id="calc-gain" class="text-2xl font-bold text-gray-600">—</p>
+            <p id="calc-gain" class="text-2xl font-bold text-gray-600">-</p>
           </div>
         </div>
 
@@ -198,10 +198,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var years = parseInt(yearsInput.value) || 0;
 
     if (amount <= 0 || years <= 0) {
-      satsEl.textContent = '—';
-      valueEl.textContent = '—';
-      investedEl.textContent = '—';
-      gainEl.textContent = '—';
+      satsEl.textContent = '-';
+      valueEl.textContent = '-';
+      investedEl.textContent = '-';
+      gainEl.textContent = '-';
       gainEl.className = 'text-2xl font-bold text-gray-600';
       return;
     }

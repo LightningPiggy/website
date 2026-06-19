@@ -9,7 +9,7 @@ const isDark = variant === 'dark';
 ---
 
 <form class:list={['newsletter-form', className]} data-variant={variant}>
-  <!-- Honeypot field — bots fill this, humans can't see it -->
+  <!-- Honeypot field - bots fill this, humans can't see it -->
   <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;">
     <label>Website (leave blank)
       <input type="text" name="website" tabindex="-1" autocomplete="off" />

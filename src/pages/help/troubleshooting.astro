@@ -29,7 +29,7 @@ const sections = [
         title: 'Update MicroPythonOS before installing the Lightning Piggy app',
         tags: mpos,
         problem: null,
-        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases — installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
+        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases - installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
       },
       {
         title: 'Connecting your device',
@@ -40,7 +40,7 @@ const sections = [
         title: 'Sourcing Parts',
         tags: mpos,
         problem: null,
-        solution: 'WaveShare ESP32-S3-Touch (2 inch screen) — including the optional camera makes setup a breeze: <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.htm" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Waveshare</a>',
+        solution: 'WaveShare ESP32-S3-Touch (2 inch screen) - including the optional camera makes setup a breeze: <a href="https://www.waveshare.com/esp32-s3-touch-lcd-2.htm" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Waveshare</a>',
       },
       {
         title: 'Flashing the Firmware',
@@ -64,7 +64,7 @@ const sections = [
         title: 'Serial port access errors',
         tags: classic,
         problem: '<code>Failed to open serial port</code> error when trying to flash firmware.',
-        solution: 'This indicates a permission restriction. On Linux/macOS, run <code>sudo chmod 777 /dev/ttyUSB*</code> to grant access. On Windows/macOS, install drivers if prompted — Linux systems typically include the necessary drivers by default.',
+        solution: 'This indicates a permission restriction. On Linux/macOS, run <code>sudo chmod 777 /dev/ttyUSB*</code> to grant access. On Windows/macOS, install drivers if prompted - Linux systems typically include the necessary drivers by default.',
       },
       {
         title: 'Browser extension conflicts during flashing',
@@ -120,7 +120,7 @@ const sections = [
         title: 'Configuration common mistakes',
         tags: classic,
         problem: 'Device won\'t connect to wallet after configuration.',
-        solution: 'When configuring your Piggy, enter only the hostname (not the full URL with <code>https://</code>). Note: For MicroPythonOS piggies the full <code>https://</code> URL is used. Settings are case-sensitive — use <code>YES</code> not <code>Yes</code>. Apply case sensitivity to timezone and currency fields too.',
+        solution: 'When configuring your Piggy, enter only the hostname (not the full URL with <code>https://</code>). Note: For MicroPythonOS piggies the full <code>https://</code> URL is used. Settings are case-sensitive - use <code>YES</code> not <code>Yes</code>. Apply case sensitivity to timezone and currency fields too.',
       },
       {
         title: 'Lightning address use (e.g. satoshi@lnbits.com)',
@@ -179,7 +179,7 @@ const sections = [
         title: 'Update MicroPythonOS before installing the Lightning Piggy app',
         tags: mpos,
         problem: null,
-        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases — installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
+        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases - installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
       },
       {
         title: 'MicroPythonOS app store fails to install Lightning Piggy',
@@ -388,7 +388,7 @@ const sections = [
           const cats = el.getAttribute('data-ts-cats');
           const section = el.getAttribute('data-ts-section') || '';
           if (!cats) {
-            // h2 headings and hrs — show if any item in their section matches
+            // h2 headings and hrs - show if any item in their section matches
             // But first check section filter
             if (active.section.size > 0) {
               let sectionMatch = false;

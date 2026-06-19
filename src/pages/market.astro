@@ -2,6 +2,7 @@
 import ContentLayout from '../layouts/ContentLayout.astro';
 import Button from '../components/ui/Button.astro';
 import VendorCard from '../components/ui/VendorCard.astro';
+import VendorApplyForm from '../components/ui/VendorApplyForm.astro';
 import vendorsData from '../data/vendors.json';
 
 const { vendors = [] } = vendorsData;
@@ -21,7 +22,7 @@ const regularVendors = vendors.filter((v) => !v.featured);
       <p class="text-gray-600 mb-6">
         These featured vendors have kindly pledged at least <strong>10% of their sales</strong> back to
         Lightning Piggy. Their generosity keeps the project free and open source, and helps us move faster
-        toward our mission — empowering every child to save for their future on a Bitcoin standard, in a way
+        toward our mission - empowering every child to save for their future on a Bitcoin standard, in a way
         that's fun, friendly, and educational.
       </p>
       <div class="grid md:grid-cols-2 gap-6">
@@ -41,6 +42,49 @@ const regularVendors = vendors.filter((v) => !v.featured);
       </div>
     </div>
   )}
+
+  <hr class="my-8 border-gray-200" />
+
+  <!-- Become a vendor -->
+  <div class="not-prose" id="become-a-vendor">
+    <div class="rounded-2xl border border-gray-200 bg-gradient-to-br from-pink/5 to-white p-8 md:p-10">
+      <h2 class="text-2xl font-bold text-gray-900 mb-2">Run a Store? Stock Lightning Piggy</h2>
+      <p class="text-gray-600 mb-6">
+        We'd love to add your shop to the market. The team will review your application.
+        Making sats the savings standard for every child is a team effort!
+      </p>
+
+      <button
+        type="button"
+        id="vendor-apply-toggle"
+        aria-expanded="false"
+        aria-controls="vendor-apply-panel"
+        class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors focus:outline-none focus:ring-2 focus:ring-pink/50"
+      >
+        Apply to Sell
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+      </button>
+
+      <div id="vendor-apply-panel" class="mt-6" hidden>
+        <VendorApplyForm />
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const toggle = document.getElementById('vendor-apply-toggle');
+    const panel = document.getElementById('vendor-apply-panel');
+    if (toggle && panel) {
+      toggle.addEventListener('click', () => {
+        panel.hidden = false;
+        toggle.setAttribute('aria-expanded', 'true');
+        toggle.hidden = true;
+        // Focus the first field for keyboard users
+        const firstField = panel.querySelector('input, select, textarea');
+        if (firstField) (firstField as HTMLElement).focus();
+      });
+    }
+  </script>
 
   <hr class="my-8 border-gray-200" />
 

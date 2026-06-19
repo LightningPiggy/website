@@ -288,7 +288,7 @@ import ContentLayout from '../../layouts/ContentLayout.astro';
         if (e.key === 'Enter') sendCommand();
       });
 
-      // Quick command buttons — populate input field
+      // Quick command buttons - populate input field
       document.querySelectorAll('.cmd-quick').forEach((btn) => {
         btn.addEventListener('click', () => {
           cmdInput.value = (btn as HTMLElement).dataset.cmd || '';

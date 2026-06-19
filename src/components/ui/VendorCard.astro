@@ -9,6 +9,7 @@ interface Vendor {
   description?: string;
   nostrUrl?: string;
   xUrl?: string;
+  featured?: boolean;
 }
 
 interface Props {
@@ -17,19 +18,25 @@ interface Props {
 
 const { vendor } = Astro.props;
 
-const shopTypeLabels: Record<string, string> = {
-  online: '🌐 Online',
-  physical: '🏪 Physical',
-  both: '🌐🏪 Online & Physical',
+const shopMeta: Record<string, { label: string; icons: string[] }> = {
+  online: { label: 'Online', icons: ['globe'] },
+  physical: { label: 'Physical', icons: ['store'] },
+  both: { label: 'Online & Physical', icons: ['globe', 'store'] },
 };
+const shop = shopMeta[vendor.shopType || 'online'] || shopMeta.online;
 
 const isInternal = vendor.url?.startsWith('/');
+
+// Featured vendors get a soft yellow "halo" (brand yellow #FFDB00) to stand out.
+const stateClass = vendor.featured
+  ? 'border-yellow shadow-[0_0_18px_2px_rgba(255,219,0,0.45)] hover:shadow-[0_0_24px_4px_rgba(255,219,0,0.6)]'
+  : 'border-gray-200 hover:border-pink hover:shadow-lg';
 ---
 
 <a
   href={vendor.url}
   {...(!isInternal ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
-  class="block p-6 bg-white rounded-xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+  class={`block p-6 bg-white rounded-xl border transition-all ${stateClass}`}
 >
   <div class="flex items-start gap-4">
     <div class="w-14 h-14 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden flex items-center justify-center">
@@ -48,13 +55,25 @@ const isInternal = vendor.url?.startsWith('/');
         {vendor.name.charAt(0).toUpperCase()}
       </div>
     </div>
-    <div class="flex-1">
-      <div class="flex items-center gap-2">
-        <h3 class="font-bold text-gray-900">{vendor.name}</h3>
-        <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
-          {shopTypeLabels[vendor.shopType || 'online'] || shopTypeLabels.online}
+    <div class="flex-1 min-w-0">
+      <div class="flex justify-end mb-2">
+        <span class="inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 whitespace-nowrap">
+        <span class="inline-flex items-center gap-0.5">
+          {shop.icons.includes('globe') && (
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm0 0c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3M3.6 9h16.8M3.6 15h16.8" />
+            </svg>
+          )}
+          {shop.icons.includes('store') && (
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 9.75V20.25h15V9.75M2.25 9.75 4.5 4.5h15l2.25 5.25M2.25 9.75h19.5M2.25 9.75a2.625 2.625 0 0 0 5.25 0 2.625 2.625 0 0 0 5.25 0 2.625 2.625 0 0 0 5.25 0M9.75 20.25v-4.5a1.5 1.5 0 0 1 1.5-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v4.5" />
+            </svg>
+          )}
+        </span>
+        {shop.label}
         </span>
       </div>
+      <h3 class="font-bold text-gray-900 break-words">{vendor.name}</h3>
       <p class="text-sm text-gray-500">
         {vendor.country}
         {vendor.shippingRegions && vendor.shippingRegions.length > 0 && (

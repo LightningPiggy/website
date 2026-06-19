@@ -1,0 +1,165 @@
+---
+// Public "become a vendor" application form. Submits to the vendor-apply
+// Netlify function, which spam-checks the entry, stores it as a pending
+// submission (Netlify Blobs) and emails the team. Mirrors the fields the
+// admin tool exposes when adding a vendor, minus internal-only flags
+// (featured / show-on-website) which stay an admin decision.
+const regions = ['Europe', 'North America', 'South America', 'Asia', 'Africa', 'Oceania', 'Worldwide'];
+---
+
+<form id="vendor-apply-form" class="vendor-apply-form not-prose">
+  <!-- Honeypot - bots fill this, humans can't see it -->
+  <div aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;overflow:hidden;">
+    <label>Website (leave blank)
+      <input type="text" name="website" tabindex="-1" autocomplete="off" />
+    </label>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4">
+    <label class="block">
+      <span class="block text-sm font-medium text-gray-700 mb-1">Store name <span class="text-pink">*</span></span>
+      <input type="text" name="name" required maxlength="120" placeholder="e.g. Robotechy"
+        class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
+    </label>
+    <label class="block">
+      <span class="block text-sm font-medium text-gray-700 mb-1">Contact email <span class="text-pink">*</span></span>
+      <input type="email" name="contactEmail" required maxlength="320" placeholder="you@store.com"
+        class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
+    </label>
+  </div>
+
+  <div class="grid sm:grid-cols-2 gap-4 mt-4">
+    <label class="block">
+      <span class="block text-sm font-medium text-gray-700 mb-1">Country <span class="text-pink">*</span></span>
+      <input type="text" name="country" required maxlength="80" placeholder="e.g. United Kingdom"
+        class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
+    </label>
+    <label class="block">
+      <span class="block text-sm font-medium text-gray-700 mb-1">Shop type</span>
+      <select name="shopType"
+        class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors">
+        <option value="online">Online</option>
+        <option value="physical">Physical</option>
+        <option value="both">Both</option>
+      </select>
+    </label>
+  </div>
+
+  <fieldset class="mt-4">
+    <legend class="block text-sm font-medium text-gray-700 mb-2">Shipping regions</legend>
+    <div class="flex flex-wrap gap-x-5 gap-y-2">
+      {regions.map((r) => (
+        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" name="shippingRegions" value={r} class="rounded border-gray-300 text-pink focus:ring-pink/30" />
+          {r}
+        </label>
+      ))}
+    </div>
+  </fieldset>
+
+  <label class="block mt-4">
+    <span class="block text-sm font-medium text-gray-700 mb-1">Description <span class="text-pink">*</span></span>
+    <textarea name="description" required rows="3" maxlength="600" placeholder="Briefly tell us what you sell and why you'd like to stock Lightning Piggy."
+      class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors"></textarea>
+  </label>
+
+  <div class="grid sm:grid-cols-2 gap-4 mt-4">
+    <label class="block">
+      <span class="block text-sm font-medium text-gray-700 mb-1">Website / shop URL <span class="text-pink">*</span></span>
+      <input type="url" name="websiteUrl" required maxlength="300" placeholder="https://yourstore.com"
+        class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
+    </label>
+    <label class="block">
+      <span class="block text-sm font-medium text-gray-700 mb-1">Nostr npub <span class="text-gray-400 font-normal">(optional)</span></span>
+      <input type="text" name="nostrNpub" maxlength="80" placeholder="npub1..."
+        class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
+    </label>
+  </div>
+
+  <label class="block mt-4">
+    <span class="block text-sm font-medium text-gray-700 mb-1">X profile URL <span class="text-gray-400 font-normal">(optional)</span></span>
+    <input type="url" name="xProfileUrl" maxlength="300" placeholder="https://x.com/yourstore"
+      class="w-full px-4 py-2.5 rounded-lg text-sm bg-white border border-gray-300 text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-pink/30 focus:border-pink transition-colors" />
+  </label>
+
+  <div class="mt-6 flex items-center gap-4">
+    <button type="submit"
+      class="px-6 py-3 rounded-xl text-sm font-semibold bg-pink text-white hover:bg-pink-dark transition-all focus:outline-none focus:ring-2 focus:ring-pink/50 disabled:opacity-50 disabled:cursor-not-allowed">
+      <span class="btn-text">Submit application</span>
+      <span class="btn-loading hidden">
+        <svg class="animate-spin h-4 w-4 mx-auto" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </span>
+    </button>
+    <p class="vendor-apply-message text-sm hidden"></p>
+  </div>
+</form>
+
+<script>
+  const form = document.getElementById('vendor-apply-form') as HTMLFormElement | null;
+  if (form) {
+    // Captured when the form rendered - server uses it as a time-to-fill check.
+    const formLoadedAt = Date.now();
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+      const btnText = submitBtn.querySelector('.btn-text') as HTMLElement;
+      const btnLoading = submitBtn.querySelector('.btn-loading') as HTMLElement;
+      const message = form.querySelector('.vendor-apply-message') as HTMLElement;
+
+      const fd = new FormData(form);
+      const shippingRegions = fd.getAll('shippingRegions').map(String);
+
+      const payload = {
+        name: String(fd.get('name') || '').trim(),
+        contactEmail: String(fd.get('contactEmail') || '').trim(),
+        country: String(fd.get('country') || '').trim(),
+        shopType: String(fd.get('shopType') || 'online'),
+        shippingRegions,
+        description: String(fd.get('description') || '').trim(),
+        websiteUrl: String(fd.get('websiteUrl') || '').trim(),
+        nostrNpub: String(fd.get('nostrNpub') || '').trim(),
+        xProfileUrl: String(fd.get('xProfileUrl') || '').trim(),
+        website: String(fd.get('website') || ''), // honeypot
+        startedAt: formLoadedAt,
+      };
+
+      submitBtn.disabled = true;
+      btnText.classList.add('hidden');
+      btnLoading.classList.remove('hidden');
+      message.classList.add('hidden');
+
+      const showMessage = (text: string, ok: boolean) => {
+        message.textContent = text;
+        message.classList.remove('hidden', 'text-green-600', 'text-red-500');
+        message.classList.add(ok ? 'text-green-600' : 'text-red-500');
+      };
+
+      try {
+        const res = await fetch('/.netlify/functions/vendor-apply', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok) {
+          form.reset();
+          showMessage("Thanks! Your application is in. We'll review it and be in touch soon. 🐷⚡", true);
+        } else {
+          showMessage(data.error || 'Something went wrong. Please try again.', false);
+        }
+      } catch (err) {
+        showMessage('Network error. Please check your connection and try again.', false);
+      } finally {
+        submitBtn.disabled = false;
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+      }
+    });
+  }
+</script>

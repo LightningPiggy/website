@@ -1,0 +1,273 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Button from '../components/ui/Button.astro';
+
+// Public download / install targets.
+// iOS ships via TestFlight (open beta) until the App Store listing is live;
+// Android is sideloaded from the latest GitHub Release APK ("latest" always
+// resolves to the newest published release).
+const TESTFLIGHT_URL = 'https://testflight.apple.com/join/bzfvEecu';
+const APK_URL = 'https://github.com/BenGWeeks/lightning-piggy-mobile/releases/latest';
+---
+
+<BaseLayout
+  title="Get the App"
+  description="Install the Lightning Piggy mobile app — a Bitcoin Lightning wallet for the whole family. iPhone via TestFlight, Android via APK."
+>
+  <!-- Hero -->
+  <section class="hero-app">
+    <div class="hero-glow" aria-hidden="true"></div>
+    <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-14 pb-4 text-center">
+      <h1 class="text-3xl md:text-5xl font-bold text-gray-900 mb-3 tracking-tight">
+        Get the Lightning Piggy app
+      </h1>
+      <p class="text-lg text-gray-600 max-w-xl mx-auto leading-relaxed">
+        A Bitcoin Lightning wallet for the whole family — save in sats, send and receive over
+        Lightning, and hunt for <a href="/piglets" class="text-pink font-semibold hover:underline">Piglets</a>
+        out in the wild. In open beta on iPhone and Android.
+      </p>
+
+      <!-- Phone showcase -->
+      <div class="showcase" role="img" aria-label="Screens from the Lightning Piggy app: wallet, explore, map, geo-cache list, and Piglet detail">
+        <div class="slot s-ol"><div class="phone p-ol"><img src="/images/app/02-explore.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-il"><div class="phone p-il"><img src="/images/app/03-map.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-c"><div class="phone p-c"><img src="/images/app/01-wallet.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-ir"><div class="phone p-ir"><img src="/images/app/05-piglet.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-or"><div class="phone p-or"><img src="/images/app/04-hunt.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    /* Premium app-showcase hero: real screenshots inside device frames floating
+       on a soft brand-pink glow. Kept on-brand (pink #EC008C) and lightweight. */
+    .hero-app {
+      position: relative;
+      overflow: hidden;
+      /* Resolve fully to white at the bottom so the section blends seamlessly
+         into the (white) download cards below — no hard pink edge. */
+      background: linear-gradient(180deg, #fff4f9 0%, #ffeaf4 22%, #fff6fb 64%, #ffffff 100%);
+      padding-bottom: 2.5rem;
+    }
+    .hero-glow {
+      position: absolute;
+      left: 50%;
+      top: 38%;
+      width: min(900px, 120%);
+      aspect-ratio: 1;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(closest-side, rgba(236, 0, 140, 0.18), rgba(236, 0, 140, 0) 70%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    .showcase {
+      margin-top: 2.75rem;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      perspective: 1600px;
+      min-height: 360px;
+    }
+    .slot {
+      opacity: 0;
+      animation: phone-rise 0.8s cubic-bezier(0.22, 0.7, 0.18, 1) forwards;
+      will-change: transform, opacity;
+    }
+    .slot:not(:first-child) { margin-left: -2.6rem; }
+
+    .phone {
+      position: relative;
+      width: var(--w, 210px);
+      aspect-ratio: 9 / 20;
+      background: linear-gradient(155deg, #232329 0%, #0b0b0e 60%);
+      border-radius: 2.1rem;
+      padding: 6px;
+      box-shadow:
+        0 2px 3px rgba(0, 0, 0, 0.5),
+        0 26px 50px -18px rgba(120, 8, 66, 0.45),
+        inset 0 0 0 1.5px rgba(255, 255, 255, 0.07);
+    }
+    .phone::before { /* notch */
+      content: "";
+      position: absolute;
+      top: 7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 34%;
+      height: 13px;
+      background: #0a0a0d;
+      border-radius: 0 0 11px 11px;
+      z-index: 3;
+    }
+    .phone::after { /* glossy edge highlight */
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 2.1rem;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 38%);
+    }
+    .phone img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: top;
+      border-radius: 1.65rem;
+      display: block;
+      background: #fff;
+    }
+
+    /* Depth + fan. Center largest and upright; flanks smaller, tilted, set back. */
+    .p-c  { --w: 232px; z-index: 5; transform: translateY(-12px); }
+    .p-il { --w: 200px; z-index: 4; transform: translateY(18px) rotate(-7deg); }
+    .p-ir { --w: 200px; z-index: 4; transform: translateY(18px) rotate(7deg); }
+    .p-ol { --w: 172px; z-index: 3; transform: translateY(46px) rotate(-12deg); filter: saturate(0.96); }
+    .p-or { --w: 172px; z-index: 3; transform: translateY(46px) rotate(12deg); filter: saturate(0.96); }
+
+    /* Staggered reveal, centre first then outward. */
+    .s-c  { animation-delay: 0.04s; }
+    .s-il, .s-ir { animation-delay: 0.16s; }
+    .s-ol, .s-or { animation-delay: 0.28s; }
+
+    @keyframes phone-rise {
+      from { opacity: 0; transform: translateY(46px) scale(0.94); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Tablet: drop the outermost pair. */
+    @media (max-width: 900px) {
+      .s-ol, .s-or { display: none; }
+      .slot:not(:first-child) { margin-left: -2rem; }
+      .p-c { --w: 210px; }
+      .p-il, .p-ir { --w: 178px; }
+    }
+    /* Phone: just the hero shot, upright. */
+    @media (max-width: 560px) {
+      .s-il, .s-ir { display: none; }
+      .showcase { min-height: 300px; }
+      .slot:not(:first-child) { margin-left: 0; }
+      .p-c { --w: 215px; transform: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .slot { opacity: 1; animation: none; }
+    }
+  </style>
+
+  <!-- Platform cards -->
+  <section class="pb-4">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid md:grid-cols-2 gap-6">
+        <!-- iOS / TestFlight -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-7 flex flex-col">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gray-900 text-white">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.365 1.43c0 1.14-.467 2.18-1.21 2.94-.79.83-2.07 1.47-3.13 1.38-.13-1.1.42-2.27 1.13-3 .79-.82 2.16-1.43 3.21-1.32zM20.9 17.07c-.57 1.31-.84 1.9-1.57 3.06-1.02 1.62-2.46 3.64-4.24 3.65-1.58.02-1.99-1.03-4.14-1.02-2.15.01-2.6 1.04-4.18 1.02-1.78-.02-3.14-1.84-4.16-3.46-2.85-4.52-3.15-9.82-1.39-12.64 1.25-2 3.22-3.17 5.08-3.17 1.89 0 3.08 1.04 4.64 1.04 1.51 0 2.43-1.04 4.62-1.04 1.65 0 3.4.9 4.65 2.45-4.09 2.24-3.42 8.08.69 10.11z"/></svg>
+            </span>
+            <div>
+              <h2 class="text-xl font-bold text-gray-900">iPhone &amp; iPad</h2>
+              <p class="text-sm text-gray-500">via TestFlight beta</p>
+            </div>
+          </div>
+          <p class="text-gray-600 leading-relaxed mb-6">
+            Join the public TestFlight beta. You'll need Apple's free
+            <span class="font-medium">TestFlight</span> app installed first — the link below opens it
+            and adds Lightning Piggy.
+          </p>
+          <div class="mt-auto">
+            <Button href={TESTFLIGHT_URL} variant="primary" size="lg" class="w-full">
+              Join the TestFlight beta
+            </Button>
+            <p class="text-xs text-gray-400 mt-3 text-center">
+              Opens testflight.apple.com · iOS 16+
+            </p>
+          </div>
+        </div>
+
+        <!-- Android / APK -->
+        <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-7 flex flex-col">
+          <div class="flex items-center gap-3 mb-4">
+            <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-pink text-white">
+              <svg class="h-7 w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.6 9.48l1.84-3.18a.4.4 0 00-.69-.4l-1.86 3.23a11.43 11.43 0 00-8.78 0L6.25 5.9a.4.4 0 00-.69.4L7.4 9.48A10.81 10.81 0 002 18.34h20a10.81 10.81 0 00-5.6-8.86zM7 15.25a1 1 0 110-2 1 1 0 010 2zm10 0a1 1 0 110-2 1 1 0 010 2z"/></svg>
+            </span>
+            <div>
+              <h2 class="text-xl font-bold text-gray-900">Android</h2>
+              <p class="text-sm text-gray-500">download the APK</p>
+            </div>
+          </div>
+          <p class="text-gray-600 leading-relaxed mb-6">
+            Download the latest APK from GitHub and install it. Android will ask you to allow
+            installing from your browser the first time — that's expected for apps outside the Play
+            Store.
+          </p>
+          <div class="mt-auto">
+            <Button href={APK_URL} variant="primary" size="lg" class="w-full">
+              Download the APK
+            </Button>
+            <p class="text-xs text-gray-400 mt-3 text-center">
+              Latest release on GitHub · Android 9+
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Beta note -->
+  <section class="py-6">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="rounded-xl bg-pink-light/40 border border-pink-light px-5 py-4 text-sm text-gray-600 text-center">
+        Lightning Piggy isn't on the App Store or Google Play yet — we're in <span class="font-semibold text-gray-800">open beta</span>.
+        Both builds come straight from our
+        <a href="https://github.com/LightningPiggy" class="text-pink font-semibold hover:underline">open-source repository</a>,
+        and your feedback shapes what comes next.
+      </div>
+    </div>
+  </section>
+
+  <!-- Privacy / serverless -->
+  <section class="py-8">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-7 text-center">
+        <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-light text-pink mb-4">
+          <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        </span>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">No tracking. No servers. No accounts.</h2>
+        <p class="text-gray-600 leading-relaxed max-w-xl mx-auto">
+          Lightning Piggy has no backend of its own — there's nothing for us to track. The app is
+          <span class="font-semibold text-gray-800">serverless</span>: it talks directly to public
+          <span class="font-semibold text-gray-800">Nostr relays</span> and the Lightning Network.
+          Your keys, your sats and your data stay on your device, under your control.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- What you can do -->
+  <section class="py-8 border-t border-gray-100">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-1">Multiple wallets</h3>
+          <p class="text-sm text-gray-600">
+            Give each child their own wallets — savings, pocket money, even one to pay the tutor or run a little business.
+          </p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-1">Save in sats</h3>
+          <p class="text-sm text-gray-600">A real Bitcoin wallet kids and parents can share.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-1">Send &amp; receive</h3>
+          <p class="text-sm text-gray-600">Fast, low-fee payments over the Lightning Network.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-gray-900 mb-1">Hunt Piglets</h3>
+          <p class="text-sm text-gray-600">
+            Find hidden <a href="/piglets" class="text-pink font-semibold hover:underline">Piglets</a> and claim real sats.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

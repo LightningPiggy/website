@@ -9,9 +9,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   <!-- MapLibre GL JS (loaded from CDN, no npm dependency) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.min.css" />
 
+  <style is:global>
+    /* Markers carry an explicit z-index (1 = NIP-GC cache, 2 = Piglet) so our
+       Piglets layer above other caches. Lift the open detail popup above both
+       (and its close button above its own content) so the card is never hidden
+       behind the pins. */
+    .maplibregl-popup { z-index: 5; }
+    .maplibregl-popup-close-button { z-index: 1; font-size: 18px; padding: 0 6px; }
+  </style>
+
   <div id="piglets-root" class="relative w-full" style="height: calc(100vh - 4rem);">
-    <!-- Map fills the container -->
-    <div id="piglets-map" class="absolute inset-0"></div>
+    <!-- Map fills the container. Position/inset are set INLINE (not via Tailwind
+         `absolute inset-0`) on purpose: MapLibre adds a `.maplibregl-map` class
+         whose stylesheet sets `position: relative`, and because that stylesheet
+         loads after Tailwind it would win over the `.absolute` utility — collapsing
+         the container to 0 height. Inline styles outrank class selectors, so the
+         map keeps filling its parent. -->
+    <div id="piglets-map" style="position:absolute;top:0;right:0;bottom:0;left:0;"></div>
 
     <!-- Loading overlay -->
     <div
@@ -30,22 +44,78 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       No Piglets found yet — go hide one!
     </div>
 
+    <!-- Helper / "what is this?" overlay (top-left) -->
+    <div
+      id="piglets-help"
+      class="absolute top-4 left-4 z-20 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-white/95 backdrop-blur-sm shadow-xl border border-gray-200 p-4 text-sm text-gray-600"
+    >
+      <button
+        id="piglets-help-close"
+        type="button"
+        aria-label="Hide info"
+        class="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100 transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      <div class="flex items-center gap-2 pr-6">
+        <span class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white border-2 border-white shrink-0" style="background:#EC008C;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>
+        </span>
+        <h2 class="text-base font-bold text-gray-900">Find a Piglet, win sats!</h2>
+      </div>
+      <p class="mt-2.5 leading-relaxed">
+        Each <span class="font-semibold text-pink">Piglet</span> is a real-world hidden Bitcoin stash. Use the
+        <span class="font-semibold">Lightning Piggy</span> app to navigate to one, find the hidden tag, and scan it.
+      </p>
+      <p class="mt-2 leading-relaxed">
+        Piglets marked with a
+        <span class="inline-flex h-4 w-4 align-text-bottom items-center justify-center rounded-full bg-white shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#FFC107" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+        </span>
+        carry a <span class="font-semibold">Lightning prize</span> you can claim straight to your wallet.
+        Grey/purple pins are other geocachers' <span class="font-semibold">NIP-GC</span> caches.
+      </p>
+      <a
+        href="/build"
+        class="mt-3 inline-flex items-center justify-center w-full px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
+      >
+        Get the Lightning Piggy app
+      </a>
+    </div>
+
+    <!-- Collapsed "info" pill — shown after the helper is dismissed -->
+    <button
+      id="piglets-help-open"
+      type="button"
+      aria-label="Show info"
+      class="absolute top-4 left-4 z-20 hidden items-center gap-1.5 rounded-full bg-white shadow-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+    >
+      <svg class="w-4 h-4 text-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      How it works
+    </button>
+
     <!-- Legend + count -->
     <div
       id="piglets-legend"
       class="absolute bottom-4 left-4 z-10 hidden rounded-xl bg-white/95 shadow-lg border border-gray-200 px-3 py-2 text-xs text-gray-700 space-y-1.5"
     >
       <div class="flex items-center gap-2">
-        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-pink text-white">
+        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full text-white border border-white" style="background:#EC008C;">
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>
         </span>
         <span>Piglet</span>
       </div>
       <div class="flex items-center gap-2">
-        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white border border-pink text-pink">
-          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>
+        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full text-white border border-white" style="background:#7A5CFF;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
         </span>
         <span>NIP-GC cache</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white" style="box-shadow:0 1px 3px rgba(0,0,0,0.25);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#FFC107" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+        </span>
+        <span>Lightning prize</span>
       </div>
       <div id="piglets-count" class="pt-1 border-t border-gray-100 text-gray-500"></div>
     </div>
@@ -308,29 +378,52 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     // Markers + popup (mirrors CacheDetailSheet)
     // -----------------------------------------------------------------------
     const BRAND_PINK = '#EC008C';
+    // The app's `cachePurple` (src/styles/palettes.ts) — vanilla NIP-GC caches.
+    const CACHE_PURPLE = '#7A5CFF';
 
+    // Lucide `piggy-bank` (Piglets) and `map-pin` (vanilla NIP-GC caches) — the
+    // same two glyphs the mobile app uses on its map (src/components/LibreMiniMap.tsx:
+    // Piglet → PiggyBank pink, NIP-GC → MapPin purple).
     const PIGGY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>`;
+    const MAPPIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`;
+    // Lucide `zap`, filled — the app's zapYellow prize badge (LpPayoutBadge.tsx).
+    const ZAP_YELLOW = '#FFC107';
+    const ZAP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="${ZAP_YELLOW}" stroke="${ZAP_YELLOW}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>`;
+
+    // A Piglet carrying a withdrawable prize (LP label + advertised sats) gets the
+    // yellow ⚡ badge — same gate as the app's LpPayoutBadge (isLpPiggy && payoutSats != null).
+    function hasPrize(cache: ParsedCache): boolean {
+      return cache.isLpPiggy && cache.payoutSats != null;
+    }
+
+    function zapBadgeHtml(): string {
+      return `<span aria-label="Lightning payout available" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:9999px;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.3);">${ZAP_SVG}</span>`;
+    }
+
+    // The circular badge used for a marker / popup icon / legend swatch. Piglet =
+    // pink + piggy-bank glyph; NIP-GC = purple + map-pin glyph. White glyph + ring
+    // on both, mirroring the app's filled pins.
+    function iconBadgeHtml(isLpPiggy: boolean, size = 32): string {
+      const bg = isLpPiggy ? BRAND_PINK : CACHE_PURPLE;
+      const glyph = isLpPiggy ? PIGGY_SVG : MAPPIN_SVG;
+      return `<span style="display:inline-flex;width:${size}px;height:${size}px;align-items:center;justify-content:center;border-radius:9999px;background:${bg};border:2px solid #fff;color:#fff;flex:none;box-shadow:0 1px 4px rgba(0,0,0,0.35);">${glyph}</span>`;
+    }
 
     function makeMarkerElement(cache: ParsedCache): HTMLElement {
+      // The OUTER element is MapLibre's marker node — leave its positioning
+      // alone (MapLibre's `.maplibregl-marker` class sets `position:absolute`;
+      // overriding it strands every pin at the map's top-left). The zap badge
+      // anchors to an INNER `position:relative` wrapper instead.
       const el = document.createElement('div');
-      el.style.width = '32px';
-      el.style.height = '32px';
-      el.style.borderRadius = '9999px';
-      el.style.display = 'flex';
-      el.style.alignItems = 'center';
-      el.style.justifyContent = 'center';
       el.style.cursor = 'pointer';
-      el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.35)';
-      if (cache.isLpPiggy) {
-        el.style.background = BRAND_PINK;
-        el.style.border = '2px solid #fff';
-        el.style.color = '#fff';
-      } else {
-        el.style.background = '#fff';
-        el.style.border = `2px solid ${BRAND_PINK}`;
-        el.style.color = BRAND_PINK;
-      }
-      el.innerHTML = PIGGY_SVG;
+      // Piglets sit above vanilla NIP-GC caches when they overlap.
+      el.style.zIndex = cache.isLpPiggy ? '2' : '1';
+      const inner = document.createElement('div');
+      inner.style.position = 'relative';
+      inner.style.width = '32px';
+      inner.style.height = '32px';
+      inner.innerHTML = iconBadgeHtml(cache.isLpPiggy, 32) + (hasPrize(cache) ? zapBadgeHtml() : '');
+      el.appendChild(inner);
       el.setAttribute('aria-label', cache.isLpPiggy ? 'Piglet' : 'NIP-GC cache');
       return el;
     }
@@ -344,9 +437,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         cache.terrain != null ? 'T' + cache.terrain : null,
       ].filter(Boolean) as string[];
 
-      const iconBadge = cache.isLpPiggy
-        ? `<span style="display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:9999px;background:${BRAND_PINK};color:#fff;flex:none;">${PIGGY_SVG}</span>`
-        : `<span style="display:inline-flex;width:28px;height:28px;align-items:center;justify-content:center;border-radius:9999px;background:#fff;border:2px solid ${BRAND_PINK};color:${BRAND_PINK};flex:none;">${PIGGY_SVG}</span>`;
+      const iconBadge = iconBadgeHtml(cache.isLpPiggy, 28);
 
       const kindChip = cache.isLpPiggy
         ? `<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${BRAND_PINK};color:#fff;">Piglet</span>`
@@ -409,7 +500,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     // -----------------------------------------------------------------------
     // Init
     // -----------------------------------------------------------------------
-    document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for the CDN-loaded MapLibre global to be ready. Astro bundles this
+    // <script> as a deferred ES module, so it may run before OR after the
+    // classic maplibre-gl script has executed — poll briefly rather than
+    // assuming an order.
+    function whenMaplibreReady(cb: (m: any) => void): void {
+      const start = Date.now();
+      const tick = () => {
+        const m = (window as any).maplibregl;
+        if (m) {
+          cb(m);
+        } else if (Date.now() - start < 10000) {
+          setTimeout(tick, 50);
+        } else {
+          console.error('MapLibre GL failed to load from CDN.');
+        }
+      };
+      tick();
+    }
+
+    async function initPigletsMap(): Promise<void> {
       const maplibregl = (window as any).maplibregl;
       const mapEl = document.getElementById('piglets-map');
       if (!maplibregl || !mapEl) return;
@@ -425,10 +535,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           carto: {
             type: 'raster' as const,
             tiles: [
-              'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-              'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-              'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
-              'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+              'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
             ],
             tileSize: 256,
             attribution: '© OpenStreetMap contributors © CARTO',
@@ -445,6 +555,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         attributionControl: true,
       });
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+      // Standard "locate me" control (button + blue dot), like the app's map.
+      const geolocate = new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true, timeout: 8000 },
+        trackUserLocation: false,
+        showUserLocation: true,
+        showAccuracyCircle: true,
+      });
+      map.addControl(geolocate, 'top-right');
 
       let caches: ParsedCache[] = [];
       try {
@@ -472,7 +591,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const bounds = new maplibregl.LngLatBounds();
 
       const addMarkers = () => {
-        for (const cache of caches) {
+        // Add vanilla NIP-GC caches first, Piglets last, so our Piglets render
+        // on top when they share (or nearly share) a location. The per-marker
+        // z-index backs this up for exact overlaps.
+        const ordered = [...caches].sort(
+          (a, b) => Number(a.isLpPiggy) - Number(b.isLpPiggy),
+        );
+        for (const cache of ordered) {
           const el = makeMarkerElement(cache);
 
           const popup = new maplibregl.Popup({
@@ -508,8 +633,103 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         }
       };
 
-      if (map.loaded()) addMarkers();
-      else map.on('load', addMarkers);
-    });
+      // HTML markers are DOM overlays positioned from the map transform, which
+      // exists as soon as the Map is constructed — they don't need the style /
+      // tiles to have finished loading. Add them right away so a slow or failing
+      // basemap can never strand the pins.
+      addMarkers();
+
+      // Auto-centre on the visitor. We call the browser geolocation API directly
+      // rather than GeolocateControl.trigger(): the control runs an async support
+      // check first and silently no-ops (no permission prompt) if triggered before
+      // it's ready — which is exactly what happens on load. getCurrentPosition
+      // always raises the prompt. On allow we fly to the user; the control's own
+      // button still shows the blue accuracy dot on demand. On deny / timeout /
+      // unsupported, the fitBounds world view stays.
+      // Smooth, gentle fly to a coordinate. Gentle zoom on purpose — there
+      // usually aren't many Piglets in the visitor's exact spot, so we frame the
+      // surrounding region, not the street. `essential:true` keeps the animation
+      // even under prefers-reduced-motion and stops a stray event cancelling it.
+      const flyToVisitor = (lng: number, lat: number, zoom: number) => {
+        map.flyTo({ center: [lng, lat], zoom, duration: 1800, essential: true });
+      };
+
+      // Last-resort coarse locate: city-level position from the visitor's IP.
+      // Used only when precise geolocation is denied, unavailable, or times out
+      // (desktop browsers without a working location provider). No prompt, no
+      // device sensors — just enough to centre the map on roughly the right area.
+      const ipFallbackLocate = async () => {
+        try {
+          // GeoJS — free, keyless, CORS-enabled. Returns lat/lng as strings.
+          const data = await fetch('https://get.geojs.io/v1/ip/geo.json').then((r) => r.json());
+          const lat = parseFloat(data && data.latitude);
+          const lng = parseFloat(data && data.longitude);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            flyToVisitor(lng, lat, 6);
+          }
+        } catch (e) {
+          console.warn('[Piglets] IP fallback failed:', e);
+        }
+      };
+
+      const locateMe = () => {
+        if (!navigator.geolocation) {
+          ipFallbackLocate();
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            flyToVisitor(pos.coords.longitude, pos.coords.latitude, 7);
+          },
+          () => {
+            // Denied / unavailable / timed out → fall back to coarse IP locate so
+            // the map still moves somewhere sensible.
+            ipFallbackLocate();
+          },
+          // enableHighAccuracy:false → fast network/Wi-Fi provider instead of
+          // waiting on GPS hardware (desktops lack it → "prompt shows but never
+          // moves"). Short-ish timeout so the IP fallback kicks in promptly.
+          { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 },
+        );
+      };
+      // Centre on the visitor immediately. We deliberately do NOT gate this on
+      // the map's `load` event: a raster-only style can leave `load` unfired, and
+      // the actual camera move happens inside the async geolocation callback by
+      // which point the map is ready regardless. Camera ops are safe pre-load
+      // (the fitBounds above already runs that early).
+      locateMe();
+    }
+
+    // Helper overlay: dismiss to a compact "How it works" pill, and restore.
+    function wireHelpOverlay(): void {
+      const help = document.getElementById('piglets-help');
+      const closeBtn = document.getElementById('piglets-help-close');
+      const openBtn = document.getElementById('piglets-help-open');
+      closeBtn?.addEventListener('click', () => {
+        help?.classList.add('hidden');
+        openBtn?.classList.remove('hidden');
+        openBtn?.classList.add('inline-flex');
+      });
+      openBtn?.addEventListener('click', () => {
+        openBtn.classList.add('hidden');
+        openBtn.classList.remove('inline-flex');
+        help?.classList.remove('hidden');
+      });
+    }
+
+    // Run as soon as both the DOM and the MapLibre global are ready. Don't
+    // rely on DOMContentLoaded alone — this bundled module is deferred and
+    // the event may have already fired by the time it executes.
+    function start(): void {
+      wireHelpOverlay();
+      whenMaplibreReady(() => {
+        initPigletsMap().catch((e) => console.error('Piglets map init failed:', e));
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
+    } else {
+      start();
+    }
   </script>
 </BaseLayout>

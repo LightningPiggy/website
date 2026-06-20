@@ -8,6 +8,56 @@ import Button from '../components/ui/Button.astro';
 // resolves to the newest published release).
 const TESTFLIGHT_URL = 'https://testflight.apple.com/join/bzfvEecu';
 const APK_URL = 'https://github.com/BenGWeeks/lightning-piggy-mobile/releases/latest';
+
+// Feature grid. `icon` is the inner markup of a 24×24 Lucide icon (stroked).
+const features = [
+  {
+    title: 'Multiple wallets',
+    body: 'Separate wallets for each child — savings, pocket money, or paying the tutor.',
+    icon: '<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>',
+  },
+  {
+    title: 'Save in sats',
+    body: 'A real Bitcoin wallet that kids and parents can hold and grow together.',
+    icon: '<path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/>',
+  },
+  {
+    title: 'Send & receive',
+    body: 'Fast, low-fee Bitcoin payments over the Lightning Network, to anyone.',
+    icon: '<path d="m3 16 4 4 4-4"/><path d="M7 20V4"/><path d="m21 8-4-4-4 4"/><path d="M17 4v16"/>',
+  },
+  {
+    title: 'Transfer & swap',
+    body: 'Move funds between wallets, and swap between on-chain and Lightning.',
+    icon: '<path d="M8 3 4 7l4 4"/><path d="M4 7h16"/><path d="m16 21 4-4-4-4"/><path d="M20 17H4"/>',
+  },
+  {
+    title: 'Find local businesses',
+    body: 'Discover shops and cafés near you that accept Bitcoin, right on the map.',
+    icon: '<path d="m2 7 4.41-4.41A2 2 0 0 1 7.83 2h8.34a2 2 0 0 1 1.42.59L22 7"/><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M15 22v-4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4"/><path d="M2 7h20"/>',
+  },
+  {
+    title: 'Encrypted messaging',
+    body: 'Message friends and family privately, with end-to-end encrypted chats.',
+    icon: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  },
+  {
+    title: 'Hunt Piglets',
+    body: 'Find hidden Piglets out in the wild and claim the real sats inside.',
+    icon: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
+    href: '/piglets',
+  },
+  {
+    title: 'Nostr integration',
+    body: 'Built on Nostr, so your profile, contacts and zaps travel with you.',
+    icon: '<rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/>',
+  },
+  {
+    title: 'NWC connect',
+    body: 'Connect any Lightning wallet over Nostr Wallet Connect in seconds.',
+    icon: '<path d="M6.3 20.3a2.4 2.4 0 0 0 3.4 0L12 18l-6-6-2.3 2.3a2.4 2.4 0 0 0 0 3.4Z"/><path d="m2 22 3-3"/><path d="M7.5 13.5 10 11"/><path d="M10.5 16.5 13 14"/><path d="m18 3-4 4h6l-4 4"/>',
+  },
+];
 ---
 
 <BaseLayout
@@ -244,29 +294,44 @@ const APK_URL = 'https://github.com/BenGWeeks/lightning-piggy-mobile/releases/la
   </section>
 
   <!-- What you can do -->
-  <section class="py-8 border-t border-gray-100">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-        <div>
-          <h3 class="font-semibold text-gray-900 mb-1">Multiple wallets</h3>
-          <p class="text-sm text-gray-600">
-            Give each child their own wallets — savings, pocket money, even one to pay the tutor or run a little business.
-          </p>
-        </div>
-        <div>
-          <h3 class="font-semibold text-gray-900 mb-1">Save in sats</h3>
-          <p class="text-sm text-gray-600">A real Bitcoin wallet kids and parents can share.</p>
-        </div>
-        <div>
-          <h3 class="font-semibold text-gray-900 mb-1">Send &amp; receive</h3>
-          <p class="text-sm text-gray-600">Fast, low-fee payments over the Lightning Network.</p>
-        </div>
-        <div>
-          <h3 class="font-semibold text-gray-900 mb-1">Hunt Piglets</h3>
-          <p class="text-sm text-gray-600">
-            Find hidden <a href="/piglets" class="text-pink font-semibold hover:underline">Piglets</a> and claim real sats.
-          </p>
-        </div>
+  <section class="py-10">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-bold text-gray-900 text-center mb-8">Everything in one app</h2>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {features.map((f) => {
+          const Tag = f.href ? 'a' : 'div';
+          return (
+            <Tag
+              href={f.href}
+              class:list={[
+                'group rounded-2xl border border-gray-200 bg-white p-6 shadow-sm transition-all',
+                f.href ? 'hover:shadow-md hover:border-pink/40 cursor-pointer' : '',
+              ]}
+            >
+              <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-pink-light text-pink mb-4">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  set:html={f.icon}
+                />
+              </span>
+              <h3 class="font-semibold text-gray-900 mb-1.5">
+                {f.title}
+                {f.href && (
+                  <span class="text-pink opacity-0 group-hover:opacity-100 transition-opacity ml-1">→</span>
+                )}
+              </h3>
+              <p class="text-sm text-gray-600 leading-relaxed">{f.body}</p>
+            </Tag>
+          );
+        })}
       </div>
     </div>
   </section>

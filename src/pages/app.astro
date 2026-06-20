@@ -275,21 +275,20 @@ const features = [
     </div>
   </section>
 
-  <!-- Privacy / serverless -->
-  <section class="py-8">
-    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="rounded-2xl border border-gray-200 bg-white shadow-sm p-7 text-center">
-        <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-light text-pink mb-4">
-          <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
-        </span>
-        <h2 class="text-xl font-bold text-gray-900 mb-2">No tracking. No servers. No accounts.</h2>
-        <p class="text-gray-600 leading-relaxed max-w-xl mx-auto">
-          Lightning Piggy has no backend of its own — there's nothing for us to track. The app is
-          <span class="font-semibold text-gray-800">serverless</span>: it talks directly to public
-          <span class="font-semibold text-gray-800">Nostr relays</span> and the Lightning Network.
-          Your keys, your sats and your data stay on your device, under your control.
-        </p>
-      </div>
+  <!-- Privacy / serverless — full-width dark band, matching the About page -->
+  <section class="py-10 md:py-16 bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <span class="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-pink mb-5">
+        <svg class="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      </span>
+      <p class="text-pink text-sm font-semibold uppercase tracking-widest mb-3">Private by design</p>
+      <h2 class="text-3xl md:text-4xl font-bold mb-4">No tracking. No servers. No accounts.</h2>
+      <p class="text-gray-400 text-lg leading-relaxed max-w-xl mx-auto">
+        Lightning Piggy has no backend of its own — there's nothing for us to track. The app is
+        <span class="font-semibold text-white">serverless</span>: it talks directly to public
+        <span class="font-semibold text-white">Nostr relays</span> and the Lightning Network.
+        Your keys, your sats and your data stay on your device, under your control.
+      </p>
     </div>
   </section>
 
@@ -308,26 +307,28 @@ const features = [
                 f.href ? 'hover:shadow-md hover:border-pink/40 cursor-pointer' : '',
               ]}
             >
-              <span class="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-pink-light text-pink mb-4">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="22"
-                  height="22"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  set:html={f.icon}
-                />
-              </span>
-              <h3 class="font-semibold text-gray-900 mb-1.5">
-                {f.title}
-                {f.href && (
-                  <span class="text-pink opacity-0 group-hover:opacity-100 transition-opacity ml-1">→</span>
-                )}
-              </h3>
+              <div class="flex items-center gap-3 mb-2">
+                <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-light text-pink">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    set:html={f.icon}
+                  />
+                </span>
+                <h3 class="font-semibold text-gray-900">
+                  {f.title}
+                  {f.href && (
+                    <span class="text-pink opacity-0 group-hover:opacity-100 transition-opacity ml-1">→</span>
+                  )}
+                </h3>
+              </div>
               <p class="text-sm text-gray-600 leading-relaxed">{f.body}</p>
             </Tag>
           );

@@ -26,6 +26,14 @@
       "logo": "https://m.primal.net/JdnO.jpg",
       "nostrUrl": "https://njump.me/npub1yy0nyk6nj6tg4sx8nd7q5qcdw6pqd5e2cc0e8u2rmcgjhpvm63hsk67xe5",
       "xUrl": "https://x.com/IsaacWeeks",
+      "products": {
+        "mode": "curated",
+        "include": [
+          "product_1768341630046_c91xy",
+          "product_1768341201209_bm83o",
+          "product_1768340961490_i9bh3"
+        ]
+      },
       "featured": false
     },
     {

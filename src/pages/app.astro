@@ -79,11 +79,11 @@ const features = [
 
       <!-- Phone showcase -->
       <div class="showcase" role="img" aria-label="Screens from the Lightning Piggy app: wallet, explore, map, geo-cache list, and Piglet detail">
-        <div class="slot s-ol"><div class="phone p-ol"><img src="/images/app/02-explore.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-ol"><div class="phone p-ol"><img src="/images/app/02-explore.webp" alt="" width="480" height="1067" loading="lazy" /></div></div>
         <div class="slot s-il"><div class="phone p-il"><img src="/images/app/03-map.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
         <div class="slot s-c"><div class="phone p-c"><img src="/images/app/01-wallet.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
         <div class="slot s-ir"><div class="phone p-ir"><img src="/images/app/05-piglet.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
-        <div class="slot s-or"><div class="phone p-or"><img src="/images/app/04-hunt.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-or"><div class="phone p-or"><img src="/images/app/04-hunt.webp" alt="" width="480" height="1067" loading="lazy" /></div></div>
       </div>
     </div>
   </section>
@@ -248,14 +248,15 @@ const features = [
           <p class="text-gray-600 leading-relaxed mb-6">
             Download the latest APK from GitHub and install it. Android will ask you to allow
             installing from your browser the first time — that's expected for apps outside the Play
-            Store.
+            Store. Every build is open-source and published straight from our GitHub Releases, so
+            you can see exactly what you're installing.
           </p>
           <div class="mt-auto">
             <Button href={APK_URL} variant="primary" size="lg" class="w-full">
               Download the APK
             </Button>
             <p class="text-xs text-gray-400 mt-3 text-center">
-              Latest release on GitHub · Android 9+
+              <a href={APK_URL} class="underline-offset-2 hover:text-pink hover:underline">Release notes on GitHub</a> · Android 9+
             </p>
           </div>
         </div>

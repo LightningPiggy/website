@@ -6,8 +6,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
   title="Piglets Map"
   description="Explore live Lightning Piggy Piglets and NIP-GC geocaches on an interactive world map, pulled straight from Nostr relays."
 >
-  <!-- MapLibre GL JS (loaded from CDN, no npm dependency) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.min.css" />
+  <!-- MapLibre GL JS (CDN, no npm dependency). Version pinned + SRI-checked. -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.min.css"
+    integrity="sha384-XPt8o1QuQUrfvyG8MY6VYuFZCJ147mPoGUtgjzC6/j9fw9/scoqo1v96sDhlvnFo"
+    crossorigin="anonymous"
+  />
 
   <style is:global>
     /* Markers carry an explicit z-index (1 = NIP-GC cache, 2 = Piglet) so our
@@ -121,8 +126,12 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     </div>
   </div>
 
-  <!-- MapLibre GL JS script (loaded from CDN) -->
-  <script is:inline src="https://cdn.jsdelivr.net/npm/maplibre-gl@4/dist/maplibre-gl.min.js"></script>
+  <!-- MapLibre GL JS script (CDN). Version pinned + SRI-checked. -->
+  <script
+    is:inline
+    src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.min.js"
+    integrity="sha384-2h8mp2ca/CxhPdLvv76KPLBoqmxlTL4u1ptEZdfvv1qxkZyRZx2u/WUnyUC3Ky6U"
+    crossorigin="anonymous"></script>
 
   <script>
     // -----------------------------------------------------------------------
@@ -556,9 +565,14 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       });
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
 
-      // Standard "locate me" control (button + blue dot), like the app's map.
+      // Standard "locate me" control (top-right). The map defaults to the
+      // world/all-Piglets view; centring on the visitor is opt-in via this
+      // button only — we never auto-prompt for location on load, and we never
+      // fall back to any third-party IP-geolocation service (browser
+      // geolocation is the only source, so the user's location stays private).
       const geolocate = new maplibregl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true, timeout: 8000 },
+        positionOptions: { enableHighAccuracy: false, timeout: 10000 },
+        fitBoundsOptions: { maxZoom: 9 }, // gentle regional zoom, not street level
         trackUserLocation: false,
         showUserLocation: true,
         showAccuracyCircle: true,
@@ -590,6 +604,33 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       const bounds = new maplibregl.LngLatBounds();
 
+      // A single popup, built lazily on marker click rather than eagerly for
+      // every cache up front. Each click renders a fresh popup element, so the
+      // hint-reveal listener is attached exactly once (no stacking on reopen),
+      // and only one popup is open at a time.
+      let openPopup: any = null;
+      const showCachePopup = (cache: ParsedCache) => {
+        if (openPopup) openPopup.remove();
+        const popup = new maplibregl.Popup({ offset: 18, maxWidth: '280px', closeButton: true })
+          .setLngLat([cache.lng, cache.lat])
+          .setHTML(buildPopupHtml(cache))
+          .addTo(map);
+        const root = popup.getElement();
+        const toggle = root?.querySelector('.pg-hint-toggle') as HTMLButtonElement | null;
+        const text = root?.querySelector('.pg-hint-text') as HTMLElement | null;
+        if (toggle && text) {
+          toggle.addEventListener('click', () => {
+            const shown = text.style.display !== 'none';
+            text.style.display = shown ? 'none' : 'block';
+            toggle.textContent = shown ? 'Hint — reveal' : 'Hint — hide';
+          });
+        }
+        popup.on('close', () => {
+          if (openPopup === popup) openPopup = null;
+        });
+        openPopup = popup;
+      };
+
       const addMarkers = () => {
         // Add vanilla NIP-GC caches first, Piglets last, so our Piglets render
         // on top when they share (or nearly share) a location. The per-marker
@@ -599,32 +640,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         );
         for (const cache of ordered) {
           const el = makeMarkerElement(cache);
-
-          const popup = new maplibregl.Popup({
-            offset: 18,
-            maxWidth: '280px',
-            closeButton: true,
-          }).setHTML(buildPopupHtml(cache));
-
-          // Wire up the hint reveal toggle each time the popup opens.
-          popup.on('open', () => {
-            const root = popup.getElement();
-            const toggle = root?.querySelector('.pg-hint-toggle') as HTMLButtonElement | null;
-            const text = root?.querySelector('.pg-hint-text') as HTMLElement | null;
-            if (toggle && text) {
-              toggle.addEventListener('click', () => {
-                const shown = text.style.display !== 'none';
-                text.style.display = shown ? 'none' : 'block';
-                toggle.textContent = shown ? 'Hint — reveal' : 'Hint — hide';
-              });
-            }
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCachePopup(cache);
           });
-
           new maplibregl.Marker({ element: el })
             .setLngLat([cache.lng, cache.lat])
-            .setPopup(popup)
             .addTo(map);
-
           bounds.extend([cache.lng, cache.lat]);
         }
 
@@ -639,65 +661,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       // basemap can never strand the pins.
       addMarkers();
 
-      // Auto-centre on the visitor. We call the browser geolocation API directly
-      // rather than GeolocateControl.trigger(): the control runs an async support
-      // check first and silently no-ops (no permission prompt) if triggered before
-      // it's ready — which is exactly what happens on load. getCurrentPosition
-      // always raises the prompt. On allow we fly to the user; the control's own
-      // button still shows the blue accuracy dot on demand. On deny / timeout /
-      // unsupported, the fitBounds world view stays.
-      // Smooth, gentle fly to a coordinate. Gentle zoom on purpose — there
-      // usually aren't many Piglets in the visitor's exact spot, so we frame the
-      // surrounding region, not the street. `essential:true` keeps the animation
-      // even under prefers-reduced-motion and stops a stray event cancelling it.
-      const flyToVisitor = (lng: number, lat: number, zoom: number) => {
-        map.flyTo({ center: [lng, lat], zoom, duration: 1800, essential: true });
-      };
-
-      // Last-resort coarse locate: city-level position from the visitor's IP.
-      // Used only when precise geolocation is denied, unavailable, or times out
-      // (desktop browsers without a working location provider). No prompt, no
-      // device sensors — just enough to centre the map on roughly the right area.
-      const ipFallbackLocate = async () => {
-        try {
-          // GeoJS — free, keyless, CORS-enabled. Returns lat/lng as strings.
-          const data = await fetch('https://get.geojs.io/v1/ip/geo.json').then((r) => r.json());
-          const lat = parseFloat(data && data.latitude);
-          const lng = parseFloat(data && data.longitude);
-          if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            flyToVisitor(lng, lat, 6);
-          }
-        } catch (e) {
-          console.warn('[Piglets] IP fallback failed:', e);
-        }
-      };
-
-      const locateMe = () => {
-        if (!navigator.geolocation) {
-          ipFallbackLocate();
-          return;
-        }
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            flyToVisitor(pos.coords.longitude, pos.coords.latitude, 7);
-          },
-          () => {
-            // Denied / unavailable / timed out → fall back to coarse IP locate so
-            // the map still moves somewhere sensible.
-            ipFallbackLocate();
-          },
-          // enableHighAccuracy:false → fast network/Wi-Fi provider instead of
-          // waiting on GPS hardware (desktops lack it → "prompt shows but never
-          // moves"). Short-ish timeout so the IP fallback kicks in promptly.
-          { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 },
-        );
-      };
-      // Centre on the visitor immediately. We deliberately do NOT gate this on
-      // the map's `load` event: a raster-only style can leave `load` unfired, and
-      // the actual camera move happens inside the async geolocation callback by
-      // which point the map is ready regardless. Camera ops are safe pre-load
-      // (the fitBounds above already runs that early).
-      locateMe();
+      // No auto-locate: the map opens on the world / all-Piglets view. Centring
+      // on the visitor is opt-in via the top-right locate control — browser
+      // geolocation only, with no IP-based third-party fallback, so a visitor's
+      // location is never requested or leaked unless they ask for it.
     }
 
     // Helper overlay: dismiss to a compact "How it works" pill, and restore.

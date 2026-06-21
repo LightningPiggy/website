@@ -627,37 +627,88 @@ app.use('/images/showcase', express.static(SHOWCASE_DIR));
 
 // --- News Post Endpoints ---
 
+// Minimal frontmatter parser for news index.md files (supports the keys the
+// publisher writes: title, slug, description, pubDate, heroImage, tags, category, url).
+function parseNewsFrontmatter(md) {
+  const m = md.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+  if (!m) return { data: {}, content: md };
+  const data = {};
+  for (const line of m[1].split(/\r?\n/)) {
+    const idx = line.indexOf(':');
+    if (idx === -1) continue;
+    const key = line.slice(0, idx).trim();
+    if (!key) continue;
+    let val = line.slice(idx + 1).trim();
+    if (val.startsWith('[') && val.endsWith(']')) {
+      val = val.slice(1, -1).split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+    } else {
+      val = val.replace(/^["']|["']$/g, '');
+    }
+    data[key] = val;
+  }
+  return { data, content: m[2].replace(/^\r?\n/, '') };
+}
+
+// Publish a new news post OR update an existing one (when originalSlug is sent).
 app.post('/api/news/publish', upload.single('heroImage'), async (req, res) => {
   try {
-    const { title, slug, description, pubDate, tags, content, category, url } = req.body;
+    const { title, slug, description, pubDate, tags, content, category, url, originalSlug } = req.body;
 
     if (!title || !slug || !content) {
       return res.status(400).json({ error: 'Title, slug, and content are required' });
     }
 
+    const isEdit = !!(originalSlug && originalSlug.trim());
     const postDir = path.join(NEWS_DIR, slug);
-    if (fs.existsSync(postDir)) {
-      return res.status(400).json({ error: `News post "${slug}" already exists` });
+    const originalDir = isEdit ? path.join(NEWS_DIR, originalSlug.trim()) : null;
+
+    // In edit mode, read the existing frontmatter so we can preserve the hero
+    // image and tags when the form doesn't supply new ones.
+    let existingData = {};
+    if (isEdit && originalDir && fs.existsSync(path.join(originalDir, 'index.md'))) {
+      existingData = parseNewsFrontmatter(fs.readFileSync(path.join(originalDir, 'index.md'), 'utf-8')).data;
     }
 
-    fs.mkdirSync(postDir, { recursive: true });
+    if (isEdit) {
+      // Renaming onto a slug owned by a different post is not allowed.
+      if (slug !== originalSlug.trim() && fs.existsSync(postDir)) {
+        return res.status(400).json({ error: `Another news post "${slug}" already exists` });
+      }
+      // Move the existing directory if the slug changed.
+      if (slug !== originalSlug.trim() && originalDir && fs.existsSync(originalDir)) {
+        fs.renameSync(originalDir, postDir);
+      }
+      if (!fs.existsSync(postDir)) fs.mkdirSync(postDir, { recursive: true });
+    } else {
+      if (fs.existsSync(postDir)) {
+        return res.status(400).json({ error: `News post "${slug}" already exists` });
+      }
+      fs.mkdirSync(postDir, { recursive: true });
+    }
 
-    // Process hero image if provided
-    let heroFilename = '';
+    // Hero image: a new upload replaces it; otherwise keep whatever the post had.
+    let heroValue = '';
     if (req.file) {
-      heroFilename = `hero.jpeg`;
       await sharp(req.file.buffer)
         .resize({ width: 1200, withoutEnlargement: true })
         .jpeg({ quality: 85 })
-        .toFile(path.join(postDir, heroFilename));
+        .toFile(path.join(postDir, 'hero.jpeg'));
+      heroValue = './hero.jpeg';
+    } else if (isEdit && existingData.heroImage) {
+      heroValue = existingData.heroImage; // preserve existing hero
+    }
+
+    // Tags: use the submitted list, else preserve existing tags on edit.
+    let tagsList = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [];
+    if (!tagsList.length && isEdit && Array.isArray(existingData.tags)) {
+      tagsList = existingData.tags;
     }
 
     // Build frontmatter
-    const tagsList = tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [];
     let frontmatter = `---\ntitle: "${title}"\nslug: ${slug}\n`;
     if (description) frontmatter += `description: "${description}"\n`;
     frontmatter += `pubDate: ${pubDate || new Date().toISOString().split('T')[0]}\n`;
-    if (heroFilename) frontmatter += `heroImage: './${heroFilename}'\n`;
+    if (heroValue) frontmatter += `heroImage: '${heroValue}'\n`;
     if (tagsList.length) frontmatter += `tags: [${tagsList.map(t => `"${t}"`).join(', ')}]\n`;
     if (category) frontmatter += `category: ${category}\n`;
     if (url) frontmatter += `url: "${url}"\n`;
@@ -665,7 +716,54 @@ app.post('/api/news/publish', upload.single('heroImage'), async (req, res) => {
 
     fs.writeFileSync(path.join(postDir, 'index.md'), frontmatter + content);
 
-    res.json({ success: true, slug, path: `/news/${slug}` });
+    res.json({ success: true, slug, path: `/news/${slug}`, updated: isEdit });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List existing news posts (for the admin edit picker)
+app.get('/api/news', (req, res) => {
+  try {
+    const posts = [];
+    if (fs.existsSync(NEWS_DIR)) {
+      for (const entry of fs.readdirSync(NEWS_DIR, { withFileTypes: true })) {
+        if (!entry.isDirectory()) continue;
+        const indexPath = path.join(NEWS_DIR, entry.name, 'index.md');
+        if (!fs.existsSync(indexPath)) continue;
+        const { data } = parseNewsFrontmatter(fs.readFileSync(indexPath, 'utf-8'));
+        posts.push({
+          slug: entry.name,
+          title: data.title || entry.name,
+          category: data.category || '',
+          pubDate: data.pubDate || '',
+        });
+      }
+    }
+    posts.sort((a, b) => String(b.pubDate).localeCompare(String(a.pubDate)));
+    res.json({ posts });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Read a single news post for editing
+app.get('/api/news/:slug', (req, res) => {
+  try {
+    const indexPath = path.join(NEWS_DIR, req.params.slug, 'index.md');
+    if (!fs.existsSync(indexPath)) return res.status(404).json({ error: 'News post not found' });
+    const { data, content } = parseNewsFrontmatter(fs.readFileSync(indexPath, 'utf-8'));
+    res.json({
+      slug: req.params.slug,
+      title: data.title || '',
+      description: data.description || '',
+      pubDate: data.pubDate || '',
+      tags: Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ''),
+      category: data.category || '',
+      url: data.url || '',
+      content,
+      hasHero: !!data.heroImage,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -879,12 +977,13 @@ app.delete('/api/credits/:id', (req, res) => {
 app.post('/api/credits/sync', (req, res) => {
   try {
     const data = loadCredits();
-    const sections = req.body.sections || ['Core Team', 'Contributor', 'Special Thanks'];
 
-    // Filter credits that should appear on website and are in enabled sections
-    const websiteCredits = data.credits.filter(c =>
-      c.showOnWebsite && sections.includes(c.websiteSection)
-    );
+    // Export every on-website credit that has a section assigned. Credits-page
+    // sections (Core Team / Contributor / Special Thanks) and landing-page
+    // sections (Community Sponsors / Education Partners / Enabling Technologies /
+    // Appearances / In the News) are both supported - the landing-page ones are
+    // emitted in the same shape as partners so FriendsFamily.astro can merge them.
+    const websiteCredits = data.credits.filter(c => c.showOnWebsite && c.websiteSection);
 
     // Helper to build credit object with link priority
     const buildCreditObj = (c, includeContribution = true, includeNote = false) => {
@@ -917,7 +1016,28 @@ app.post('/api/credits/sync', (req, res) => {
       return obj;
     };
 
-    // Group by section (Special Thanks merged into Contributors)
+    // Landing-page sections expect the partner shape (name/description/url/logo
+    // + social URLs) so FriendsFamily.astro can merge credits with partners.
+    const buildPartnerLikeObj = (c) => {
+      const nostrUrl = c.nostrNpub ? `https://njump.me/${c.nostrNpub}` : '';
+      const xUrl = c.xProfileUrl || '';
+      const websiteUrl = c.websiteUrl || '';
+      const githubUrl = c.githubUrl || '';
+      return {
+        name: c.name,
+        description: c.notes || '',
+        url: websiteUrl || nostrUrl || xUrl,
+        logo: c.nostrProfilePic || c.xProfilePic || '',
+        nostrUrl,
+        xUrl,
+        githubUrl,
+      };
+    };
+    const landingGroup = (section) =>
+      websiteCredits.filter(c => c.websiteSection === section).map(buildPartnerLikeObj);
+
+    // Group by section. Credits-page groups keep their existing shape (Special
+    // Thanks merged into Contributors); landing-page groups mirror partners.json.
     const grouped = {
       coreTeam: websiteCredits
         .filter(c => c.websiteSection === 'Core Team')
@@ -926,6 +1046,11 @@ app.post('/api/credits/sync', (req, res) => {
         .filter(c => c.websiteSection === 'Contributor' || c.websiteSection === 'Special Thanks')
         .map(c => buildCreditObj(c, c.websiteSection === 'Contributor', c.websiteSection === 'Special Thanks')),
       specialThanks: [], // Kept for backwards compatibility
+      communitySponsors: landingGroup('Community Sponsors'),
+      educationPartners: landingGroup('Education Partners'),
+      technologyPartners: landingGroup('Enabling Technologies'),
+      appearances: landingGroup('Appearances'),
+      inTheNews: landingGroup('In the News'),
     };
 
     // Ensure data directory exists
@@ -941,6 +1066,11 @@ app.post('/api/credits/sync', (req, res) => {
         coreTeam: grouped.coreTeam.length,
         contributors: grouped.contributors.length,
         specialThanks: grouped.specialThanks.length,
+        communitySponsors: grouped.communitySponsors.length,
+        educationPartners: grouped.educationPartners.length,
+        technologyPartners: grouped.technologyPartners.length,
+        appearances: grouped.appearances.length,
+        inTheNews: grouped.inTheNews.length,
       },
       path: 'src/data/credits.json',
     });

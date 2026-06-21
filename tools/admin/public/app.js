@@ -400,6 +400,17 @@ const newsSlug = document.getElementById('news-slug');
 const newsDate = document.getElementById('news-date');
 const newsForm = document.getElementById('news-form');
 const newsResult = document.getElementById('news-result');
+const newsList = document.getElementById('news-list');
+const newsSearch = document.getElementById('news-search');
+const newsNewBtn = document.getElementById('news-new-btn');
+const newsCancelBtn = document.getElementById('news-cancel-btn');
+const newsFormTitle = document.getElementById('news-form-title');
+const newsOriginalSlug = document.getElementById('news-original-slug');
+const newsDescription = document.getElementById('news-description');
+const newsTags = document.getElementById('news-tags');
+const newsContent = document.getElementById('news-content');
+const newsUrl = document.getElementById('news-url');
+let allNewsPosts = [];
 
 // Category buttons
 const categoryBtns = document.querySelectorAll('.category-btn');
@@ -434,10 +445,11 @@ newsTitle.addEventListener('input', () => {
 
 newsForm.addEventListener('submit', async e => {
   e.preventDefault();
+  const isEdit = !!newsOriginalSlug.value;
   const formData = new FormData(newsForm);
   const submitBtn = newsForm.querySelector('button[type="submit"]');
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Publishing...';
+  submitBtn.textContent = isEdit ? 'Updating...' : 'Publishing...';
 
   try {
     const resp = await fetch('/api/news/publish', { method: 'POST', body: formData });
@@ -445,20 +457,121 @@ newsForm.addEventListener('submit', async e => {
 
     if (data.success) {
       newsResult.className = 'result success';
-      newsResult.innerHTML = `Published! View at <strong>${data.path}</strong> (restart dev server to see it)`;
+      newsResult.innerHTML = `${data.updated ? 'Updated' : 'Published'}! View at <strong>${data.path}</strong> (restart dev server to see it)`;
+      newsResult.hidden = false;
+      resetNewsForm();
+      loadNewsPosts();
     } else {
       newsResult.className = 'result error';
       newsResult.textContent = data.error;
+      newsResult.hidden = false;
     }
   } catch (err) {
     newsResult.className = 'result error';
     newsResult.textContent = err.message;
+    newsResult.hidden = false;
   }
 
-  newsResult.hidden = false;
   submitBtn.disabled = false;
-  submitBtn.textContent = 'Publish';
+  submitBtn.textContent = newsOriginalSlug.value ? 'Update' : 'Publish';
 });
+
+// --- News post list + editing ---
+function setNewsCategory(cat) {
+  categoryBtns.forEach(b => b.classList.remove('primary'));
+  categoryInput.value = cat || '';
+  if (cat) {
+    const btn = [...categoryBtns].find(b => b.dataset.category === cat);
+    if (btn) btn.classList.add('primary');
+    urlField.style.display = cat === 'in-the-news' ? '' : 'none';
+  } else {
+    urlField.style.display = 'none';
+  }
+}
+
+function resetNewsForm() {
+  newsForm.reset();
+  newsOriginalSlug.value = '';
+  setNewsCategory('');
+  newsDate.value = new Date().toISOString().split('T')[0];
+  if (newsFormTitle) newsFormTitle.textContent = 'Publish News Post';
+  const submitBtn = newsForm.querySelector('button[type="submit"]');
+  if (submitBtn) submitBtn.textContent = 'Publish';
+  if (newsCancelBtn) newsCancelBtn.style.display = 'none';
+  renderNewsList();
+}
+
+async function loadNewsPosts() {
+  if (!newsList) return;
+  try {
+    const resp = await fetch('/api/news');
+    const data = await resp.json();
+    allNewsPosts = data.posts || [];
+    renderNewsList();
+  } catch (err) {
+    newsList.innerHTML = `<p class="error">Failed to load posts: ${escapeHtmlAdmin(err.message)}</p>`;
+  }
+}
+
+function renderNewsList() {
+  if (!newsList) return;
+  const q = (newsSearch?.value || '').toLowerCase();
+  const posts = allNewsPosts.filter(p =>
+    !q || (p.title || '').toLowerCase().includes(q) || (p.slug || '').toLowerCase().includes(q)
+  );
+  if (!posts.length) {
+    newsList.innerHTML = '<p class="empty">No posts found.</p>';
+    return;
+  }
+  const activeSlug = newsOriginalSlug.value;
+  newsList.innerHTML = posts.map(p => `
+    <div class="news-item${p.slug === activeSlug ? ' active' : ''}" data-slug="${escapeHtmlAdmin(p.slug)}" title="Edit this post">
+      <div class="news-item-title">${escapeHtmlAdmin(p.title)}</div>
+      <div class="news-item-meta">${escapeHtmlAdmin(p.category || 'uncategorised')}${p.pubDate ? ' · ' + escapeHtmlAdmin(p.pubDate) : ''}</div>
+    </div>`).join('');
+  newsList.querySelectorAll('.news-item').forEach(el =>
+    el.addEventListener('click', () => editNewsPost(el.dataset.slug))
+  );
+}
+
+async function editNewsPost(slug) {
+  try {
+    const resp = await fetch('/api/news/' + encodeURIComponent(slug));
+    const d = await resp.json();
+    if (!resp.ok) {
+      newsResult.className = 'result error';
+      newsResult.textContent = d.error || 'Failed to load post';
+      newsResult.hidden = false;
+      return;
+    }
+    newsOriginalSlug.value = d.slug;
+    newsTitle.value = d.title || '';
+    newsSlug.value = d.slug || '';
+    if (newsDescription) newsDescription.value = d.description || '';
+    if (newsTags) newsTags.value = d.tags || '';
+    newsDate.value = d.pubDate || new Date().toISOString().split('T')[0];
+    setNewsCategory(d.category);
+    if (newsUrl) newsUrl.value = d.url || '';
+    newsContent.value = d.content || '';
+    if (newsFormTitle) newsFormTitle.textContent = `Edit: ${d.title || d.slug}`;
+    const submitBtn = newsForm.querySelector('button[type="submit"]');
+    if (submitBtn) submitBtn.textContent = 'Update';
+    if (newsCancelBtn) newsCancelBtn.style.display = '';
+    renderNewsList();
+    newsResult.hidden = true;
+    newsForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch (err) {
+    newsResult.className = 'result error';
+    newsResult.textContent = err.message;
+    newsResult.hidden = false;
+  }
+}
+
+newsNewBtn?.addEventListener('click', () => { resetNewsForm(); newsResult.hidden = true; });
+newsCancelBtn?.addEventListener('click', () => { resetNewsForm(); newsResult.hidden = true; });
+newsSearch?.addEventListener('input', renderNewsList);
+document.querySelector('[data-tab="news"]')?.addEventListener('click', loadNewsPosts);
+loadNewsPosts();
 
 // --- Credits ---
 const creditsList = document.getElementById('credits-list');
@@ -830,14 +943,13 @@ syncCreditsBtn.addEventListener('click', async () => {
   syncCreditsBtn.disabled = true;
   syncCreditsBtn.textContent = 'Syncing...';
 
-  // Always sync all sections (Special Thanks merged into Contributors)
-  const sections = ['Core Team', 'Contributor'];
-
+  // The server exports every on-website credit by its section (credits-page
+  // sections and landing-page sections alike), so no section filter is sent.
   try {
     const resp = await fetch('/api/credits/sync', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sections }),
+      body: JSON.stringify({}),
     });
     const data = await resp.json();
 
@@ -858,8 +970,12 @@ syncCreditsBtn.addEventListener('click', async () => {
   syncCreditsBtn.textContent = 'Sync to Website';
 });
 
-// Load credits when tab is clicked
-document.querySelector('[data-tab="credits"]').addEventListener('click', loadCredits);
+// Load credits when tab is clicked. Friends & Family now lives in the same
+// panel, so load partners here too.
+document.querySelector('[data-tab="credits"]').addEventListener('click', () => {
+  loadCredits();
+  loadPartners();
+});
 
 // Auto-calculate nostr hex and fetch profile picture from Primal
 document.getElementById('credit-nostr-npub').addEventListener('input', async e => {
@@ -1345,8 +1461,8 @@ syncPartnersBtn.addEventListener('click', async () => {
   syncPartnersBtn.textContent = 'Sync to Website';
 });
 
-// Load partners when tab is clicked
-document.querySelector('[data-tab="partners"]').addEventListener('click', loadPartners);
+// Friends & Family is merged into the Credits panel; partners load via the
+// Credits tab handler above (no separate tab).
 
 // Auto-populate X profile picture from X URL for partners
 document.getElementById('partner-x-url').addEventListener('input', e => {

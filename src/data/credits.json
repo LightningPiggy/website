@@ -323,5 +323,20 @@
       "contribution": ""
     }
   ],
-  "specialThanks": []
+  "specialThanks": [],
+  "communitySponsors": [],
+  "educationPartners": [],
+  "technologyPartners": [],
+  "appearances": [],
+  "inTheNews": [
+    {
+      "name": "Proof of Work Magazine",
+      "description": "",
+      "url": "https://proofofworkmagazine.com/",
+      "logo": "https://blossom.primal.net/48d05cb71631dbef7acb75f5b63d9bd753ec539559361bbd99840da94a80d808.png",
+      "nostrUrl": "https://njump.me/npub12zxlmsyqug5kvtu946hef02v4r2ur3ednsr6vtn86vcchp8ex3gq7dz0n7",
+      "xUrl": "https://x.com/proofofworkmag",
+      "githubUrl": ""
+    }
+  ]
 }

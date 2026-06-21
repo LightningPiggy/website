@@ -1,0 +1,95 @@
+---
+// A single Friends & Family / partner card (logo, name, description, socials).
+// Used for every section in FriendsFamily.astro. The `partner` object may come
+// from partners.json or from a credit assigned to a landing-page section.
+interface Partner {
+  name: string;
+  description?: string;
+  url?: string;
+  logo?: string;
+  nostrUrl?: string;
+  xUrl?: string;
+  githubUrl?: string;
+}
+const { partner } = Astro.props as { partner: Partner };
+
+// Social profile patterns that should NOT show the website (globe) icon.
+function isWebsiteUrl(url?: string): boolean {
+  if (!url) return false;
+  const socialPatterns = [/twitter\.com\//i, /x\.com\//i, /njump\.me\//i, /github\.com\//i, /nostr\.band\//i, /primal\.net\//i];
+  return !socialPatterns.some((pattern) => pattern.test(url));
+}
+const showGlobe = isWebsiteUrl(partner.url);
+const hasSocials = showGlobe || partner.nostrUrl || partner.xUrl || partner.githubUrl;
+---
+
+<a
+  href={partner.url}
+  target="_blank"
+  rel="noopener noreferrer"
+  class="bg-white rounded-xl p-4 text-center hover:shadow-lg transition-all group w-40 sm:w-44"
+>
+  <div class="w-24 h-24 mx-auto mb-3 rounded-full bg-gray-100 overflow-hidden flex items-center justify-center">
+    {partner.logo ? (
+      <img
+        src={partner.logo}
+        alt={partner.name}
+        class="w-full h-full object-cover"
+        referrerpolicy="no-referrer"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+      />
+    ) : null}
+    <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink text-2xl font-bold" style={partner.logo ? "display: none;" : ""}>
+      {partner.name.charAt(0).toUpperCase()}
+    </div>
+  </div>
+  <h4 class="font-semibold text-gray-900 group-hover:text-pink transition-colors text-sm">
+    {partner.name}
+  </h4>
+  {partner.description && <p class="text-xs text-gray-500 mt-1">{partner.description}</p>}
+  {hasSocials && (
+    <div class="flex justify-center gap-2 mt-2">
+      {showGlobe && (
+        <span
+          class="text-gray-400 hover:text-blue-600 transition-colors cursor-pointer"
+          onclick={`event.preventDefault(); event.stopPropagation(); window.open('${partner.url}', '_blank');`}
+          title="Website"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"></path>
+          </svg>
+        </span>
+      )}
+      {partner.nostrUrl && (
+        <span
+          class="text-gray-400 hover:text-purple-600 transition-colors cursor-pointer"
+          onclick={`event.preventDefault(); event.stopPropagation(); window.open('${partner.nostrUrl}', '_blank');`}
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="40 38 185 180">
+            <path d="M210.8 199.4c0 3.1-2.5 5.7-5.7 5.7h-68c-3.1 0-5.7-2.5-5.7-5.7v-15.5c.3-19 2.3-37.2 6.5-45.5 2.5-5 6.7-7.7 11.5-9.1 9.1-2.7 24.9-.9 31.7-1.2 0 0 20.4.8 20.4-10.7s-9.1-8.6-9.1-8.6c-10 .3-17.7-.4-22.6-2.4-8.3-3.3-8.6-9.2-8.6-11.2-.4-23.1-34.5-25.9-64.5-20.1-32.8 6.2.4 53.3.4 116.1v8.4c0 3.1-2.6 5.6-5.7 5.6H57.7c-3.1 0-5.7-2.5-5.7-5.7v-144c0-3.1 2.5-5.7 5.7-5.7h31.7c3.1 0 5.7 2.5 5.7 5.7 0 4.7 5.2 7.2 9 4.5 11.4-8.2 26-12.5 42.4-12.5 36.6 0 64.4 21.4 64.4 68.7v83.2ZM150 99.3c0-6.7-5.4-12.1-12.1-12.1s-12.1 5.4-12.1 12.1 5.4 12.1 12.1 12.1S150 106 150 99.3Z"/>
+          </svg>
+        </span>
+      )}
+      {partner.xUrl && (
+        <span
+          class="text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
+          onclick={`event.preventDefault(); event.stopPropagation(); window.open('${partner.xUrl}', '_blank');`}
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </span>
+      )}
+      {partner.githubUrl && (
+        <span
+          class="text-gray-400 hover:text-gray-900 transition-colors cursor-pointer"
+          onclick={`event.preventDefault(); event.stopPropagation(); window.open('${partner.githubUrl}', '_blank');`}
+        >
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd" />
+          </svg>
+        </span>
+      )}
+    </div>
+  )}
+</a>

@@ -862,6 +862,17 @@ app.get('/api/credits', (req, res) => {
 });
 
 // Add a new credit
+// A credit can belong to several website sections. Accept the new
+// `websiteSections` array, but fall back to the legacy single `websiteSection`
+// (+ `isBitcoinKid` flag) so older clients/data keep working.
+function normaliseSections(body) {
+  if (Array.isArray(body.websiteSections)) return body.websiteSections.filter(Boolean);
+  const out = [];
+  if (body.websiteSection) out.push(body.websiteSection);
+  if (body.isBitcoinKid === true || body.isBitcoinKid === 'true') out.push('Bitcoin Kids');
+  return out;
+}
+
 app.post('/api/credits', (req, res) => {
   try {
     const data = loadCredits();
@@ -878,10 +889,11 @@ app.post('/api/credits', (req, res) => {
       xProfilePic: req.body.xProfilePic || '',
       websiteUrl: req.body.websiteUrl || '',
       githubUrl: req.body.githubUrl || '',
+      description: req.body.description || '',
+      logoUrl: req.body.logoUrl || '',
       notes: req.body.notes || '',
       showOnWebsite: req.body.showOnWebsite ?? false,
-      websiteSection: req.body.websiteSection || '',
-      isBitcoinKid: req.body.isBitcoinKid ?? false,
+      websiteSections: normaliseSections(req.body),
       dateAdded: req.body.dateAdded || new Date().toISOString().split('T')[0],
     };
     data.credits.push(credit);
@@ -945,11 +957,16 @@ app.put('/api/credits/:id', (req, res) => {
       xProfilePic: req.body.xProfilePic ?? data.credits[index].xProfilePic,
       websiteUrl: req.body.websiteUrl ?? data.credits[index].websiteUrl ?? '',
       githubUrl: req.body.githubUrl ?? data.credits[index].githubUrl ?? '',
+      description: req.body.description ?? data.credits[index].description ?? '',
+      logoUrl: req.body.logoUrl ?? data.credits[index].logoUrl ?? '',
       notes: req.body.notes ?? data.credits[index].notes,
       showOnWebsite: req.body.showOnWebsite ?? data.credits[index].showOnWebsite ?? false,
-      websiteSection: req.body.websiteSection ?? data.credits[index].websiteSection ?? '',
-      isBitcoinKid: req.body.isBitcoinKid ?? data.credits[index].isBitcoinKid ?? false,
+      websiteSections: Array.isArray(req.body.websiteSections)
+        ? req.body.websiteSections.filter(Boolean)
+        : (data.credits[index].websiteSections || normaliseSections(data.credits[index])),
     };
+    delete data.credits[index].websiteSection;
+    delete data.credits[index].isBitcoinKid;
     saveCredits(data);
     res.json({ success: true, credit: data.credits[index] });
   } catch (err) {
@@ -973,6 +990,26 @@ app.delete('/api/credits/:id', (req, res) => {
   }
 });
 
+// Upload a logo for a credit (200x200 PNG, same pipeline as partners/vendors)
+app.post('/api/credits/logo', upload.single('logo'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No image provided' });
+    if (!fs.existsSync(LOGOS_DIR)) fs.mkdirSync(LOGOS_DIR, { recursive: true });
+    const name = req.body.name || `logo-${Date.now()}`;
+    const safeName = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+    const filename = `${safeName}.png`;
+    const outputPath = path.join(LOGOS_DIR, filename);
+    await sharp(req.file.buffer)
+      .resize({ width: 200, height: 200, fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
+      .png({ quality: 90 })
+      .toFile(outputPath);
+    const stats = fs.statSync(outputPath);
+    res.json({ success: true, filename, size: `${Math.round(stats.size / 1024)}KB`, path: `/images/logos/${filename}` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Sync credits to website (export only showOnWebsite: true entries)
 app.post('/api/credits/sync', (req, res) => {
   try {
@@ -983,69 +1020,60 @@ app.post('/api/credits/sync', (req, res) => {
     // sections (Community Sponsors / Education Partners / Enabling Technologies /
     // Appearances / In the News) are both supported - the landing-page ones are
     // emitted in the same shape as partners so FriendsFamily.astro can merge them.
-    const websiteCredits = data.credits.filter(c => c.showOnWebsite && c.websiteSection);
+    // A credit can be in several sections at once (websiteSections array).
+    const secs = (c) => Array.isArray(c.websiteSections) ? c.websiteSections : normaliseSections(c);
+    const has = (c, section) => secs(c).includes(section);
+    const websiteCredits = data.credits.filter(c => c.showOnWebsite && secs(c).length);
 
-    // Helper to build credit object with link priority
+    // Helper to build a credits-page object (Core Team / Contributors / Bitcoin Kids).
     const buildCreditObj = (c, includeContribution = true, includeNote = false) => {
       const nostrUrl = c.nostrNpub ? `https://njump.me/${c.nostrNpub}` : '';
       const xUrl = c.xProfileUrl || '';
-      const websiteUrl = c.websiteUrl || '';
-      const githubUrl = c.githubUrl || '';
-
-      // Priority: websiteUrl > nostrUrl > xUrl
-      const primaryUrl = websiteUrl || nostrUrl || xUrl;
-
+      const primaryUrl = (c.websiteUrl || '') || nostrUrl || xUrl;
       const obj = {
         name: c.name,
         url: primaryUrl,
-        avatar: c.nostrProfilePic || c.xProfilePic || '',
-        isBitcoinKid: c.isBitcoinKid || false,
-        // Always include social URLs for icons
-        nostrUrl: nostrUrl,
-        xUrl: xUrl,
-        githubUrl: githubUrl,
+        avatar: c.logoUrl || c.nostrProfilePic || c.xProfilePic || '',
+        isBitcoinKid: has(c, 'Bitcoin Kids'),
+        nostrUrl,
+        xUrl,
+        githubUrl: c.githubUrl || '',
       };
-
-      if (includeContribution) {
-        obj.contribution = c.notes || '';
-      }
-      if (includeNote) {
-        obj.note = c.notes || '';
-      }
-
+      if (includeContribution) obj.contribution = c.notes || '';
+      if (includeNote) obj.note = c.notes || '';
       return obj;
     };
 
     // Landing-page sections expect the partner shape (name/description/url/logo
-    // + social URLs) so FriendsFamily.astro can merge credits with partners.
+    // + social URLs) so FriendsFamily.astro can render them.
     const buildPartnerLikeObj = (c) => {
       const nostrUrl = c.nostrNpub ? `https://njump.me/${c.nostrNpub}` : '';
       const xUrl = c.xProfileUrl || '';
-      const websiteUrl = c.websiteUrl || '';
-      const githubUrl = c.githubUrl || '';
       return {
         name: c.name,
-        description: c.notes || '',
-        url: websiteUrl || nostrUrl || xUrl,
-        logo: c.nostrProfilePic || c.xProfilePic || '',
+        description: c.description || c.notes || '',
+        url: (c.websiteUrl || '') || nostrUrl || xUrl,
+        logo: c.logoUrl || c.nostrProfilePic || c.xProfilePic || '',
         nostrUrl,
         xUrl,
-        githubUrl,
+        githubUrl: c.githubUrl || '',
       };
     };
-    const landingGroup = (section) =>
-      websiteCredits.filter(c => c.websiteSection === section).map(buildPartnerLikeObj);
+    const landingGroup = (section) => websiteCredits.filter(c => has(c, section)).map(buildPartnerLikeObj);
 
-    // Group by section. Credits-page groups keep their existing shape (Special
-    // Thanks merged into Contributors); landing-page groups mirror partners.json.
+    // Group by section. Bitcoin Kids are emitted as their own group and pulled
+    // out of Core Team / Contributors (mirroring the public credits page).
     const grouped = {
       coreTeam: websiteCredits
-        .filter(c => c.websiteSection === 'Core Team')
+        .filter(c => has(c, 'Core Team') && !has(c, 'Bitcoin Kids'))
         .map(c => buildCreditObj(c, true, false)),
       contributors: websiteCredits
-        .filter(c => c.websiteSection === 'Contributor' || c.websiteSection === 'Special Thanks')
-        .map(c => buildCreditObj(c, c.websiteSection === 'Contributor', c.websiteSection === 'Special Thanks')),
-      specialThanks: [], // Kept for backwards compatibility
+        .filter(c => (has(c, 'Contributor') || has(c, 'Special Thanks')) && !has(c, 'Bitcoin Kids'))
+        .map(c => buildCreditObj(c, has(c, 'Contributor'), !has(c, 'Contributor') && has(c, 'Special Thanks'))),
+      specialThanks: [], // merged into contributors; kept for backwards compatibility
+      bitcoinKids: websiteCredits
+        .filter(c => has(c, 'Bitcoin Kids'))
+        .map(c => buildCreditObj(c, true, false)),
       communitySponsors: landingGroup('Community Sponsors'),
       educationPartners: landingGroup('Education Partners'),
       technologyPartners: landingGroup('Enabling Technologies'),
@@ -1066,6 +1094,7 @@ app.post('/api/credits/sync', (req, res) => {
         coreTeam: grouped.coreTeam.length,
         contributors: grouped.contributors.length,
         specialThanks: grouped.specialThanks.length,
+        bitcoinKids: grouped.bitcoinKids.length,
         communitySponsors: grouped.communitySponsors.length,
         educationPartners: grouped.educationPartners.length,
         technologyPartners: grouped.technologyPartners.length,

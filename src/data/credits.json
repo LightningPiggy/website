@@ -63,16 +63,6 @@
       "contribution": "Creator of the stunning Lightning Piggy logo."
     },
     {
-      "name": "Isaac Weeks",
-      "url": "https://njump.me/npub17dfg3tynlv39m0e9z8a0t558e7plet96xg9g4uu6q84caykq8jtqwdy09f",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fpbs.twimg.com%2Fprofile_images%2F1481346550345437186%2F_gwMpWzo_400x400.jpg",
-      "isBitcoinKid": true,
-      "nostrUrl": "https://njump.me/npub17dfg3tynlv39m0e9z8a0t558e7plet96xg9g4uu6q84caykq8jtqwdy09f",
-      "xUrl": "",
-      "githubUrl": "",
-      "contribution": "Bitcoin Kid ⭐️"
-    },
-    {
       "name": "Marina",
       "url": "https://twitter.com/LadyM_BTC",
       "avatar": "https://unavatar.io/twitter/LadyM_BTC",
@@ -273,16 +263,6 @@
       "contribution": ""
     },
     {
-      "name": "Samatha de Waal",
-      "url": "https://twitter.com/SamTheBTCKid",
-      "avatar": "https://unavatar.io/twitter/SamTheBTCKid",
-      "isBitcoinKid": true,
-      "nostrUrl": "",
-      "xUrl": "https://twitter.com/SamTheBTCKid",
-      "githubUrl": "",
-      "contribution": "Inspirational speech at BTC Prague 2023."
-    },
-    {
       "name": "Bolt.fun",
       "url": "https://bolt.fun/",
       "avatar": "https://imagedelivery.net/wyrwp3c-j0gDDUWgnE7lig/f494848b-9baa-4262-a948-301df5b9c500/public",
@@ -291,16 +271,6 @@
       "xUrl": "",
       "githubUrl": "",
       "contribution": "For providing the impetus to get building."
-    },
-    {
-      "name": "Boynohat",
-      "url": "https://njump.me/npub1ehtg7a7uk584pa6zll2d65fm3ur5x88r5wrh5hz8z8al38e0f0ksqq9h2v",
-      "avatar": "https://m.primal.net/JPEl.jpg",
-      "isBitcoinKid": true,
-      "nostrUrl": "https://njump.me/npub1ehtg7a7uk584pa6zll2d65fm3ur5x88r5wrh5hz8z8al38e0f0ksqq9h2v",
-      "xUrl": "",
-      "githubUrl": "",
-      "contribution": ""
     },
     {
       "name": "Esther",
@@ -321,13 +291,257 @@
       "xUrl": "https://x.com/Vitus_Ze",
       "githubUrl": "",
       "contribution": ""
+    },
+    {
+      "name": "CryptoCloaks",
+      "url": "https://www.cryptocloaks.com/",
+      "avatar": "https://blossom.primal.net/0b37365a5dc124610c8187b31b39a9a97cdea6e181276af2d23983c8498a4884.png",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1lrjgpa9m2dl6esdah5pq7m005ymwh4glq4aet76q2zlz2f83esfsa2zvrj",
+      "xUrl": "https://x.com/CryptoCloaks",
+      "githubUrl": "",
+      "note": ""
     }
   ],
   "specialThanks": [],
-  "communitySponsors": [],
-  "educationPartners": [],
-  "technologyPartners": [],
-  "appearances": [],
+  "bitcoinKids": [
+    {
+      "name": "Isaac Weeks",
+      "url": "https://njump.me/npub17dfg3tynlv39m0e9z8a0t558e7plet96xg9g4uu6q84caykq8jtqwdy09f",
+      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fpbs.twimg.com%2Fprofile_images%2F1481346550345437186%2F_gwMpWzo_400x400.jpg",
+      "isBitcoinKid": true,
+      "nostrUrl": "https://njump.me/npub17dfg3tynlv39m0e9z8a0t558e7plet96xg9g4uu6q84caykq8jtqwdy09f",
+      "xUrl": "",
+      "githubUrl": "",
+      "contribution": "Bitcoin Kid ⭐️"
+    },
+    {
+      "name": "Samatha de Waal",
+      "url": "https://twitter.com/SamTheBTCKid",
+      "avatar": "https://unavatar.io/twitter/SamTheBTCKid",
+      "isBitcoinKid": true,
+      "nostrUrl": "",
+      "xUrl": "https://twitter.com/SamTheBTCKid",
+      "githubUrl": "",
+      "contribution": "Inspirational speech at BTC Prague 2023."
+    },
+    {
+      "name": "Boynohat",
+      "url": "https://njump.me/npub1ehtg7a7uk584pa6zll2d65fm3ur5x88r5wrh5hz8z8al38e0f0ksqq9h2v",
+      "avatar": "https://m.primal.net/JPEl.jpg",
+      "isBitcoinKid": true,
+      "nostrUrl": "https://njump.me/npub1ehtg7a7uk584pa6zll2d65fm3ur5x88r5wrh5hz8z8al38e0f0ksqq9h2v",
+      "xUrl": "",
+      "githubUrl": "",
+      "contribution": ""
+    }
+  ],
+  "communitySponsors": [
+    {
+      "name": "Bitcoin Runners",
+      "description": "",
+      "url": "https://www.bitcoinrunners.org/",
+      "logo": "https://blossom.primal.net/f789c385dafbb6bdb7c3b81336d5b8c6c0cf5693bccedb6c5350af0ad282daae.png",
+      "nostrUrl": "https://njump.me/npub1ylwh3snzv3hw9k3lum0kxx5h7v04xd76uqccnney8fmpqehluevqge7jxa",
+      "xUrl": "https://x.com/bitcoinrunners",
+      "githubUrl": ""
+    },
+    {
+      "name": "ENOGTYVE",
+      "description": "",
+      "url": "https://enogtyve.org/",
+      "logo": "https://blossom.primal.net/8c34d6405dea937b6c575f234ece3da8e1af974a3ffd728bc70fd01108cbe049.png",
+      "nostrUrl": "https://njump.me/npub1h5gc62mhzak97z9y9mznc9jcwv0re8nx9eqt35ta9d4kyvjqt9csnzjx0m",
+      "xUrl": "",
+      "githubUrl": ""
+    }
+  ],
+  "educationPartners": [
+    {
+      "name": "Bitcoin Junior Club",
+      "description": "",
+      "url": "https://www.bitcoin4youth.com/",
+      "logo": "https://m.primal.net/KRoM.png",
+      "nostrUrl": "https://njump.me/npub1p0s2hqy2eew49zye7jw79374u0jj4t7erthx4mcsy3r0ddkzkkxqxaa7gv",
+      "xUrl": "",
+      "githubUrl": ""
+    },
+    {
+      "name": "EconoKids",
+      "description": "",
+      "url": "https://econokidz.com/",
+      "logo": "https://unavatar.io/twitter/EconoKidz",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/EconoKidz",
+      "githubUrl": ""
+    },
+    {
+      "name": "Amity Age",
+      "description": "",
+      "url": "https://www.amityage.com/",
+      "logo": "https://unavatar.io/twitter/AmityAge",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/AmityAge",
+      "githubUrl": ""
+    },
+    {
+      "name": "My First Bitcoin",
+      "description": "",
+      "url": "https://myfirstbitcoin.org/",
+      "logo": "https://blossom.primal.net/41c44c97ed9e756991165312bb4df5576aa8bed4bca170d5a81fc26e020f769d.jpg",
+      "nostrUrl": "https://njump.me/npub17cyatz6z2dzcw6xehtcm9z45m76lde5smxdmyasvs00r4pqv863qrs4ml3",
+      "xUrl": "https://x.com/MyfirstBitcoin_",
+      "githubUrl": "https://github.com/MyFirstBitcoin"
+    }
+  ],
+  "technologyPartners": [
+    {
+      "name": "LNbits",
+      "description": "",
+      "url": "https://lnbits.com/",
+      "logo": "https://image.nostr.build/746ac622954f1fc2843e576828712d3659ff186bcc5c478de9483fcf0036796c.jpg",
+      "nostrUrl": "https://njump.me/npub10efcj7x65z2ak6vd69xr8f2hvqwuaqrhlygl3yqa4y63hfvc02mqwzaeh3",
+      "xUrl": "",
+      "githubUrl": "https://github.com/lnbits/lnbits"
+    },
+    {
+      "name": "MicroPythonOS",
+      "description": "",
+      "url": "https://micropythonos.com/",
+      "logo": "/images/logos/micropythonos.png",
+      "nostrUrl": "",
+      "xUrl": "",
+      "githubUrl": "https://github.com/MicroPythonOS"
+    },
+    {
+      "name": "Nostr Wallet Connect",
+      "description": "",
+      "url": "https://nwc.dev/",
+      "logo": "https://image.nostr.build/af7c53ba49eeefbbf43ec0b7dd62e1d02ea81254669263ef7afcd82818cc939f.png",
+      "nostrUrl": "https://njump.me/npub19hg5pj5qmd3teumh6ld7drfz49d65sw3n3d5jud8sgz27avkq5dqm7yv9p",
+      "xUrl": "https://x.com/nwc_dev",
+      "githubUrl": ""
+    },
+    {
+      "name": "Bitcoin",
+      "description": "",
+      "url": "https://bitcoin.org/",
+      "logo": "/images/logos/bitcoin.png",
+      "nostrUrl": "",
+      "xUrl": "",
+      "githubUrl": "https://github.com/bitcoin/"
+    },
+    {
+      "name": "Lightning",
+      "description": "",
+      "url": "https://lightning.network/",
+      "logo": "/images/logos/lightning.png",
+      "nostrUrl": "",
+      "xUrl": "",
+      "githubUrl": "https://github.com/lightning"
+    }
+  ],
+  "appearances": [
+    {
+      "name": "Adopting Bitcoin",
+      "description": "",
+      "url": "https://adoptingbitcoin.org/",
+      "logo": "https://m.primal.net/PvTZ.png",
+      "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
+      "xUrl": "https://x.com/AdoptingBTC",
+      "githubUrl": ""
+    },
+    {
+      "name": "Bitcoin Berlin",
+      "description": "",
+      "url": "https://beacons.ai/bitcoinberlinsv",
+      "logo": "https://unavatar.io/twitter/bitcoinberlinsv",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/bitcoinberlinsv",
+      "githubUrl": ""
+    },
+    {
+      "name": "Noderunners Conference",
+      "description": "",
+      "url": "https://noderunners.network/en/conference",
+      "logo": "https://blossom.primal.net/7ba8a475e819bc6ea7b4febf8bed9167b1e92ffd39e68a8c49a5e02476ecbc7b.jpg",
+      "nostrUrl": "https://njump.me/npub1phht66uk5uhekpqcylc45gyapjnu88r55sfktr9xlkug6lsf2zys8p3495",
+      "xUrl": "https://x.com/NoderunnersNET",
+      "githubUrl": ""
+    },
+    {
+      "name": "Sats Conf",
+      "description": "",
+      "url": "https://satsconf.com.br/",
+      "logo": "https://unavatar.io/twitter/satsconf_",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/satsconf_",
+      "githubUrl": ""
+    },
+    {
+      "name": "Learning Bitcoin",
+      "description": "",
+      "url": "https://www.learningbitcoin.ca/",
+      "logo": "https://coinos.io/api/public/d80a2a90a086792668a4dd016a0309e77037b81a5d237b08edb7d984ce65d89c.webp",
+      "nostrUrl": "https://njump.me/npub1ku3r3n4hau650a5cjudhtja2pdfsr7yxjzda9lx2py4knr3ld69s7j4wnw",
+      "xUrl": "https://x.com/learningbtcfdn",
+      "githubUrl": ""
+    },
+    {
+      "name": "Satoshi Summer Camp",
+      "description": "",
+      "url": "https://b.tc/conference/2024/summer-camp",
+      "logo": "https://blossom.primal.net/386e48830d62a25f6ba12c97cbee103daf2f44c7b868772a1669fbefc599e136.png",
+      "nostrUrl": "https://njump.me/npub1rwh33t5x8n7czknhts5fg0v0fml8mkl7neaarksumkkf8d679qrqcz7avv",
+      "xUrl": "https://x.com/TheBitcoinConf",
+      "githubUrl": ""
+    },
+    {
+      "name": "BTC Prague",
+      "description": "",
+      "url": "https://btcprague.com/",
+      "logo": "https://pbs.twimg.com/profile_images/1676983239888588801/-OSqlrx1_400x400.jpg",
+      "nostrUrl": "https://njump.me/npub167n5w6cj2wseqtmk26zllc7n28uv9c4vw28k2kht206vnghe5a7stgzu3r",
+      "xUrl": "https://x.com/BtcPrague",
+      "githubUrl": ""
+    },
+    {
+      "name": "Bitcoin Atlantis",
+      "description": "",
+      "url": "https://bitcoinatlantis.com/",
+      "logo": "https://cdn.satlantis.io/1etgqcj9gc6yaxttuwu9eqgs3ynt2dzaudvwnrssrn2zdt2useaasfj8n6e-1743759746074-FREE%20icon%20en%20taman%CC%83o%20mediano.jpeg",
+      "nostrUrl": "https://njump.me/npub1etgqcj9gc6yaxttuwu9eqgs3ynt2dzaudvwnrssrn2zdt2useaasfj8n6e",
+      "xUrl": "https://x.com/FREEMadeiraOrg",
+      "githubUrl": ""
+    },
+    {
+      "name": "Adopting Bitcoin Arnhem",
+      "description": "",
+      "url": "https://www.adoptingbitcoinarnhem.com/",
+      "logo": "https://m.primal.net/HTCX.png",
+      "nostrUrl": "https://njump.me/npub1uv2tr83c5y7k82af6zdzlqs8m0klcmndd8u5vmlg2eyrskld6uzsv4rmr8",
+      "xUrl": "https://x.com/AB_Arnhem",
+      "githubUrl": ""
+    },
+    {
+      "name": "Bitcoin 2024",
+      "description": "",
+      "url": "https://b.tc/conference/2024",
+      "logo": "https://blossom.primal.net/386e48830d62a25f6ba12c97cbee103daf2f44c7b868772a1669fbefc599e136.png",
+      "nostrUrl": "https://njump.me/npub1rwh33t5x8n7czknhts5fg0v0fml8mkl7neaarksumkkf8d679qrqcz7avv",
+      "xUrl": "https://x.com/TheBitcoinConf",
+      "githubUrl": ""
+    },
+    {
+      "name": "Bitcoin Copenhagen",
+      "description": "",
+      "url": "https://bitcoincopenhagen.dk/",
+      "logo": "https://unavatar.io/twitter/BTCCPH",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/BTCCPH",
+      "githubUrl": ""
+    }
+  ],
   "inTheNews": [
     {
       "name": "Proof of Work Magazine",
@@ -336,6 +550,33 @@
       "logo": "https://blossom.primal.net/48d05cb71631dbef7acb75f5b63d9bd753ec539559361bbd99840da94a80d808.png",
       "nostrUrl": "https://njump.me/npub12zxlmsyqug5kvtu946hef02v4r2ur3ednsr6vtn86vcchp8ex3gq7dz0n7",
       "xUrl": "https://x.com/proofofworkmag",
+      "githubUrl": ""
+    },
+    {
+      "name": "Bitcoin Focus",
+      "description": "",
+      "url": "https://bitcoinfocus.nl/2024/05/28/353-bitcoinfeest-in-arnhem/",
+      "logo": "https://unavatar.io/twitter/BitcoinFocusNL",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/BitcoinFocusNL",
+      "githubUrl": ""
+    },
+    {
+      "name": "LNbits News",
+      "description": "",
+      "url": "https://news.lnbits.com/news/leveraging-lnbits-and-lnurlpay-for-lightningpiggy",
+      "logo": "https://image.nostr.build/746ac622954f1fc2843e576828712d3659ff186bcc5c478de9483fcf0036796c.jpg",
+      "nostrUrl": "https://njump.me/npub10efcj7x65z2ak6vd69xr8f2hvqwuaqrhlygl3yqa4y63hfvc02mqwzaeh3",
+      "xUrl": "https://x.com/lnbits",
+      "githubUrl": ""
+    },
+    {
+      "name": "Lightning News",
+      "description": "",
+      "url": "https://lightning.news/lightningpiggy-the-piggy-bank-that-beats-inflation/",
+      "logo": "https://unavatar.io/twitter/LightningNewsX",
+      "nostrUrl": "",
+      "xUrl": "https://x.com/LightningNewsX",
       "githubUrl": ""
     }
   ]

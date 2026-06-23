@@ -101,7 +101,19 @@ const sections = [
         title: 'WiFi connection issues after waking from sleep',
         tags: classic,
         problem: 'The device fails to reconnect to WiFi after waking from sleep mode.',
-        solution: 'Ensure your WiFi access point is stable and within range. If the device shows connection errors after waking, press the reset button to force a fresh connection attempt. You can also try positioning the Piggy closer to your router. See <a href="https://github.com/LightningPiggy/lightning-piggy/issues/34" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">GitHub #34</a>',
+        solution: 'Ensure your WiFi access point is stable and within range. If the device shows connection errors after waking, press the <code>RST</code> (reset) button to force a fresh connection attempt. You can also try positioning the Piggy closer to your router. See <a href="https://github.com/LightningPiggy/lightning-piggy/issues/34" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">GitHub #34</a>',
+      },
+      {
+        title: 'Entering WiFi configuration mode (Access Point)',
+        tags: classic,
+        problem: 'Holding the <code>IO39</code> button does nothing - the Piggy never switches to Access Point configuration mode.',
+        solution: 'The long-press is only detected from a <strong>fresh</strong> press while the device is awake. The <code>IO39</code> button (marked <code>IO39</code> on the PCB) is read on change, so if you hold it down <em>before</em> the Piggy wakes or boots, no change is registered and the 3-second timer never starts. Press the <code>RST</code> (reset) button for a clean boot, wait for the boot screen to appear, then cleanly <strong>press and hold the <code>IO39</code> button for a full 3-4 seconds</strong> - do not keep it held from before. The screen will change to "...starting Access Point configuration mode!". You then have a short window to connect to the Piggy\'s WiFi access point and open the configuration page.',
+      },
+      {
+        title: 'Balance or payments not updating immediately',
+        tags: classic,
+        problem: 'A payment I sent has not appeared yet, or the balance looks out of date.',
+        solution: 'New incoming payments are normally shown <strong>within seconds</strong> - the Piggy subscribes to real-time payment notifications, so a payment appears almost instantly as long as the device is connected to WiFi and the relay/server delivers it. As a fallback, the Piggy also does a full balance and transaction refresh on a timer (every <strong>5 minutes</strong> on NWC, every <strong>15 minutes</strong> on LNbits) to catch anything a missed notification did not. If a payment is lagging you do not have to wait: <strong>force an immediate refresh</strong> with a <strong>short press of the <code>IO39</code> button</strong> or by <strong>tilting the piggy</strong> - both trigger a full balance and payments fetch right away.',
       },
     ],
   },
@@ -109,6 +121,12 @@ const sections = [
     title: 'Configuration',
     slug: 'configuration',
     items: [
+      {
+        title: 'Entering WiFi configuration mode (Access Point)',
+        tags: classic,
+        problem: 'Holding the <code>IO39</code> button does nothing - the Piggy never switches to Access Point configuration mode.',
+        solution: 'The long-press is only detected from a <strong>fresh</strong> press while the device is awake. The <code>IO39</code> button (marked <code>IO39</code> on the PCB) is read on change, so if you hold it down <em>before</em> the Piggy wakes or boots, no change is registered and the 3-second timer never starts. Press the <code>RST</code> (reset) button for a clean boot, wait for the boot screen to appear, then cleanly <strong>press and hold the <code>IO39</code> button for a full 3-4 seconds</strong> - do not keep it held from before. The screen will change to "...starting Access Point configuration mode!". You then have a short window to connect to the Piggy\'s WiFi access point and open the configuration page.',
+      },
       {
         title: 'Default configuration login credentials',
         tags: classic,

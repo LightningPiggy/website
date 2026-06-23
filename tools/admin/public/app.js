@@ -662,22 +662,27 @@ function renderCreditCard(c, index, sectionArr) {
   return `
     <div class="credit-card" data-id="${c.id}">
       <div class="credit-avatar">
-        ${c.nostrProfilePic || c.xProfilePic
-          ? `<img src="${c.nostrProfilePic || c.xProfilePic}" alt="${c.name}" onerror="this.style.display='none'">`
+        ${c.logoUrl || c.nostrProfilePic || c.xProfilePic
+          ? `<img src="${c.logoUrl || c.nostrProfilePic || c.xProfilePic}" alt="${c.name}" onerror="this.style.display='none'">`
           : `<span>${(c.name || '?')[0].toUpperCase()}</span>`
         }
       </div>
       <div class="credit-info">
         <div class="credit-name">
-          ${c.isBitcoinKid ? '<span class="bitcoin-kid-star">⭐</span>' : ''}
+          ${(c.websiteSections || []).includes('Bitcoin Kids') ? '<span class="bitcoin-kid-star">⭐</span>' : ''}
           ${c.name || 'Unnamed'}
         </div>
-        <div class="credit-role">${c.notes || ''}</div>
+        <div class="credit-role">${c.notes || c.description || ''}</div>
         <div class="credit-links">
           ${c.nostrNpub ? `<a href="https://njump.me/${c.nostrNpub}" target="_blank" title="Nostr" class="social-icon">${ICONS.nostr}</a>` : ''}
           ${c.xProfileUrl ? `<a href="${c.xProfileUrl}" target="_blank" title="X" class="social-icon">${ICONS.x}</a>` : ''}
           ${c.githubUrl ? `<a href="${c.githubUrl}" target="_blank" title="GitHub" class="social-icon">${ICONS.github}</a>` : ''}
           ${c.websiteUrl ? `<a href="${c.websiteUrl}" target="_blank" title="Website" class="social-icon">${ICONS.web}</a>` : ''}
+        </div>
+        <div class="credit-section-tags">
+          ${(c.websiteSections && c.websiteSections.length)
+            ? c.websiteSections.map(s => `<span class="credit-section-tag">${escapeHtmlAdmin(s)}</span>`).join('')
+            : '<span class="credit-section-tag none">Not assigned</span>'}
         </div>
       </div>
       <div class="credit-actions">
@@ -696,53 +701,9 @@ function renderCredits(credits) {
     return;
   }
 
-  // Group credits by section (Special Thanks merged into Contributors).
-  // Bitcoin Kids are pulled into their own group and excluded from the others,
-  // mirroring the public credits page.
-  const bitcoinKids = credits.filter(c => c.isBitcoinKid);
-  const coreTeam = credits.filter(c => !c.isBitcoinKid && c.websiteSection === 'Core Team');
-  const contributors = credits.filter(c => !c.isBitcoinKid && (c.websiteSection === 'Contributor' || c.websiteSection === 'Special Thanks'));
-  const other = credits.filter(c => !c.isBitcoinKid && (!c.websiteSection || !['Core Team', 'Contributor', 'Special Thanks'].includes(c.websiteSection)));
-
-  let html = '';
-
-  if (coreTeam.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Core Team <span class="credits-section-count">(${coreTeam.length})</span></h3>
-        <div class="credits-section-list">${coreTeam.map((c, i, arr) => renderCreditCard(c, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (bitcoinKids.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">⭐ Bitcoin Kids <span class="credits-section-count">(${bitcoinKids.length})</span></h3>
-        <div class="credits-section-list">${bitcoinKids.map((c, i, arr) => renderCreditCard(c, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (contributors.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Contributors <span class="credits-section-count">(${contributors.length})</span></h3>
-        <div class="credits-section-list">${contributors.map((c, i, arr) => renderCreditCard(c, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (other.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Not Assigned <span class="credits-section-count">(${other.length})</span></h3>
-        <div class="credits-section-list">${other.map((c, i, arr) => renderCreditCard(c, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  creditsList.innerHTML = html;
+  // One flat list of all credits (people and organisations). Each card shows
+  // its assigned website sections as badges; a credit can be in several.
+  creditsList.innerHTML = `<div class="credits-section-list">${credits.map((c, i, arr) => renderCreditCard(c, i, arr)).join('')}</div>`;
 
   // Attach event listeners
   creditsList.querySelectorAll('.edit-credit').forEach(btn => {
@@ -792,10 +753,17 @@ function openModal(credit = null) {
   }
   document.getElementById('credit-website-url').value = credit?.websiteUrl || '';
   document.getElementById('credit-github-url').value = credit?.githubUrl || '';
+  document.getElementById('credit-description').value = credit?.description || '';
   document.getElementById('credit-notes').value = credit?.notes || '';
   document.getElementById('credit-show-on-website').checked = credit?.showOnWebsite || false;
-  document.getElementById('credit-website-section').value = credit?.websiteSection || '';
-  document.getElementById('credit-bitcoin-kid').checked = credit?.isBitcoinKid || false;
+  // Logo
+  pendingCreditLogoFile = null;
+  setCreditLogo(credit?.logoUrl || '');
+  // Website sections (multi-select)
+  const sections = credit?.websiteSections || [];
+  document.querySelectorAll('#credit-sections input[type=checkbox]').forEach(cb => {
+    cb.checked = sections.includes(cb.value);
+  });
   creditModal.hidden = false;
 }
 
@@ -822,38 +790,14 @@ async function deleteCredit(id) {
 }
 
 async function moveCredit(id, direction) {
-  const credit = allCredits.find(c => c.id === id);
-  if (!credit) return;
+  // Flat list: swap with the adjacent credit in the full list.
+  const idx = allCredits.findIndex(c => c.id === id);
+  if (idx === -1) return;
+  const swap = direction === 'up' ? idx - 1 : idx + 1;
+  if (swap < 0 || swap >= allCredits.length) return;
 
-  // Credits use websiteSection: 'Core Team', 'Contributor', 'Special Thanks'
-  // Contributors and Special Thanks are merged in the UI
-  const getCreditSection = (c) => {
-    if (c.websiteSection === 'Core Team') return 'Core Team';
-    if (c.websiteSection === 'Contributor' || c.websiteSection === 'Special Thanks') return 'Contributors';
-    return 'Not Assigned';
-  };
-
-  const creditSection = getCreditSection(credit);
-  const sectionCredits = allCredits.filter(c => getCreditSection(c) === creditSection);
-  const indexInSection = sectionCredits.findIndex(c => c.id === id);
-
-  if (direction === 'up' && indexInSection <= 0) return;
-  if (direction === 'down' && indexInSection >= sectionCredits.length - 1) return;
-
-  const swapIndex = direction === 'up' ? indexInSection - 1 : indexInSection + 1;
-  [sectionCredits[indexInSection], sectionCredits[swapIndex]] = [sectionCredits[swapIndex], sectionCredits[indexInSection]];
-
-  // Rebuild the full allCredits array preserving section order
-  const sectionOrder = ['Core Team', 'Contributors', 'Not Assigned'];
-  const reordered = [];
-  for (const section of sectionOrder) {
-    if (section === creditSection) {
-      reordered.push(...sectionCredits);
-    } else {
-      reordered.push(...allCredits.filter(c => getCreditSection(c) === section));
-    }
-  }
-
+  const reordered = [...allCredits];
+  [reordered[idx], reordered[swap]] = [reordered[swap], reordered[idx]];
   const ids = reordered.map(c => c.id);
   try {
     const resp = await fetch('/api/credits/reorder', {
@@ -864,18 +808,7 @@ async function moveCredit(id, direction) {
     const result = await resp.json();
     if (result.success) {
       allCredits = reordered;
-      const query = creditsSearch.value.toLowerCase();
-      if (query) {
-        const filtered = allCredits.filter(c =>
-          (c.name || '').toLowerCase().includes(query) ||
-          (c.email || '').toLowerCase().includes(query) ||
-          (c.role || '').toLowerCase().includes(query) ||
-          (c.notes || '').toLowerCase().includes(query)
-        );
-        renderCredits(filtered);
-      } else {
-        renderCredits(allCredits);
-      }
+      renderCredits(allCredits);
     }
   } catch (err) {
     alert('Failed to reorder: ' + err.message);
@@ -891,6 +824,22 @@ creditModal.addEventListener('click', e => {
 creditForm.addEventListener('submit', async e => {
   e.preventDefault();
   const id = document.getElementById('credit-id').value;
+
+  // Upload a pending logo file first, if one was chosen.
+  let logoUrl = creditLogoUrl.value;
+  if (pendingCreditLogoFile) {
+    try {
+      const fd = new FormData();
+      fd.append('logo', pendingCreditLogoFile);
+      fd.append('name', document.getElementById('credit-name').value || 'credit');
+      const r = await fetch('/api/credits/logo', { method: 'POST', body: fd });
+      const j = await r.json();
+      if (j.success) logoUrl = j.path;
+    } catch (err) { /* keep URL field value on upload failure */ }
+  }
+
+  const websiteSections = [...document.querySelectorAll('#credit-sections input[type=checkbox]:checked')].map(cb => cb.value);
+
   const data = {
     name: document.getElementById('credit-name').value,
     nostrNpub: document.getElementById('credit-nostr-npub').value,
@@ -900,10 +849,11 @@ creditForm.addEventListener('submit', async e => {
     xProfilePic: document.getElementById('credit-x-pic').value,
     websiteUrl: document.getElementById('credit-website-url').value,
     githubUrl: document.getElementById('credit-github-url').value,
+    description: document.getElementById('credit-description').value,
+    logoUrl,
     notes: document.getElementById('credit-notes').value,
     showOnWebsite: document.getElementById('credit-show-on-website').checked,
-    websiteSection: document.getElementById('credit-website-section').value,
-    isBitcoinKid: document.getElementById('credit-bitcoin-kid').checked,
+    websiteSections,
   };
 
   try {
@@ -927,13 +877,44 @@ creditForm.addEventListener('submit', async e => {
   }
 });
 
+// Credit logo upload (used for landing-page sections)
+let pendingCreditLogoFile = null;
+const creditLogoFile = document.getElementById('credit-logo-file');
+const creditLogoUploadBtn = document.getElementById('credit-logo-upload-btn');
+const creditLogoUrl = document.getElementById('credit-logo-url');
+const creditLogoPreview = document.getElementById('credit-logo-preview');
+const creditLogoPreviewImg = document.getElementById('credit-logo-preview-img');
+const creditLogoClear = document.getElementById('credit-logo-clear');
+
+function setCreditLogo(url) {
+  creditLogoUrl.value = url || '';
+  if (url) {
+    creditLogoPreviewImg.src = url;
+    creditLogoPreview.hidden = false;
+  } else {
+    creditLogoPreviewImg.removeAttribute('src');
+    creditLogoPreview.hidden = true;
+  }
+}
+creditLogoUploadBtn?.addEventListener('click', () => creditLogoFile.click());
+creditLogoFile?.addEventListener('change', () => {
+  if (creditLogoFile.files[0]) {
+    pendingCreditLogoFile = creditLogoFile.files[0];
+    setCreditLogo(URL.createObjectURL(pendingCreditLogoFile));
+  }
+});
+creditLogoUrl?.addEventListener('input', () => { pendingCreditLogoFile = null; setCreditLogo(creditLogoUrl.value); });
+creditLogoClear?.addEventListener('click', () => { pendingCreditLogoFile = null; setCreditLogo(''); });
+
 creditsSearch.addEventListener('input', () => {
   const query = creditsSearch.value.toLowerCase();
   const filtered = allCredits.filter(c =>
     (c.name || '').toLowerCase().includes(query) ||
     (c.email || '').toLowerCase().includes(query) ||
     (c.role || '').toLowerCase().includes(query) ||
-    (c.notes || '').toLowerCase().includes(query)
+    (c.notes || '').toLowerCase().includes(query) ||
+    (c.description || '').toLowerCase().includes(query) ||
+    (c.websiteSections || []).some(s => s.toLowerCase().includes(query))
   );
   renderCredits(filtered);
 });
@@ -970,12 +951,8 @@ syncCreditsBtn.addEventListener('click', async () => {
   syncCreditsBtn.textContent = 'Sync to Website';
 });
 
-// Load credits when tab is clicked. Friends & Family now lives in the same
-// panel, so load partners here too.
-document.querySelector('[data-tab="credits"]').addEventListener('click', () => {
-  loadCredits();
-  loadPartners();
-});
+// Load credits when the tab is clicked.
+document.querySelector('[data-tab="credits"]').addEventListener('click', loadCredits);
 
 // Auto-calculate nostr hex and fetch profile picture from Primal
 document.getElementById('credit-nostr-npub').addEventListener('input', async e => {
@@ -1050,450 +1027,6 @@ document.getElementById('copy-x-pic-btn').addEventListener('click', async () => 
   } catch (err) {
     picField.select();
     document.execCommand('copy');
-  }
-});
-
-// --- Partners / Friends & Family ---
-const partnersList = document.getElementById('partners-list');
-const partnerModal = document.getElementById('partner-modal');
-const partnerForm = document.getElementById('partner-form');
-const partnerModalTitle = document.getElementById('partner-modal-title');
-const addPartnerBtn = document.getElementById('add-partner-btn');
-const cancelPartnerBtn = document.getElementById('cancel-partner-btn');
-const partnersSearch = document.getElementById('partners-search');
-const syncPartnersBtn = document.getElementById('sync-partners-btn');
-const partnersSyncResult = document.getElementById('partners-sync-result');
-
-let allPartners = [];
-
-async function loadPartners() {
-  try {
-    const resp = await fetch('/api/partners');
-    allPartners = await resp.json();
-    renderPartners(allPartners);
-  } catch (err) {
-    partnersList.innerHTML = `<p class="error">Failed to load partners: ${err.message}</p>`;
-  }
-}
-
-function renderPartnerCard(p, index, sectionArr) {
-  const isFirst = index === 0;
-  const isLast = index === sectionArr.length - 1;
-  return `
-    <div class="credit-card" data-id="${p.id}">
-      <div class="credit-avatar">
-        ${p.logoUrl || p.nostrProfilePic || p.xProfilePic
-          ? `<img src="${p.logoUrl || p.nostrProfilePic || p.xProfilePic}" alt="${p.name}" onerror="this.style.display='none'">`
-          : `<span>${(p.name || '?')[0].toUpperCase()}</span>`
-        }
-      </div>
-      <div class="credit-info">
-        <div class="credit-name">${p.name || 'Unnamed'}</div>
-        <div class="credit-role">${p.description || ''}</div>
-        <div class="credit-links">
-          ${p.nostrNpub ? `<a href="https://njump.me/${p.nostrNpub}" target="_blank" title="Nostr" class="social-icon">${ICONS.nostr}</a>` : ''}
-          ${p.xProfileUrl ? `<a href="${p.xProfileUrl}" target="_blank" title="X" class="social-icon">${ICONS.x}</a>` : ''}
-          ${p.githubUrl ? `<a href="${p.githubUrl}" target="_blank" title="GitHub" class="social-icon">${ICONS.github}</a>` : ''}
-          ${p.websiteUrl ? `<a href="${p.websiteUrl}" target="_blank" title="Website" class="social-icon">${ICONS.web}</a>` : ''}
-        </div>
-      </div>
-      <div class="credit-actions">
-        <button class="btn-move move-partner-up" data-id="${p.id}" title="Move up" ${isFirst ? 'disabled' : ''}>&#9650;</button>
-        <button class="btn-move move-partner-down" data-id="${p.id}" title="Move down" ${isLast ? 'disabled' : ''}>&#9660;</button>
-        <button class="btn-icon edit-partner" title="Edit">✏️</button>
-        <button class="btn-icon delete-partner" title="Delete">🗑️</button>
-      </div>
-    </div>
-  `;
-}
-
-function renderPartners(partners) {
-  if (partners.length === 0) {
-    partnersList.innerHTML = '<p class="empty">No partners yet. Click "Add Partner" to create one.</p>';
-    return;
-  }
-
-  // Group partners by section
-  const communitySponsors = partners.filter(p => p.section === 'Community Sponsors');
-  const educationPartners = partners.filter(p => p.section === 'Education Partners');
-  const technologyPartners = partners.filter(p => p.section === 'Enabling Technologies');
-  const appearances = partners.filter(p => p.section === 'Appearances');
-  const inTheNews = partners.filter(p => p.section === 'In the News');
-  const other = partners.filter(p => !p.section || !['Community Sponsors', 'Education Partners', 'Enabling Technologies', 'Appearances', 'In the News'].includes(p.section));
-
-  let html = '';
-
-  if (communitySponsors.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Community Sponsors <span class="credits-section-count">(${communitySponsors.length})</span></h3>
-        <div class="credits-section-list">${communitySponsors.map((p, i, arr) => renderPartnerCard(p, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (educationPartners.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Education Partners <span class="credits-section-count">(${educationPartners.length})</span></h3>
-        <div class="credits-section-list">${educationPartners.map((p, i, arr) => renderPartnerCard(p, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (technologyPartners.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Enabling Technologies <span class="credits-section-count">(${technologyPartners.length})</span></h3>
-        <div class="credits-section-list">${technologyPartners.map((p, i, arr) => renderPartnerCard(p, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (appearances.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Appearances <span class="credits-section-count">(${appearances.length})</span></h3>
-        <div class="credits-section-list">${appearances.map((p, i, arr) => renderPartnerCard(p, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (inTheNews.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">In the News <span class="credits-section-count">(${inTheNews.length})</span></h3>
-        <div class="credits-section-list">${inTheNews.map((p, i, arr) => renderPartnerCard(p, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  if (other.length > 0) {
-    html += `
-      <div class="credits-section">
-        <h3 class="credits-section-title">Not Assigned <span class="credits-section-count">(${other.length})</span></h3>
-        <div class="credits-section-list">${other.map((p, i, arr) => renderPartnerCard(p, i, arr)).join('')}</div>
-      </div>
-    `;
-  }
-
-  partnersList.innerHTML = html;
-
-  // Attach event listeners
-  partnersList.querySelectorAll('.edit-partner').forEach(btn => {
-    btn.addEventListener('click', () => editPartner(btn.closest('.credit-card').dataset.id));
-  });
-  partnersList.querySelectorAll('.delete-partner').forEach(btn => {
-    btn.addEventListener('click', () => deletePartner(btn.closest('.credit-card').dataset.id));
-  });
-  partnersList.querySelectorAll('.move-partner-up').forEach(btn => {
-    btn.addEventListener('click', () => movePartner(btn.dataset.id, 'up'));
-  });
-  partnersList.querySelectorAll('.move-partner-down').forEach(btn => {
-    btn.addEventListener('click', () => movePartner(btn.dataset.id, 'down'));
-  });
-}
-
-let pendingLogoFile = null;
-
-function openPartnerModal(partner = null) {
-  partnerModalTitle.textContent = partner ? 'Edit Partner' : 'Add Partner';
-  document.getElementById('partner-id').value = partner?.id || '';
-  document.getElementById('partner-name').value = partner?.name || '';
-  document.getElementById('partner-description').value = partner?.description || '';
-  document.getElementById('partner-website-url').value = partner?.websiteUrl || '';
-  document.getElementById('partner-logo-url').value = partner?.logoUrl || '';
-  document.getElementById('partner-nostr-npub').value = partner?.nostrNpub || '';
-  document.getElementById('partner-nostr-pic').value = partner?.nostrProfilePic || '';
-  document.getElementById('partner-x-url').value = partner?.xProfileUrl || '';
-  // Auto-generate X pic from URL
-  if (partner?.xProfilePic) {
-    document.getElementById('partner-x-pic').value = partner.xProfilePic;
-  } else if (partner?.xProfileUrl) {
-    const username = extractXUsername(partner.xProfileUrl);
-    document.getElementById('partner-x-pic').value = username ? `https://unavatar.io/twitter/${username}` : '';
-  } else {
-    document.getElementById('partner-x-pic').value = '';
-  }
-  document.getElementById('partner-github-url').value = partner?.githubUrl || '';
-  document.getElementById('partner-show-on-website').checked = partner?.showOnWebsite || false;
-  document.getElementById('partner-section').value = partner?.section || '';
-
-  // Reset logo upload state
-  pendingLogoFile = null;
-  document.getElementById('partner-logo-file').value = '';
-  const logoPreview = document.getElementById('partner-logo-preview');
-  const logoPreviewImg = document.getElementById('partner-logo-preview-img');
-  if (partner?.logoUrl) {
-    logoPreviewImg.src = partner.logoUrl;
-    logoPreview.hidden = false;
-  } else {
-    logoPreview.hidden = true;
-  }
-
-  partnerModal.hidden = false;
-}
-
-function closePartnerModal() {
-  partnerModal.hidden = true;
-  partnerForm.reset();
-  pendingLogoFile = null;
-  document.getElementById('partner-logo-preview').hidden = true;
-}
-
-function editPartner(id) {
-  const partner = allPartners.find(p => p.id === id);
-  if (partner) openPartnerModal(partner);
-}
-
-async function deletePartner(id) {
-  const partner = allPartners.find(p => p.id === id);
-  if (!confirm(`Delete partner "${partner?.name || 'Unnamed'}"?`)) return;
-
-  try {
-    await fetch(`/api/partners/${id}`, { method: 'DELETE' });
-    loadPartners();
-  } catch (err) {
-    alert('Failed to delete: ' + err.message);
-  }
-}
-
-async function movePartner(id, direction) {
-  // Find the partner and its section
-  const partner = allPartners.find(p => p.id === id);
-  if (!partner) return;
-
-  // Get partners in the same section, preserving their order from allPartners
-  const sectionPartners = allPartners.filter(p => p.section === partner.section);
-  const indexInSection = sectionPartners.findIndex(p => p.id === id);
-
-  // Check boundaries
-  if (direction === 'up' && indexInSection <= 0) return;
-  if (direction === 'down' && indexInSection >= sectionPartners.length - 1) return;
-
-  // Swap within the section array
-  const swapIndex = direction === 'up' ? indexInSection - 1 : indexInSection + 1;
-  [sectionPartners[indexInSection], sectionPartners[swapIndex]] = [sectionPartners[swapIndex], sectionPartners[indexInSection]];
-
-  // Rebuild the full allPartners array preserving section order
-  const sectionOrder = ['Community Sponsors', 'Education Partners', 'Enabling Technologies', 'Appearances', 'In the News'];
-  const reordered = [];
-  for (const section of sectionOrder) {
-    if (section === partner.section) {
-      reordered.push(...sectionPartners);
-    } else {
-      reordered.push(...allPartners.filter(p => p.section === section));
-    }
-  }
-  // Add any partners with no section or unknown sections
-  reordered.push(...allPartners.filter(p => !p.section || !sectionOrder.includes(p.section)));
-
-  // Send the new order to the server
-  const ids = reordered.map(p => p.id);
-  try {
-    const resp = await fetch('/api/partners/reorder', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    });
-    const result = await resp.json();
-    if (result.success) {
-      allPartners = reordered;
-      // Re-render, respecting any active search filter
-      const query = partnersSearch.value.toLowerCase();
-      if (query) {
-        const filtered = allPartners.filter(p =>
-          (p.name || '').toLowerCase().includes(query) ||
-          (p.description || '').toLowerCase().includes(query)
-        );
-        renderPartners(filtered);
-      } else {
-        renderPartners(allPartners);
-      }
-    }
-  } catch (err) {
-    alert('Failed to reorder: ' + err.message);
-  }
-}
-
-addPartnerBtn.addEventListener('click', () => openPartnerModal());
-cancelPartnerBtn.addEventListener('click', closePartnerModal);
-partnerModal.addEventListener('click', e => {
-  if (e.target === partnerModal) closePartnerModal();
-});
-
-partnerForm.addEventListener('submit', async e => {
-  e.preventDefault();
-  const id = document.getElementById('partner-id').value;
-  let logoUrl = document.getElementById('partner-logo-url').value;
-
-  // Upload logo if a file is pending
-  if (pendingLogoFile) {
-    const formData = new FormData();
-    formData.append('logo', pendingLogoFile);
-    formData.append('name', document.getElementById('partner-name').value);
-
-    try {
-      const uploadResp = await fetch('/api/partners/logo', { method: 'POST', body: formData });
-      const uploadData = await uploadResp.json();
-      if (uploadData.success) {
-        logoUrl = uploadData.path;
-      } else {
-        alert('Failed to upload logo: ' + uploadData.error);
-        return;
-      }
-    } catch (err) {
-      alert('Failed to upload logo: ' + err.message);
-      return;
-    }
-  }
-
-  const data = {
-    name: document.getElementById('partner-name').value,
-    description: document.getElementById('partner-description').value,
-    websiteUrl: document.getElementById('partner-website-url').value,
-    logoUrl: logoUrl,
-    nostrNpub: document.getElementById('partner-nostr-npub').value,
-    nostrProfilePic: document.getElementById('partner-nostr-pic').value,
-    xProfileUrl: document.getElementById('partner-x-url').value,
-    xProfilePic: document.getElementById('partner-x-pic').value,
-    githubUrl: document.getElementById('partner-github-url').value,
-    showOnWebsite: document.getElementById('partner-show-on-website').checked,
-    section: document.getElementById('partner-section').value,
-  };
-
-  try {
-    if (id) {
-      await fetch(`/api/partners/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    } else {
-      await fetch('/api/partners', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-    }
-    closePartnerModal();
-    loadPartners();
-  } catch (err) {
-    alert('Failed to save: ' + err.message);
-  }
-});
-
-partnersSearch.addEventListener('input', () => {
-  const query = partnersSearch.value.toLowerCase();
-  const filtered = allPartners.filter(p =>
-    (p.name || '').toLowerCase().includes(query) ||
-    (p.description || '').toLowerCase().includes(query)
-  );
-  renderPartners(filtered);
-});
-
-// Logo upload handling
-const logoFileInput = document.getElementById('partner-logo-file');
-const logoUploadBtn = document.getElementById('partner-logo-upload-btn');
-const logoPreview = document.getElementById('partner-logo-preview');
-const logoPreviewImg = document.getElementById('partner-logo-preview-img');
-const logoClearBtn = document.getElementById('partner-logo-clear');
-const logoUrlInput = document.getElementById('partner-logo-url');
-
-logoUploadBtn.addEventListener('click', () => logoFileInput.click());
-
-logoFileInput.addEventListener('change', () => {
-  if (logoFileInput.files[0]) {
-    pendingLogoFile = logoFileInput.files[0];
-    const url = URL.createObjectURL(pendingLogoFile);
-    logoPreviewImg.src = url;
-    logoPreview.hidden = false;
-    logoUrlInput.value = ''; // Clear URL when file is selected
-  }
-});
-
-logoClearBtn.addEventListener('click', () => {
-  pendingLogoFile = null;
-  logoFileInput.value = '';
-  logoPreview.hidden = true;
-  logoUrlInput.value = '';
-});
-
-// Update preview when URL is entered manually
-logoUrlInput.addEventListener('input', () => {
-  const url = logoUrlInput.value.trim();
-  if (url) {
-    logoPreviewImg.src = url;
-    logoPreview.hidden = false;
-    pendingLogoFile = null; // Clear pending file when URL is entered
-    logoFileInput.value = '';
-  } else if (!pendingLogoFile) {
-    logoPreview.hidden = true;
-  }
-});
-
-// Sync partners to website
-syncPartnersBtn.addEventListener('click', async () => {
-  syncPartnersBtn.disabled = true;
-  syncPartnersBtn.textContent = 'Syncing...';
-
-  try {
-    const resp = await fetch('/api/partners/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await resp.json();
-
-    if (data.success) {
-      partnersSyncResult.className = 'result success';
-      partnersSyncResult.innerHTML = `Synced to <strong>${data.path}</strong>: ${data.exported.educationPartners} Education, ${data.exported.technologyPartners} Technology, ${data.exported.appearances} Appearances, ${data.exported.inTheNews} News`;
-    } else {
-      partnersSyncResult.className = 'result error';
-      partnersSyncResult.textContent = data.error;
-    }
-  } catch (err) {
-    partnersSyncResult.className = 'result error';
-    partnersSyncResult.textContent = err.message;
-  }
-
-  partnersSyncResult.hidden = false;
-  syncPartnersBtn.disabled = false;
-  syncPartnersBtn.textContent = 'Sync to Website';
-});
-
-// Friends & Family is merged into the Credits panel; partners load via the
-// Credits tab handler above (no separate tab).
-
-// Auto-populate X profile picture from X URL for partners
-document.getElementById('partner-x-url').addEventListener('input', e => {
-  const url = e.target.value.trim();
-  const picField = document.getElementById('partner-x-pic');
-  const username = extractXUsername(url);
-
-  if (username) {
-    picField.value = `https://unavatar.io/twitter/${username}`;
-  } else {
-    picField.value = '';
-  }
-});
-
-// Auto-fetch Nostr profile pic for partners
-document.getElementById('partner-nostr-npub').addEventListener('input', async e => {
-  const npub = e.target.value.trim();
-  const picField = document.getElementById('partner-nostr-pic');
-  const hex = npubToHex(npub);
-
-  if (hex) {
-    picField.value = 'Loading...';
-    try {
-      const resp = await fetch(`/api/nostr/profile/${hex}`);
-      const profile = await resp.json();
-      picField.value = profile.picture || '';
-    } catch (err) {
-      picField.value = '';
-    }
-  } else {
-    picField.value = '';
   }
 });
 

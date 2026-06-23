@@ -61,15 +61,14 @@ function parseProfile(name: string, url?: string, avatar?: string, nostrUrl?: st
   };
 }
 
-const { coreTeam = [], contributors = [], specialThanks = [] } = creditsData;
+const { coreTeam = [], contributors = [], specialThanks = [], bitcoinKids = [] } = creditsData;
 // Merge contributors and specialThanks into a single array
 const allContributors = [...contributors, ...specialThanks];
 
-// Pull Bitcoin Kids into their own group (from any source) and remove them
-// from the other lists so they only appear once, in their dedicated section.
-const bitcoinKids = [...coreTeam, ...allContributors].filter((p) => p.isBitcoinKid);
-const coreTeamMain = coreTeam.filter((p) => !p.isBitcoinKid);
-const contributorsMain = allContributors.filter((p) => !p.isBitcoinKid);
+// The sync already emits Bitcoin Kids as their own group and excludes them from
+// Core Team / Contributors, so these lists are ready to render as-is.
+const coreTeamMain = coreTeam;
+const contributorsMain = allContributors;
 ---
 
 <BaseLayout title="Credits" description="The team and contributors behind Lightning Piggy">

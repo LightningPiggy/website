@@ -1,0 +1,705 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Treasure Hunt"
+  description="Explore live Lightning Piggy Piglets and NIP-GC geocaches on an interactive world map, pulled straight from Nostr relays."
+>
+  <!-- MapLibre GL JS (CDN, no npm dependency). Version pinned + SRI-checked. -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.min.css"
+    integrity="sha384-XPt8o1QuQUrfvyG8MY6VYuFZCJ147mPoGUtgjzC6/j9fw9/scoqo1v96sDhlvnFo"
+    crossorigin="anonymous"
+  />
+
+  <style is:global>
+    /* Markers carry an explicit z-index (1 = NIP-GC cache, 2 = Piglet) so our
+       Piglets layer above other caches. Lift the open detail popup above both
+       (and its close button above its own content) so the card is never hidden
+       behind the pins. */
+    .maplibregl-popup { z-index: 5; }
+    .maplibregl-popup-close-button { z-index: 1; font-size: 18px; padding: 0 6px; }
+  </style>
+
+  <div id="piglets-root" class="relative w-full" style="height: calc(100vh - 4rem);">
+    <!-- Map fills the container. Position/inset are set INLINE (not via Tailwind
+         `absolute inset-0`) on purpose: MapLibre adds a `.maplibregl-map` class
+         whose stylesheet sets `position: relative`, and because that stylesheet
+         loads after Tailwind it would win over the `.absolute` utility - collapsing
+         the container to 0 height. Inline styles outrank class selectors, so the
+         map keeps filling its parent. -->
+    <div id="piglets-map" style="position:absolute;top:0;right:0;bottom:0;left:0;"></div>
+
+    <!-- Loading overlay -->
+    <div
+      id="piglets-loading"
+      class="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm pointer-events-none"
+    >
+      <div class="inline-block animate-spin rounded-full h-10 w-10 border-4 border-pink border-t-transparent"></div>
+      <p class="text-gray-600 mt-3 font-medium">Loading Piglets from Nostr…</p>
+    </div>
+
+    <!-- Empty state -->
+    <div
+      id="piglets-empty"
+      class="absolute top-4 left-1/2 -translate-x-1/2 z-10 hidden rounded-full bg-white shadow-lg border border-gray-200 px-4 py-2 text-sm text-gray-600"
+    >
+      No Piglets found yet - go hide one!
+    </div>
+
+    <!-- Helper / "what is this?" overlay (top-left) -->
+    <div
+      id="piglets-help"
+      class="absolute top-4 left-4 z-20 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-white/95 backdrop-blur-sm shadow-xl border border-gray-200 p-4 text-sm text-gray-600"
+    >
+      <button
+        id="piglets-help-close"
+        type="button"
+        aria-label="Hide info"
+        class="absolute top-2.5 right-2.5 text-gray-400 hover:text-gray-700 rounded-full p-1 hover:bg-gray-100 transition-colors"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      <div class="flex items-center gap-2 pr-6">
+        <span class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white border-2 border-white shrink-0" style="background:#EC008C;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>
+        </span>
+        <h2 class="text-base font-bold text-gray-900">Find a Piglet and claim the treasure!</h2>
+      </div>
+      <p class="mt-2.5 leading-relaxed">
+        Each <span class="font-semibold text-pink">Piglet</span> is a modern-day treasure chest. Use the
+        <span class="font-semibold">Lightning Piggy</span> app to navigate to one, find the hidden tag, and scan it.
+      </p>
+      <p class="mt-2 leading-relaxed">
+        Piglets marked with a
+        <span class="inline-flex h-4 w-4 align-text-bottom items-center justify-center rounded-full bg-white shadow-sm">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#FFC107" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+        </span>
+        contain <span class="font-semibold">real sats</span> you can claim straight to your wallet.
+        Grey/purple pins are other geocachers' <span class="font-semibold">NIP-GC</span> caches drawn from the Nostr network.
+      </p>
+      <p class="mt-2 text-xs text-gray-500 leading-relaxed">
+        Note: The Lightning Piggy app is currently in development and available for testing via <a href="https://app.lightningpiggy.com" target="_blank" rel="noopener noreferrer" class="font-semibold text-pink hover:underline">this link</a>.
+      </p>
+      <a
+        href="/build"
+        class="mt-3 inline-flex items-center justify-center w-full px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
+      >
+        Get the Lightning Piggy app
+      </a>
+    </div>
+
+    <!-- Collapsed "info" pill - shown after the helper is dismissed -->
+    <button
+      id="piglets-help-open"
+      type="button"
+      aria-label="Show info"
+      class="absolute top-4 left-4 z-20 hidden items-center gap-1.5 rounded-full bg-white shadow-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+    >
+      <svg class="w-4 h-4 text-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      How it works
+    </button>
+
+    <!-- Legend + count -->
+    <div
+      id="piglets-legend"
+      class="absolute bottom-4 left-4 z-10 hidden rounded-xl bg-white/95 shadow-lg border border-gray-200 px-3 py-2 text-xs text-gray-700 space-y-1.5"
+    >
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full text-white border border-white" style="background:#EC008C;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>
+        </span>
+        <span>Piglet</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full text-white border border-white" style="background:#7A5CFF;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>
+        </span>
+        <span>NIP-GC cache</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white" style="box-shadow:0 1px 3px rgba(0,0,0,0.25);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#FFC107" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+        </span>
+        <span>Lightning prize</span>
+      </div>
+      <div id="piglets-count" class="pt-1 border-t border-gray-100 text-gray-500"></div>
+    </div>
+  </div>
+
+  <!-- MapLibre GL JS script (CDN). Version pinned + SRI-checked. -->
+  <script
+    is:inline
+    src="https://cdn.jsdelivr.net/npm/maplibre-gl@4.7.1/dist/maplibre-gl.min.js"
+    integrity="sha384-2h8mp2ca/CxhPdLvv76KPLBoqmxlTL4u1ptEZdfvv1qxkZyRZx2u/WUnyUC3Ky6U"
+    crossorigin="anonymous"></script>
+
+  <script>
+    // -----------------------------------------------------------------------
+    // Pure helpers (ported verbatim from the Lightning Piggy mobile app)
+    // -----------------------------------------------------------------------
+    // rot13 - faithful port of the mobile app's rot13 obfuscation/decode (the
+    // two are the same operation). Hints are rot13-obfuscated on the wire.
+    function rot13Decode(input: string): string {
+      let out = '';
+      for (let i = 0; i < input.length; i++) {
+        const code = input.charCodeAt(i);
+        if (code >= 65 && code <= 90) {
+          out += String.fromCharCode(((code - 65 + 13) % 26) + 65);
+        } else if (code >= 97 && code <= 122) {
+          out += String.fromCharCode(((code - 97 + 13) % 26) + 97);
+        } else {
+          out += input[i];
+        }
+      }
+      return out;
+    }
+
+    const GEOHASH_BASE32 = '0123456789bcdefghjkmnpqrstuvwxyz';
+    function decodeGeohash(gh: string): { lat: number; lng: number } {
+      let latLo = -90,
+        latHi = 90,
+        lonLo = -180,
+        lonHi = 180,
+        evenBit = true;
+      for (let i = 0; i < gh.length; i++) {
+        const idx = GEOHASH_BASE32.indexOf(gh[i].toLowerCase());
+        if (idx < 0) continue;
+        for (let bit = 4; bit >= 0; bit--) {
+          const set = (idx >> bit) & 1;
+          if (evenBit) {
+            const mid = (lonLo + lonHi) / 2;
+            if (set) lonLo = mid;
+            else lonHi = mid;
+          } else {
+            const mid = (latLo + latHi) / 2;
+            if (set) latLo = mid;
+            else latHi = mid;
+          }
+          evenBit = !evenBit;
+        }
+      }
+      return { lat: (latLo + latHi) / 2, lng: (lonLo + lonHi) / 2 };
+    }
+
+    // -----------------------------------------------------------------------
+    // Sanitisation helpers (mirrors NostrProducts.astro)
+    // -----------------------------------------------------------------------
+    function escapeHtml(str: string): string {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function sanitizeUrl(url: string): string {
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url;
+      } catch {}
+      return '';
+    }
+
+    // -----------------------------------------------------------------------
+    // Nostr relays + types
+    // -----------------------------------------------------------------------
+    const GC_RELAYS = [
+      'wss://nos.lol',
+      'wss://relay.damus.io',
+      'wss://relay.ditto.pub',
+      'wss://relay.dreamith.to',
+    ];
+
+    interface NostrEvent {
+      id: string;
+      content: string;
+      tags: string[][];
+      pubkey: string;
+      kind: number;
+      created_at: number;
+    }
+
+    interface ParsedCache {
+      d: string;
+      name: string;
+      description: string;
+      difficulty: number | null;
+      terrain: number | null;
+      size: string | null;
+      cacheType: string | null;
+      geohash: string;
+      hint: string | null;
+      imageUrl: string | null;
+      payoutSats: number | null;
+      waitSeconds: number | null;
+      uses: number | null;
+      expiresAt: number | null;
+      createdAt: number;
+      hiderPubkey: string;
+      coord: string;
+      isLpPiggy: boolean;
+      lat: number;
+      lng: number;
+    }
+
+    // First tag value for a key.
+    function firstTag(tags: string[][], key: string): string | undefined {
+      const t = tags.find((tag) => tag[0] === key);
+      return t ? t[1] : undefined;
+    }
+
+    function intOrNull(v: string | undefined): number | null {
+      if (v == null) return null;
+      const n = parseInt(v, 10);
+      return Number.isNaN(n) ? null : n;
+    }
+
+    function parseCache(event: NostrEvent): ParsedCache | null {
+      const tags = event.tags || [];
+      const d = firstTag(tags, 'd');
+      if (!d) return null;
+
+      // Longest g tag → geohash. No g tag → no location → skip.
+      const gTags = tags
+        .filter((t) => t[0] === 'g' && typeof t[1] === 'string')
+        .map((t) => t[1])
+        .sort((a, b) => b.length - a.length);
+      const geohash = gTags[0];
+      if (!geohash) return null;
+
+      const { lat, lng } = decodeGeohash(geohash);
+
+      const hintRaw = firstTag(tags, 'hint');
+      const imageUrlRaw = firstTag(tags, 'image');
+
+      const isLpPiggy = tags.some(
+        (t) => t[0] === 'l' && t[1] === 'payout-lnurl-w' && t[2] === 'com.lightningpiggy.app',
+      );
+
+      return {
+        d,
+        name: firstTag(tags, 'name') || 'Unnamed cache',
+        description: event.content || '',
+        difficulty: intOrNull(firstTag(tags, 'D')),
+        terrain: intOrNull(firstTag(tags, 'T')),
+        size: firstTag(tags, 'S') || null,
+        cacheType: firstTag(tags, 't') || null,
+        geohash,
+        hint: hintRaw ? rot13Decode(hintRaw) : null,
+        imageUrl: imageUrlRaw || null,
+        payoutSats: intOrNull(firstTag(tags, 'amount')),
+        waitSeconds: intOrNull(firstTag(tags, 'wait')),
+        uses: intOrNull(firstTag(tags, 'uses')),
+        expiresAt: intOrNull(firstTag(tags, 'expiration')),
+        createdAt: event.created_at,
+        hiderPubkey: event.pubkey,
+        coord: `37516:${event.pubkey}:${d}`,
+        isLpPiggy,
+        lat,
+        lng,
+      };
+    }
+
+    // -----------------------------------------------------------------------
+    // Relay fetching (mirrors NostrProducts.astro WebSocket pattern)
+    // -----------------------------------------------------------------------
+    function fetchFromRelay(relayUrl: string): Promise<NostrEvent[]> {
+      return new Promise((resolve) => {
+        const events: NostrEvent[] = [];
+        let ws: WebSocket;
+        let timeout: number;
+
+        try {
+          ws = new WebSocket(relayUrl);
+        } catch {
+          resolve([]);
+          return;
+        }
+
+        const subId = Math.random().toString(36).slice(2, 10);
+
+        ws.onopen = () => {
+          ws.send(JSON.stringify(['REQ', subId, { kinds: [37516], limit: 500 }]));
+          timeout = window.setTimeout(() => {
+            try {
+              ws.close();
+            } catch {}
+            resolve(events);
+          }, 6000);
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg[0] === 'EVENT' && msg[1] === subId && msg[2]?.kind === 37516) {
+              events.push(msg[2]);
+            }
+            if (msg[0] === 'EOSE' && msg[1] === subId) {
+              clearTimeout(timeout);
+              try {
+                ws.close();
+              } catch {}
+              resolve(events);
+            }
+          } catch {
+            // ignore parse errors
+          }
+        };
+
+        ws.onerror = () => {
+          clearTimeout(timeout);
+          resolve([]);
+        };
+
+        ws.onclose = () => {
+          clearTimeout(timeout);
+        };
+      });
+    }
+
+    async function fetchCaches(): Promise<ParsedCache[]> {
+      const results = await Promise.all(GC_RELAYS.map((r) => fetchFromRelay(r)));
+      const allEvents = results.flat();
+
+      const now = Math.floor(Date.now() / 1000);
+
+      // Dedupe parameterised-replaceable events: key by pubkey:d, keep newest.
+      const newest = new Map<string, NostrEvent>();
+      for (const ev of allEvents) {
+        const d = firstTag(ev.tags || [], 'd');
+        if (!d) continue;
+        const key = ev.pubkey + ':' + d;
+        const existing = newest.get(key);
+        if (!existing || ev.created_at > existing.created_at) {
+          newest.set(key, ev);
+        }
+      }
+
+      const caches: ParsedCache[] = [];
+      for (const ev of newest.values()) {
+        const cache = parseCache(ev);
+        if (!cache) continue;
+        if (cache.expiresAt != null && cache.expiresAt < now) continue; // expired
+        caches.push(cache);
+      }
+      return caches;
+    }
+
+    // -----------------------------------------------------------------------
+    // Markers + popup (mirrors CacheDetailSheet)
+    // -----------------------------------------------------------------------
+    const BRAND_PINK = '#EC008C';
+    // The app's `cachePurple` (src/styles/palettes.ts) - vanilla NIP-GC caches.
+    const CACHE_PURPLE = '#7A5CFF';
+
+    // Lucide `piggy-bank` (Piglets) and `map-pin` (vanilla NIP-GC caches) - the
+    // same two glyphs the mobile app uses on its map (src/components/LibreMiniMap.tsx:
+    // Piglet → PiggyBank pink, NIP-GC → MapPin purple).
+    const PIGGY_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>`;
+    const MAPPIN_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>`;
+    // Lucide `zap`, filled - the app's zapYellow prize badge (LpPayoutBadge.tsx).
+    const ZAP_YELLOW = '#FFC107';
+    const ZAP_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="${ZAP_YELLOW}" stroke="${ZAP_YELLOW}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>`;
+
+    // A Piglet carrying a withdrawable prize (LP label + advertised sats) gets the
+    // yellow ⚡ badge - same gate as the app's LpPayoutBadge (isLpPiggy && payoutSats != null).
+    function hasPrize(cache: ParsedCache): boolean {
+      return cache.isLpPiggy && cache.payoutSats != null;
+    }
+
+    function zapBadgeHtml(): string {
+      return `<span aria-label="Lightning payout available" style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:9999px;background:#fff;display:inline-flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,0.3);">${ZAP_SVG}</span>`;
+    }
+
+    // The circular badge used for a marker / popup icon / legend swatch. Piglet =
+    // pink + piggy-bank glyph; NIP-GC = purple + map-pin glyph. White glyph + ring
+    // on both, mirroring the app's filled pins.
+    function iconBadgeHtml(isLpPiggy: boolean, size = 32): string {
+      const bg = isLpPiggy ? BRAND_PINK : CACHE_PURPLE;
+      const glyph = isLpPiggy ? PIGGY_SVG : MAPPIN_SVG;
+      return `<span style="display:inline-flex;width:${size}px;height:${size}px;align-items:center;justify-content:center;border-radius:9999px;background:${bg};border:2px solid #fff;color:#fff;flex:none;box-shadow:0 1px 4px rgba(0,0,0,0.35);">${glyph}</span>`;
+    }
+
+    function makeMarkerElement(cache: ParsedCache): HTMLElement {
+      // The OUTER element is MapLibre's marker node - leave its positioning
+      // alone (MapLibre's `.maplibregl-marker` class sets `position:absolute`;
+      // overriding it strands every pin at the map's top-left). The zap badge
+      // anchors to an INNER `position:relative` wrapper instead.
+      const el = document.createElement('div');
+      el.style.cursor = 'pointer';
+      // Piglets sit above vanilla NIP-GC caches when they overlap.
+      el.style.zIndex = cache.isLpPiggy ? '2' : '1';
+      const inner = document.createElement('div');
+      inner.style.position = 'relative';
+      inner.style.width = '32px';
+      inner.style.height = '32px';
+      inner.innerHTML = iconBadgeHtml(cache.isLpPiggy, 32) + (hasPrize(cache) ? zapBadgeHtml() : '');
+      el.appendChild(inner);
+      el.setAttribute('aria-label', cache.isLpPiggy ? 'Piglet' : 'NIP-GC cache');
+      return el;
+    }
+
+    function buildPopupHtml(cache: ParsedCache): string {
+      const kindLabel = cache.isLpPiggy ? 'Piglet' : 'NIP-GC cache';
+      const specBits = [
+        cache.cacheType,
+        cache.size,
+        cache.difficulty != null ? 'D' + cache.difficulty : null,
+        cache.terrain != null ? 'T' + cache.terrain : null,
+      ].filter(Boolean) as string[];
+
+      const iconBadge = iconBadgeHtml(cache.isLpPiggy, 28);
+
+      const kindChip = cache.isLpPiggy
+        ? `<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:${BRAND_PINK};color:#fff;">Piglet</span>`
+        : `<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;background:#f3f4f6;color:#374151;">NIP-GC cache</span>`;
+
+      const specChip =
+        specBits.length > 0
+          ? `<span style="display:inline-block;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:500;background:#f3f4f6;color:#374151;">${escapeHtml(
+              specBits.join(' · '),
+            )}</span>`
+          : '';
+
+      const prizeLine =
+        cache.isLpPiggy && cache.payoutSats != null
+          ? `<div style="margin-top:8px;font-size:13px;font-weight:600;color:${BRAND_PINK};">⚡ ${cache.payoutSats.toLocaleString()} sats prize</div>`
+          : '';
+
+      const descBlock = cache.description
+        ? `<p style="margin-top:8px;font-size:13px;color:#4b5563;line-height:1.45;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(
+            cache.description,
+          )}</p>`
+        : '';
+
+      const hintBlock = cache.hint
+        ? `<div style="margin-top:8px;">
+             <button type="button" class="pg-hint-toggle" style="font-size:12px;font-weight:600;color:${BRAND_PINK};background:none;border:none;padding:0;cursor:pointer;">Hint - reveal</button>
+             <p class="pg-hint-text" style="display:none;margin-top:4px;font-size:13px;color:#4b5563;background:#f9fafb;border-radius:8px;padding:6px 8px;">${escapeHtml(
+               cache.hint,
+             )}</p>
+           </div>`
+        : '';
+
+      const safeImg = cache.imageUrl ? sanitizeUrl(cache.imageUrl) : '';
+      const imgBlock = safeImg
+        ? `<img src="${safeImg}" alt="${escapeHtml(
+            cache.name,
+          )}" loading="lazy" referrerpolicy="no-referrer" style="margin-top:8px;width:100%;border-radius:8px;object-fit:cover;max-height:180px;" onerror="this.style.display='none'">`
+        : '';
+
+      return `
+        <div style="max-width:260px;font-family:Inter,system-ui,sans-serif;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            ${iconBadge}
+            <strong style="font-size:15px;color:#111827;line-height:1.2;">${escapeHtml(
+              cache.name,
+            )}</strong>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;">
+            ${kindChip}
+            ${specChip}
+          </div>
+          ${prizeLine}
+          ${descBlock}
+          ${hintBlock}
+          ${imgBlock}
+        </div>
+      `;
+    }
+
+    // -----------------------------------------------------------------------
+    // Init
+    // -----------------------------------------------------------------------
+    // Wait for the CDN-loaded MapLibre global to be ready. Astro bundles this
+    // <script> as a deferred ES module, so it may run before OR after the
+    // classic maplibre-gl script has executed - poll briefly rather than
+    // assuming an order.
+    function whenMaplibreReady(cb: (m: any) => void): void {
+      const start = Date.now();
+      const tick = () => {
+        const m = (window as any).maplibregl;
+        if (m) {
+          cb(m);
+        } else if (Date.now() - start < 10000) {
+          setTimeout(tick, 50);
+        } else {
+          console.error('MapLibre GL failed to load from CDN.');
+        }
+      };
+      tick();
+    }
+
+    async function initPigletsMap(): Promise<void> {
+      const maplibregl = (window as any).maplibregl;
+      const mapEl = document.getElementById('piglets-map');
+      if (!maplibregl || !mapEl) return;
+
+      const loadingEl = document.getElementById('piglets-loading');
+      const emptyEl = document.getElementById('piglets-empty');
+      const legendEl = document.getElementById('piglets-legend');
+      const countEl = document.getElementById('piglets-count');
+
+      const style = {
+        version: 8 as const,
+        sources: {
+          carto: {
+            type: 'raster' as const,
+            tiles: [
+              'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+              'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+            ],
+            tileSize: 256,
+            attribution: '© OpenStreetMap contributors © CARTO',
+          },
+        },
+        layers: [{ id: 'carto', type: 'raster' as const, source: 'carto' }],
+      };
+
+      const map = new maplibregl.Map({
+        container: mapEl,
+        style,
+        center: [0, 20],
+        zoom: 1.5,
+        attributionControl: true,
+      });
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+
+      // Standard "locate me" control (top-right). The map defaults to the
+      // world/all-Piglets view; centring on the visitor is opt-in via this
+      // button only - we never auto-prompt for location on load, and we never
+      // fall back to any third-party IP-geolocation service (browser
+      // geolocation is the only source, so the user's location stays private).
+      const geolocate = new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: false, timeout: 10000 },
+        fitBoundsOptions: { maxZoom: 9 }, // gentle regional zoom, not street level
+        trackUserLocation: false,
+        showUserLocation: true,
+        showAccuracyCircle: true,
+      });
+      map.addControl(geolocate, 'top-right');
+
+      let caches: ParsedCache[] = [];
+      try {
+        caches = await fetchCaches();
+      } catch (e) {
+        console.error('Failed to load Piglets:', e);
+      }
+
+      loadingEl?.classList.add('hidden');
+      legendEl?.classList.remove('hidden');
+
+      if (caches.length === 0) {
+        emptyEl?.classList.remove('hidden');
+        if (countEl) countEl.textContent = '';
+        return;
+      }
+
+      if (countEl) {
+        const piglets = caches.filter((c) => c.isLpPiggy).length;
+        countEl.textContent = `${caches.length} cache${caches.length === 1 ? '' : 's'} · ${piglets} Piglet${
+          piglets === 1 ? '' : 's'
+        }`;
+      }
+
+      const bounds = new maplibregl.LngLatBounds();
+
+      // A single popup, built lazily on marker click rather than eagerly for
+      // every cache up front. Each click renders a fresh popup element, so the
+      // hint-reveal listener is attached exactly once (no stacking on reopen),
+      // and only one popup is open at a time.
+      let openPopup: any = null;
+      const showCachePopup = (cache: ParsedCache) => {
+        if (openPopup) openPopup.remove();
+        const popup = new maplibregl.Popup({ offset: 18, maxWidth: '280px', closeButton: true })
+          .setLngLat([cache.lng, cache.lat])
+          .setHTML(buildPopupHtml(cache))
+          .addTo(map);
+        const root = popup.getElement();
+        const toggle = root?.querySelector('.pg-hint-toggle') as HTMLButtonElement | null;
+        const text = root?.querySelector('.pg-hint-text') as HTMLElement | null;
+        if (toggle && text) {
+          toggle.addEventListener('click', () => {
+            const shown = text.style.display !== 'none';
+            text.style.display = shown ? 'none' : 'block';
+            toggle.textContent = shown ? 'Hint - reveal' : 'Hint - hide';
+          });
+        }
+        popup.on('close', () => {
+          if (openPopup === popup) openPopup = null;
+        });
+        openPopup = popup;
+      };
+
+      const addMarkers = () => {
+        // Add vanilla NIP-GC caches first, Piglets last, so our Piglets render
+        // on top when they share (or nearly share) a location. The per-marker
+        // z-index backs this up for exact overlaps.
+        const ordered = [...caches].sort(
+          (a, b) => Number(a.isLpPiggy) - Number(b.isLpPiggy),
+        );
+        for (const cache of ordered) {
+          const el = makeMarkerElement(cache);
+          el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showCachePopup(cache);
+          });
+          new maplibregl.Marker({ element: el })
+            .setLngLat([cache.lng, cache.lat])
+            .addTo(map);
+          bounds.extend([cache.lng, cache.lat]);
+        }
+
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, { padding: 60, maxZoom: 12, duration: 0 });
+        }
+      };
+
+      // HTML markers are DOM overlays positioned from the map transform, which
+      // exists as soon as the Map is constructed - they don't need the style /
+      // tiles to have finished loading. Add them right away so a slow or failing
+      // basemap can never strand the pins.
+      addMarkers();
+
+      // No auto-locate: the map opens on the world / all-Piglets view. Centring
+      // on the visitor is opt-in via the top-right locate control - browser
+      // geolocation only, with no IP-based third-party fallback, so a visitor's
+      // location is never requested or leaked unless they ask for it.
+    }
+
+    // Helper overlay: dismiss to a compact "How it works" pill, and restore.
+    function wireHelpOverlay(): void {
+      const help = document.getElementById('piglets-help');
+      const closeBtn = document.getElementById('piglets-help-close');
+      const openBtn = document.getElementById('piglets-help-open');
+      closeBtn?.addEventListener('click', () => {
+        help?.classList.add('hidden');
+        openBtn?.classList.remove('hidden');
+        openBtn?.classList.add('inline-flex');
+      });
+      openBtn?.addEventListener('click', () => {
+        openBtn.classList.add('hidden');
+        openBtn.classList.remove('inline-flex');
+        help?.classList.remove('hidden');
+      });
+    }
+
+    // Run as soon as both the DOM and the MapLibre global are ready. Don't
+    // rely on DOMContentLoaded alone - this bundled module is deferred and
+    // the event may have already fired by the time it executes.
+    function start(): void {
+      wireHelpOverlay();
+      whenMaplibreReady(() => {
+        initPigletsMap().catch((e) => console.error('Piglets map init failed:', e));
+      });
+    }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', start);
+    } else {
+      start();
+    }
+  </script>
+</BaseLayout>

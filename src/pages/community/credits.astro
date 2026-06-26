@@ -61,7 +61,7 @@ function parseProfile(name: string, url?: string, avatar?: string, nostrUrl?: st
   };
 }
 
-const { coreTeam = [], contributors = [], specialThanks = [], bitcoinKids = [] } = creditsData;
+const { coreTeam = [], contributors = [], specialThanks = [], bitcoinKids = [], communitySupporters = [] } = creditsData;
 // Merge contributors and specialThanks into a single array
 const allContributors = [...contributors, ...specialThanks];
 
@@ -69,6 +69,18 @@ const allContributors = [...contributors, ...specialThanks];
 // Core Team / Contributors, so these lists are ready to render as-is.
 const coreTeamMain = coreTeam;
 const contributorsMain = allContributors;
+
+// Community Supporters are stored in the partner shape (logo/description); map
+// them onto the card's expected fields (avatar/contribution).
+const communitySupportersMain = communitySupporters.map((s) => ({
+  name: s.name,
+  url: s.url,
+  avatar: s.logo,
+  contribution: s.description,
+  nostrUrl: s.nostrUrl,
+  xUrl: s.xUrl,
+  githubUrl: s.githubUrl,
+}));
 ---
 
 <BaseLayout title="Credits" description="The team and contributors behind Lightning Piggy">
@@ -366,6 +378,36 @@ const contributorsMain = allContributors;
                     </div>
                   )}
                 </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      <!-- Community Supporters -->
+      {communitySupportersMain.length > 0 && (
+        <section class="mb-16">
+          <h2 class="text-2xl font-bold text-gray-900 mb-2">Community Supporters</h2>
+          <p class="text-gray-600 mb-6">Generous supporters helping keep Lightning Piggy free and open source.</p>
+          <div class="flex flex-wrap items-center gap-4">
+            {communitySupportersMain.map((person) => {
+              const link = person.nostrUrl || person.xUrl || person.url;
+              return (
+                <a
+                  href={link || undefined}
+                  target={link ? '_blank' : undefined}
+                  rel={link ? 'noopener noreferrer' : undefined}
+                  title={person.name || undefined}
+                  class="block w-16 h-16 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-pink/50 transition"
+                >
+                  {person.avatar ? (
+                    <img src={person.avatar} alt={person.name || 'Supporter'} class="w-full h-full object-cover" loading="lazy"
+                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                  ) : null}
+                  <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink font-bold" style={person.avatar ? 'display:none;' : ''}>
+                    {(person.name || '?').charAt(0).toUpperCase()}
+                  </div>
+                </a>
               );
             })}
           </div>

@@ -40,12 +40,14 @@ const hasSocials = showGlobe || partner.nostrUrl || partner.xUrl || partner.gith
       />
     ) : null}
     <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink text-2xl font-bold" style={partner.logo ? "display: none;" : ""}>
-      {partner.name.charAt(0).toUpperCase()}
+      {(partner.name || '?').charAt(0).toUpperCase()}
     </div>
   </div>
-  <h4 class="font-semibold text-gray-900 group-hover:text-pink transition-colors text-sm">
-    {partner.name}
-  </h4>
+  {partner.name && (
+    <h4 class="font-semibold text-gray-900 group-hover:text-pink transition-colors text-sm">
+      {partner.name}
+    </h4>
+  )}
   {partner.description && <p class="text-xs text-gray-500 mt-1">{partner.description}</p>}
   {hasSocials && (
     <div class="flex justify-center gap-2 mt-2">

@@ -58,7 +58,7 @@ const VENDORS_EXPORT_FILE = path.join(ROOT, 'src', 'data', 'vendors.json');
 // Device screenshot helper from MicroPythonOS/scripts. Override with
 // LP_DEVICE_SCREENSHOT_SCRIPT env var if your MicroPythonOS checkout lives elsewhere.
 const DEVICE_SCREENSHOT_SCRIPT = process.env.LP_DEVICE_SCREENSHOT_SCRIPT
-  || path.join(os.homedir(), 'MicroPythonOS', 'MicroPythonOS', 'scripts', 'device_screenshot.sh');
+  || path.join(__dirname, 'device_screenshot.sh');
 const DEVICE_SCREENSHOT_FILE = path.join(os.homedir(), '.lightningpiggy', 'device_screenshot.png');
 
 const app = express();
@@ -853,6 +853,14 @@ function saveCredits(data) {
   const dir = path.dirname(CREDITS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(CREDITS_FILE, JSON.stringify(data, null, 2));
+  // Auto-sync the website export after every change so src/data/credits.json
+  // stays current without a manual "Sync to Website" step. (Deploy still
+  // publishes.) A sync failure must not break the save.
+  try {
+    syncCreditsToWebsite();
+  } catch (err) {
+    console.error('[credits] auto-sync failed:', err.message);
+  }
 }
 
 // Get all credits
@@ -1011,13 +1019,15 @@ app.post('/api/credits/logo', upload.single('logo'), async (req, res) => {
 });
 
 // Sync credits to website (export only showOnWebsite: true entries)
-app.post('/api/credits/sync', (req, res) => {
-  try {
+// Regenerate src/data/credits.json from the credit store. Runs automatically
+// after every credit change (add/edit/delete/reorder) and is also exposed via
+// the endpoint below. Returns the exported per-section counts.
+function syncCreditsToWebsite() {
     const data = loadCredits();
 
     // Export every on-website credit that has a section assigned. Credits-page
     // sections (Core Team / Contributor / Special Thanks) and landing-page
-    // sections (Community Sponsors / Education Partners / Enabling Technologies /
+    // sections (Community Supporters / Education Partners / Enabling Technologies /
     // Appearances / In the News) are both supported - the landing-page ones are
     // emitted in the same shape as partners so FriendsFamily.astro can merge them.
     // A credit can be in several sections at once (websiteSections array).
@@ -1074,7 +1084,7 @@ app.post('/api/credits/sync', (req, res) => {
       bitcoinKids: websiteCredits
         .filter(c => has(c, 'Bitcoin Kids'))
         .map(c => buildCreditObj(c, true, false)),
-      communitySponsors: landingGroup('Community Sponsors'),
+      communitySupporters: landingGroup('Community Supporters'),
       educationPartners: landingGroup('Education Partners'),
       technologyPartners: landingGroup('Enabling Technologies'),
       appearances: landingGroup('Appearances'),
@@ -1088,21 +1098,23 @@ app.post('/api/credits/sync', (req, res) => {
     // Write to website data file
     fs.writeFileSync(CREDITS_EXPORT_FILE, JSON.stringify(grouped, null, 2));
 
-    res.json({
-      success: true,
-      exported: {
-        coreTeam: grouped.coreTeam.length,
-        contributors: grouped.contributors.length,
-        specialThanks: grouped.specialThanks.length,
-        bitcoinKids: grouped.bitcoinKids.length,
-        communitySponsors: grouped.communitySponsors.length,
-        educationPartners: grouped.educationPartners.length,
-        technologyPartners: grouped.technologyPartners.length,
-        appearances: grouped.appearances.length,
-        inTheNews: grouped.inTheNews.length,
-      },
-      path: 'src/data/credits.json',
-    });
+    return {
+      coreTeam: grouped.coreTeam.length,
+      contributors: grouped.contributors.length,
+      specialThanks: grouped.specialThanks.length,
+      bitcoinKids: grouped.bitcoinKids.length,
+      communitySupporters: grouped.communitySupporters.length,
+      educationPartners: grouped.educationPartners.length,
+      technologyPartners: grouped.technologyPartners.length,
+      appearances: grouped.appearances.length,
+      inTheNews: grouped.inTheNews.length,
+    };
+}
+
+app.post('/api/credits/sync', (req, res) => {
+  try {
+    const exported = syncCreditsToWebsite();
+    res.json({ success: true, exported, path: 'src/data/credits.json' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1499,6 +1511,12 @@ function saveTestimonials(data) {
   const dir = path.dirname(TESTIMONIALS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(TESTIMONIALS_FILE, JSON.stringify(data, null, 2));
+  // Auto-sync the website export after every change (deploy still publishes).
+  try {
+    syncTestimonialsToWebsite();
+  } catch (err) {
+    console.error('[testimonials] auto-sync failed:', err.message);
+  }
 }
 
 // Get all testimonials
@@ -1629,37 +1647,29 @@ app.post('/api/testimonials/upload-profile', upload.single('profilePic'), async 
 });
 
 // Sync testimonials to website
+// Regenerate src/data/testimonials.json from the store. Runs automatically
+// after every testimonial change, and is exposed via the endpoint below.
+function syncTestimonialsToWebsite() {
+  const data = loadTestimonials();
+  const websiteTestimonials = data.testimonials
+    .filter(t => t.showOnWebsite)
+    .map(t => ({
+      name: t.name,
+      profilePic: t.profilePic || '',
+      quote: t.quote,
+      sourcePlatform: t.sourcePlatform,
+      sourceUrl: t.sourceUrl,
+    }));
+  const exportDir = path.dirname(TESTIMONIALS_EXPORT_FILE);
+  if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
+  fs.writeFileSync(TESTIMONIALS_EXPORT_FILE, JSON.stringify({ testimonials: websiteTestimonials }, null, 2));
+  return websiteTestimonials.length;
+}
+
 app.post('/api/testimonials/sync', (req, res) => {
   try {
-    const data = loadTestimonials();
-
-    // Filter testimonials that should appear on website
-    const websiteTestimonials = data.testimonials
-      .filter(t => t.showOnWebsite)
-      .map(t => ({
-        name: t.name,
-        profilePic: t.profilePic || '',
-        quote: t.quote,
-        sourcePlatform: t.sourcePlatform,
-        sourceUrl: t.sourceUrl,
-      }));
-
-    const exported = {
-      testimonials: websiteTestimonials,
-    };
-
-    // Ensure data directory exists
-    const exportDir = path.dirname(TESTIMONIALS_EXPORT_FILE);
-    if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
-
-    // Write to website data file
-    fs.writeFileSync(TESTIMONIALS_EXPORT_FILE, JSON.stringify(exported, null, 2));
-
-    res.json({
-      success: true,
-      exported: websiteTestimonials.length,
-      path: 'src/data/testimonials.json',
-    });
+    const exported = syncTestimonialsToWebsite();
+    res.json({ success: true, exported, path: 'src/data/testimonials.json' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1684,6 +1694,12 @@ function saveVendors(data) {
   const dir = path.dirname(VENDORS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(VENDORS_FILE, JSON.stringify(data, null, 2));
+  // Auto-sync the website export after every change (deploy still publishes).
+  try {
+    syncVendorsToWebsite();
+  } catch (err) {
+    console.error('[vendors] auto-sync failed:', err.message);
+  }
 }
 
 // Get all vendors
@@ -1819,45 +1835,40 @@ app.post('/api/vendors/logo', upload.single('logo'), async (req, res) => {
   }
 });
 
-// Sync vendors to website
+// Regenerate src/data/vendors.json from the store. Runs automatically after
+// every vendor change, and is exposed via the endpoint below.
+function syncVendorsToWebsite() {
+  const data = loadVendors();
+  const websiteVendors = data.vendors
+    .filter(v => v.showOnWebsite)
+    .map(v => {
+      const nostrUrl = v.nostrNpub ? `https://njump.me/${v.nostrNpub}` : '';
+      const xUrl = v.xProfileUrl || '';
+      const websiteUrl = v.websiteUrl || '';
+      const primaryUrl = websiteUrl || nostrUrl || xUrl;
+      return {
+        name: v.name,
+        country: v.country || '',
+        shippingRegions: v.shippingRegions || [],
+        shopType: v.shopType || 'online',
+        description: v.description || '',
+        url: primaryUrl,
+        logo: v.logoUrl || v.nostrProfilePic || v.xProfilePic || '',
+        nostrUrl,
+        xUrl,
+        featured: !!v.featured,
+      };
+    });
+  const exportDir = path.dirname(VENDORS_EXPORT_FILE);
+  if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
+  fs.writeFileSync(VENDORS_EXPORT_FILE, JSON.stringify({ vendors: websiteVendors }, null, 2));
+  return websiteVendors.length;
+}
+
 app.post('/api/vendors/sync', (req, res) => {
   try {
-    const data = loadVendors();
-
-    const websiteVendors = data.vendors
-      .filter(v => v.showOnWebsite)
-      .map(v => {
-        const nostrUrl = v.nostrNpub ? `https://njump.me/${v.nostrNpub}` : '';
-        const xUrl = v.xProfileUrl || '';
-        const websiteUrl = v.websiteUrl || '';
-        const primaryUrl = websiteUrl || nostrUrl || xUrl;
-
-        return {
-          name: v.name,
-          country: v.country || '',
-          shippingRegions: v.shippingRegions || [],
-          shopType: v.shopType || 'online',
-          description: v.description || '',
-          url: primaryUrl,
-          logo: v.logoUrl || v.nostrProfilePic || v.xProfilePic || '',
-          nostrUrl,
-          xUrl,
-          featured: !!v.featured,
-        };
-      });
-
-    const exported = { vendors: websiteVendors };
-
-    const exportDir = path.dirname(VENDORS_EXPORT_FILE);
-    if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
-
-    fs.writeFileSync(VENDORS_EXPORT_FILE, JSON.stringify(exported, null, 2));
-
-    res.json({
-      success: true,
-      exported: websiteVendors.length,
-      path: 'src/data/vendors.json',
-    });
+    const exported = syncVendorsToWebsite();
+    res.json({ success: true, exported, path: 'src/data/vendors.json' });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -2231,7 +2242,9 @@ app.post('/api/device/capture', async (req, res) => {
   try {
     fs.mkdirSync(path.dirname(savePath), { recursive: true });
     await execFileAsync(DEVICE_SCREENSHOT_SCRIPT, [device, savePath], {
-      timeout: 120000,
+      // mpremote's file copy of the ~230KB framebuffer is slow (~100s), so allow
+      // generous headroom.
+      timeout: 240000,
       maxBuffer: 4 * 1024 * 1024,
     });
     const stat = fs.statSync(savePath);

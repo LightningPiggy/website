@@ -2,6 +2,40 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Button from '../components/ui/Button.astro';
 import supporters from '../data/supporters.json';
+import creditsData from '../data/credits.json';
+
+// Community Supporters = curated credits tagged "Community Supporters" in the
+// admin tool, plus $50+ donors (avatar-only, added by the BTCPay webhook).
+// They render in one grid, so donors become avatar cards that link to a profile.
+const communitySupporters = (creditsData as Record<string, any[]>).communitySupporters || [];
+
+// Dedupe: a curated supporter who also donates should appear once. Match donors
+// to curated supporters by npub / X handle (from the profile link) or by the
+// underlying avatar image, and drop any donor that's already a curated supporter.
+function profileKey(url?: string): string {
+  if (!url) return '';
+  const npub = url.match(/(npub1[0-9a-z]+)/i);
+  if (npub) return 'nostr:' + npub[1].toLowerCase();
+  const x = url.match(/(?:x\.com|twitter\.com)\/([^\/?#]+)/i);
+  if (x) return 'x:' + x[1].toLowerCase();
+  return url;
+}
+function donorImageSource(avatarUrl?: string): string {
+  if (!avatarUrl) return '';
+  try { return new URL(avatarUrl).searchParams.get('u') || avatarUrl; } catch { return avatarUrl; }
+}
+const curatedKeys = new Set<string>();
+const curatedLogos = new Set<string>();
+for (const c of communitySupporters) {
+  if (c.nostrUrl) curatedKeys.add(profileKey(c.nostrUrl));
+  if (c.xUrl) curatedKeys.add(profileKey(c.xUrl));
+  if (c.logo) curatedLogos.add(c.logo);
+}
+const donorCards = (supporters as any[])
+  .filter((s) => !(s.profileUrl && curatedKeys.has(profileKey(s.profileUrl))) && !curatedLogos.has(donorImageSource(s.avatarUrl)))
+  .map((s) => ({ name: '', logo: s.avatarUrl, url: s.profileUrl }));
+
+const allSupporters = [...communitySupporters, ...donorCards];
 ---
 
 <BaseLayout title="Donate" description="Support Lightning Piggy - an open source Bitcoin piggy bank for kids. Donate with Bitcoin on-chain or over Lightning.">
@@ -23,23 +57,33 @@ import supporters from '../data/supporters.json';
     </div>
   </div>
 
-  <!-- Supporters -->
-  {supporters.length > 0 && (
-    <section class="py-12 bg-white">
-      <div class="max-w-3xl mx-auto px-4 text-center">
-        <h2 class="text-xl font-bold text-gray-900 mb-6">Supporters <svg class="w-5 h-5 text-pink inline-block align-middle" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></h2>
-        <div class="flex flex-wrap justify-center gap-3">
-          {supporters.map((s) => (
-            <div class="w-12 h-12 rounded-full bg-gray-100 overflow-hidden">
-              <img src={s.avatarUrl} alt="Supporter" class="w-full h-full object-cover" loading="lazy"
-                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-              <div class="w-full h-full bg-pink/10 flex items-center justify-center" style="display: none;">
-                <svg class="w-5 h-5 text-pink" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                </svg>
-              </div>
-            </div>
-          ))}
+  <!-- Community Supporters: curated credits + $50+ donors, one grid -->
+  {allSupporters.length > 0 && (
+    <section class="py-12 bg-gray-50">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Community Supporters</h2>
+        <p class="text-gray-600 mb-8">Generous supporters helping keep Lightning Piggy free and open source.</p>
+        <div class="flex flex-wrap justify-center items-center gap-4">
+          {allSupporters.map((p) => {
+            const link = p.nostrUrl || p.xUrl || p.url;
+            return (
+              <a
+                href={link || undefined}
+                target={link ? '_blank' : undefined}
+                rel={link ? 'noopener noreferrer' : undefined}
+                title={p.name || undefined}
+                class="block w-16 h-16 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-pink/50 transition"
+              >
+                {p.logo ? (
+                  <img src={p.logo} alt={p.name || 'Supporter'} class="w-full h-full object-cover" loading="lazy"
+                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                ) : null}
+                <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink font-bold" style={p.logo ? 'display:none;' : ''}>
+                  {(p.name || '?').charAt(0).toUpperCase()}
+                </div>
+              </a>
+            );
+          })}
         </div>
       </div>
     </section>

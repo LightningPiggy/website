@@ -300,7 +300,7 @@
       "nostrUrl": "https://njump.me/npub1lrjgpa9m2dl6esdah5pq7m005ymwh4glq4aet76q2zlz2f83esfsa2zvrj",
       "xUrl": "https://x.com/CryptoCloaks",
       "githubUrl": "",
-      "note": ""
+      "note": "Home mining and the best bitcoin tools and equipment."
     }
   ],
   "specialThanks": [],
@@ -336,7 +336,16 @@
       "contribution": ""
     }
   ],
-  "communitySponsors": [
+  "communitySupporters": [
+    {
+      "name": "Esther",
+      "description": "",
+      "url": "https://njump.me/npub150exgyavnu2ktrldvm99ywxgvph7lrc538jwlch2gjhk34nl04zq3xcapx",
+      "logo": "https://image.nostr.build/52e478cdc314bd97560aace6e9026af876b9ab4db76c0a22aa0a136c4d0d467b.jpg",
+      "nostrUrl": "https://njump.me/npub150exgyavnu2ktrldvm99ywxgvph7lrc538jwlch2gjhk34nl04zq3xcapx",
+      "xUrl": "",
+      "githubUrl": ""
+    },
     {
       "name": "Bitcoin Runners",
       "description": "",
@@ -353,6 +362,15 @@
       "logo": "https://blossom.primal.net/8c34d6405dea937b6c575f234ece3da8e1af974a3ffd728bc70fd01108cbe049.png",
       "nostrUrl": "https://njump.me/npub1h5gc62mhzak97z9y9mznc9jcwv0re8nx9eqt35ta9d4kyvjqt9csnzjx0m",
       "xUrl": "",
+      "githubUrl": ""
+    },
+    {
+      "name": "CryptoCloaks",
+      "description": "3D Printed Bitcoin Accessories made in Colorado",
+      "url": "https://www.cryptocloaks.com/",
+      "logo": "https://blossom.primal.net/0b37365a5dc124610c8187b31b39a9a97cdea6e181276af2d23983c8498a4884.png",
+      "nostrUrl": "https://njump.me/npub1lrjgpa9m2dl6esdah5pq7m005ymwh4glq4aet76q2zlz2f83esfsa2zvrj",
+      "xUrl": "https://x.com/CryptoCloaks",
       "githubUrl": ""
     }
   ],

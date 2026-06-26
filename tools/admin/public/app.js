@@ -581,8 +581,6 @@ const modalTitle = document.getElementById('modal-title');
 const addCreditBtn = document.getElementById('add-credit-btn');
 const cancelCreditBtn = document.getElementById('cancel-credit-btn');
 const creditsSearch = document.getElementById('credits-search');
-const syncCreditsBtn = document.getElementById('sync-credits-btn');
-const syncResult = document.getElementById('sync-result');
 
 let allCredits = [];
 
@@ -821,6 +819,14 @@ creditModal.addEventListener('click', e => {
   if (e.target === creditModal) closeModal();
 });
 
+// Ticking any website section auto-enables "Show on Website" (a credit must be
+// shown to be synced). Unticking is left alone, so you can still hide a credit.
+document.querySelectorAll('#credit-sections input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    if (cb.checked) document.getElementById('credit-show-on-website').checked = true;
+  });
+});
+
 creditForm.addEventListener('submit', async e => {
   e.preventDefault();
   const id = document.getElementById('credit-id').value;
@@ -919,37 +925,8 @@ creditsSearch.addEventListener('input', () => {
   renderCredits(filtered);
 });
 
-// Sync credits to website
-syncCreditsBtn.addEventListener('click', async () => {
-  syncCreditsBtn.disabled = true;
-  syncCreditsBtn.textContent = 'Syncing...';
-
-  // The server exports every on-website credit by its section (credits-page
-  // sections and landing-page sections alike), so no section filter is sent.
-  try {
-    const resp = await fetch('/api/credits/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    const data = await resp.json();
-
-    if (data.success) {
-      syncResult.className = 'result success';
-      syncResult.innerHTML = `Synced to <strong>${data.path}</strong>: ${data.exported.coreTeam} Core Team, ${data.exported.contributors} Contributors`;
-    } else {
-      syncResult.className = 'result error';
-      syncResult.textContent = data.error;
-    }
-  } catch (err) {
-    syncResult.className = 'result error';
-    syncResult.textContent = err.message;
-  }
-
-  syncResult.hidden = false;
-  syncCreditsBtn.disabled = false;
-  syncCreditsBtn.textContent = 'Sync to Website';
-});
+// Credits auto-sync to the website on every change (server-side), so there's
+// no manual "Sync to Website" step here.
 
 // Load credits when the tab is clicked.
 document.querySelector('[data-tab="credits"]').addEventListener('click', loadCredits);
@@ -1320,8 +1297,6 @@ const testimonialModalTitle = document.getElementById('testimonial-modal-title')
 const addTestimonialBtn = document.getElementById('add-testimonial-btn');
 const cancelTestimonialBtn = document.getElementById('cancel-testimonial-btn');
 const testimonialsSearch = document.getElementById('testimonials-search');
-const syncTestimonialsBtn = document.getElementById('sync-testimonials-btn');
-const testimonialsSyncResult = document.getElementById('testimonials-sync-result');
 
 let allTestimonials = [];
 
@@ -1605,34 +1580,7 @@ testimonialsSearch.addEventListener('input', () => {
   renderTestimonials(filtered);
 });
 
-// Sync testimonials to website
-syncTestimonialsBtn.addEventListener('click', async () => {
-  syncTestimonialsBtn.disabled = true;
-  syncTestimonialsBtn.textContent = 'Syncing...';
-
-  try {
-    const resp = await fetch('/api/testimonials/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await resp.json();
-
-    if (data.success) {
-      testimonialsSyncResult.className = 'result success';
-      testimonialsSyncResult.innerHTML = `Synced to <strong>${data.path}</strong>: ${data.exported} testimonials`;
-    } else {
-      testimonialsSyncResult.className = 'result error';
-      testimonialsSyncResult.textContent = data.error;
-    }
-  } catch (err) {
-    testimonialsSyncResult.className = 'result error';
-    testimonialsSyncResult.textContent = err.message;
-  }
-
-  testimonialsSyncResult.hidden = false;
-  syncTestimonialsBtn.disabled = false;
-  syncTestimonialsBtn.textContent = 'Sync to Website';
-});
+// Testimonials auto-sync to the website on every change (server-side).
 
 // Load testimonials when tab is clicked
 document.querySelector('[data-tab="testimonials"]').addEventListener('click', loadTestimonials);
@@ -1738,8 +1686,6 @@ const vendorModalTitle = document.getElementById('vendor-modal-title');
 const addVendorBtn = document.getElementById('add-vendor-btn');
 const cancelVendorBtn = document.getElementById('cancel-vendor-btn');
 const vendorsSearch = document.getElementById('vendors-search');
-const syncVendorsBtn = document.getElementById('sync-vendors-btn');
-const vendorsSyncResult = document.getElementById('vendors-sync-result');
 
 let allVendors = [];
 let pendingVendorLogoFile = null;
@@ -2269,34 +2215,7 @@ document.getElementById('vendor-nostr-refresh').addEventListener('click', async 
   updateVendorLogoPreview();
 });
 
-// Sync vendors to website
-syncVendorsBtn.addEventListener('click', async () => {
-  syncVendorsBtn.disabled = true;
-  syncVendorsBtn.textContent = 'Syncing...';
-
-  try {
-    const resp = await fetch('/api/vendors/sync', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await resp.json();
-
-    if (data.success) {
-      vendorsSyncResult.className = 'result success';
-      vendorsSyncResult.innerHTML = `Synced to <strong>${data.path}</strong>: ${data.exported} vendors`;
-    } else {
-      vendorsSyncResult.className = 'result error';
-      vendorsSyncResult.textContent = data.error;
-    }
-  } catch (err) {
-    vendorsSyncResult.className = 'result error';
-    vendorsSyncResult.textContent = err.message;
-  }
-
-  vendorsSyncResult.hidden = false;
-  syncVendorsBtn.disabled = false;
-  syncVendorsBtn.textContent = 'Sync to Website';
-});
+// Vendors auto-sync to the website on every change (server-side).
 
 // Load vendors when tab is clicked
 document.querySelector('[data-tab="vendors"]').addEventListener('click', loadVendors);
@@ -2494,7 +2413,7 @@ smClearBtn.addEventListener('click', () => { smOutput.textContent = ''; });
 async function smCaptureScreenshot() {
   smScreenStatus.hidden = false;
   smScreenStatus.className = 'result';
-  smScreenStatus.textContent = 'Capturing screenshot… (5–60s)';
+  smScreenStatus.textContent = 'Capturing screenshot… (up to ~2 min)';
   smCaptureBtn.disabled = true;
   try {
     const res = await fetch('/api/device/capture', {

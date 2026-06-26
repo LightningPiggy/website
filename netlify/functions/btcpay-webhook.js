@@ -89,8 +89,8 @@ async function sendEmailNotification(amount, currency, metadata) {
   }
 }
 
-// Add supporter avatar to supporters.json via GitHub API
-async function addSupporter(avatarUrl) {
+// Add supporter avatar (+ optional profile link) to supporters.json via GitHub API
+async function addSupporter(avatarUrl, profileUrl) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
     console.error('GITHUB_TOKEN not set, skipping supporter commit');
@@ -117,10 +117,9 @@ async function addSupporter(avatarUrl) {
     const supporters = JSON.parse(currentContent);
 
     // Append new supporter
-    supporters.push({
-      avatarUrl: avatarUrl,
-      addedAt: new Date().toISOString()
-    });
+    const entry = { avatarUrl: avatarUrl, addedAt: new Date().toISOString() };
+    if (profileUrl) entry.profileUrl = profileUrl;
+    supporters.push(entry);
 
     // Commit updated file
     const newContent = Buffer.from(JSON.stringify(supporters, null, 2) + '\n').toString('base64');
@@ -235,7 +234,14 @@ exports.handler = async function (event) {
   if (numericAmount >= 50 && metadata.avatarUrl) {
     const url = metadata.avatarUrl;
     if (url.startsWith('https://primal.b-cdn.net/') || url.startsWith('https://unavatar.io/')) {
-      await addSupporter(url);
+      // Link the avatar to their public profile when we have one.
+      let profileUrl = '';
+      if (metadata.nostrNpub) {
+        profileUrl = 'https://primal.net/p/' + encodeURIComponent(metadata.nostrNpub);
+      } else if (metadata.xHandle) {
+        profileUrl = 'https://x.com/' + encodeURIComponent(metadata.xHandle.replace(/^@/, ''));
+      }
+      await addSupporter(url, profileUrl);
     } else {
       console.warn('Ignoring untrusted avatar URL:', url);
     }

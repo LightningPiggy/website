@@ -1,0 +1,20 @@
+---
+import ContentLayout from '../layouts/ContentLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+const posts = await getCollection('pages');
+const privacyPost = posts.find(p => p.data.slug === 'privacy');
+
+let Content = null;
+if (privacyPost) {
+  const rendered = await render(privacyPost);
+  Content = rendered.Content;
+}
+---
+
+<ContentLayout
+  title="Privacy Policy"
+  description="What limited personal data Lightning Piggy collects, why, and the choices and rights you have."
+>
+  {Content && <Content />}
+</ContentLayout>

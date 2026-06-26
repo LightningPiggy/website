@@ -93,6 +93,19 @@ const regions = ['Europe', 'North America', 'South America', 'Asia', 'Africa', '
     💡 Your store logo will be downloaded automatically from your Nostr or X profile picture, so please add at least one.
   </p>
 
+  <label class="flex items-start gap-2 mt-6">
+    <input type="checkbox" name="agreeTerms" required value="yes"
+      class="mt-0.5 rounded border-gray-300 text-pink focus:ring-pink/30" />
+    <span class="text-sm text-gray-600">
+      I agree to the
+      <a href="/terms" class="text-pink underline underline-offset-2 hover:text-pink-dark">Terms</a>
+      and
+      <a href="/privacy" class="text-pink underline underline-offset-2 hover:text-pink-dark">Privacy Policy</a>,
+      and I consent to the details I provide being published on the marketplace if my application is approved.
+      <span class="text-pink">*</span>
+    </span>
+  </label>
+
   <div class="mt-6 flex items-center gap-4">
     <button type="submit"
       class="px-6 py-3 rounded-xl text-sm font-semibold bg-pink text-white hover:bg-pink-dark transition-all focus:outline-none focus:ring-2 focus:ring-pink/50 disabled:opacity-50 disabled:cursor-not-allowed">

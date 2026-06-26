@@ -1,0 +1,20 @@
+---
+import ContentLayout from '../layouts/ContentLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+const posts = await getCollection('pages');
+const termsPost = posts.find(p => p.data.slug === 'terms');
+
+let Content = null;
+if (termsPost) {
+  const rendered = await render(termsPost);
+  Content = rendered.Content;
+}
+---
+
+<ContentLayout
+  title="Terms & Conditions"
+  description="The terms governing your use of the Lightning Piggy website, hardware, app, Treasure Hunt, marketplace and related services."
+>
+  {Content && <Content />}
+</ContentLayout>

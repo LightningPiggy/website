@@ -1,6 +1,27 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/ui/Button.astro';
+
+const helpResources = [
+  {
+    title: 'Troubleshooting',
+    description: 'Solutions to common issues with setup, connectivity, and firmware.',
+    href: '/help/troubleshooting',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>',
+  },
+  {
+    title: 'Serial Monitor',
+    description: 'Real-time serial console for debugging your Lightning Piggy device directly in the browser.',
+    href: '/help/serial-monitor',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>',
+  },
+  {
+    title: 'FAQs',
+    description: 'Common questions about Lightning Piggy, Lightning Network, and getting started.',
+    href: '/help/faqs',
+    icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
+  },
+];
 ---
 
 <BaseLayout title="Build" description="Build your own Lightning Piggy - choose between the E-paper or LCD edition">
@@ -215,6 +236,42 @@ import Button from '../../components/ui/Button.astro';
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
             </svg>
           </a>
+        </div>
+      </div>
+
+      <!-- Help section -->
+      <div id="help" class="mt-16 scroll-mt-20">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Help</h2>
+        <p class="text-gray-600 mb-6">Troubleshooting guides and answers to frequently asked questions.</p>
+        <div class="grid gap-6">
+          {helpResources.map((resource) => (
+            <a
+              href={resource.href}
+              class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+            >
+              <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+                <Fragment set:html={resource.icon} />
+              </div>
+              <div class="flex-1">
+                <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                  {resource.title}
+                </h3>
+                <p class="text-gray-600 mt-1">{resource.description}</p>
+              </div>
+              <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </a>
+          ))}
+        </div>
+
+        <div class="mt-8 text-center p-8 bg-gray-50 rounded-2xl">
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Still have questions?</h3>
+          <p class="text-gray-600 mb-6">Join our community for help and support.</p>
+          <div class="flex flex-wrap justify-center gap-4">
+            <Button href="https://t.me/LightningPiggy" variant="primary">Join Telegram</Button>
+            <Button href="https://github.com/LightningPiggy" variant="outline">View GitHub</Button>
+          </div>
         </div>
       </div>
     </div>

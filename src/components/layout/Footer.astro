@@ -7,6 +7,7 @@ const footerLinks = {
     { label: 'Market', href: '/market' },
     { label: 'Build Guide', href: '/build' },
     { label: 'Cases', href: '/build/cases' },
+    { label: 'Help', href: '/build#help' },
   ],
   community: [
     { label: 'In the Wild', href: '/community/wild' },
@@ -128,18 +129,22 @@ const socialLinks = [
     <!-- Disclaimer -->
     <div class="mt-12 pt-8 border-t border-gray-800">
       <p class="text-xs text-gray-500 text-center mb-6">
-        Lightning Piggy is an open-source project developed by the Lightning Piggy Foundation. Nothing on this website constitutes financial advice. Always do your own research before giving your child generational wealth.
+        Lightning Piggy is a free and open-source project maintained by its volunteer contributors. Nothing on this website constitutes financial advice. Always do your own research before giving your child generational wealth.
       </p>
     </div>
 
     <!-- Bottom Bar -->
     <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
       <p class="text-sm text-gray-400">
-        &copy; {new Date().getFullYear()} Lightning Piggy Foundation. Open source, built with love.
+        &copy; {new Date().getFullYear()} The Lightning Piggy Project. Open source, built with love.
       </p>
-      <p class="text-sm text-gray-500">
-        Bitcoin only. Open source everything.
-      </p>
+      <div class="flex items-center gap-4 text-sm text-gray-500">
+        <a href="/terms" class="hover:text-white transition-colors">Terms</a>
+        <span aria-hidden="true">&middot;</span>
+        <a href="/privacy" class="hover:text-white transition-colors">Privacy</a>
+        <span aria-hidden="true">&middot;</span>
+        <span>Bitcoin only. Open source everything.</span>
+      </div>
     </div>
   </div>
 </footer>

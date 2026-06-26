@@ -50,6 +50,15 @@ const isDark = variant === 'dark';
     'newsletter-message mt-2 text-sm hidden',
     isDark ? 'text-gray-300' : 'text-gray-600'
   ]}></p>
+  <p class:list={[
+    'mt-2 text-xs',
+    isDark ? 'text-gray-400' : 'text-gray-500'
+  ]}>
+    By subscribing you agree to our
+    <a href="/terms" class:list={['underline underline-offset-2', isDark ? 'hover:text-white' : 'hover:text-pink']}>Terms</a>
+    and
+    <a href="/privacy" class:list={['underline underline-offset-2', isDark ? 'hover:text-white' : 'hover:text-pink']}>Privacy Policy</a>.
+  </p>
 </form>
 
 <script>

@@ -27,7 +27,7 @@ const {
   pubDate,
   updatedDate,
   tags,
-  author = 'Lightning Piggy Foundation',
+  author = 'Lightning Piggy',
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
@@ -106,7 +106,7 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Organization",
-      "name": "Lightning Piggy Foundation",
+      "name": "Lightning Piggy",
       "url": "https://lightningpiggy.com",
       "logo": "https://lightningpiggy.com/images/mascot.png",
       "description": "An open source Bitcoin piggy bank for kids. Save in satoshis over the Lightning Network.",

@@ -10,7 +10,7 @@
       "description": "Get your Lightning Piggy directly from the project team. Bitcoin over Lightning accepted! ⚡",
       "url": "/market/danish-bacon",
       "logo": "/images/logos/danish-bacon.png",
-      "nostrUrl": "",
+      "nostrUrl": "https://njump.me/npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqdjts9p",
       "xUrl": "",
       "featured": true
     },
@@ -44,7 +44,7 @@
       "description": "Physical stores located in Bitcoin Beach, El Zonte and Bitcoin Berlín, Usulután.",
       "url": "https://tbhs.sv/",
       "logo": "https://unavatar.io/twitter/tbhs_sv",
-      "nostrUrl": "",
+      "nostrUrl": "https://njump.me/npub1ludxu99nnuj4hn0z7r0lcs49tswzlmegl2wqhq6492ccxp053emqn3dzq0",
       "xUrl": "https://x.com/tbhs_sv",
       "featured": false
     },

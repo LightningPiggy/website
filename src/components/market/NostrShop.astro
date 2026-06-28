@@ -15,6 +15,7 @@
 interface ShopInput {
   name: string;
   storeUrl: string;
+  logo?: string;
   nostrUrl?: string;
   products?: { mode?: string; include?: string[]; keywords?: string[] };
 }
@@ -29,6 +30,7 @@ const shops = vendors
   .map((v) => ({
     name: v.name,
     storeUrl: v.storeUrl,
+    logo: v.logo || '',
     npub: (v.nostrUrl!.match(/npub1[0-9a-z]+/) || [])[0] || '',
     mode: v.products!.mode || 'curated',
     include: v.products!.include || [],
@@ -46,7 +48,7 @@ const shops = vendors
     </div>
 
     <!-- Grid -->
-    <div id="shop-grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+    <div id="shop-grid" class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 hidden"></div>
 
     <!-- Empty / error -->
     <div id="shop-empty" class="text-center py-8 hidden">
@@ -113,6 +115,7 @@ const shops = vendors
   interface Shop {
     name: string;
     storeUrl: string;
+    logo: string;
     npub: string;
     mode: string;
     include: string[];
@@ -149,47 +152,43 @@ const shops = vendors
     summary: string;
     storeUrl: string;
     vendor: string;
+    vendorLogo: string;
     createdAt: number;
   }
 
   function fetchFromRelay(url: string, authors: string[]): Promise<NostrEvent[]> {
     return new Promise((resolve) => {
       const events: NostrEvent[] = [];
-      let ws: WebSocket;
+      let ws: WebSocket | undefined;
+      let done = false;
+      // Overall timeout set up-front (NOT inside onopen) so a relay whose socket
+      // never opens — and never errors — can't hang the whole Promise.all.
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try {
+          ws && ws.close();
+        } catch {}
+        resolve(events);
+      };
+      const timer = window.setTimeout(finish, 6000);
       try {
         ws = new WebSocket(url);
       } catch {
-        resolve([]);
+        finish();
         return;
       }
       const sub = Math.random().toString(36).slice(2, 10);
-      let timeout: number;
-      ws.onopen = () => {
-        ws.send(JSON.stringify(['REQ', sub, { kinds: [30402, 30018], authors }]));
-        timeout = window.setTimeout(() => {
-          try {
-            ws.close();
-          } catch {}
-          resolve(events);
-        }, 6000);
-      };
+      ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, { kinds: [30402, 30018], authors }]));
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);
           if (msg[0] === 'EVENT' && msg[1] === sub) events.push(msg[2]);
-          if (msg[0] === 'EOSE' && msg[1] === sub) {
-            clearTimeout(timeout);
-            try {
-              ws.close();
-            } catch {}
-            resolve(events);
-          }
+          if (msg[0] === 'EOSE' && msg[1] === sub) finish();
         } catch {}
       };
-      ws.onerror = () => {
-        clearTimeout(timeout);
-        resolve([]);
-      };
+      ws.onerror = () => finish();
     });
   }
 
@@ -268,6 +267,7 @@ const shops = vendors
           summary: tagVal(ev.tags, 'summary') || ev.content || '',
           storeUrl: shop.storeUrl,
           vendor: shop.name,
+          vendorLogo: sanitizeUrl(shop.logo) || (shop.logo.startsWith('/') ? shop.logo : ''),
           createdAt: ev.created_at,
         });
       }
@@ -286,25 +286,33 @@ const shops = vendors
 
   function cardHtml(p: Product): string {
     const img = p.image
-      ? `<img src="${p.image}" alt="${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.style.display='none'">`
-      : '';
+      ? `<img src="${p.image}" alt="${escapeHtml(p.title)}" loading="lazy" referrerpolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.style.display='none'">`
+      : `<div class="absolute inset-0 flex items-center justify-center text-gray-300 text-sm">No image</div>`;
     const price = p.price
       ? `<span class="text-pink font-bold whitespace-nowrap">${escapeHtml(p.price)}</span>`
       : '';
+    // Store badge: logo (or initial) + vendor name, sourced from vendors.json.
+    const logo = p.vendorLogo
+      ? `<img src="${escapeHtml(p.vendorLogo)}" alt="${escapeHtml(p.vendor)}" referrerpolicy="no-referrer" class="w-5 h-5 rounded-full object-cover flex-shrink-0" onerror="this.style.display='none'">`
+      : `<span class="w-5 h-5 rounded-full bg-pink/10 text-pink text-[10px] font-bold flex items-center justify-center flex-shrink-0">${escapeHtml((p.vendor || '?').charAt(0).toUpperCase())}</span>`;
     return `
       <a href="${escapeHtml(p.storeUrl)}" target="_blank" rel="noopener noreferrer"
-         class="group flex flex-col bg-white rounded-xl border border-gray-200 overflow-hidden transition-all hover:border-pink hover:shadow-lg">
-        <div class="aspect-square bg-gray-50 overflow-hidden">${img}</div>
+         class="group flex flex-col bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all hover:border-pink hover:shadow-lg">
+        <div class="relative aspect-square bg-gray-50 overflow-hidden">${img}</div>
         <div class="flex flex-col flex-1 p-4">
           <div class="flex items-start justify-between gap-2">
-            <h3 class="font-semibold text-gray-900 leading-snug">${escapeHtml(p.title)}</h3>
+            <h3 class="font-semibold text-gray-900 leading-snug line-clamp-2">${escapeHtml(p.title)}</h3>
             ${price}
           </div>
-          <p class="text-sm text-gray-500 mt-1 line-clamp-2">${escapeHtml(p.summary.slice(0, 120))}</p>
-          <span class="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-pink group-hover:gap-2 transition-all">
-            Buy at ${escapeHtml(p.vendor)}
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-          </span>
+          <p class="text-sm text-gray-500 mt-1 line-clamp-2 flex-1">${escapeHtml(p.summary.slice(0, 120))}</p>
+          <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2">
+            ${logo}
+            <span class="text-xs text-gray-500 truncate flex-1">${escapeHtml(p.vendor)}</span>
+            <span class="inline-flex items-center gap-1 text-sm font-semibold text-pink group-hover:gap-2 transition-all whitespace-nowrap">
+              Buy
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </span>
+          </div>
         </div>
       </a>`;
   }

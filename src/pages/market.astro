@@ -1,77 +1,228 @@
 ---
-import ContentLayout from '../layouts/ContentLayout.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
 import Button from '../components/ui/Button.astro';
-import VendorCard from '../components/ui/VendorCard.astro';
 import VendorApplyForm from '../components/ui/VendorApplyForm.astro';
+import NostrShop from '../components/market/NostrShop.astro';
+import NostrMarket from '../components/market/NostrMarket.astro';
+import Nip05Form from '../components/market/Nip05Form.astro';
 import vendorsData from '../data/vendors.json';
 
 const { vendors = [] } = vendorsData;
 
-const featuredVendors = vendors.filter((v) => v.featured);
-const regularVendors = vendors.filter((v) => !v.featured);
+// The four "What is NIP-05?" points, rendered inside the dark identity band.
+const nip05Points = [
+  {
+    title: 'Verified identity',
+    body: "NIP-05 links your Nostr public key to a human-readable address, so people know it's really you.",
+  },
+  {
+    title: 'Easy to share',
+    body: 'Instead of a long npub, just tell people your handle (you@lightningpiggy.com) — like an email address for Nostr.',
+  },
+  {
+    title: 'Client support',
+    body: 'Nostr clients like Primal, Damus, and Amethyst display a verified checkmark next to NIP-05 handles.',
+  },
+  {
+    title: 'Support the project',
+    body: 'Your contribution helps fund Lightning Piggy development, education resources, and community events.',
+  },
+];
 ---
 
-<ContentLayout
+<BaseLayout
   title="Market"
-  description="This little piggy went to market… Buy a Lightning Piggy directly from the project team or from one of these awesome vendors below. Making sats the savings standard for every child is a team effort! If you run a store and would like to stock Lightning Piggy, we’d love to hear from you."
-  heroImage="/images/pages/robotechy-pigs.jpeg"
+  description="This little piggy went to market… Shop Lightning Piggy gear pulled live from Nostr, buy direct from awesome vendors, and claim your yourname@lightningpiggy.com Nostr handle."
 >
-  {featuredVendors.length > 0 && (
-    <div class="not-prose">
-      <h2 class="text-2xl font-bold text-gray-900 mb-2">Pride of the Market</h2>
-      <p class="text-gray-600 mb-6">
-        These featured vendors have kindly pledged at least <strong>10% of their sales</strong> back to
-        Lightning Piggy. Their generosity keeps the project free and open source, and helps us move faster
-        toward our mission - empowering every child to save for their future on a Bitcoin standard, in a way
-        that's fun, friendly, and educational.
-      </p>
-      <div class="grid md:grid-cols-2 gap-6">
-        {featuredVendors.map((vendor) => <VendorCard vendor={vendor} />)}
+  <!-- 1. Banner -->
+  <section class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+      <div class="flex flex-col md:flex-row md:items-center gap-8">
+        <div class="flex-1 text-center md:text-left">
+          <p class="text-pink text-sm font-semibold uppercase tracking-widest mb-3">The Market</p>
+          <h1 class="text-4xl md:text-5xl font-bold mb-4">This little piggy went to market…</h1>
+          <p class="text-lg text-gray-300 leading-relaxed max-w-xl mx-auto md:mx-0">
+            Shop Lightning Piggy gear — every product pulled <strong class="text-white">live from Nostr</strong>.
+            Buy direct from awesome vendors, zap them a thank-you, and grab your own Nostr handle.
+          </p>
+        </div>
+        <div class="hidden md:flex flex-shrink-0 w-40 h-40 items-center justify-center">
+          <img src="/images/pages/lightningpiggy-thumbs-up.png" alt="Lightning Piggy thumbs up" class="w-full h-full object-contain" />
+        </div>
       </div>
     </div>
-  )}
+  </section>
 
-  {regularVendors.length > 0 && (
-    <div class="not-prose mt-12">
-      <h2 class="text-2xl font-bold text-gray-900 mb-2">Responsible Farmers</h2>
-      <p class="text-gray-600 mb-6">
-        More awesome stores stocking Lightning Piggy. Making sats the savings standard for every child is a team effort!
-      </p>
-      <div class="grid md:grid-cols-2 gap-6">
-        {regularVendors.map((vendor) => <VendorCard vendor={vendor} />)}
+  <!-- 2. Products — straight in -->
+  <section id="products" class="py-12 md:py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Shop the Market</h2>
+        <p class="text-gray-600 max-w-2xl">
+          Lightning Piggy gear and gadgets, each listing pulled <strong>live from the vendor's Nostr profile</strong>.
+          Click any product to buy from the vendor's own store.
+        </p>
+      </div>
+      <NostrShop vendors={vendors} />
+    </div>
+  </section>
+
+  <!-- 3. Your Nostr identity — dark band with NIP-05 points + pop-up form -->
+  <section id="nostr-handles" class="bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
+      <div class="text-center max-w-2xl mx-auto">
+        <p class="text-pink text-sm font-semibold uppercase tracking-widest mb-3">Your Nostr identity</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">
+          <span class="text-pink">yourname</span>@lightningpiggy.com
+        </h2>
+        <p class="text-gray-300 text-lg leading-relaxed mb-2">
+          A verified, memorable NIP-05 handle for Nostr — powered by the Lightning Piggy community.
+        </p>
+        <p class="text-gray-400 text-sm mb-6">
+          Pay what you want (min&nbsp;$5) over Lightning. Live within minutes.
+        </p>
+        <button
+          type="button"
+          id="open-nip05"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-full hover:bg-white hover:text-gray-900 transition-colors"
+        >
+          Get your handle
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+      </div>
+
+      <!-- What is NIP-05? -->
+      <div class="mt-14 pt-10 border-t border-white/10">
+        <h3 class="text-xl font-bold text-center mb-8">What is NIP-05?</h3>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
+          {nip05Points.map((pt) => (
+            <div class="flex items-start gap-4">
+              <span class="text-pink font-bold text-xl mt-0.5">→</span>
+              <div>
+                <h4 class="font-bold text-white mb-1">{pt.title}</h4>
+                <p class="text-gray-300 text-sm leading-relaxed">{pt.body}</p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
-  )}
+  </section>
 
-  <hr class="my-8 border-gray-200" />
+  <!-- 4. Vendors — a card per vendor -->
+  <section id="vendors" class="py-12 md:py-16 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Where to buy</h2>
+        <p class="text-gray-600 max-w-2xl">
+          Vendors stocking Lightning Piggy — each card is pulled <strong>live from the vendor's Nostr profile</strong>.
+          Vendors marked <span class="font-semibold">★ Pride of the Market</span> have pledged at least
+          <strong>10% of their sales</strong> back to the project. ⚡ Zap them a thank-you!
+        </p>
+      </div>
+      <NostrMarket vendors={vendors} showProducts={false} />
+    </div>
+  </section>
 
-  <!-- Become a vendor -->
-  <div class="not-prose" id="become-a-vendor">
-    <div class="rounded-2xl border border-gray-200 bg-gradient-to-br from-pink/5 to-white p-8 md:p-10">
-      <h2 class="text-2xl font-bold text-gray-900 mb-2">Run a Store? Stock Lightning Piggies?</h2>
-      <p class="text-gray-600 mb-6">
-        We'd love to add your shop to the market. The team will review your application.
-        Making sats the savings standard for every child is a team effort!
-      </p>
+  <!-- Become a vendor + build your own -->
+  <section class="py-12 md:py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <!-- Become a vendor -->
+      <div id="become-a-vendor" class="rounded-2xl border border-gray-200 bg-gradient-to-br from-pink/5 to-white p-8 md:p-10">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Run a Store? Stock Lightning Piggies?</h2>
+        <p class="text-gray-600 mb-6 max-w-2xl">
+          We'd love to add your shop to the market. The team will review your application.
+          Making sats the savings standard for every child is a team effort!
+        </p>
 
+        <button
+          type="button"
+          id="vendor-apply-toggle"
+          aria-expanded="false"
+          aria-controls="vendor-apply-panel"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors focus:outline-none focus:ring-2 focus:ring-pink/50"
+        >
+          Apply to Sell
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <div id="vendor-apply-panel" class="mt-6" hidden>
+          <VendorApplyForm />
+        </div>
+      </div>
+
+      <!-- Build your own -->
+      <div class="rounded-2xl border border-gray-200 p-8 md:p-10">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Prefer to Build Your Own?</h2>
+        <p class="text-gray-600 mb-6 max-w-2xl">
+          Lightning Piggy is fully open source. Source the parts yourself and follow our
+          step-by-step build guide.
+        </p>
+        <Button href="/build" variant="outline">
+          View Build Guide →
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- NIP-05 pop-up modal -->
+  <div
+    id="nip05-modal"
+    class="fixed inset-0 z-50 hidden items-center justify-center p-4"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="nip05-modal-title"
+  >
+    <div id="nip05-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 md:p-8">
       <button
         type="button"
-        id="vendor-apply-toggle"
-        aria-expanded="false"
-        aria-controls="vendor-apply-panel"
-        class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors focus:outline-none focus:ring-2 focus:ring-pink/50"
+        id="nip05-close"
+        aria-label="Close"
+        class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors"
       >
-        Apply to Sell
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
       </button>
-
-      <div id="vendor-apply-panel" class="mt-6" hidden>
-        <VendorApplyForm />
+      <div class="text-center mb-6">
+        <h2 id="nip05-modal-title" class="text-2xl font-bold text-gray-900 mb-2">Choose Your Handle</h2>
+        <p class="text-gray-600">
+          Pick a username, paste your npub, and pay what you want. Your NIP-05 handle will be live within minutes.
+        </p>
       </div>
+      <Nip05Form />
     </div>
   </div>
 
   <script>
+    // --- NIP-05 pop-up modal ---
+    const modal = document.getElementById('nip05-modal');
+    const openBtn = document.getElementById('open-nip05');
+    const closeBtn = document.getElementById('nip05-close');
+    const backdrop = document.getElementById('nip05-backdrop');
+
+    function openModal() {
+      if (!modal) return;
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+      const first = modal.querySelector('input');
+      if (first) (first as HTMLElement).focus({ preventScroll: true });
+    }
+    function closeModal() {
+      if (!modal) return;
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+
+    openBtn?.addEventListener('click', openModal);
+    closeBtn?.addEventListener('click', closeModal);
+    backdrop?.addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
+    });
+
+    // --- Vendor "Apply to Sell" expand ---
     const toggle = document.getElementById('vendor-apply-toggle');
     const panel = document.getElementById('vendor-apply-panel');
     if (toggle && panel) {
@@ -80,59 +231,9 @@ const regularVendors = vendors.filter((v) => !v.featured);
         panel.hidden = false;
         toggle.setAttribute('aria-expanded', 'true');
         toggle.style.display = 'none';
-        // Focus the first field for keyboard users, without yanking the
-        // page scroll (preventScroll stops the jump-to-top behaviour).
         const firstField = panel.querySelector('input, select, textarea');
         if (firstField) (firstField as HTMLElement).focus({ preventScroll: true });
       });
     }
   </script>
-
-  <hr class="my-8 border-gray-200" />
-
-  <h2>Prefer to Build Your Own?</h2>
-  <p>
-    Lightning Piggy is fully open source. Source the parts yourself and follow our
-    step-by-step build guide.
-  </p>
-
-  <div class="not-prose mt-6">
-    <Button href="/build" variant="outline">
-      View Build Guide →
-    </Button>
-  </div>
-
-  <hr class="my-8 border-gray-200" />
-
-  <!-- NIP-05 Handles section -->
-  <div class="not-prose">
-    <div class="rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 to-white p-8 md:p-10">
-      <div class="flex flex-col md:flex-row md:items-center gap-6">
-        <div class="flex-1">
-          <div class="flex items-center gap-2 mb-3">
-            <h2 class="text-2xl font-bold text-gray-900">Nostr NIP-05 Handles</h2>
-          </div>
-          <p class="text-gray-600 mb-2">
-            Get <span class="font-semibold text-pink">yourname@lightningpiggy.com</span> as your Nostr identity.
-            Verified, memorable, and powered by the Lightning Piggy community.
-          </p>
-          <p class="text-sm text-gray-500">
-            Pay what you want (min $5) with Bitcoin over Lightning. Your handle will be live within minutes.
-          </p>
-          <div class="mt-6">
-            <a
-              href="/market/nip05"
-              class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors"
-            >
-              Get Your Handle
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-            </a>
-          </div>
-        </div>
-        <div class="hidden md:flex flex-shrink-0 w-40 h-40 items-center justify-center">
-          <img src="/images/pages/lightningpiggy-thumbs-up.png" alt="Lightning Piggy thumbs up" class="w-full h-full object-contain" />
-        </div>
-      </div>
-    </div>
-  </div>
-</ContentLayout>
+</BaseLayout>

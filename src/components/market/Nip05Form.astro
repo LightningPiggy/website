@@ -1,0 +1,320 @@
+---
+// Nip05Form.astro
+// Self-contained "claim your yourname@lightningpiggy.com NIP-05 handle" form.
+// Extracted from the old /market/nip05 page so it can live inside the pop-up
+// modal on /market. Checks availability live and creates a BTCPay invoice.
+---
+
+<form id="nip05-form" class="space-y-6">
+  <!-- Handle input -->
+  <div>
+    <label for="nip05-handle" class="block text-sm font-semibold text-gray-900 mb-1.5">
+      Handle
+    </label>
+    <div class="flex items-stretch">
+      <input
+        type="text"
+        id="nip05-handle"
+        name="handle"
+        required
+        placeholder="yourname"
+        autocapitalize="none"
+        autocomplete="off"
+        spellcheck="false"
+        class="flex-1 min-w-0 px-4 py-3 rounded-l-xl border border-r-0 border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
+      />
+      <span class="inline-flex items-center px-4 py-3 rounded-r-xl border border-l-0 border-gray-200 bg-gray-50 text-gray-500 text-sm font-medium whitespace-nowrap">
+        @lightningpiggy.com
+      </span>
+    </div>
+    <p id="handle-status" class="text-sm mt-1.5 h-5"></p>
+  </div>
+
+  <!-- npub input -->
+  <div>
+    <label for="nip05-npub" class="block text-sm font-semibold text-gray-900 mb-1.5">
+      Nostr npub
+    </label>
+    <input
+      type="text"
+      id="nip05-npub"
+      name="npub"
+      required
+      placeholder="npub1..."
+      autocapitalize="none"
+      autocomplete="off"
+      spellcheck="false"
+      class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
+    />
+    <p id="npub-status" class="text-sm mt-1.5 h-5"></p>
+  </div>
+
+  <!-- Amount selection -->
+  <div>
+    <label class="block text-sm font-semibold text-gray-900 mb-3">
+      Amount (USD) - pay what you want
+    </label>
+    <div class="grid grid-cols-3 gap-2 mb-3" id="preset-amounts">
+      <button type="button" data-amount="5"
+        class="preset-btn py-2.5 rounded-xl border-2 border-pink bg-pink/5 text-pink font-semibold text-sm transition-all">$5</button>
+      <button type="button" data-amount="21"
+        class="preset-btn py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm hover:border-pink hover:text-pink transition-all">$21</button>
+      <button type="button" data-amount="50"
+        class="preset-btn py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm hover:border-pink hover:text-pink transition-all">$50</button>
+    </div>
+    <div class="relative">
+      <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
+      <input
+        type="number"
+        id="nip05-amount"
+        name="amount"
+        min="5"
+        step="any"
+        value="5"
+        required
+        placeholder="Enter amount"
+        class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
+      />
+    </div>
+  </div>
+
+  <!-- Submit button -->
+  <button
+    type="submit"
+    id="nip05-submit"
+    class="w-full py-3 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    <span class="btn-text">Get NIP-05 Handle</span>
+    <span class="btn-loading hidden">
+      <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </span>
+  </button>
+
+  <!-- Error message -->
+  <p id="nip05-error" class="text-sm text-red-500 text-center hidden"></p>
+</form>
+
+<p class="text-xs text-gray-400 mt-5 text-center">
+  Payments are processed through our self-hosted BTCPay Server. Your handle will be live after the next site build (~1-2 minutes).
+</p>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function () {
+    var CHECK_ENDPOINT = '/.netlify/functions/check-nip05';
+    var INVOICE_ENDPOINT = '/.netlify/functions/create-nip05-invoice';
+
+    var form = document.getElementById('nip05-form');
+    if (!form) return;
+    var handleInput = document.getElementById('nip05-handle');
+    var npubInput = document.getElementById('nip05-npub');
+    var amountInput = document.getElementById('nip05-amount');
+    var submitBtn = document.getElementById('nip05-submit');
+    var btnText = submitBtn.querySelector('.btn-text');
+    var btnLoading = submitBtn.querySelector('.btn-loading');
+    var errorEl = document.getElementById('nip05-error');
+    var statusEl = document.getElementById('handle-status');
+    var npubStatusEl = document.getElementById('npub-status');
+    var presetBtns = document.querySelectorAll('.preset-btn');
+
+    var debounceTimer;
+    var handleAvailable = false;
+
+    function setActivePreset(activeBtn) {
+      presetBtns.forEach(function (btn) {
+        btn.classList.remove('border-pink', 'bg-pink/5', 'text-pink');
+        btn.classList.add('border-gray-200', 'text-gray-700');
+      });
+      if (activeBtn) {
+        activeBtn.classList.remove('border-gray-200', 'text-gray-700');
+        activeBtn.classList.add('border-pink', 'bg-pink/5', 'text-pink');
+      }
+    }
+
+    presetBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        amountInput.value = btn.getAttribute('data-amount');
+        setActivePreset(btn);
+        errorEl.classList.add('hidden');
+      });
+    });
+
+    amountInput.addEventListener('input', function () {
+      var val = amountInput.value;
+      var matched = null;
+      presetBtns.forEach(function (btn) {
+        if (btn.getAttribute('data-amount') === val) matched = btn;
+      });
+      setActivePreset(matched);
+    });
+
+    npubInput.addEventListener('input', function () {
+      var val = npubInput.value.trim();
+      npubStatusEl.className = 'text-sm mt-1.5 h-5';
+      if (!val) {
+        npubStatusEl.textContent = '';
+      } else if (!val.startsWith('npub')) {
+        npubStatusEl.classList.add('text-red-500');
+        npubStatusEl.textContent = '✗ Must start with npub';
+      } else if (/^npub1[a-z0-9]{58}$/.test(val)) {
+        npubStatusEl.classList.add('text-green-600');
+        npubStatusEl.textContent = '✓ Valid npub';
+      } else {
+        npubStatusEl.classList.add('text-gray-400');
+        npubStatusEl.textContent = 'Keep typing…';
+      }
+    });
+
+    function showStatus(type, message) {
+      statusEl.textContent = message;
+      statusEl.className = 'text-sm mt-1.5 h-5';
+      if (type === 'available') {
+        statusEl.classList.add('text-green-600');
+        statusEl.textContent = '✓ ' + message;
+      } else if (type === 'taken' || type === 'reserved' || type === 'invalid') {
+        statusEl.classList.add('text-red-500');
+        statusEl.textContent = '✗ ' + message;
+      } else if (type === 'checking') {
+        statusEl.classList.add('text-gray-400');
+      } else {
+        statusEl.textContent = '';
+      }
+    }
+
+    function showError(msg) {
+      errorEl.textContent = msg;
+      errorEl.classList.remove('hidden');
+    }
+
+    function setLoading(loading) {
+      submitBtn.disabled = loading;
+      if (loading) {
+        btnText.classList.add('hidden');
+        btnLoading.classList.remove('hidden');
+      } else {
+        btnText.classList.remove('hidden');
+        btnLoading.classList.add('hidden');
+      }
+    }
+
+    function checkAvailability(handle) {
+      showStatus('checking', 'Checking availability…');
+      handleAvailable = false;
+
+      fetch(CHECK_ENDPOINT + '?handle=' + encodeURIComponent(handle))
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (handleInput.value.trim().toLowerCase() !== handle) return;
+
+          if (data.available) {
+            handleAvailable = true;
+            showStatus('available', 'Available!');
+          } else if (data.reason === 'taken') {
+            showStatus('taken', 'Already taken - please choose a different name');
+          } else if (data.reason === 'reserved') {
+            showStatus('reserved', 'Reserved - please choose a different name');
+          } else {
+            showStatus('invalid', 'Invalid format');
+          }
+        })
+        .catch(function () {
+          showStatus('', '');
+        });
+    }
+
+    handleInput.addEventListener('input', function () {
+      clearTimeout(debounceTimer);
+      handleAvailable = false;
+      errorEl.classList.add('hidden');
+
+      var handle = handleInput.value.trim().toLowerCase();
+      if (!handle) {
+        showStatus('', '');
+        return;
+      }
+
+      if (!/^[a-z0-9][a-z0-9_-]{0,30}[a-z0-9]$|^[a-z0-9]$/.test(handle)) {
+        showStatus('invalid', 'Use lowercase letters, numbers, hyphens, underscores');
+        return;
+      }
+
+      debounceTimer = setTimeout(function () {
+        checkAvailability(handle);
+      }, 500);
+    });
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.classList.add('hidden');
+
+      var handle = handleInput.value.trim().toLowerCase();
+      var npub = npubInput.value.trim();
+      var amount = parseFloat(amountInput.value);
+
+      if (!handle) {
+        showError('Please enter a handle.');
+        return;
+      }
+      if (!/^[a-z0-9][a-z0-9_-]{0,30}[a-z0-9]$|^[a-z0-9]$/.test(handle)) {
+        showError('Invalid handle format. Use lowercase letters, numbers, hyphens, and underscores.');
+        return;
+      }
+      if (!handleAvailable) {
+        showError('Please wait for the availability check, or choose a different handle.');
+        return;
+      }
+
+      if (!npub) {
+        showError('Please enter your Nostr npub.');
+        return;
+      }
+      if (!/^npub1[a-z0-9]{58}$/.test(npub)) {
+        showError('Invalid npub format. It should start with npub1 and be 63 characters long.');
+        return;
+      }
+
+      if (!amount || amount < 5) {
+        showError('Minimum amount is $5.');
+        return;
+      }
+
+      setLoading(true);
+
+      fetch(INVOICE_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          handle: handle,
+          npub: npub,
+          amount: String(amount)
+        })
+      })
+        .then(function (response) {
+          if (response.status === 409) {
+            throw new Error('This handle was just taken. Please choose a different one.');
+          }
+          if (!response.ok) {
+            return response.json().then(function (data) {
+              throw new Error(data.error || 'Failed to create invoice.');
+            });
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          if (data.checkoutLink) {
+            window.location.href = data.checkoutLink;
+          } else {
+            throw new Error('No checkout link in response.');
+          }
+        })
+        .catch(function (err) {
+          console.error('NIP-05 purchase error:', err);
+          showError(err.message || 'Something went wrong. Please try again.');
+          setLoading(false);
+          checkAvailability(handle);
+        });
+    });
+  });
+</script>

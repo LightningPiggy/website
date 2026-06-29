@@ -1,0 +1,172 @@
+---
+// NostrShop.astro
+// Live "shop" of curated NIP-99 (kind 30402) / NIP-15 (kind 30018) products
+// pulled from selected vendors' Nostr profiles. Each vendor opts in via a
+// `products` block in src/data/vendors.json:
+//
+//   "products": { "mode": "curated", "include": ["<d-tag>", ...] }
+//   "products": { "mode": "keywords", "keywords": ["piggy", "zap"] }
+//   "products": { "mode": "all" }
+//
+// SEO: products are fetched from relays AT BUILD TIME and rendered as a static,
+// crawlable grid (plus JSON-LD). The client <script> then refreshes the grid
+// live on load, so humans get up-to-date listings and bots/no-JS get the
+// build-time snapshot. Build-time fetch is fail-safe: if relays are unreachable
+// the grid falls back to client-only rendering and the build still succeeds.
+
+import {
+  npubToHex,
+  buildShopProducts,
+  shopCardHtml,
+  productsJsonLd,
+  type Shop,
+} from '../../lib/market';
+import { fetchMarketEvents } from '../../lib/marketServer';
+
+interface ShopInput {
+  name: string;
+  storeUrl: string;
+  logo?: string;
+  nostrUrl?: string;
+  products?: { mode?: string; include?: string[]; keywords?: string[] };
+}
+interface Props {
+  vendors: ShopInput[];
+}
+const { vendors } = Astro.props;
+
+// Shape just what the client script needs, and pull the npub out of nostrUrl.
+const shops: Shop[] = vendors
+  .filter((v) => v.products && v.nostrUrl)
+  .map((v) => ({
+    name: v.name,
+    storeUrl: v.storeUrl,
+    logo: v.logo || '',
+    npub: (v.nostrUrl!.match(/npub1[0-9a-z]+/) || [])[0] || '',
+    mode: v.products!.mode || 'curated',
+    include: v.products!.include || [],
+    keywords: v.products!.keywords || [],
+  }))
+  .filter((s) => s.npub);
+
+// ---- Build-time prerender ----
+const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];
+const events = await fetchMarketEvents(authors, [30402, 30018]);
+const products = buildShopProducts(events, shops);
+const prerenderHtml = products.map(shopCardHtml).join('');
+const hasPrerender = products.length > 0;
+const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.site).href) : '';
+---
+
+{shops.length > 0 && (
+  <div id="nostr-shop" class="not-prose" data-shops={JSON.stringify(shops)}>
+    <!-- Loading (only shown when there's no prerendered snapshot) -->
+    <div id="shop-loading" class={`text-center py-10 ${hasPrerender ? 'hidden' : ''}`}>
+      <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-pink border-t-transparent"></div>
+      <p class="text-gray-500 mt-3">Loading products from Nostr…</p>
+    </div>
+
+    <!-- Grid: prerendered at build, refreshed live on the client -->
+    <div
+      id="shop-grid"
+      class={`grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 ${hasPrerender ? '' : 'hidden'}`}
+      set:html={prerenderHtml}
+    />
+
+    <!-- Empty / error -->
+    <div id="shop-empty" class="text-center py-8 hidden">
+      <p class="text-gray-500">No products available right now.</p>
+    </div>
+
+    {hasPrerender && <script type="application/ld+json" set:html={jsonLd} />}
+  </div>
+)}
+
+<script>
+  // Live refresh of the build-time snapshot. Parsing + rendering come from the
+  // shared isomorphic module, so the live grid is byte-identical to the
+  // prerendered one (no layout shift) and the two can never drift apart.
+  import {
+    RELAYS,
+    npubToHex,
+    buildShopProducts,
+    shopCardHtml,
+    type NostrEvent,
+    type Shop,
+  } from '../../lib/market';
+
+  function fetchFromRelay(url: string, authors: string[]): Promise<NostrEvent[]> {
+    return new Promise((resolve) => {
+      const events: NostrEvent[] = [];
+      let ws: WebSocket | undefined;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try {
+          ws && ws.close();
+        } catch {}
+        resolve(events);
+      };
+      const timer = window.setTimeout(finish, 6000);
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        finish();
+        return;
+      }
+      const sub = Math.random().toString(36).slice(2, 10);
+      ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, { kinds: [30402, 30018], authors }]));
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg[0] === 'EVENT' && msg[1] === sub) events.push(msg[2]);
+          if (msg[0] === 'EOSE' && msg[1] === sub) finish();
+        } catch {}
+      };
+      ws.onerror = () => finish();
+    });
+  }
+
+  async function init() {
+    const root = document.getElementById('nostr-shop');
+    if (!root) return;
+    const loadingEl = document.getElementById('shop-loading');
+    const gridEl = document.getElementById('shop-grid');
+    const emptyEl = document.getElementById('shop-empty');
+
+    let shops: Shop[] = [];
+    try {
+      shops = JSON.parse(root.dataset.shops || '[]');
+    } catch {}
+    const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];
+    if (authors.length === 0) {
+      loadingEl?.classList.add('hidden');
+      // No prerendered cards to keep -> show empty.
+      if (gridEl && !gridEl.children.length) emptyEl?.classList.remove('hidden');
+      return;
+    }
+
+    const results = await Promise.all(RELAYS.map((r) => fetchFromRelay(r, authors)));
+    const products = buildShopProducts(results.flat(), shops);
+
+    loadingEl?.classList.add('hidden');
+    if (products.length === 0) {
+      // Keep any prerendered snapshot rather than blanking it; only show the
+      // empty state if there was nothing to begin with.
+      if (gridEl && !gridEl.children.length) emptyEl?.classList.remove('hidden');
+      return;
+    }
+    if (gridEl) {
+      gridEl.innerHTML = products.map(shopCardHtml).join('');
+      gridEl.classList.remove('hidden');
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

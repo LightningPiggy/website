@@ -10,6 +10,11 @@ html {
 body {
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.6;
+  /* Clip (not hide) horizontal overflow so full-bleed sections that break out
+     of a constrained layout with 100vw can't add a stray horizontal scrollbar.
+     `clip` (vs `hidden`) doesn't create a scroll container, so the sticky
+     header keeps working. */
+  overflow-x: clip;
 }
 
 /* Typography */

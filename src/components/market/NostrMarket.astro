@@ -1,0 +1,202 @@
+---
+// NostrMarket.astro
+// A Nostr-native market: each vendor is driven live from their npub. We pull
+// the vendor's kind-0 profile (name, picture, about, nip-05, lightning address)
+// and their NIP-99 (kind 30402) / NIP-15 (kind 30018) products in one relay
+// pass, then render a vendor card with a ⚡ Zap button and their curated
+// products. Vendors opt in / curate via src/data/vendors.json:
+//
+//   "products": { "mode": "curated", "include": ["<d-tag>", ...] }
+//   "products": { "mode": "keywords", "keywords": ["piggy", "zap"] }
+//   "products": { "mode": "all" }
+//
+// JSON name/logo/url act only as a fallback when the live profile is missing a
+// field. Test/staging listings are always excluded; products are de-duped.
+//
+// SEO: vendor cards are rendered AT BUILD TIME from the JSON fallback (and
+// enriched from relays when reachable), so the section is crawlable even before
+// JS runs. The client <script> refreshes/enriches the cards live on load.
+
+import {
+  npubToHex,
+  buildVendorViews,
+  vendorHtml,
+  type Seed,
+} from '../../lib/market';
+import { fetchMarketEvents } from '../../lib/marketServer';
+
+interface Vendor {
+  name: string;
+  url?: string;
+  logo?: string;
+  description?: string;
+  shopType?: string;
+  country?: string;
+  shippingRegions?: string[];
+  nostrUrl?: string;
+  featured?: boolean;
+  products?: { mode?: string; include?: string[]; keywords?: string[] };
+}
+interface Props {
+  vendors: Vendor[];
+  // When false, render pure vendor cards (no nested product grid) — used for the
+  // dedicated "Vendors" section, since products get their own grid up top.
+  showProducts?: boolean;
+}
+const { vendors, showProducts = true } = Astro.props;
+
+// Every vendor is rendered. Those with an npub are enriched live from their
+// kind-0 profile + NIP-99 products; those without fall back to this JSON.
+const seeds: Seed[] = vendors.map((v) => ({
+  npub: (v.nostrUrl?.match(/npub1[0-9a-z]+/) || [])[0] || '',
+  fallbackName: v.name,
+  fallbackLogo: v.logo || '',
+  fallbackAbout: v.description || '',
+  storeUrl: v.url || '',
+  shopType: v.shopType || 'online',
+  location: [v.country, (v.shippingRegions || []).length ? 'Ships to ' + (v.shippingRegions || []).join(', ') : '']
+    .filter(Boolean)
+    .join(' · '),
+  featured: !!v.featured,
+  mode: v.products?.mode || 'all',
+  include: v.products?.include || [],
+  keywords: v.products?.keywords || [],
+}));
+
+// ---- Build-time prerender (always renders every vendor from the JSON
+// fallback; enriched from relays when they're reachable at build) ----
+const authors = [...new Set(seeds.map((s) => npubToHex(s.npub)).filter(Boolean))];
+const events = await fetchMarketEvents(authors, showProducts ? [0, 30402, 30018] : [0]);
+const views = buildVendorViews(events, seeds, showProducts);
+const prerenderHtml = views.map((v) => vendorHtml(v, showProducts)).join('');
+const hasPrerender = views.length > 0;
+---
+
+<div id="nostr-market" class="not-prose" data-seeds={JSON.stringify(seeds)} data-show-products={String(showProducts)}>
+  <div id="market-loading" class={`text-center py-12 ${hasPrerender ? 'hidden' : ''}`}>
+    <div class="inline-block animate-spin rounded-full h-9 w-9 border-4 border-pink border-t-transparent"></div>
+    <p class="text-gray-500 mt-3">Loading vendors live from Nostr…</p>
+  </div>
+  <div
+    id="market-vendors"
+    class={`${hasPrerender ? '' : 'hidden '}${showProducts ? 'space-y-8' : 'grid gap-6 sm:grid-cols-2'}`}
+    set:html={prerenderHtml}
+  />
+  <div id="market-empty" class="text-center py-10 hidden">
+    <p class="text-gray-500">No vendors available right now.</p>
+  </div>
+</div>
+
+<script>
+  // Live refresh/enrich of the build-time vendor snapshot. Parsing + rendering
+  // come from the shared isomorphic module, so the live cards match the
+  // prerendered ones exactly.
+  import {
+    RELAYS,
+    npubToHex,
+    buildVendorViews,
+    vendorHtml,
+    type NostrEvent,
+    type Seed,
+  } from '../../lib/market';
+
+  const SHOW_PRODUCTS =
+    document.getElementById('nostr-market')?.dataset.showProducts !== 'false';
+  const REQ_KINDS = SHOW_PRODUCTS ? [0, 30402, 30018] : [0];
+
+  function fetchFromRelay(url: string, authors: string[]): Promise<NostrEvent[]> {
+    return new Promise((resolve) => {
+      const events: NostrEvent[] = [];
+      let ws: WebSocket | undefined;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try {
+          ws && ws.close();
+        } catch {}
+        resolve(events);
+      };
+      const timer = window.setTimeout(finish, 6000);
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        finish();
+        return;
+      }
+      const sub = Math.random().toString(36).slice(2, 10);
+      ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, { kinds: REQ_KINDS, authors }]));
+      ws.onmessage = (e) => {
+        try {
+          const m = JSON.parse(e.data);
+          if (m[0] === 'EVENT' && m[1] === sub) events.push(m[2]);
+          if (m[0] === 'EOSE' && m[1] === sub) finish();
+        } catch {}
+      };
+      ws.onerror = () => finish();
+    });
+  }
+
+  async function init() {
+    const root = document.getElementById('nostr-market');
+    if (!root) return;
+    const loadingEl = document.getElementById('market-loading');
+    const listEl = document.getElementById('market-vendors');
+    const emptyEl = document.getElementById('market-empty');
+
+    let seeds: Seed[] = [];
+    try {
+      seeds = JSON.parse(root.dataset.seeds || '[]');
+    } catch {}
+    if (!seeds.length) {
+      loadingEl?.classList.add('hidden');
+      if (listEl && !listEl.children.length) emptyEl?.classList.remove('hidden');
+      return;
+    }
+
+    const authors = [...new Set(seeds.map((s) => npubToHex(s.npub)).filter(Boolean))];
+    const all = authors.length
+      ? (await Promise.all(RELAYS.map((r) => fetchFromRelay(r, authors)))).flat()
+      : [];
+
+    const views = buildVendorViews(all, seeds, SHOW_PRODUCTS);
+
+    loadingEl?.classList.add('hidden');
+    if (!views.length) {
+      if (listEl && !listEl.children.length) emptyEl?.classList.remove('hidden');
+      return;
+    }
+    if (listEl) {
+      listEl.innerHTML = views.map((v) => vendorHtml(v, SHOW_PRODUCTS)).join('');
+      listEl.classList.remove('hidden');
+    }
+  }
+
+  // ---------- Zap: lightweight LNURL-pay link-out (v1) ----------
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement)?.closest?.('.zap-btn') as HTMLElement | null;
+    if (!btn) return;
+    e.preventDefault();
+    const lud16 = btn.dataset.lud16 || '';
+    const at = lud16.indexOf('@');
+    if (at < 1) return;
+    const name = lud16.slice(0, at);
+    const domain = lud16.slice(at + 1);
+    try {
+      const res = await fetch(`https://${domain}/.well-known/lnurlp/${name}`);
+      const data = await res.json();
+      if (data && data.callback) {
+        window.location.href = `lightning:${lud16}`;
+        return;
+      }
+    } catch {}
+    window.location.href = `lightning:${lud16}`;
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+</script>

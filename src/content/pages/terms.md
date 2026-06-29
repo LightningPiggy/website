@@ -10,7 +10,7 @@ updatedDate: 2026-06-26
 
 These Terms & Conditions ("Terms") govern your access to and use of the Lightning Piggy website at lightningpiggy.com and its subdomains, the open-source Lightning Piggy hardware, the Lightning Piggy mobile application, the Treasure Hunt, the vendor marketplace, and any related content, tools and services (together, the "Services").
 
-The Services are provided by the Lightning Piggy project, a free and open-source project maintained by its volunteer contributors ("Lightning Piggy", "we", "us" or "our"). The project is in early development and is not currently incorporated as a legal entity. You can reach us at oink@lightningpiggy.com.
+The Services are provided by the Lightning Piggy project, a free and open-source project maintained by its volunteer contributors ("Lightning Piggy", "we", "us" or "our"). The project is in early development and is not currently incorporated as a legal entity. You can reach us at <oink@lightningpiggy.com>.
 
 **Please read these Terms carefully. By accessing the Website, building or using the Device, downloading or using the App, taking part in the Treasure Hunt, or otherwise using the Services, you agree to be bound by these Terms. If you do not agree, do not use the Services.**
 
@@ -155,4 +155,4 @@ If any provision of these Terms is found unenforceable, the remaining provisions
 
 ## 25. Contact
 
-Questions about these Terms can be sent to **oink@lightningpiggy.com**, or via our community channels linked on the Website.
+Questions about these Terms can be sent to **<oink@lightningpiggy.com>**, or via our community channels linked on the Website.

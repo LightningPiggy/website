@@ -9,7 +9,7 @@
 //   "products": { "mode": "all" }
 //
 // SEO: products are fetched from relays AT BUILD TIME and rendered as a static,
-// crawlable grid (plus JSON-LD). The client <script> then refreshes the grid
+// crawlable grid (plus JSON-LD). The client script then refreshes the grid
 // live on load, so humans get up-to-date listings and bots/no-JS get the
 // build-time snapshot. Build-time fetch is fail-safe: if relays are unreachable
 // the grid falls back to client-only rendering and the build still succeeds.
@@ -25,7 +25,7 @@ import { fetchMarketEvents } from '../../lib/marketServer';
 
 interface ShopInput {
   name: string;
-  storeUrl: string;
+  url?: string;
   logo?: string;
   nostrUrl?: string;
   products?: { mode?: string; include?: string[]; keywords?: string[] };
@@ -40,7 +40,7 @@ const shops: Shop[] = vendors
   .filter((v) => v.products && v.nostrUrl)
   .map((v) => ({
     name: v.name,
-    storeUrl: v.storeUrl,
+    storeUrl: v.url || '',
     logo: v.logo || '',
     npub: (v.nostrUrl!.match(/npub1[0-9a-z]+/) || [])[0] || '',
     mode: v.products!.mode || 'curated',

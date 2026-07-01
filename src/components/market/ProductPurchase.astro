@@ -24,9 +24,11 @@ interface Props {
   priceCurrency: string;
   title: string;
   vendorName: string;
+  vendorPicture: string; // vendor's Nostr profile image (may be '')
   storeUrl: string; // external fallback
 }
-const { lud16, vendorPubkey, priceAmount, priceCurrency, title, vendorName, storeUrl } = Astro.props;
+const { lud16, vendorPubkey, priceAmount, priceCurrency, title, vendorName, vendorPicture, storeUrl } =
+  Astro.props;
 const canPayOnSite = !!lud16 && !!priceAmount;
 ---
 
@@ -67,7 +69,25 @@ const canPayOnSite = !!lud16 && !!priceAmount;
             <svg class="w-5 h-5 text-pink" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
             <h3 id="pay-title" class="text-xl font-bold text-gray-900">Checkout</h3>
           </div>
-          <p class="text-sm text-gray-500 mb-5 truncate">{title}</p>
+          <p class="text-sm font-medium text-gray-800 truncate">{title}</p>
+
+          <!-- Seller attribution: order is with the vendor, not Lightning Piggy. -->
+          <div class="flex items-center gap-2.5 mt-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2">
+            <span class="w-8 h-8 rounded-full overflow-hidden bg-pink/10 flex items-center justify-center flex-shrink-0">
+              {vendorPicture ? (
+                <img src={vendorPicture} alt={vendorName} referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+              ) : (
+                <span class="text-pink text-sm font-bold">{(vendorName || '?').charAt(0).toUpperCase()}</span>
+              )}
+            </span>
+            <div class="min-w-0 leading-tight">
+              <p class="text-[11px] text-gray-500">Sold &amp; shipped by</p>
+              <p class="text-sm font-semibold text-gray-900 truncate">{vendorName}</p>
+            </div>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-2 mb-4">
+            Lightning Piggy is the marketplace — your order &amp; payment go directly to {vendorName}, not Lightning Piggy.
+          </p>
 
           <!-- Step 1: shipping (guest by default; sign-in optional) -->
           <div id="view-shipping">

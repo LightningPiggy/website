@@ -149,8 +149,16 @@ const productKind = coord.split(':')[0] || '30402';
   tabComments.addEventListener('click', () => selectTab('comments'));
 
   // ---- Relay read: newest event per author (reviews) or all (comments) ----
+  // Relays that failed to connect this page session are skipped on later queries,
+  // so a down relay (e.g. an unreachable one) isn't retried for every load —
+  // cutting the repeated "WebSocket connection failed" console noise.
+  const deadRelays = new Set<string>();
   function fetchFromRelay(url: string, filter: any): Promise<NostrEvent[]> {
     return new Promise((resolve) => {
+      if (deadRelays.has(url)) {
+        resolve([]);
+        return;
+      }
       const events: NostrEvent[] = [];
       let ws: WebSocket | undefined;
       let done = false;
@@ -158,8 +166,10 @@ const productKind = coord.split(':')[0] || '30402';
         if (done) return;
         done = true;
         clearTimeout(timer);
+        // Only close an already-open socket; closing one that's still CONNECTING
+        // logs a noisy "closed before the connection is established" warning.
         try {
-          ws && ws.close();
+          if (ws && ws.readyState === WebSocket.OPEN) ws.close();
         } catch {}
         resolve(events);
       };
@@ -167,6 +177,7 @@ const productKind = coord.split(':')[0] || '30402';
       try {
         ws = new WebSocket(url);
       } catch {
+        deadRelays.add(url);
         finish();
         return;
       }
@@ -179,7 +190,10 @@ const productKind = coord.split(':')[0] || '30402';
           if (m[0] === 'EOSE' && m[1] === sub) finish();
         } catch {}
       };
-      ws.onerror = () => finish();
+      ws.onerror = () => {
+        deadRelays.add(url);
+        finish();
+      };
     });
   }
   async function fetchAll(filter: any): Promise<NostrEvent[]> {

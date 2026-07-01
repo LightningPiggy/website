@@ -20,6 +20,7 @@
     "@netlify/blobs": "^8.2.0",
     "astro": "^5.1.0",
     "nostr-tools": "^2.23.9",
+    "qrcode": "^1.5.4",
     "ws": "^8.19.0"
   },
   "devDependencies": {

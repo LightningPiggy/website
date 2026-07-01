@@ -100,13 +100,32 @@ const currentPath = Astro.url.pathname;
         ))}
       </div>
 
-      <!-- CTA Button -->
-      <a
-        href="/build"
-        class="hidden lg:inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
-      >
-        Build Your Own
-      </a>
+      <!-- Sign in / account (Nostr) -->
+      <div class="hidden lg:flex items-center relative" id="hdr-auth">
+        <button
+          id="hdr-signin"
+          type="button"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zM4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>
+          Sign in
+        </button>
+        <button
+          id="hdr-account"
+          type="button"
+          class="hidden inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-gray-200 hover:border-pink transition-colors"
+        >
+          <span class="w-7 h-7 rounded-full overflow-hidden bg-pink/10 flex items-center justify-center flex-shrink-0">
+            <img id="hdr-avatar" src="" alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover hidden" />
+            <span id="hdr-initial" class="text-pink text-xs font-bold"></span>
+          </span>
+          <span id="hdr-name" class="text-sm font-semibold text-gray-800 max-w-[120px] truncate"></span>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="hdr-menu" class="hidden absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+          <button id="hdr-signout" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Sign out</button>
+        </div>
+      </div>
 
       <!-- Mobile Menu Button -->
       <button
@@ -155,12 +174,21 @@ const currentPath = Astro.url.pathname;
           )}
         </div>
       ))}
-      <a
-        href="/build"
+      <button
+        id="hdr-signin-m"
+        type="button"
         class="block w-full text-center px-4 py-3 text-base font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors mt-4"
       >
-        Build Your Own
-      </a>
+        Sign in with Nostr
+      </button>
+      <div id="hdr-account-m" class="hidden mt-4 items-center gap-3 px-3 py-2 rounded-xl border border-gray-200">
+        <span class="w-8 h-8 rounded-full overflow-hidden bg-pink/10 flex items-center justify-center flex-shrink-0">
+          <img id="hdr-avatar-m" src="" alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover hidden" />
+          <span id="hdr-initial-m" class="text-pink text-sm font-bold"></span>
+        </span>
+        <span id="hdr-name-m" class="text-sm font-semibold text-gray-800 flex-1 truncate"></span>
+        <button id="hdr-signout-m" type="button" class="text-sm text-pink font-semibold">Sign out</button>
+      </div>
     </div>
   </div>
 </header>
@@ -172,4 +200,79 @@ const currentPath = Astro.url.pathname;
   menuButton?.addEventListener('click', () => {
     mobileMenu?.classList.toggle('hidden');
   });
+
+  // --- Nostr sign-in (header, global) ---
+  import { getSession, login, logout, shortId, type NostrSession } from '../../lib/nostrAuth';
+
+  const signinBtn = document.getElementById('hdr-signin');
+  const accountBtn = document.getElementById('hdr-account');
+  const menu = document.getElementById('hdr-menu');
+  const signoutBtn = document.getElementById('hdr-signout');
+  const signinBtnM = document.getElementById('hdr-signin-m');
+  const accountM = document.getElementById('hdr-account-m');
+  const signoutBtnM = document.getElementById('hdr-signout-m');
+
+  function setAvatar(imgId: string, initialId: string, s: NostrSession) {
+    const img = document.getElementById(imgId) as HTMLImageElement | null;
+    const initial = document.getElementById(initialId);
+    const name = s.name || shortId(s.pubkey);
+    if (s.picture && img) {
+      img.src = s.picture;
+      img.classList.remove('hidden');
+      initial?.classList.add('hidden');
+    } else {
+      img?.classList.add('hidden');
+      initial?.classList.remove('hidden');
+      if (initial) initial.textContent = (name || '?').charAt(0).toUpperCase();
+    }
+  }
+
+  function renderAuth(s: NostrSession | null) {
+    const name = s ? s.name || shortId(s.pubkey) : '';
+    // Desktop
+    signinBtn?.classList.toggle('hidden', !!s);
+    accountBtn?.classList.toggle('hidden', !s);
+    if (s) {
+      (document.getElementById('hdr-name') as HTMLElement).textContent = name;
+      setAvatar('hdr-avatar', 'hdr-initial', s);
+    } else {
+      menu?.classList.add('hidden');
+    }
+    // Mobile
+    signinBtnM?.classList.toggle('hidden', !!s);
+    accountM?.classList.toggle('hidden', !s);
+    accountM?.classList.toggle('flex', !!s);
+    if (s) {
+      (document.getElementById('hdr-name-m') as HTMLElement).textContent = name;
+      setAvatar('hdr-avatar-m', 'hdr-initial-m', s);
+    }
+  }
+
+  async function doLogin(btn?: HTMLButtonElement | null) {
+    if (!(window as any).nostr) {
+      window.open('https://getalby.com', '_blank');
+      return;
+    }
+    if (btn) btn.disabled = true;
+    try {
+      await login();
+    } catch {
+      /* cancelled */
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  }
+
+  signinBtn?.addEventListener('click', () => doLogin(signinBtn as HTMLButtonElement));
+  signinBtnM?.addEventListener('click', () => doLogin(signinBtnM as HTMLButtonElement));
+  accountBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => menu?.classList.add('hidden'));
+  signoutBtn?.addEventListener('click', () => logout());
+  signoutBtnM?.addEventListener('click', () => logout());
+
+  window.addEventListener('nostr:auth', (e) => renderAuth((e as CustomEvent).detail));
+  renderAuth(getSession());
 </script>

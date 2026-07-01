@@ -41,12 +41,12 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       <button
         id="buy-btn"
         type="button"
-        class="group w-full inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-pink text-white text-base font-bold shadow-lg shadow-pink/25 hover:bg-pink/90 hover:shadow-xl active:scale-[0.99] transition-all disabled:opacity-60 disabled:pointer-events-none"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-pink text-white text-base font-bold shadow-lg shadow-pink/25 hover:bg-pink/90 hover:shadow-xl active:scale-[0.99] transition-all disabled:opacity-60 disabled:pointer-events-none"
       >
         <svg class="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
         Buy now with Lightning
       </button>
-      <p class="text-xs text-gray-500 mt-2.5 flex items-center gap-1.5">
+      <p class="text-xs text-gray-500 mt-2.5 max-w-sm flex items-center gap-1.5">
         <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
         Pays {vendorName} directly over Lightning — non-custodial, no account needed.
       </p>

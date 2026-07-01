@@ -365,7 +365,8 @@ export function parseProductDetail(ev: NostrEvent): ProductDetail {
     price: formatPrice(ev.tags) || (json.price ? String(json.price) : ''),
     priceAmount: priceTag?.[1] || (json.price != null ? String(json.price) : ''),
     priceCurrency: (priceTag?.[2] || json.currency || '').toUpperCase(),
-    images,
+    // De-dupe identical image URLs (some listings repeat the same `image` tag).
+    images: [...new Set(images)],
     specs,
     categories: tagsAll(ev.tags, 't'),
     location: tagVal(ev.tags, 'location') || '',

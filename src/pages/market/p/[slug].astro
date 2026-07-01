@@ -182,16 +182,16 @@ if (detail.priceAmount) {
             ))}
           </div>
         )}
+
+        <!-- Description: under the buy button, in the info column beside the images -->
+        {detail.description && (
+          <div class="mt-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Description</h2>
+            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{detail.description}</p>
+          </div>
+        )}
       </div>
     </div>
-
-    <!-- Description -->
-    {detail.description && (
-      <div class="mt-12 max-w-3xl">
-        <h2 class="text-2xl font-bold text-gray-900 mb-3">Description</h2>
-        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{detail.description}</p>
-      </div>
-    )}
 
     <!-- Specs -->
     {detail.specs.length > 0 && (

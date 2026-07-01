@@ -1,35 +1,39 @@
 ---
 // ProductPurchase.astro
-// Client-side, Nostr-native "Buy with Lightning" island. No backend: the invoice
-// is fetched directly from the vendor's own Lightning address (lud16, read from
-// their Nostr kind-0 profile at build time) via LNURL-pay. This is the reference
-// robotechy checkout's payment step, minus the single-merchant order-service:
-// each vendor is paid to their own address automatically.
+// Client-side, Nostr-native checkout island (no backend). Modelled on the
+// robotechy checkout, adapted for a multi-vendor market:
 //
-// Clicking "Buy now" opens a pop-up dialog (like robotechy's CheckoutDialog)
-// that resolves the price to sats → requests a BOLT11 invoice → shows it
-// (copy / open-in-wallet / WebLN pay).
+//   1. Buy now → pop-up. Step 1 collects the shipping address (requires a Nostr
+//      sign-in, since the order is sent AS the buyer).
+//   2. "Continue to payment": the order + shipping address is sent to the vendor
+//      as a NIP-17 gift-wrapped (encrypted) DM (kind 14) — see nostrOrder.ts —
+//      and an invoice is fetched from the vendor's own Lightning address (lud16,
+//      LNURL-pay). No single-merchant order-service: each vendor is paid + DM'd
+//      directly.
+//   3. Pay the invoice (WebLN / wallet / copy). On WebLN success a receipt DM
+//      (with the payment preimage) is sent to the vendor.
 //
-// PHASE 2 (see PR roadmap): NIP-17 gift-wrapped order (shipping details +
-// line items) to the vendor, payment receipt, status tracking, and a QR code —
-// mirroring robotechy's kind 16/17 Gamma Markets order protocol. This slice
-// pays the vendor but does not yet transmit the order/shipping info.
+// The vendor reads the order as an encrypted Nostr DM in their client (Damus,
+// Primal, Alby, …) and ships it. The LNURL comment carries the order id so
+// manually-paid invoices can be correlated.
 
 interface Props {
   lud16: string; // vendor Lightning address, e.g. name@domain (may be '')
+  vendorPubkey: string; // vendor hex pubkey (the product author) — DM recipient
   priceAmount: string;
-  priceCurrency: string; // upper-case: SAT, SATS, BTC, USD, GBP, EUR, …
+  priceCurrency: string;
   title: string;
   vendorName: string;
   storeUrl: string; // external fallback
 }
-const { lud16, priceAmount, priceCurrency, title, vendorName, storeUrl } = Astro.props;
+const { lud16, vendorPubkey, priceAmount, priceCurrency, title, vendorName, storeUrl } = Astro.props;
 const canPayOnSite = !!lud16 && !!priceAmount;
 ---
 
 <div
   id="product-purchase"
   data-lud16={lud16}
+  data-vendor-pubkey={vendorPubkey}
   data-amount={priceAmount}
   data-currency={priceCurrency}
   data-title={title}
@@ -54,38 +58,67 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       <!-- Checkout pop-up -->
       <div id="pay-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="pay-title">
         <div id="pay-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 md:p-7">
+        <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 md:p-7">
           <button id="pay-close" type="button" aria-label="Close" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
           </button>
 
           <div class="flex items-center gap-2 mb-1">
             <svg class="w-5 h-5 text-pink" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
-            <h3 id="pay-title" class="text-xl font-bold text-gray-900">Pay with Lightning</h3>
+            <h3 id="pay-title" class="text-xl font-bold text-gray-900">Checkout</h3>
           </div>
           <p class="text-sm text-gray-500 mb-5 truncate">{title}</p>
 
-          <div id="invoice-status" class="py-6 text-center text-sm text-gray-600">
-            <div class="inline-block animate-spin rounded-full h-7 w-7 border-4 border-pink border-t-transparent mb-3"></div>
-            <p id="invoice-status-text">Requesting invoice…</p>
-          </div>
-
-          <div id="invoice-body" class="hidden">
-            <p class="text-sm text-gray-500 mb-1">Amount</p>
-            <p id="invoice-amount" class="text-2xl font-bold text-gray-900 mb-4"></p>
-            <label class="block text-sm text-gray-500 mb-1">Lightning invoice</label>
-            <textarea id="invoice-bolt11" readonly rows="3" class="w-full text-xs font-mono rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 mb-3"></textarea>
-            <div class="flex flex-wrap gap-2">
-              <a id="invoice-open" href="#" class="flex-1 text-center px-4 py-2.5 rounded-xl bg-pink text-white text-sm font-semibold hover:bg-pink/90 transition">Open in wallet</a>
-              <button id="invoice-copy" type="button" class="px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold hover:border-pink hover:text-pink transition">Copy</button>
-              <button id="invoice-webln" type="button" class="px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold hover:border-pink hover:text-pink transition hidden">Pay with WebLN</button>
+          <!-- Step 1: shipping (requires sign-in) -->
+          <div id="view-shipping">
+            <div id="ship-signin" class="hidden text-center py-4">
+              <p class="text-sm text-gray-600 mb-3">Sign in with Nostr to place your order — it's sent to the vendor as an encrypted message.</p>
+              <button id="ship-connect" type="button" class="inline-flex items-center gap-2 px-5 py-2.5 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">Connect Nostr</button>
+              <p id="ship-connect-msg" class="text-xs text-gray-500 mt-2"></p>
             </div>
-            <p id="invoice-paid" class="hidden mt-4 text-center text-sm font-semibold text-green-600">✓ Paid — thank you! {vendorName} will be in touch.</p>
+
+            <form id="ship-form" class="hidden space-y-3">
+              <p class="text-sm text-gray-500">Where should {vendorName} ship this?</p>
+              <div class="grid grid-cols-2 gap-3">
+                <input id="ship-name" required placeholder="Full name" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-email" type="email" required placeholder="Email" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-addr1" required placeholder="Address" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-addr2" placeholder="Address line 2 (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-city" required placeholder="City" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-postcode" required placeholder="Post code" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-country" required placeholder="Country" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <textarea id="ship-note" rows="2" placeholder="Note to vendor (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none"></textarea>
+              </div>
+              <button type="submit" id="ship-submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition disabled:opacity-60">
+                Continue to payment
+              </button>
+              <p id="ship-status" class="text-sm text-center text-gray-500"></p>
+            </form>
           </div>
 
-          <div id="invoice-error" class="hidden py-4 text-center text-sm text-red-500">
-            Couldn't create an invoice.<br />
-            <a href={storeUrl} target="_blank" rel="noopener noreferrer" class="underline">Buy on the {vendorName} store instead →</a>
+          <!-- Step 2: payment -->
+          <div id="view-payment" class="hidden">
+            <div id="invoice-status" class="py-6 text-center text-sm text-gray-600">
+              <div class="inline-block animate-spin rounded-full h-7 w-7 border-4 border-pink border-t-transparent mb-3"></div>
+              <p id="invoice-status-text">Requesting invoice…</p>
+            </div>
+            <div id="invoice-body" class="hidden">
+              <p class="text-green-600 text-sm font-semibold mb-3">✓ Order sent to {vendorName}. Now pay to confirm:</p>
+              <p class="text-sm text-gray-500 mb-1">Amount</p>
+              <p id="invoice-amount" class="text-2xl font-bold text-gray-900 mb-4"></p>
+              <label class="block text-sm text-gray-500 mb-1">Lightning invoice</label>
+              <textarea id="invoice-bolt11" readonly rows="3" class="w-full text-xs font-mono rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 mb-3"></textarea>
+              <div class="flex flex-wrap gap-2">
+                <a id="invoice-open" href="#" class="flex-1 text-center px-4 py-2.5 rounded-xl bg-pink text-white text-sm font-semibold hover:bg-pink/90 transition">Open in wallet</a>
+                <button id="invoice-copy" type="button" class="px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold hover:border-pink hover:text-pink transition">Copy</button>
+                <button id="invoice-webln" type="button" class="px-4 py-2.5 rounded-xl border border-gray-300 text-sm font-semibold hover:border-pink hover:text-pink transition hidden">Pay with WebLN</button>
+              </div>
+              <p id="invoice-paid" class="hidden mt-4 text-center text-sm font-semibold text-green-600">✓ Paid — thank you! {vendorName} has your order.</p>
+            </div>
+            <div id="invoice-error" class="hidden py-4 text-center text-sm text-red-500">
+              <span id="invoice-error-text">Couldn't create an invoice.</span><br />
+              <a href={storeUrl} target="_blank" rel="noopener noreferrer" class="underline">Buy on the {vendorName} store instead →</a>
+            </div>
           </div>
         </div>
       </div>
@@ -95,7 +128,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       href={storeUrl}
       target="_blank"
       rel="noopener noreferrer"
-      class="group w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-pink text-white text-base font-bold shadow-lg shadow-pink/25 hover:bg-pink/90 hover:shadow-xl transition-all"
+      class="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-pink text-white text-base font-bold shadow-lg shadow-pink/25 hover:bg-pink/90 hover:shadow-xl transition-all"
     >
       Buy on the {vendorName} store
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
@@ -104,20 +137,31 @@ const canPayOnSite = !!lud16 && !!priceAmount;
 </div>
 
 <script>
+  import { getSession, login, type NostrSession } from '../../lib/nostrAuth';
+  import { sendGiftWrappedDM } from '../../lib/nostrOrder';
+
   const root = document.getElementById('product-purchase');
   if (root && root.dataset.lud16 && root.dataset.amount) {
     const lud16 = root.dataset.lud16!;
+    const vendorPubkey = root.dataset.vendorPubkey || '';
     const amount = parseFloat(root.dataset.amount || '0');
     const currency = (root.dataset.currency || '').toUpperCase();
+    const title = root.dataset.title || 'Product';
+    const vendor = root.dataset.vendor || 'the vendor';
 
     const modal = document.getElementById('pay-modal');
     const backdrop = document.getElementById('pay-backdrop');
     const closeBtn = document.getElementById('pay-close');
     const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
+    const viewShipping = document.getElementById('view-shipping');
+    const viewPayment = document.getElementById('view-payment');
+    const shipSignin = document.getElementById('ship-signin');
+    const shipForm = document.getElementById('ship-form') as HTMLFormElement | null;
     const statusEl = document.getElementById('invoice-status');
     const statusText = document.getElementById('invoice-status-text');
     const bodyEl = document.getElementById('invoice-body');
     const errEl = document.getElementById('invoice-error');
+    const errText = document.getElementById('invoice-error-text');
 
     function openModal() {
       modal?.classList.remove('hidden');
@@ -135,8 +179,33 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
     });
 
-    // Convert the listed price to sats. Sats/BTC are exact; fiat uses a public
-    // BTC spot rate. Returns null if we can't determine an amount.
+    // Sign-in gate on the shipping step.
+    function renderShipAuth(session: NostrSession | null) {
+      shipSignin?.classList.toggle('hidden', !!session);
+      shipForm?.classList.toggle('hidden', !session);
+    }
+    window.addEventListener('nostr:auth', (e) => renderShipAuth((e as CustomEvent).detail));
+    document.getElementById('ship-connect')?.addEventListener('click', async () => {
+      const msg = document.getElementById('ship-connect-msg');
+      if (!(window as any).nostr) {
+        if (msg) msg.textContent = 'No Nostr extension found (install Alby / nos2x).';
+        return;
+      }
+      try {
+        await login();
+      } catch {
+        if (msg) msg.textContent = 'Sign-in cancelled.';
+      }
+    });
+
+    buyBtn?.addEventListener('click', () => {
+      // Reset to step 1.
+      viewShipping?.classList.remove('hidden');
+      viewPayment?.classList.add('hidden');
+      renderShipAuth(getSession());
+      openModal();
+    });
+
     async function toSats(): Promise<number | null> {
       if (!amount || amount <= 0) return null;
       if (currency === 'SAT' || currency === 'SATS' || currency === '') return Math.round(amount);
@@ -152,9 +221,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       }
     }
 
-    // Resolve a Lightning address to its LNURL-pay params, then request a BOLT11
-    // invoice for the given sats.
-    async function requestInvoice(sats: number): Promise<string> {
+    async function requestInvoice(sats: number, comment: string): Promise<string> {
       const at = lud16.indexOf('@');
       if (at < 1) throw new Error('bad lud16');
       const name = lud16.slice(0, at);
@@ -165,38 +232,102 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       if (meta.minSendable) msats = Math.max(msats, meta.minSendable);
       if (meta.maxSendable) msats = Math.min(msats, meta.maxSendable);
       const sep = meta.callback.includes('?') ? '&' : '?';
-      const inv = await (await fetch(`${meta.callback}${sep}amount=${msats}`)).json();
+      let url = `${meta.callback}${sep}amount=${msats}`;
+      if (meta.commentAllowed && meta.commentAllowed > 0) {
+        url += `&comment=${encodeURIComponent(comment.slice(0, meta.commentAllowed))}`;
+      }
+      const inv = await (await fetch(url)).json();
       if (!inv || !inv.pr) throw new Error('no invoice');
       return inv.pr as string;
     }
 
     const fmtSats = (n: number) => `${n.toLocaleString()} sats`;
+    const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value.trim() || '';
 
-    buyBtn?.addEventListener('click', async () => {
-      // Reset + open the modal in its loading state.
-      statusEl?.classList.remove('hidden');
-      bodyEl?.classList.add('hidden');
-      errEl?.classList.add('hidden');
-      if (statusText) statusText.textContent = 'Working out the amount…';
-      openModal();
+    function orderMessage(orderId: string, sats: number, bolt11: string): string {
+      const addr2 = val('ship-addr2');
+      const note = val('ship-note');
+      return [
+        `🐷⚡ New Lightning Piggy order`,
+        ``,
+        `Product: ${title}`,
+        `Price: ${amount} ${currency} (${fmtSats(sats)})`,
+        `Order ID: ${orderId}`,
+        ``,
+        `Ship to:`,
+        val('ship-name'),
+        val('ship-addr1'),
+        ...(addr2 ? [addr2] : []),
+        `${val('ship-city')}, ${val('ship-postcode')}`,
+        val('ship-country'),
+        ``,
+        `Contact: ${val('ship-email')}`,
+        ...(note ? [`Note: ${note}`] : []),
+        ``,
+        `Invoice: ${bolt11}`,
+      ].join('\n');
+    }
+
+    // Step 1 → 2: build order, DM the vendor, fetch the invoice.
+    shipForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const shipStatus = document.getElementById('ship-status')!;
+      const submitBtn = document.getElementById('ship-submit') as HTMLButtonElement;
+      const session = getSession();
+      if (!session) {
+        renderShipAuth(null);
+        return;
+      }
+      submitBtn.disabled = true;
+      shipStatus.textContent = 'Preparing your order…';
 
       const sats = await toSats();
-      if (!sats) return showError();
-      if (statusText) statusText.textContent = 'Requesting invoice…';
-      try {
-        showInvoice(await requestInvoice(sats), sats);
-      } catch {
-        showError();
+      if (!sats) {
+        shipStatus.textContent = 'Could not work out the price. Try the vendor store.';
+        submitBtn.disabled = false;
+        return;
       }
+
+      const orderId = (crypto as any).randomUUID ? crypto.randomUUID() : String(Date.now());
+      let bolt11: string;
+      try {
+        bolt11 = await requestInvoice(sats, `LP order ${orderId}`);
+      } catch {
+        shipStatus.textContent = 'Could not create an invoice. Try the vendor store.';
+        submitBtn.disabled = false;
+        return;
+      }
+
+      // Send the order + shipping address to the vendor as an encrypted DM.
+      try {
+        shipStatus.textContent = 'Sending your order to the vendor…';
+        await sendGiftWrappedDM(vendorPubkey, orderMessage(orderId, sats, bolt11));
+      } catch (err: any) {
+        submitBtn.disabled = false;
+        if (err?.message === 'no-nip44') {
+          shipStatus.textContent =
+            'Your Nostr signer can’t send encrypted DMs (NIP-44). Try Alby, or use the vendor store.';
+        } else {
+          shipStatus.textContent = 'Could not send your order privately. Please try again.';
+        }
+        return;
+      }
+
+      // Move to payment.
+      viewShipping?.classList.add('hidden');
+      viewPayment?.classList.remove('hidden');
+      showInvoice(bolt11, sats, orderId);
+      submitBtn.disabled = false;
     });
 
-    function showError() {
+    function showError(msg?: string) {
       statusEl?.classList.add('hidden');
       bodyEl?.classList.add('hidden');
+      if (errText && msg) errText.textContent = msg;
       errEl?.classList.remove('hidden');
     }
 
-    function showInvoice(bolt11: string, sats: number) {
+    function showInvoice(bolt11: string, sats: number, orderId: string) {
       statusEl?.classList.add('hidden');
       errEl?.classList.add('hidden');
       bodyEl?.classList.remove('hidden');
@@ -223,9 +354,15 @@ const canPayOnSite = !!lud16 && !!priceAmount;
           weblnBtn.textContent = 'Paying…';
           try {
             await webln.enable();
-            await webln.sendPayment(bolt11);
+            const res = await webln.sendPayment(bolt11);
             document.getElementById('invoice-paid')?.classList.remove('hidden');
             weblnBtn.textContent = 'Paid';
+            // Send a payment receipt (with preimage) to the vendor — best effort.
+            const preimage = (res && (res.preimage as string)) || '';
+            sendGiftWrappedDM(
+              vendorPubkey,
+              `✅ Paid — Lightning Piggy order ${orderId}${preimage ? `\nPreimage: ${preimage}` : ''}`,
+            ).catch(() => {});
           } catch {
             weblnBtn.disabled = false;
             weblnBtn.textContent = 'Pay with WebLN';

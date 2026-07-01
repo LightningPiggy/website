@@ -231,14 +231,26 @@ const productKind = coord.split(':')[0] || '30402';
     return `<span class="inline-flex items-center gap-1.5">${avatar}<span class="text-xs font-medium text-gray-700 truncate max-w-[160px]">${esc(name)}</span></span>`;
   }
 
+  // Delete (trash) control — only rendered on the signed-in user's own posts.
+  let selfPubkey = getSession()?.pubkey || '';
+  const deletedIds = new Set<string>();
+  function deleteBtn(id: string, kind: number, pubkey: string): string {
+    if (!selfPubkey || pubkey !== selfPubkey) return '';
+    return `<button type="button" class="post-delete text-gray-300 hover:text-red-500 transition" data-id="${esc(id)}" data-kind="${kind}" title="Delete" aria-label="Delete">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </button>`;
+  }
+
   // Optimistically-kept posts so a fresh submit shows before relays index it.
   const extraReviews = new Map<string, NostrEvent>(); // keyed by author pubkey
   const extraComments = new Map<string, NostrEvent>(); // keyed by event id
 
   // ---- Reviews (kind 31555) ----
   async function loadReviews() {
-    const evs = await fetchAll({ kinds: [31555], '#d': [reviewCoord] });
-    for (const ev of extraReviews.values()) evs.push(ev);
+    const evs = (await fetchAll({ kinds: [31555], '#d': [reviewCoord] })).filter(
+      (ev) => !deletedIds.has(ev.id || ''),
+    );
+    for (const ev of extraReviews.values()) if (!deletedIds.has(ev.id || '')) evs.push(ev);
     const byAuthor = new Map<string, NostrEvent>();
     for (const ev of evs) {
       const ex = byAuthor.get(ev.pubkey);
@@ -248,6 +260,7 @@ const productKind = coord.split(':')[0] || '30402';
       .map((ev) => {
         const rt = ev.tags.find((t) => t[0] === 'rating');
         return {
+          id: ev.id || '',
           pubkey: ev.pubkey,
           stars: Math.round((rt ? parseFloat(rt[1]) : 0) * 5),
           text: ev.content || '',
@@ -279,7 +292,10 @@ const productKind = coord.split(':')[0] || '30402';
       <div class="rounded-xl border border-gray-200 bg-white p-4">
         <div class="flex items-center justify-between gap-2 mb-2">
           ${authorHtml(r.pubkey)}
-          <span class="text-xs text-gray-400">${esc(fmtDate(r.createdAt))}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">${esc(fmtDate(r.createdAt))}</span>
+            ${deleteBtn(r.id, 31555, r.pubkey)}
+          </div>
         </div>
         <div class="text-sm mb-1">${starRow(r.stars)}</div>
         ${r.text ? `<p class="text-sm text-gray-700 whitespace-pre-wrap">${esc(r.text)}</p>` : ''}
@@ -294,7 +310,9 @@ const productKind = coord.split(':')[0] || '30402';
     for (const ev of extraComments.values()) evs.push(ev);
     const seen = new Set<string>();
     const comments = evs
-      .filter((ev) => (ev.id && !seen.has(ev.id) ? (seen.add(ev.id), true) : false))
+      .filter((ev) =>
+        ev.id && !seen.has(ev.id) && !deletedIds.has(ev.id) ? (seen.add(ev.id), true) : false,
+      )
       .sort((a, b) => b.created_at - a.created_at);
 
     const listEl = document.getElementById('comments-list')!;
@@ -312,7 +330,10 @@ const productKind = coord.split(':')[0] || '30402';
       <div class="rounded-xl border border-gray-200 bg-white p-4">
         <div class="flex items-center justify-between gap-2 mb-2">
           ${authorHtml(c.pubkey)}
-          <span class="text-xs text-gray-400">${esc(fmtDate(c.created_at))}</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">${esc(fmtDate(c.created_at))}</span>
+            ${deleteBtn(c.id, 1111, c.pubkey)}
+          </div>
         </div>
         <p class="text-sm text-gray-700 whitespace-pre-wrap">${esc(c.content)}</p>
       </div>`,
@@ -334,8 +355,44 @@ const productKind = coord.split(':')[0] || '30402';
   );
   window.addEventListener('nostr:auth', (e) => {
     const s = (e as CustomEvent).detail as NostrSession | null;
+    selfPubkey = s?.pubkey || '';
     seedSelf(s);
     renderAuth(s);
+    // Re-render so the delete controls appear/disappear for the current user.
+    loadReviews();
+    loadComments();
+  });
+
+  // Delete your own post — publishes a NIP-09 deletion (kind 5).
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement)?.closest?.('.post-delete') as HTMLButtonElement | null;
+    if (!btn) return;
+    const session = getSession();
+    if (!session) {
+      openLogin();
+      return;
+    }
+    const id = btn.dataset.id || '';
+    const kind = Number(btn.dataset.kind);
+    if (!id || !confirm('Delete this post? This can’t be undone.')) return;
+    btn.disabled = true;
+    try {
+      const del = await signEvent({
+        kind: 5,
+        created_at: Math.floor(Date.now() / 1000),
+        pubkey: session.pubkey,
+        tags: [['e', id], ['k', String(kind)]],
+        content: '',
+      });
+      await publish(del);
+      deletedIds.add(id);
+      extraComments.delete(id);
+      for (const [pk, ev] of extraReviews) if (ev.id === id) extraReviews.delete(pk);
+      if (kind === 1111) await loadComments();
+      else await loadReviews();
+    } catch {
+      btn.disabled = false;
+    }
   });
 
   // ---- Review submit ----

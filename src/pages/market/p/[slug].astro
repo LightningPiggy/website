@@ -197,7 +197,7 @@ if (detail.priceAmount) {
 
     <!-- Specs -->
     {detail.specs.length > 0 && (
-      <div class="mt-10 max-w-3xl">
+      <div class="mt-10">
         <h2 class="text-2xl font-bold text-gray-900 mb-3">Specifications</h2>
         <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
           <tbody>
@@ -213,7 +213,7 @@ if (detail.priceAmount) {
     )}
 
     <!-- Reviews (client-side, Nostr kind 31555) -->
-    <div class="max-w-3xl">
+    <div class="mt-4">
       <ProductReviews coord={detail.coord} productPubkey={detail.pubkey} />
     </div>
   </div>

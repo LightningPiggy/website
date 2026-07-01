@@ -10,7 +10,8 @@
     "astro": "astro",
     "admin": "cd tools/admin && npm start",
     "lint:md": "markdownlint 'src/content/**/*.md' 'archive/**/*.md' --fix",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:e2e": "node e2e/market.e2e.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.0.0",
@@ -27,6 +28,7 @@
     "bech32": "^2.0.0",
     "husky": "^9.1.7",
     "markdownlint-cli": "^0.47.0",
+    "playwright": "^1.61.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19"
   }

@@ -1,19 +1,30 @@
 // nostrAuth.ts
-// Tiny browser-only Nostr session helper (NIP-07). Kept dependency-free to match
-// the rest of the market code (the browser extension does the signing, so we
-// never touch secp256k1). Import this ONLY from client <script> blocks — it
-// touches window/localStorage and must not run in the Astro build.
+// Browser-only Nostr session helper. Supports two login methods (mirroring the
+// robotechy login dialog's core options):
+//   • 'extension' — NIP-07 signer (Alby, nos2x). The extension holds the key and
+//                   does the signing; nothing secret is stored here.
+//   • 'nsec'      — a secret key pasted/uploaded by the user. Signing happens
+//                   locally with nostr-tools (imported on demand). The key is
+//                   kept in this browser's localStorage — see the warning shown
+//                   in the login dialog.
 //
-// A "session" is just the logged-in pubkey plus a cached profile (name/picture)
-// for display. Sign-in is via a NIP-07 extension (Alby, nos2x, …). Components
-// listen for the `nostr:auth` window event to react to log in / log out.
+// signEvent() and nip44Encrypt() branch on the method, so callers (reviews,
+// comments, the gift-wrapped order flow) work the same regardless of how the
+// user signed in. Components open the login dialog by dispatching the
+// `nostr:open-login` window event, and react to `nostr:auth` for state changes.
+//
+// Import this ONLY from client <script> blocks.
 
 import { RELAYS } from './market';
 
+export type LoginMethod = 'extension' | 'nsec';
+
 export interface NostrSession {
   pubkey: string; // hex
+  method: LoginMethod;
   name?: string;
   picture?: string;
+  sk?: string; // hex secret key — only present for method 'nsec' (this browser)
 }
 
 const KEY = 'lp_nostr_session';
@@ -29,44 +40,97 @@ export function getSession(): NostrSession | null {
 function setSession(s: NostrSession | null) {
   if (s) localStorage.setItem(KEY, JSON.stringify(s));
   else localStorage.removeItem(KEY);
-  window.dispatchEvent(new CustomEvent('nostr:auth', { detail: s }));
+  // Don't leak the secret key to listeners.
+  const detail = s ? { pubkey: s.pubkey, method: s.method, name: s.name, picture: s.picture } : null;
+  window.dispatchEvent(new CustomEvent('nostr:auth', { detail }));
 }
 
 export function logout() {
   setSession(null);
 }
 
-// Sign in with a NIP-07 extension, then enrich with the kind-0 profile.
-export async function login(): Promise<NostrSession> {
+export function openLogin() {
+  window.dispatchEvent(new CustomEvent('nostr:open-login'));
+}
+
+function hexToBytes(hex: string): Uint8Array {
+  const a = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < a.length; i++) a[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+  return a;
+}
+function bytesToHex(b: Uint8Array): string {
+  return Array.from(b)
+    .map((x) => x.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// ---- Login ----
+export async function loginExtension(): Promise<NostrSession> {
   const nostr = (window as any).nostr;
-  if (!nostr || typeof nostr.getPublicKey !== 'function') {
-    throw new Error('no-extension');
-  }
+  if (!nostr || typeof nostr.getPublicKey !== 'function') throw new Error('no-extension');
   const pubkey = await nostr.getPublicKey();
+  return finish({ pubkey, method: 'extension' });
+}
+
+export async function loginNsec(nsec: string): Promise<NostrSession> {
+  const [{ decode }, { getPublicKey }] = await Promise.all([
+    import('nostr-tools/nip19'),
+    import('nostr-tools/pure'),
+  ]);
+  const dec = decode(nsec.trim());
+  if (dec.type !== 'nsec') throw new Error('bad-nsec');
+  const sk = dec.data as Uint8Array;
+  const pubkey = getPublicKey(sk);
+  return finish({ pubkey, method: 'nsec', sk: bytesToHex(sk) });
+}
+
+// Kept for backwards-compatibility (older callers used login() === extension).
+export const login = loginExtension;
+
+async function finish(base: NostrSession): Promise<NostrSession> {
   let name: string | undefined;
   let picture: string | undefined;
   try {
-    const profile = await fetchProfile(pubkey);
+    const profile = await fetchProfile(base.pubkey);
     name = profile?.display_name || profile?.name;
     picture = profile?.picture;
   } catch {}
-  const session: NostrSession = { pubkey, name, picture };
+  const session: NostrSession = { ...base, name, picture };
   setSession(session);
   return session;
 }
 
-// Sign an event template with the current extension. Requires the extension to
-// be present (the session in localStorage is only an identity cache).
+// ---- Signing / encryption (method-aware) ----
 export async function signEvent(unsigned: any): Promise<any> {
-  const nostr = (window as any).nostr;
-  if (!nostr || typeof nostr.signEvent !== 'function') {
-    throw new Error('no-extension');
+  const s = getSession();
+  if (!s) throw new Error('not-signed-in');
+  if (s.method === 'extension') {
+    const nostr = (window as any).nostr;
+    if (!nostr || typeof nostr.signEvent !== 'function') throw new Error('no-extension');
+    return nostr.signEvent(unsigned);
   }
-  return nostr.signEvent(unsigned);
+  // nsec
+  const { finalizeEvent } = await import('nostr-tools/pure');
+  const { pubkey, ...template } = unsigned;
+  return finalizeEvent(template, hexToBytes(s.sk!));
 }
 
+export async function nip44Encrypt(recipientHex: string, plaintext: string): Promise<string> {
+  const s = getSession();
+  if (!s) throw new Error('not-signed-in');
+  if (s.method === 'extension') {
+    const nostr = (window as any).nostr;
+    if (!nostr || !nostr.nip44 || typeof nostr.nip44.encrypt !== 'function') throw new Error('no-nip44');
+    return nostr.nip44.encrypt(recipientHex, plaintext);
+  }
+  const nip44 = await import('nostr-tools/nip44');
+  const convKey = nip44.getConversationKey(hexToBytes(s.sk!), recipientHex);
+  return nip44.encrypt(plaintext, convKey);
+}
+
+// ---- Publish ----
 // Publish a signed event to the relays; resolves once one accepts (or after a
-// short grace period). Shared by the reviews + comments forms.
+// short grace period). Shared by the reviews + comments + order flows.
 export function publish(signed: any): Promise<void> {
   return new Promise((resolve) => {
     let settled = false;
@@ -112,15 +176,15 @@ function fetchProfile(hex: string): Promise<any | null> {
     let newestAt = -1;
     let pending = RELAYS.length;
     let settled = false;
-    const finish = () => {
+    const finishFetch = () => {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
       resolve(newest);
     };
-    const timer = window.setTimeout(finish, 4000);
+    const timer = window.setTimeout(finishFetch, 4000);
     const onOneDone = () => {
-      if (--pending <= 0) finish();
+      if (--pending <= 0) finishFetch();
     };
     RELAYS.forEach((url) => {
       let ws: WebSocket;

@@ -100,7 +100,7 @@ const productKind = coord.split(':')[0] || '30402';
 
 <script>
   import { RELAYS } from '../../lib/market';
-  import { getSession, login, signEvent, publish, shortId, type NostrSession } from '../../lib/nostrAuth';
+  import { getSession, openLogin, signEvent, publish, shortId, type NostrSession } from '../../lib/nostrAuth';
 
   interface NostrEvent {
     id?: string;
@@ -277,18 +277,7 @@ const productKind = coord.split(':')[0] || '30402';
     );
   }
   document.querySelectorAll('.connect-btn').forEach((btn) =>
-    btn.addEventListener('click', async () => {
-      const msg = btn.parentElement?.querySelector('.connect-msg') as HTMLElement | null;
-      if (!(window as any).nostr) {
-        if (msg) msg.textContent = 'No Nostr extension found (install Alby / nos2x).';
-        return;
-      }
-      try {
-        await login();
-      } catch {
-        if (msg) msg.textContent = 'Sign-in cancelled.';
-      }
-    }),
+    btn.addEventListener('click', () => openLogin()),
   );
   window.addEventListener('nostr:auth', (e) => renderAuth((e as CustomEvent).detail));
 
@@ -317,9 +306,15 @@ const productKind = coord.split(':')[0] || '30402';
       statusEl.textContent = 'Pick a star rating first.';
       return;
     }
+    const rSession = getSession();
+    if (!rSession) {
+      statusEl.textContent = 'Sign in to post your review.';
+      openLogin();
+      return;
+    }
     statusEl.textContent = 'Signing…';
     try {
-      const pubkey = getSession()?.pubkey || (await login()).pubkey;
+      const pubkey = rSession.pubkey;
       const signed = await signEvent({
         kind: 31555,
         created_at: Math.floor(Date.now() / 1000),
@@ -352,9 +347,15 @@ const productKind = coord.split(':')[0] || '30402';
       statusEl.textContent = 'Write something first.';
       return;
     }
+    const cSession = getSession();
+    if (!cSession) {
+      statusEl.textContent = 'Sign in to comment.';
+      openLogin();
+      return;
+    }
     statusEl.textContent = 'Signing…';
     try {
-      const pubkey = getSession()?.pubkey || (await login()).pubkey;
+      const pubkey = cSession.pubkey;
       const signed = await signEvent({
         kind: 1111,
         created_at: Math.floor(Date.now() / 1000),

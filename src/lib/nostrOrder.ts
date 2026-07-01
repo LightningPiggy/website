@@ -14,20 +14,20 @@
 //               with a random key), so nostr-tools is imported dynamically here —
 //               it only loads when a buyer actually checks out.
 //
-// Requires a NIP-07 extension that implements nip44 (e.g. Alby). Throws
-// 'no-extension' / 'no-nip44' otherwise so the UI can explain.
+// Signing + sender-side encryption go through nostrAuth, so this works whether
+// the user signed in with an extension or an nsec. An extension without nip44
+// support throws 'no-nip44' so the UI can explain.
 
-import { publish } from './nostrAuth';
+import { publish, signEvent, nip44Encrypt, getSession } from './nostrAuth';
 
 export async function sendGiftWrappedDM(recipientHex: string, message: string): Promise<void> {
-  const nostr = (window as any).nostr;
-  if (!nostr || !nostr.getPublicKey || !nostr.signEvent) throw new Error('no-extension');
-  if (!nostr.nip44 || typeof nostr.nip44.encrypt !== 'function') throw new Error('no-nip44');
+  const session = getSession();
+  if (!session) throw new Error('not-signed-in');
+  const senderPubkey = session.pubkey;
 
   const [pure, nip44] = await Promise.all([import('nostr-tools/pure'), import('nostr-tools/nip44')]);
   const { generateSecretKey, finalizeEvent, getEventHash } = pure;
 
-  const senderPubkey = await nostr.getPublicKey();
   const now = Math.floor(Date.now() / 1000);
   // NIP-59: randomise timestamps up to 2 days in the past to hide metadata.
   const past = () => now - Math.floor(Math.random() * 172800);
@@ -43,8 +43,8 @@ export async function sendGiftWrappedDM(recipientHex: string, message: string): 
   rumor.id = getEventHash(rumor);
 
   // 2. Seal — kind 13 signed by the sender; content = rumor encrypted to recipient.
-  const sealContent = await nostr.nip44.encrypt(recipientHex, JSON.stringify(rumor));
-  const seal = await nostr.signEvent({
+  const sealContent = await nip44Encrypt(recipientHex, JSON.stringify(rumor));
+  const seal = await signEvent({
     kind: 13,
     pubkey: senderPubkey,
     created_at: past(),

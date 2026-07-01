@@ -137,7 +137,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
 </div>
 
 <script>
-  import { getSession, login, type NostrSession } from '../../lib/nostrAuth';
+  import { getSession, openLogin, type NostrSession } from '../../lib/nostrAuth';
   import { sendGiftWrappedDM } from '../../lib/nostrOrder';
 
   const root = document.getElementById('product-purchase');
@@ -185,18 +185,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       shipForm?.classList.toggle('hidden', !session);
     }
     window.addEventListener('nostr:auth', (e) => renderShipAuth((e as CustomEvent).detail));
-    document.getElementById('ship-connect')?.addEventListener('click', async () => {
-      const msg = document.getElementById('ship-connect-msg');
-      if (!(window as any).nostr) {
-        if (msg) msg.textContent = 'No Nostr extension found (install Alby / nos2x).';
-        return;
-      }
-      try {
-        await login();
-      } catch {
-        if (msg) msg.textContent = 'Sign-in cancelled.';
-      }
-    });
+    document.getElementById('ship-connect')?.addEventListener('click', () => openLogin());
 
     buyBtn?.addEventListener('click', () => {
       // Reset to step 1.
@@ -276,6 +265,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       const session = getSession();
       if (!session) {
         renderShipAuth(null);
+        openLogin();
         return;
       }
       submitBtn.disabled = true;

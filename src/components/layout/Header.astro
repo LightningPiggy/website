@@ -1,4 +1,6 @@
 ---
+import NostrLoginModal from '../market/NostrLoginModal.astro';
+
 const navItems = [
   { label: 'About', href: '/about' },
   {
@@ -193,6 +195,8 @@ const currentPath = Astro.url.pathname;
   </div>
 </header>
 
+<NostrLoginModal />
+
 <script>
   const menuButton = document.getElementById('mobile-menu-button');
   const mobileMenu = document.getElementById('mobile-menu');
@@ -202,7 +206,7 @@ const currentPath = Astro.url.pathname;
   });
 
   // --- Nostr sign-in (header, global) ---
-  import { getSession, login, logout, shortId, type NostrSession } from '../../lib/nostrAuth';
+  import { getSession, logout, shortId, openLogin, type NostrSession } from '../../lib/nostrAuth';
 
   const signinBtn = document.getElementById('hdr-signin');
   const accountBtn = document.getElementById('hdr-account');
@@ -248,23 +252,12 @@ const currentPath = Astro.url.pathname;
     }
   }
 
-  async function doLogin(btn?: HTMLButtonElement | null) {
-    if (!(window as any).nostr) {
-      window.open('https://getalby.com', '_blank');
-      return;
-    }
-    if (btn) btn.disabled = true;
-    try {
-      await login();
-    } catch {
-      /* cancelled */
-    } finally {
-      if (btn) btn.disabled = false;
-    }
-  }
-
-  signinBtn?.addEventListener('click', () => doLogin(signinBtn as HTMLButtonElement));
-  signinBtnM?.addEventListener('click', () => doLogin(signinBtnM as HTMLButtonElement));
+  // Open the login dialog (Extension / Secret key) — never redirect off-site.
+  signinBtn?.addEventListener('click', () => openLogin());
+  signinBtnM?.addEventListener('click', () => {
+    mobileMenu?.classList.add('hidden');
+    openLogin();
+  });
   accountBtn?.addEventListener('click', (e) => {
     e.stopPropagation();
     menu?.classList.toggle('hidden');

@@ -19,13 +19,14 @@ import {
   buildShopProducts,
   shopCardHtml,
   productsJsonLd,
+  shopsFromVendors,
   type Shop,
 } from '../../lib/market';
 import { fetchMarketEvents } from '../../lib/marketServer';
 
 interface ShopInput {
   name: string;
-  storeUrl: string;
+  url?: string;
   logo?: string;
   nostrUrl?: string;
   products?: { mode?: string; include?: string[]; keywords?: string[] };
@@ -35,19 +36,9 @@ interface Props {
 }
 const { vendors } = Astro.props;
 
-// Shape just what the client script needs, and pull the npub out of nostrUrl.
-const shops: Shop[] = vendors
-  .filter((v) => v.products && v.nostrUrl)
-  .map((v) => ({
-    name: v.name,
-    storeUrl: v.storeUrl,
-    logo: v.logo || '',
-    npub: (v.nostrUrl!.match(/npub1[0-9a-z]+/) || [])[0] || '',
-    mode: v.products!.mode || 'curated',
-    include: v.products!.include || [],
-    keywords: v.products!.keywords || [],
-  }))
-  .filter((s) => s.npub);
+// Shape just what the client script needs (npub pulled from nostrUrl, store URL
+// from `url`). Shared with the product detail pages via shopsFromVendors.
+const shops: Shop[] = shopsFromVendors(vendors);
 
 // ---- Build-time prerender ----
 const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];

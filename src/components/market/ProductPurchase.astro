@@ -1,0 +1,208 @@
+---
+// ProductPurchase.astro
+// Client-side, Nostr-native "Buy with Lightning" island. No backend: the invoice
+// is fetched directly from the vendor's own Lightning address (lud16, read from
+// their Nostr kind-0 profile at build time) via LNURL-pay. This is the reference
+// robotechy checkout's payment step, minus the single-merchant order-service:
+// each vendor is paid to their own address automatically.
+//
+// Flow: price → sats (via a public BTC rate for fiat) → resolve lud16 LNURL →
+// request a BOLT11 invoice → show it (copy / open-in-wallet / WebLN pay).
+//
+// PHASE 2 (see PR roadmap): NIP-17 gift-wrapped order (shipping details +
+// line items) to the vendor, payment receipt, and status tracking — mirroring
+// robotechy's kind 16/17 Gamma Markets order protocol. This slice pays the
+// vendor but does not yet transmit the order/shipping info.
+
+interface Props {
+  lud16: string; // vendor Lightning address, e.g. name@domain (may be '')
+  priceAmount: string;
+  priceCurrency: string; // upper-case: SAT, SATS, BTC, USD, GBP, EUR, …
+  title: string;
+  vendorName: string;
+  storeUrl: string; // external fallback
+}
+const { lud16, priceAmount, priceCurrency, title, vendorName, storeUrl } = Astro.props;
+const canPayOnSite = !!lud16 && !!priceAmount;
+---
+
+<div
+  id="product-purchase"
+  class="mt-6"
+  data-lud16={lud16}
+  data-amount={priceAmount}
+  data-currency={priceCurrency}
+  data-title={title}
+  data-vendor={vendorName}
+  data-store={storeUrl}
+>
+  {canPayOnSite ? (
+    <>
+      <button
+        id="buy-btn"
+        type="button"
+        class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-yellow text-gray-900 font-bold rounded-full hover:brightness-95 transition disabled:opacity-60"
+      >
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
+        Buy with Lightning
+      </button>
+      <p class="text-xs text-gray-500 mt-2">
+        Pays {vendorName} directly over the Lightning Network. Non-custodial — no account needed.
+      </p>
+
+      <!-- Invoice panel -->
+      <div id="invoice-panel" class="hidden mt-5 rounded-2xl border border-gray-200 bg-white p-5">
+        <div id="invoice-status" class="text-sm text-gray-600 mb-3">Requesting invoice…</div>
+        <div id="invoice-body" class="hidden">
+          <p class="text-sm text-gray-500 mb-1">Amount</p>
+          <p id="invoice-amount" class="text-lg font-bold text-gray-900 mb-4"></p>
+          <label class="block text-sm text-gray-500 mb-1">Lightning invoice</label>
+          <textarea id="invoice-bolt11" readonly rows="3" class="w-full text-xs font-mono rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 mb-3"></textarea>
+          <div class="flex flex-wrap gap-2">
+            <button id="invoice-copy" type="button" class="px-4 py-2 rounded-full border border-gray-300 text-sm font-semibold hover:border-pink hover:text-pink transition">Copy</button>
+            <a id="invoice-open" href="#" class="px-4 py-2 rounded-full border border-gray-300 text-sm font-semibold hover:border-pink hover:text-pink transition">Open in wallet</a>
+            <button id="invoice-webln" type="button" class="px-4 py-2 rounded-full bg-pink text-white text-sm font-semibold hover:bg-pink/90 transition hidden">Pay with WebLN</button>
+          </div>
+          <p id="invoice-paid" class="hidden mt-3 text-sm font-semibold text-green-600">✓ Paid — thank you! The vendor will be in touch.</p>
+        </div>
+        <div id="invoice-error" class="hidden text-sm text-red-500">
+          Couldn't create an invoice.
+          <a href={storeUrl} target="_blank" rel="noopener noreferrer" class="underline">Buy on the {vendorName} store instead →</a>
+        </div>
+      </div>
+    </>
+  ) : (
+    <a
+      href={storeUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 bg-pink text-white font-bold rounded-full hover:bg-pink/90 transition"
+    >
+      Buy on the {vendorName} store
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </a>
+  )}
+</div>
+
+<script>
+  const root = document.getElementById('product-purchase');
+  if (root && root.dataset.lud16 && root.dataset.amount) {
+    const lud16 = root.dataset.lud16!;
+    const amount = parseFloat(root.dataset.amount || '0');
+    const currency = (root.dataset.currency || '').toUpperCase();
+
+    // Convert the listed price to sats. Sats/BTC are exact; fiat uses a public
+    // BTC spot rate. Returns null if we can't determine an amount.
+    async function toSats(): Promise<number | null> {
+      if (!amount || amount <= 0) return null;
+      if (currency === 'SAT' || currency === 'SATS' || currency === '') return Math.round(amount);
+      if (currency === 'BTC') return Math.round(amount * 1e8);
+      try {
+        const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=BTC');
+        const data = await res.json();
+        const perBtc = parseFloat(data?.data?.rates?.[currency]);
+        if (!isFinite(perBtc) || perBtc <= 0) return null;
+        return Math.round((amount / perBtc) * 1e8);
+      } catch {
+        return null;
+      }
+    }
+
+    // Resolve a Lightning address to its LNURL-pay params, then request a BOLT11
+    // invoice for the given sats.
+    async function requestInvoice(sats: number): Promise<string> {
+      const at = lud16.indexOf('@');
+      if (at < 1) throw new Error('bad lud16');
+      const name = lud16.slice(0, at);
+      const domain = lud16.slice(at + 1);
+      const meta = await (await fetch(`https://${domain}/.well-known/lnurlp/${name}`)).json();
+      if (!meta || !meta.callback) throw new Error('no callback');
+      let msats = sats * 1000;
+      if (meta.minSendable) msats = Math.max(msats, meta.minSendable);
+      if (meta.maxSendable) msats = Math.min(msats, meta.maxSendable);
+      const sep = meta.callback.includes('?') ? '&' : '?';
+      const inv = await (await fetch(`${meta.callback}${sep}amount=${msats}`)).json();
+      if (!inv || !inv.pr) throw new Error('no invoice');
+      return inv.pr as string;
+    }
+
+    function fmtSats(n: number): string {
+      return `${n.toLocaleString()} sats`;
+    }
+
+    const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
+    const panel = document.getElementById('invoice-panel');
+    const statusEl = document.getElementById('invoice-status');
+    const bodyEl = document.getElementById('invoice-body');
+    const errEl = document.getElementById('invoice-error');
+
+    buyBtn?.addEventListener('click', async () => {
+      buyBtn.disabled = true;
+      panel?.classList.remove('hidden');
+      statusEl?.classList.remove('hidden');
+      bodyEl?.classList.add('hidden');
+      errEl?.classList.add('hidden');
+      if (statusEl) statusEl.textContent = 'Working out the amount…';
+
+      const sats = await toSats();
+      if (!sats) {
+        showError();
+        return;
+      }
+      if (statusEl) statusEl.textContent = 'Requesting invoice…';
+      try {
+        const bolt11 = await requestInvoice(sats);
+        showInvoice(bolt11, sats);
+      } catch {
+        showError();
+      } finally {
+        buyBtn.disabled = false;
+      }
+    });
+
+    function showError() {
+      statusEl?.classList.add('hidden');
+      bodyEl?.classList.add('hidden');
+      errEl?.classList.remove('hidden');
+      if (buyBtn) buyBtn.disabled = false;
+    }
+
+    function showInvoice(bolt11: string, sats: number) {
+      statusEl?.classList.add('hidden');
+      errEl?.classList.add('hidden');
+      bodyEl?.classList.remove('hidden');
+      (document.getElementById('invoice-amount') as HTMLElement).textContent = fmtSats(sats);
+      (document.getElementById('invoice-bolt11') as HTMLTextAreaElement).value = bolt11;
+      (document.getElementById('invoice-open') as HTMLAnchorElement).href = `lightning:${bolt11}`;
+
+      const copyBtn = document.getElementById('invoice-copy');
+      copyBtn?.addEventListener(
+        'click',
+        () => {
+          navigator.clipboard?.writeText(bolt11);
+          if (copyBtn) copyBtn.textContent = 'Copied!';
+        },
+        { once: true },
+      );
+
+      const webln = (window as any).webln;
+      const weblnBtn = document.getElementById('invoice-webln') as HTMLButtonElement | null;
+      if (webln && weblnBtn) {
+        weblnBtn.classList.remove('hidden');
+        weblnBtn.addEventListener('click', async () => {
+          weblnBtn.disabled = true;
+          weblnBtn.textContent = 'Paying…';
+          try {
+            await webln.enable();
+            await webln.sendPayment(bolt11);
+            document.getElementById('invoice-paid')?.classList.remove('hidden');
+            weblnBtn.textContent = 'Paid';
+          } catch {
+            weblnBtn.disabled = false;
+            weblnBtn.textContent = 'Pay with WebLN';
+          }
+        });
+      }
+    }
+  }
+</script>

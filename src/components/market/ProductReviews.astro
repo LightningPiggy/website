@@ -1,0 +1,330 @@
+---
+// ProductReviews.astro
+// Client-side product reviews island, Nostr-native and fully decentralized —
+// mirrors the reference robotechy-website approach. Reviews are NIP-99 / Gamma
+// Markets "product review" events (kind 31555):
+//
+//   kind: 31555
+//   tags: [ ['d', 'a:<kind>:<pubkey>:<dtag>'],   // product coordinate
+//           ['rating', '<0..1 float>', 'thumb'],  // overall rating
+//           ['p', '<product author pubkey>'] ]
+//   content: '<free-text review>'
+//
+// The d tag makes a review replaceable per-author (one review per reviewer per
+// product; re-publishing edits it). Reading is public (any relay); submitting
+// needs a NIP-07 signer (Alby, nos2x, …) via window.nostr. Using the same
+// coordinate format as robotechy means reviews are shared across both sites.
+
+interface Props {
+  coord: string; // `<kind>:<pubkey>:<dtag>` from ProductDetail.coord
+  productPubkey: string; // hex author of the product being reviewed
+}
+const { coord, productPubkey } = Astro.props;
+const reviewCoord = `a:${coord}`;
+---
+
+<section
+  id="product-reviews"
+  class="mt-14 pt-10 border-t border-gray-100"
+  data-review-coord={reviewCoord}
+  data-product-pubkey={productPubkey}
+>
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-6">
+    <h2 class="text-2xl font-bold text-gray-900">Reviews</h2>
+    <div id="reviews-aggregate" class="text-sm text-gray-500">Loading reviews…</div>
+  </div>
+
+  <!-- Review list -->
+  <div id="reviews-list" class="space-y-5"></div>
+  <p id="reviews-empty" class="text-gray-500 hidden">No reviews yet — be the first!</p>
+
+  <!-- Write a review -->
+  <div class="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-6">
+    <h3 class="text-lg font-bold text-gray-900 mb-1">Write a review</h3>
+    <p id="review-signin-note" class="text-sm text-gray-500 mb-4">
+      Reviews are signed with your Nostr key. Install a NIP-07 extension
+      (<a href="https://getalby.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby</a>,
+      nos2x, …) to leave one.
+    </p>
+    <form id="review-form" class="space-y-4 hidden">
+      <div>
+        <span class="block text-sm font-medium text-gray-700 mb-1">Your rating</span>
+        <div id="star-input" class="flex gap-1 text-2xl text-gray-300 cursor-pointer select-none" role="radiogroup" aria-label="Rating">
+          {[1, 2, 3, 4, 5].map((n) => (
+            <span class="star" data-value={n} role="radio" aria-label={`${n} star${n > 1 ? 's' : ''}`}>★</span>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label for="review-text" class="block text-sm font-medium text-gray-700 mb-1">Your review</label>
+        <textarea id="review-text" rows="4" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-pink focus:ring-1 focus:ring-pink outline-none" placeholder="What did you think?"></textarea>
+      </div>
+      <div class="flex items-center gap-3">
+        <button type="submit" id="review-submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-pink text-white font-semibold rounded-full hover:bg-pink/90 transition-colors disabled:opacity-50">
+          Publish review
+        </button>
+        <span id="review-status" class="text-sm text-gray-500"></span>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+  const RELAYS = [
+    'wss://relay.damus.io',
+    'wss://nos.lol',
+    'wss://relay.primal.net',
+    'wss://relay.nostr.band',
+  ];
+
+  interface NostrEvent {
+    id?: string;
+    pubkey: string;
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+    sig?: string;
+  }
+
+  const root = document.getElementById('product-reviews');
+  const reviewCoord = root?.dataset.reviewCoord || '';
+  const productPubkey = root?.dataset.productPubkey || '';
+
+  function esc(s: string): string {
+    const d = document.createElement('div');
+    d.textContent = s ?? '';
+    return d.innerHTML;
+  }
+
+  function shortNpub(hex: string): string {
+    return hex ? `${hex.slice(0, 8)}…${hex.slice(-4)}` : 'anon';
+  }
+
+  function ratingToStars(r: number): number {
+    const n = Math.round((isFinite(r) ? r : 0) * 5);
+    return Math.max(0, Math.min(5, n));
+  }
+
+  function starRow(stars: number): string {
+    return (
+      '<span class="text-yellow-500">' +
+      '★'.repeat(stars) +
+      '</span><span class="text-gray-300">' +
+      '★'.repeat(5 - stars) +
+      '</span>'
+    );
+  }
+
+  // Fetch kind 31555 reviews for this product coordinate across all relays,
+  // keeping the newest event per author.
+  function fetchFromRelay(url: string): Promise<NostrEvent[]> {
+    return new Promise((resolve) => {
+      const events: NostrEvent[] = [];
+      let ws: WebSocket | undefined;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        try {
+          ws && ws.close();
+        } catch {}
+        resolve(events);
+      };
+      const timer = window.setTimeout(finish, 6000);
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        finish();
+        return;
+      }
+      const sub = Math.random().toString(36).slice(2, 10);
+      ws.onopen = () =>
+        ws!.send(JSON.stringify(['REQ', sub, { kinds: [31555], '#d': [reviewCoord] }]));
+      ws.onmessage = (e) => {
+        try {
+          const m = JSON.parse(e.data);
+          if (m[0] === 'EVENT' && m[1] === sub) events.push(m[2]);
+          if (m[0] === 'EOSE' && m[1] === sub) finish();
+        } catch {}
+      };
+      ws.onerror = () => finish();
+    });
+  }
+
+  function parseReview(ev: NostrEvent) {
+    const ratingTag = ev.tags.find((t) => t[0] === 'rating');
+    const rating = ratingTag ? parseFloat(ratingTag[1]) : 0;
+    return {
+      pubkey: ev.pubkey,
+      stars: ratingToStars(rating),
+      text: ev.content || '',
+      createdAt: ev.created_at || 0,
+    };
+  }
+
+  async function loadReviews() {
+    const results = await Promise.all(RELAYS.map((r) => fetchFromRelay(r)));
+    // newest event per author
+    const byAuthor = new Map<string, NostrEvent>();
+    for (const ev of results.flat()) {
+      const ex = byAuthor.get(ev.pubkey);
+      if (!ex || ev.created_at > ex.created_at) byAuthor.set(ev.pubkey, ev);
+    }
+    const reviews = [...byAuthor.values()].map(parseReview).sort((a, b) => b.createdAt - a.createdAt);
+
+    const listEl = document.getElementById('reviews-list');
+    const emptyEl = document.getElementById('reviews-empty');
+    const aggEl = document.getElementById('reviews-aggregate');
+
+    if (aggEl) {
+      if (reviews.length) {
+        const avg = reviews.reduce((s, r) => s + r.stars, 0) / reviews.length;
+        aggEl.innerHTML = `${starRow(Math.round(avg))} <span class="ml-1 font-semibold text-gray-700">${avg.toFixed(1)}</span> <span class="text-gray-400">(${reviews.length})</span>`;
+      } else {
+        aggEl.textContent = 'No ratings yet';
+      }
+    }
+
+    if (listEl) {
+      if (!reviews.length) {
+        emptyEl?.classList.remove('hidden');
+        listEl.innerHTML = '';
+      } else {
+        emptyEl?.classList.add('hidden');
+        listEl.innerHTML = reviews
+          .map((r) => {
+            const date = r.createdAt ? new Date(r.createdAt * 1000).toLocaleDateString() : '';
+            return `
+              <div class="rounded-xl border border-gray-200 bg-white p-4">
+                <div class="flex items-center justify-between gap-2 mb-1">
+                  <span class="text-sm">${starRow(r.stars)}</span>
+                  <span class="text-xs text-gray-400">${esc(date)}</span>
+                </div>
+                <p class="text-xs text-gray-400 mb-2 font-mono">${esc(shortNpub(r.pubkey))}</p>
+                ${r.text ? `<p class="text-sm text-gray-700 whitespace-pre-wrap">${esc(r.text)}</p>` : ''}
+              </div>`;
+          })
+          .join('');
+      }
+    }
+  }
+
+  // ---- Submit (NIP-07) ----
+  let selectedStars = 0;
+  function wireForm() {
+    const nostr = (window as any).nostr;
+    const form = document.getElementById('review-form') as HTMLFormElement | null;
+    const note = document.getElementById('review-signin-note');
+    if (!nostr || !form) return; // no signer → leave the note visible, form hidden
+
+    note?.classList.add('hidden');
+    form.classList.remove('hidden');
+
+    const stars = Array.from(document.querySelectorAll('#star-input .star')) as HTMLElement[];
+    const paint = (val: number) => {
+      stars.forEach((s) => {
+        const v = Number(s.dataset.value);
+        s.classList.toggle('text-yellow-500', v <= val);
+        s.classList.toggle('text-gray-300', v > val);
+      });
+    };
+    stars.forEach((s) => {
+      s.addEventListener('mouseenter', () => paint(Number(s.dataset.value)));
+      s.addEventListener('mouseleave', () => paint(selectedStars));
+      s.addEventListener('click', () => {
+        selectedStars = Number(s.dataset.value);
+        paint(selectedStars);
+      });
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById('review-status');
+      const submitBtn = document.getElementById('review-submit') as HTMLButtonElement | null;
+      const text = (document.getElementById('review-text') as HTMLTextAreaElement)?.value.trim() || '';
+      if (!selectedStars) {
+        if (statusEl) statusEl.textContent = 'Pick a star rating first.';
+        return;
+      }
+      if (submitBtn) submitBtn.disabled = true;
+      if (statusEl) statusEl.textContent = 'Signing…';
+      try {
+        const pubkey = await nostr.getPublicKey();
+        const unsigned = {
+          kind: 31555,
+          created_at: Math.floor(Date.now() / 1000),
+          pubkey,
+          tags: [
+            ['d', reviewCoord],
+            ['rating', (selectedStars / 5).toFixed(2), 'thumb'],
+            ['p', productPubkey],
+          ],
+          content: text,
+        };
+        const signed = await nostr.signEvent(unsigned);
+        if (statusEl) statusEl.textContent = 'Publishing…';
+        await publish(signed);
+        if (statusEl) statusEl.textContent = 'Thanks — your review is live!';
+        (document.getElementById('review-text') as HTMLTextAreaElement).value = '';
+        selectedStars = 0;
+        paint(0);
+        await loadReviews();
+      } catch (err) {
+        if (statusEl) statusEl.textContent = 'Could not publish — please try again.';
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    });
+  }
+
+  // Publish a signed event to the relays; resolve once at least one accepts (or
+  // after a short grace period).
+  function publish(signed: NostrEvent): Promise<void> {
+    return new Promise((resolve) => {
+      let settled = false;
+      let accepted = 0;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      const overall = window.setTimeout(done, 4000);
+      RELAYS.forEach((url) => {
+        let ws: WebSocket;
+        try {
+          ws = new WebSocket(url);
+        } catch {
+          return;
+        }
+        ws.onopen = () => ws.send(JSON.stringify(['EVENT', signed]));
+        ws.onmessage = (e) => {
+          try {
+            const m = JSON.parse(e.data);
+            if (m[0] === 'OK' && m[1] === signed.id) {
+              accepted++;
+              try {
+                ws.close();
+              } catch {}
+              if (accepted >= 1) {
+                clearTimeout(overall);
+                done();
+              }
+            }
+          } catch {}
+        };
+        ws.onerror = () => {
+          try {
+            ws.close();
+          } catch {}
+        };
+      });
+    });
+  }
+
+  if (reviewCoord) {
+    loadReviews();
+    wireForm();
+  }
+</script>

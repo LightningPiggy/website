@@ -25,7 +25,9 @@ export interface NostrEvent {
 }
 
 // A product as rendered in the grid. priceAmount/priceCurrency are the raw
-// values (for JSON-LD); `price` is the display string.
+// values (for JSON-LD); `price` is the display string. `productUrl` is the
+// internal detail page (/market/p/<slug>); `storeUrl` is the vendor's external
+// store (used as a fallback / for the detail page's "buy on vendor store").
 export interface Product {
   title: string;
   price: string;
@@ -34,8 +36,32 @@ export interface Product {
   image: string;
   summary: string;
   storeUrl: string;
+  productUrl: string;
   vendor: string;
   vendorLogo: string;
+  createdAt: number;
+}
+
+// The full product used to render a detail page (/market/p/<slug>). Mirrors the
+// NIP-99 (kind 30402) / NIP-15 (kind 30018) event as closely as the reference
+// robotechy-website ProductData does, so per-product pages have images, specs,
+// a long description, etc. Built at build time in the [slug].astro getStaticPaths.
+export interface ProductDetail {
+  pubkey: string; // hex author (vendor)
+  dtag: string; // 'd' tag (stable product id)
+  kind: number; // 30402 or 30018
+  coord: string; // addressable coordinate: `<kind>:<pubkey>:<dtag>`
+  title: string;
+  summary: string;
+  description: string; // long-form body (event content for 30402)
+  price: string; // display string, e.g. "£29"
+  priceAmount: string; // raw amount
+  priceCurrency: string; // upper-cased currency code
+  images: string[]; // sanitized image URLs (first is primary)
+  specs: [string, string][]; // 'spec' tag key/value pairs
+  categories: string[]; // 't' tag hashtags
+  location: string; // 'location' tag
+  stock: string; // 'stock' tag ('' = unspecified/unlimited)
   createdAt: number;
 }
 
@@ -198,10 +224,51 @@ export function productMatches(ev: NostrEvent, seed: Seed): boolean {
   return true; // 'all'
 }
 
+// ---------- slugs / vendor shaping ----------
+// URL-safe kebab-case slug from arbitrary text.
+export function kebab(s: string): string {
+  return String(s ?? '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Stable, unique-per-product slug for the /market/p/<slug> detail page. Keyed on
+// the vendor name + the product's `d` tag (stable id), so it doesn't change when
+// the title is edited.
+export function productSlug(vendorName: string, dtag: string): string {
+  return `${kebab(vendorName)}--${kebab(dtag)}`;
+}
+
+// Shape src/data/vendors.json entries into the Shop list the shop grid + product
+// pages both consume. Only vendors that opt in with a `products` block and have
+// an npub are included. Reads the store address from `url` (the field name used
+// in vendors.json).
+export function shopsFromVendors(vendors: any[]): Shop[] {
+  return (vendors || [])
+    .filter((v) => v && v.products && v.nostrUrl)
+    .map((v) => ({
+      name: v.name,
+      storeUrl: v.url || '',
+      logo: v.logo || '',
+      npub: (String(v.nostrUrl).match(/npub1[0-9a-z]+/) || [])[0] || '',
+      mode: v.products.mode || 'curated',
+      include: v.products.include || [],
+      keywords: v.products.keywords || [],
+    }))
+    .filter((s) => s.npub);
+}
+
 // ---------- transforms (events -> view models) ----------
-// Build the flat product grid (NostrShop). Mirrors the client init() exactly so
-// build-time and live renders agree.
-export function buildShopProducts(events: NostrEvent[], shops: Shop[]): Product[] {
+// Select the newest, matching, de-duplicated product events for each shop, in
+// display order. Shared by buildShopProducts (grid) and the [slug].astro
+// getStaticPaths (detail pages) so the two never disagree about which products
+// exist or how they're keyed.
+export function selectShopEvents(
+  events: NostrEvent[],
+  shops: Shop[],
+): { ev: NostrEvent; shop: Shop }[] {
   const newest = new Map<string, NostrEvent>();
   for (const ev of events) {
     if (ev.kind !== 30402 && ev.kind !== 30018) continue;
@@ -211,7 +278,7 @@ export function buildShopProducts(events: NostrEvent[], shops: Shop[]): Product[
     if (!ex || ev.created_at > ex.created_at) newest.set(key, ev);
   }
 
-  const products: Product[] = [];
+  const out: { ev: NostrEvent; shop: Shop }[] = [];
   const seenTitles = new Set<string>();
   const evList = [...newest.values()];
   for (const shop of shops) {
@@ -225,22 +292,86 @@ export function buildShopProducts(events: NostrEvent[], shops: Shop[]): Product[
       const titleKey = `${hex}:${title.toLowerCase()}`;
       if (seenTitles.has(titleKey)) continue;
       seenTitles.add(titleKey);
-      const priceTag = ev.tags.find((x) => x[0] === 'price');
-      products.push({
-        title,
-        price: formatPrice(ev.tags),
-        priceAmount: priceTag?.[1] || '',
-        priceCurrency: (priceTag?.[2] || '').toUpperCase(),
-        image: sanitizeUrl(tagVal(ev.tags, 'image') || ''),
-        summary: tagVal(ev.tags, 'summary') || ev.content || '',
-        storeUrl: shop.storeUrl,
-        vendor: shop.name,
-        vendorLogo: sanitizeUrl(shop.logo) || (shop.logo.startsWith('/') ? shop.logo : ''),
-        createdAt: ev.created_at,
-      });
+      out.push({ ev, shop });
     }
   }
-  return products;
+  return out;
+}
+
+// Build the flat product grid (NostrShop). Mirrors the client init() exactly so
+// build-time and live renders agree.
+export function buildShopProducts(events: NostrEvent[], shops: Shop[]): Product[] {
+  return selectShopEvents(events, shops).map(({ ev, shop }) => {
+    const priceTag = ev.tags.find((x) => x[0] === 'price');
+    const dtag = tagVal(ev.tags, 'd') || '';
+    return {
+      title: tagVal(ev.tags, 'title') || '',
+      price: formatPrice(ev.tags),
+      priceAmount: priceTag?.[1] || '',
+      priceCurrency: (priceTag?.[2] || '').toUpperCase(),
+      image: sanitizeUrl(tagVal(ev.tags, 'image') || ''),
+      summary: tagVal(ev.tags, 'summary') || ev.content || '',
+      storeUrl: shop.storeUrl,
+      productUrl: `/market/p/${productSlug(shop.name, dtag)}`,
+      vendor: shop.name,
+      vendorLogo: sanitizeUrl(shop.logo) || (shop.logo.startsWith('/') ? shop.logo : ''),
+      createdAt: ev.created_at,
+    };
+  });
+}
+
+// Parse a product event into the full ProductDetail used by the detail page.
+// Tolerant of both NIP-99 (kind 30402, tag-based) and NIP-15 (kind 30018,
+// JSON-in-content) shapes.
+export function parseProductDetail(ev: NostrEvent): ProductDetail {
+  const dtag = tagVal(ev.tags, 'd') || '';
+  const priceTag = ev.tags.find((x) => x[0] === 'price');
+
+  // NIP-15 (30018) carries the bulk of its data as JSON in content.
+  let json: any = {};
+  if (ev.kind === 30018) {
+    try {
+      json = JSON.parse(ev.content) || {};
+    } catch {}
+  }
+
+  const images = tagsAll(ev.tags, 'image')
+    .map(sanitizeUrl)
+    .filter(Boolean);
+  if (!images.length) {
+    const fromJson = Array.isArray(json.images)
+      ? json.images
+      : json.image
+        ? [json.image]
+        : [];
+    for (const u of fromJson) {
+      const s = sanitizeUrl(u);
+      if (s) images.push(s);
+    }
+  }
+
+  const specs = ev.tags
+    .filter((t) => t[0] === 'spec' && t[1])
+    .map((t) => [t[1], t[2] || ''] as [string, string]);
+
+  return {
+    pubkey: ev.pubkey,
+    dtag,
+    kind: ev.kind,
+    coord: `${ev.kind}:${ev.pubkey}:${dtag}`,
+    title: tagVal(ev.tags, 'title') || json.name || 'Untitled product',
+    summary: tagVal(ev.tags, 'summary') || json.summary || '',
+    description: ev.kind === 30018 ? json.description || '' : ev.content || '',
+    price: formatPrice(ev.tags) || (json.price ? String(json.price) : ''),
+    priceAmount: priceTag?.[1] || (json.price != null ? String(json.price) : ''),
+    priceCurrency: (priceTag?.[2] || json.currency || '').toUpperCase(),
+    images,
+    specs,
+    categories: tagsAll(ev.tags, 't'),
+    location: tagVal(ev.tags, 'location') || '',
+    stock: tagVal(ev.tags, 'stock') || (json.quantity != null ? String(json.quantity) : ''),
+    createdAt: ev.created_at,
+  };
 }
 
 // Build the vendor cards (NostrMarket). Mirrors the client init() exactly.
@@ -332,8 +463,14 @@ export function shopCardHtml(p: Product): string {
     : `<span class="w-5 h-5 rounded-full bg-pink/10 text-pink text-[10px] font-bold flex items-center justify-center flex-shrink-0">${escapeHtml(
         (p.vendor || '?').charAt(0).toUpperCase(),
       )}</span>`;
+  // Prefer the internal product detail page; fall back to the vendor store URL
+  // (external) only if we somehow have no product URL.
+  const internal = !!p.productUrl;
+  const href = p.productUrl || p.storeUrl;
+  const linkAttrs = internal ? '' : ' target="_blank" rel="noopener noreferrer"';
+  const cta = internal ? 'View' : 'Buy';
   return `
-      <a href="${escapeHtml(p.storeUrl)}" target="_blank" rel="noopener noreferrer"
+      <a href="${escapeHtml(href)}"${linkAttrs}
          class="group flex flex-col bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all hover:border-pink hover:shadow-lg">
         <div class="relative aspect-square bg-gray-50 overflow-hidden">${img}</div>
         <div class="flex flex-col flex-1 p-4">
@@ -346,7 +483,7 @@ export function shopCardHtml(p: Product): string {
             ${logo}
             <span class="text-xs text-gray-500 truncate flex-1">${escapeHtml(p.vendor)}</span>
             <span class="inline-flex items-center gap-1 text-sm font-semibold text-pink group-hover:gap-2 transition-all whitespace-nowrap">
-              Buy
+              ${cta}
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
             </span>
           </div>

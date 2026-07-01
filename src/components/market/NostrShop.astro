@@ -120,6 +120,21 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
     });
   }
 
+  // --- Merchant filter (driven by MerchantFilter via the `market:filter` event) ---
+  let activeVendor = '';
+  function applyMarketFilter() {
+    const grid = document.getElementById('shop-grid');
+    if (!grid) return;
+    Array.from(grid.children).forEach((card) => {
+      const el = card as HTMLElement;
+      el.style.display = !activeVendor || el.dataset.vendor === activeVendor ? '' : 'none';
+    });
+  }
+  window.addEventListener('market:filter', (e) => {
+    activeVendor = ((e as CustomEvent).detail as string) || '';
+    applyMarketFilter();
+  });
+
   async function init() {
     const root = document.getElementById('nostr-shop');
     if (!root) return;
@@ -152,6 +167,7 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
     if (gridEl) {
       gridEl.innerHTML = products.map(shopCardHtml).join('');
       gridEl.classList.remove('hidden');
+      applyMarketFilter(); // preserve any active filter across the live refresh
     }
   }
 

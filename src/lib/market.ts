@@ -471,7 +471,7 @@ export function shopCardHtml(p: Product): string {
   const linkAttrs = internal ? '' : ' target="_blank" rel="noopener noreferrer"';
   const cta = internal ? 'View' : 'Buy';
   return `
-      <a href="${escapeHtml(href)}"${linkAttrs}
+      <a href="${escapeHtml(href)}"${linkAttrs} data-vendor="${escapeHtml(p.vendor)}"
          class="group flex flex-col bg-white rounded-2xl border border-gray-200 overflow-hidden transition-all hover:border-pink hover:shadow-lg">
         <div class="relative aspect-square bg-gray-50 overflow-hidden">${img}</div>
         <div class="flex flex-col flex-1 p-4">

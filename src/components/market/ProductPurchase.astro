@@ -96,15 +96,15 @@ const canPayOnSite = !!lud16 && !!priceAmount;
                 <span id="ship-who" class="text-sm"></span>
                 <button type="button" id="ship-auth-action" class="text-sm font-semibold text-pink hover:underline whitespace-nowrap"></button>
               </div>
-              <p class="text-sm text-gray-500">Where should {vendorName} ship this?</p>
+              <p class="text-sm text-gray-500">Where should {vendorName} ship this? <span class="text-gray-400">(<span class="text-pink">*</span> required)</span></p>
               <div class="grid grid-cols-2 gap-3">
-                <input id="ship-name" required placeholder="Full name" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
-                <input id="ship-email" type="email" required placeholder="Email" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
-                <input id="ship-addr1" required placeholder="Address" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-name" required placeholder="Full name *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-email" type="email" placeholder="Email *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-addr1" required placeholder="Address *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <input id="ship-addr2" placeholder="Address line 2 (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
-                <input id="ship-city" required placeholder="City" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
-                <input id="ship-postcode" required placeholder="Post code" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
-                <input id="ship-country" required placeholder="Country" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-city" required placeholder="City *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-postcode" required placeholder="Post code *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-country" required placeholder="Country *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <textarea id="ship-note" rows="2" placeholder="Note to vendor (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none"></textarea>
               </div>
               <button type="submit" id="ship-submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition disabled:opacity-60">
@@ -200,20 +200,30 @@ const canPayOnSite = !!lud16 && !!priceAmount;
     const shipBanner = document.getElementById('ship-auth-banner');
     const shipAction = document.getElementById('ship-auth-action');
     const shipSubmit = document.getElementById('ship-submit');
+    const shipEmail = document.getElementById('ship-email') as HTMLInputElement | null;
 
-    // Make the guest-vs-signed-in state unmistakable: a banner + a submit label
-    // that changes ("Continue as guest" vs "Continue to payment").
+    // Make the guest-vs-signed-in state unmistakable: a banner, a submit label
+    // that changes, and email required for guests (their only contact) but
+    // optional for signed-in buyers (the vendor can reply over Nostr).
     function renderShipAuth(session: NostrSession | null) {
       if (session) {
         if (shipWho) shipWho.innerHTML = `Signed in as <strong>${session.name || shortId(session.pubkey)}</strong>`;
         if (shipAction) shipAction.textContent = 'Sign out';
         if (shipBanner) shipBanner.className = 'flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-green-800';
         if (shipSubmit) shipSubmit.textContent = 'Continue to payment';
+        if (shipEmail) {
+          shipEmail.required = false;
+          shipEmail.placeholder = 'Email (optional)';
+        }
       } else {
         if (shipWho) shipWho.innerHTML = '👤 Checking out as <strong>guest</strong>';
         if (shipAction) shipAction.textContent = 'Sign in';
         if (shipBanner) shipBanner.className = 'flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800';
         if (shipSubmit) shipSubmit.textContent = 'Continue as guest';
+        if (shipEmail) {
+          shipEmail.required = true;
+          shipEmail.placeholder = 'Email *';
+        }
       }
     }
     window.addEventListener('nostr:auth', (e) => renderShipAuth((e as CustomEvent).detail));

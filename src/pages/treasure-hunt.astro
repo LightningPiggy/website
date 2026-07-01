@@ -30,7 +30,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
   </style>
 
-  <div id="piglets-root" class="relative w-full" style="height: calc(100vh - 4rem);">
+  <!-- 100dvh (dynamic viewport height) so mobile Safari's collapsing address bar
+       doesn't cut off the bottom of the map; 100vh kept first as a fallback for
+       older browsers that don't support dvh. -->
+  <div id="piglets-root" class="relative w-full" style="height: calc(100vh - 4rem); height: calc(100dvh - 4rem);">
     <!-- Map fills the container. Position/inset are set INLINE (not via Tailwind
          `absolute inset-0`) on purpose: MapLibre adds a `.maplibregl-map` class
          whose stylesheet sets `position: relative`, and because that stylesheet
@@ -1092,6 +1095,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           center: [0, 20],
           zoom: 1.5,
           attributionControl: true,
+          // Don't hijack page scroll: require Ctrl+wheel (desktop) or two fingers
+          // (mobile touch-pan) to interact with the map, so the page scrolls freely.
+          cooperativeGestures: true,
         });
       } catch (e) {
         console.error('Piglets map: failed to create WebGL map context:', e);

@@ -1,0 +1,126 @@
+---
+// NostrSignIn.astro
+// "Sign in with Nostr" card (mirrors the reference robotechy-website login).
+// Uses a NIP-07 browser extension (Alby, nos2x, …) — the extension holds the
+// key and does the signing, so there are no secrets on this site. Signing in
+// lets you leave reviews/comments and (later) check out. Session + profile are
+// cached in localStorage and broadcast via the `nostr:auth` event so the
+// reviews/comments forms can post as you.
+---
+
+<div id="nostr-signin" class="rounded-2xl border border-gray-200 p-8 md:p-10">
+  <!-- Signed-out -->
+  <div id="signin-out">
+    <div class="flex items-start gap-3 mb-2">
+      <svg class="w-7 h-7 text-pink flex-shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
+      <div>
+        <h2 class="text-2xl font-bold text-gray-900">Sign in with Nostr</h2>
+        <p class="text-gray-600 mt-1 max-w-2xl">
+          Bring your own identity. Sign in with your Nostr key to leave reviews,
+          comment, and buy — no account, no password, you stay in control.
+        </p>
+      </div>
+    </div>
+
+    <div class="mt-6 flex flex-wrap items-center gap-3">
+      <button
+        id="signin-btn"
+        type="button"
+        class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors focus:outline-none focus:ring-2 focus:ring-pink/50"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H3m0 0l4-4m-4 4l4 4m6-11h5a2 2 0 012 2v10a2 2 0 01-2 2h-5"/></svg>
+        Connect Nostr extension
+      </button>
+      <span id="signin-msg" class="text-sm text-gray-500"></span>
+    </div>
+
+    <p id="signin-noext" class="hidden text-sm text-gray-500 mt-3">
+      No Nostr extension detected. Install
+      <a href="https://getalby.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby</a>
+      or
+      <a href="https://github.com/fiatjaf/nos2x" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">nos2x</a>
+      (a NIP-07 signer), then try again.
+    </p>
+  </div>
+
+  <!-- Signed-in -->
+  <div id="signin-in" class="hidden">
+    <div class="flex items-center gap-4">
+      <div class="w-14 h-14 rounded-full overflow-hidden bg-pink/10 flex-shrink-0">
+        <img id="signin-avatar" src="" alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover hidden" />
+        <div id="signin-initial" class="w-full h-full flex items-center justify-center text-pink text-xl font-bold"></div>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm text-gray-500">Signed in as</p>
+        <p id="signin-name" class="text-lg font-bold text-gray-900 truncate"></p>
+      </div>
+      <button
+        id="signout-btn"
+        type="button"
+        class="px-4 py-2 rounded-full border border-gray-300 text-sm font-semibold text-gray-700 hover:border-pink hover:text-pink transition"
+      >
+        Sign out
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { getSession, login, logout, shortId, type NostrSession } from '../../lib/nostrAuth';
+
+  const outEl = document.getElementById('signin-out');
+  const inEl = document.getElementById('signin-in');
+  const btn = document.getElementById('signin-btn') as HTMLButtonElement | null;
+  const signoutBtn = document.getElementById('signout-btn');
+  const msg = document.getElementById('signin-msg');
+  const noext = document.getElementById('signin-noext');
+
+  function render(session: NostrSession | null) {
+    if (session) {
+      outEl?.classList.add('hidden');
+      inEl?.classList.remove('hidden');
+      const name = session.name || shortId(session.pubkey);
+      (document.getElementById('signin-name') as HTMLElement).textContent = name;
+      const avatar = document.getElementById('signin-avatar') as HTMLImageElement;
+      const initial = document.getElementById('signin-initial') as HTMLElement;
+      if (session.picture) {
+        avatar.src = session.picture;
+        avatar.classList.remove('hidden');
+        initial.classList.add('hidden');
+      } else {
+        avatar.classList.add('hidden');
+        initial.classList.remove('hidden');
+        initial.textContent = (name || '?').charAt(0).toUpperCase();
+      }
+    } else {
+      inEl?.classList.add('hidden');
+      outEl?.classList.remove('hidden');
+    }
+  }
+
+  btn?.addEventListener('click', async () => {
+    if (msg) msg.textContent = '';
+    noext?.classList.add('hidden');
+    if (!(window as any).nostr) {
+      noext?.classList.remove('hidden');
+      return;
+    }
+    btn.disabled = true;
+    if (msg) msg.textContent = 'Waiting for your extension…';
+    try {
+      await login();
+      if (msg) msg.textContent = '';
+    } catch (e: any) {
+      if (e?.message === 'no-extension') noext?.classList.remove('hidden');
+      else if (msg) msg.textContent = 'Sign-in was cancelled.';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  signoutBtn?.addEventListener('click', () => logout());
+
+  // React to auth changes from anywhere (this card or another island).
+  window.addEventListener('nostr:auth', (e) => render((e as CustomEvent).detail));
+  render(getSession());
+</script>

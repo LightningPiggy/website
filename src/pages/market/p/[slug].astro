@@ -22,6 +22,7 @@ import {
   selectShopEvents,
   parseProductDetail,
   productSlug,
+  sanitizeUrl,
   type ProductDetail,
 } from '../../../lib/market';
 import { fetchMarketEvents } from '../../../lib/marketServer';
@@ -33,29 +34,38 @@ export async function getStaticPaths() {
   const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];
   const events = await fetchMarketEvents(authors, [0, 30402, 30018]);
 
-  // Vendor Lightning address (lud16) from the newest kind-0 profile per author.
-  const lud16ByPubkey = new Map<string, string>();
+  // Merchant profile (Lightning address, avatar, name) from the newest kind-0
+  // event per author. Used to pay the vendor and to show their real Nostr
+  // identity on the page.
+  const profileByPubkey = new Map<string, { lud16: string; picture: string; name: string }>();
   const profileAt = new Map<string, number>();
   for (const ev of events) {
     if (ev.kind !== 0) continue;
     if ((profileAt.get(ev.pubkey) || 0) >= ev.created_at) continue;
     try {
       const p = JSON.parse(ev.content);
-      lud16ByPubkey.set(ev.pubkey, p.lud16 || p.lud06 || '');
+      profileByPubkey.set(ev.pubkey, {
+        lud16: p.lud16 || p.lud06 || '',
+        picture: p.picture || '',
+        name: p.display_name || p.name || '',
+      });
       profileAt.set(ev.pubkey, ev.created_at);
     } catch {}
   }
 
   return selectShopEvents(events, shops).map(({ ev, shop }) => {
     const detail = parseProductDetail(ev);
+    const prof = profileByPubkey.get(ev.pubkey);
     return {
+      // Slug keeps the JSON vendor name so it matches the grid link exactly.
       params: { slug: productSlug(shop.name, detail.dtag) },
       props: {
         detail,
-        vendorName: shop.name,
+        vendorName: prof?.name || shop.name,
+        vendorPicture: sanitizeUrl(prof?.picture || '') || '',
         vendorLogo: shop.logo,
         storeUrl: shop.storeUrl,
-        lud16: lud16ByPubkey.get(ev.pubkey) || '',
+        lud16: prof?.lud16 || '',
       },
     };
   });
@@ -64,12 +74,15 @@ export async function getStaticPaths() {
 interface Props {
   detail: ProductDetail;
   vendorName: string;
+  vendorPicture: string;
   vendorLogo: string;
   storeUrl: string;
   lud16: string;
 }
 
-const { detail, vendorName, vendorLogo, storeUrl, lud16 } = Astro.props;
+const { detail, vendorName, vendorPicture, vendorLogo, storeUrl, lud16 } = Astro.props;
+// Prefer the merchant's live Nostr profile picture; fall back to the JSON logo.
+const merchantImg = vendorPicture || vendorLogo || '';
 
 // JSON-LD Product for SEO.
 const jsonLd: any = {
@@ -106,8 +119,8 @@ if (detail.priceAmount) {
     </a>
 
     <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
-      <!-- Gallery -->
-      <div>
+      <!-- Gallery: main image + thumbnail grid (mirrors robotechy) -->
+      <div class="space-y-3">
         <div class="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
           {detail.images[0] ? (
             <img id="main-image" src={detail.images[0]} alt={detail.title} referrerpolicy="no-referrer" class="w-full h-full object-cover" />
@@ -116,9 +129,16 @@ if (detail.priceAmount) {
           )}
         </div>
         {detail.images.length > 1 && (
-          <div class="mt-3 grid grid-cols-5 gap-2">
-            {detail.images.slice(0, 5).map((src) => (
-              <button type="button" class="thumb aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-pink" data-src={src}>
+          <div class="grid grid-cols-4 gap-2">
+            {detail.images.slice(0, 8).map((src, i) => (
+              <button
+                type="button"
+                class:list={[
+                  'thumb aspect-square rounded-lg overflow-hidden border-2 transition-all',
+                  i === 0 ? 'border-pink' : 'border-gray-200 hover:border-gray-300',
+                ]}
+                data-src={src}
+              >
                 <img src={src} alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
               </button>
             ))}
@@ -128,11 +148,19 @@ if (detail.priceAmount) {
 
       <!-- Info -->
       <div>
-        <div class="flex items-center gap-2 mb-3">
-          {vendorLogo && (
-            <img src={vendorLogo} alt={vendorName} referrerpolicy="no-referrer" class="w-6 h-6 rounded-full object-cover" />
-          )}
-          <span class="text-sm text-gray-500">{vendorName}</span>
+        <!-- Merchant: live Nostr profile picture (circular) + name -->
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full overflow-hidden bg-pink/10 flex-shrink-0 flex items-center justify-center">
+            {merchantImg ? (
+              <img src={merchantImg} alt={vendorName} referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+            ) : (
+              <span class="text-pink font-bold">{(vendorName || '?').charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs text-gray-400 leading-none mb-1">Sold by</p>
+            <span class="text-sm font-semibold text-gray-900 truncate">{vendorName}</span>
+          </div>
         </div>
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{detail.title}</h1>
         {detail.price && <p class="text-2xl font-bold text-pink mb-4">{detail.price}</p>}
@@ -191,12 +219,19 @@ if (detail.priceAmount) {
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <script>
-    // Thumbnail → main image swap.
+    // Thumbnail → main image swap, with active-border highlight.
     const main = document.getElementById('main-image') as HTMLImageElement | null;
-    document.querySelectorAll('.thumb').forEach((btn) => {
+    const thumbs = Array.from(document.querySelectorAll('.thumb')) as HTMLElement[];
+    thumbs.forEach((btn) => {
       btn.addEventListener('click', () => {
-        const src = (btn as HTMLElement).dataset.src;
+        const src = btn.dataset.src;
         if (main && src) main.src = src;
+        thumbs.forEach((b) => {
+          b.classList.remove('border-pink');
+          b.classList.add('border-gray-200');
+        });
+        btn.classList.add('border-pink');
+        btn.classList.remove('border-gray-200');
       });
     });
   </script>

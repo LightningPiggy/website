@@ -294,11 +294,15 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         await sendGiftWrappedDM(vendorPubkey, orderMessage(orderId, sats, bolt11));
       } catch (err: any) {
         submitBtn.disabled = false;
+        console.error('[order] gift-wrap send failed:', err);
         if (err?.message === 'no-nip44') {
           shipStatus.textContent =
             'Your Nostr signer can’t send encrypted DMs (NIP-44). Try Alby, or use the vendor store.';
+        } else if (err?.message === 'not-signed-in') {
+          shipStatus.textContent = 'Please sign in and try again.';
+          openLogin();
         } else {
-          shipStatus.textContent = 'Could not send your order privately. Please try again.';
+          shipStatus.textContent = `Could not send your order privately (${err?.message || 'unknown error'}). Please try again.`;
         }
         return;
       }

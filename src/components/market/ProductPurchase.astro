@@ -52,7 +52,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       </button>
       <p class="text-xs text-gray-500 mt-2.5 max-w-sm flex items-center gap-1.5">
         <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-        Pays {vendorName} directly over Lightning — non-custodial, no account needed.
+        Paid directly to {vendorName} over Lightning — no middleman, no sign-up.
       </p>
 
       <!-- Checkout pop-up -->
@@ -72,10 +72,11 @@ const canPayOnSite = !!lud16 && !!priceAmount;
           <!-- Step 1: shipping (guest by default; sign-in optional) -->
           <div id="view-shipping">
             <form id="ship-form" class="space-y-3">
-              <div class="flex items-center justify-between gap-2">
-                <p class="text-sm text-gray-500">Where should {vendorName} ship this?</p>
-                <span id="ship-who" class="text-xs text-gray-400 whitespace-nowrap"></span>
+              <div id="ship-auth-banner" class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+                <span id="ship-who" class="text-sm"></span>
+                <button type="button" id="ship-auth-action" class="text-sm font-semibold text-pink hover:underline whitespace-nowrap"></button>
               </div>
+              <p class="text-sm text-gray-500">Where should {vendorName} ship this?</p>
               <div class="grid grid-cols-2 gap-3">
                 <input id="ship-name" required placeholder="Full name" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <input id="ship-email" type="email" required placeholder="Email" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
@@ -134,7 +135,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
 </div>
 
 <script>
-  import { getSession, openLogin, shortId, type NostrSession } from '../../lib/nostrAuth';
+  import { getSession, openLogin, logout, shortId, type NostrSession } from '../../lib/nostrAuth';
   import { sendGiftWrappedDM } from '../../lib/nostrOrder';
 
   const root = document.getElementById('product-purchase');
@@ -176,20 +177,29 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
     });
 
-    // Guest by default; the who-line shows how the order will be sent and offers
-    // an optional sign-in.
+    const shipBanner = document.getElementById('ship-auth-banner');
+    const shipAction = document.getElementById('ship-auth-action');
+    const shipSubmit = document.getElementById('ship-submit');
+
+    // Make the guest-vs-signed-in state unmistakable: a banner + a submit label
+    // that changes ("Continue as guest" vs "Continue to payment").
     function renderShipAuth(session: NostrSession | null) {
-      if (!shipWho) return;
       if (session) {
-        shipWho.textContent = 'Signed in as ' + (session.name || shortId(session.pubkey));
+        if (shipWho) shipWho.innerHTML = `Signed in as <strong>${session.name || shortId(session.pubkey)}</strong>`;
+        if (shipAction) shipAction.textContent = 'Sign out';
+        if (shipBanner) shipBanner.className = 'flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-green-800';
+        if (shipSubmit) shipSubmit.textContent = 'Continue to payment';
       } else {
-        shipWho.innerHTML =
-          'Guest · <button type="button" id="ship-signin-link" class="underline hover:text-pink">sign in</button>';
+        if (shipWho) shipWho.innerHTML = '👤 Checking out as <strong>guest</strong>';
+        if (shipAction) shipAction.textContent = 'Sign in';
+        if (shipBanner) shipBanner.className = 'flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800';
+        if (shipSubmit) shipSubmit.textContent = 'Continue as guest';
       }
     }
     window.addEventListener('nostr:auth', (e) => renderShipAuth((e as CustomEvent).detail));
-    document.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement)?.id === 'ship-signin-link') openLogin();
+    shipAction?.addEventListener('click', () => {
+      if (getSession()) logout();
+      else openLogin();
     });
 
     buyBtn?.addEventListener('click', () => {
@@ -241,6 +251,11 @@ const canPayOnSite = !!lud16 && !!priceAmount;
     function orderMessage(orderId: string, sats: number, bolt11: string): string {
       const addr2 = val('ship-addr2');
       const note = val('ship-note');
+      const session = getSession();
+      // Tell the store owner how the order was placed, so they know how to reply.
+      const placedBy = session
+        ? `Buyer: ${session.name ? session.name + ' · ' : ''}Nostr ${session.pubkey.slice(0, 12)}… (you can reply to this DM on Nostr)`
+        : `Buyer: GUEST checkout — this Nostr key is one-time, so please reply via the email above, not on Nostr.`;
       return [
         `🐷⚡ New Lightning Piggy order`,
         ``,
@@ -256,6 +271,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         val('ship-country'),
         ``,
         `Contact: ${val('ship-email')}`,
+        placedBy,
         ...(note ? [`Note: ${note}`] : []),
         ``,
         `Invoice: ${bolt11}`,

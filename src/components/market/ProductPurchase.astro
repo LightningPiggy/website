@@ -69,16 +69,13 @@ const canPayOnSite = !!lud16 && !!priceAmount;
           </div>
           <p class="text-sm text-gray-500 mb-5 truncate">{title}</p>
 
-          <!-- Step 1: shipping (requires sign-in) -->
+          <!-- Step 1: shipping (guest by default; sign-in optional) -->
           <div id="view-shipping">
-            <div id="ship-signin" class="hidden text-center py-4">
-              <p class="text-sm text-gray-600 mb-3">Sign in with Nostr to place your order — it's sent to the vendor as an encrypted message.</p>
-              <button id="ship-connect" type="button" class="inline-flex items-center gap-2 px-5 py-2.5 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">Connect Nostr</button>
-              <p id="ship-connect-msg" class="text-xs text-gray-500 mt-2"></p>
-            </div>
-
-            <form id="ship-form" class="hidden space-y-3">
-              <p class="text-sm text-gray-500">Where should {vendorName} ship this?</p>
+            <form id="ship-form" class="space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-sm text-gray-500">Where should {vendorName} ship this?</p>
+                <span id="ship-who" class="text-xs text-gray-400 whitespace-nowrap"></span>
+              </div>
               <div class="grid grid-cols-2 gap-3">
                 <input id="ship-name" required placeholder="Full name" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <input id="ship-email" type="email" required placeholder="Email" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
@@ -137,7 +134,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
 </div>
 
 <script>
-  import { getSession, openLogin, type NostrSession } from '../../lib/nostrAuth';
+  import { getSession, openLogin, shortId, type NostrSession } from '../../lib/nostrAuth';
   import { sendGiftWrappedDM } from '../../lib/nostrOrder';
 
   const root = document.getElementById('product-purchase');
@@ -155,8 +152,8 @@ const canPayOnSite = !!lud16 && !!priceAmount;
     const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
     const viewShipping = document.getElementById('view-shipping');
     const viewPayment = document.getElementById('view-payment');
-    const shipSignin = document.getElementById('ship-signin');
     const shipForm = document.getElementById('ship-form') as HTMLFormElement | null;
+    const shipWho = document.getElementById('ship-who');
     const statusEl = document.getElementById('invoice-status');
     const statusText = document.getElementById('invoice-status-text');
     const bodyEl = document.getElementById('invoice-body');
@@ -179,13 +176,21 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
     });
 
-    // Sign-in gate on the shipping step.
+    // Guest by default; the who-line shows how the order will be sent and offers
+    // an optional sign-in.
     function renderShipAuth(session: NostrSession | null) {
-      shipSignin?.classList.toggle('hidden', !!session);
-      shipForm?.classList.toggle('hidden', !session);
+      if (!shipWho) return;
+      if (session) {
+        shipWho.textContent = 'Signed in as ' + (session.name || shortId(session.pubkey));
+      } else {
+        shipWho.innerHTML =
+          'Guest · <button type="button" id="ship-signin-link" class="underline hover:text-pink">sign in</button>';
+      }
     }
     window.addEventListener('nostr:auth', (e) => renderShipAuth((e as CustomEvent).detail));
-    document.getElementById('ship-connect')?.addEventListener('click', () => openLogin());
+    document.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement)?.id === 'ship-signin-link') openLogin();
+    });
 
     buyBtn?.addEventListener('click', () => {
       // Reset to step 1.
@@ -262,12 +267,6 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       e.preventDefault();
       const shipStatus = document.getElementById('ship-status')!;
       const submitBtn = document.getElementById('ship-submit') as HTMLButtonElement;
-      const session = getSession();
-      if (!session) {
-        renderShipAuth(null);
-        openLogin();
-        return;
-      }
       submitBtn.disabled = true;
       shipStatus.textContent = 'Preparing your order…';
 

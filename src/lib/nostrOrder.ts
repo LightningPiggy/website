@@ -14,23 +14,40 @@
 //               with a random key), so nostr-tools is imported dynamically here —
 //               it only loads when a buyer actually checks out.
 //
-// Signing + sender-side encryption go through nostrAuth, so this works whether
-// the user signed in with an extension or an nsec. An extension without nip44
-// support throws 'no-nip44' so the UI can explain.
+// Works signed-in OR as a guest:
+//   • signed in  — the seal is signed + encrypted via nostrAuth (extension or
+//     nsec), so the vendor sees the buyer's real npub and can reply over Nostr.
+//   • guest      — a throwaway ephemeral key is generated just for this order, so
+//     no account is needed ("no account needed" copy). The order is one-way; the
+//     vendor replies via the email in the order.
+// The outer gift wrap always uses a fresh ephemeral key regardless.
 
 import { publish, signEvent, nip44Encrypt, getSession } from './nostrAuth';
 
 export async function sendGiftWrappedDM(recipientHex: string, message: string): Promise<void> {
   const session = getSession();
-  if (!session) throw new Error('not-signed-in');
-  const senderPubkey = session.pubkey;
 
   const [pure, nip44] = await Promise.all([import('nostr-tools/pure'), import('nostr-tools/nip44')]);
-  const { generateSecretKey, finalizeEvent, getEventHash } = pure;
+  const { generateSecretKey, getPublicKey, finalizeEvent, getEventHash } = pure;
 
   const now = Math.floor(Date.now() / 1000);
   // NIP-59: randomise timestamps up to 2 days in the past to hide metadata.
   const past = () => now - Math.floor(Math.random() * 172800);
+
+  // Sender identity + how to seal: the signed-in account, or a guest key.
+  let senderPubkey: string;
+  let sealEncrypt: (pt: string) => Promise<string> | string;
+  let sealSign: (tmpl: any) => Promise<any> | any;
+  if (session) {
+    senderPubkey = session.pubkey;
+    sealEncrypt = (pt) => nip44Encrypt(recipientHex, pt);
+    sealSign = (tmpl) => signEvent(tmpl);
+  } else {
+    const guestSk = generateSecretKey();
+    senderPubkey = getPublicKey(guestSk);
+    sealEncrypt = (pt) => nip44.encrypt(pt, nip44.getConversationKey(guestSk, recipientHex));
+    sealSign = (tmpl) => finalizeEvent(tmpl, guestSk);
+  }
 
   // 1. Rumor — unsigned kind-14 message.
   const rumor: any = {
@@ -43,8 +60,8 @@ export async function sendGiftWrappedDM(recipientHex: string, message: string): 
   rumor.id = getEventHash(rumor);
 
   // 2. Seal — kind 13 signed by the sender; content = rumor encrypted to recipient.
-  const sealContent = await nip44Encrypt(recipientHex, JSON.stringify(rumor));
-  const seal = await signEvent({
+  const sealContent = await sealEncrypt(JSON.stringify(rumor));
+  const seal = await sealSign({
     kind: 13,
     pubkey: senderPubkey,
     created_at: past(),

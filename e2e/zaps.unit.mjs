@@ -13,6 +13,7 @@ import {
   topZappers,
   thresholdSatsForUsd,
   FALLBACK_THRESHOLD_SATS,
+  MAX_ZAP_MSATS,
 } from '../src/lib/zaps.ts';
 
 let failed = false;
@@ -83,6 +84,32 @@ eq(
   'malformed description JSON rejected',
 );
 eq(parseZapReceipt({ ...receipt({ sender: ALICE, amountMsats: 1000 }), kind: 1 }), null, 'non-9735 kind rejected');
+
+// ---- hostile amounts: safe-integer + supply-cap guards ----
+const rMax = parseZapReceipt(receipt({ sender: ALICE, amountMsats: MAX_ZAP_MSATS }));
+ok(rMax && rMax.msats === MAX_ZAP_MSATS, 'amount at the 21,000-BTC cap accepted');
+eq(
+  parseZapReceipt(receipt({ sender: ALICE, amountMsats: '9007199254740993' })), // > MAX_SAFE_INTEGER
+  null,
+  'amount past Number.MAX_SAFE_INTEGER rejected (no float imprecision)',
+);
+eq(
+  parseZapReceipt(receipt({ sender: ALICE, amountMsats: '99999999999999999999999999' })),
+  null,
+  'absurdly long amount string rejected outright',
+);
+eq(
+  parseZapReceipt(receipt({ sender: ALICE, amountMsats: MAX_ZAP_MSATS + 1000 })),
+  null,
+  'amount above the 21,000-BTC sanity cap rejected',
+);
+{
+  // Totals clamp: a flood of maxed receipts can't overflow safe integers.
+  const flood = Array.from({ length: 10 }, (_, i) =>
+    receipt({ sender: BOB, amountMsats: MAX_ZAP_MSATS, id: `flood${i}` }),
+  );
+  eq(aggregateZaps(flood).get(BOB), MAX_ZAP_MSATS, 'per-sender total clamps at the sanity cap (no unsafe-integer sums)');
+}
 
 // ---- aggregation: totals PER ZAPPER, de-duped by event id ----
 const events = [

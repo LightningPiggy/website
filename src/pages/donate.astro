@@ -258,27 +258,36 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
       }
 
       // ================= Wall of zappers =================
+      // loadWall can run more than once (initial load + after a WebLN payment),
+      // so it fully resets the empty/avatars states each pass, and a run token
+      // makes sure an overlapping earlier run can't clobber a newer one's UI.
+      let wallRun = 0;
       async function loadWall() {
         const skeleton = document.getElementById('wall-skeleton');
         const wallEl = document.getElementById('wall-avatars');
         const emptyEl = document.getElementById('wall-empty');
         const thresholdEl = document.getElementById('wall-threshold');
         if (!wallEl || !skeleton || !emptyEl) return;
+        const run = ++wallRun;
 
         // Receipts + the $50-in-sats bar (nearest 1,000; 50k-sat fallback).
         const [receipts, rate] = await Promise.all([
           fetchAll({ kinds: [9735], '#p': [PROJECT_PUBKEY], limit: 500 }),
           usdPerBtc(),
         ]);
+        if (run !== wallRun) return; // a newer run took over
         const threshold = rate ? thresholdSatsForUsd(rate) : FALLBACK_THRESHOLD_SATS;
         if (thresholdEl) thresholdEl.textContent = `${threshold.toLocaleString('en-US')} sats (~$50)`;
 
         const zappers = topZappers(receipts, threshold);
         skeleton.classList.add('hidden');
         if (!zappers.length) {
+          wallEl.classList.add('hidden');
+          wallEl.classList.remove('flex');
           emptyEl.classList.remove('hidden');
           return;
         }
+        emptyEl.classList.add('hidden');
 
         // Profiles (kind 0) + npubs for the qualifying zappers only. Kind 0 is
         // replaceable so relays should hold one per author — the limit is a
@@ -288,6 +297,7 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
           fetchAll({ kinds: [0], authors, limit: authors.length * 2 }),
           import('nostr-tools/nip19'),
         ]);
+        if (run !== wallRun) return; // a newer run took over
         const profiles = new Map<string, { name: string; picture: string }>();
         const newest = new Map<string, NostrEvent>();
         for (const ev of profileEvents) {
@@ -483,6 +493,7 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
         }
       });
 
+      let qrSeq = 0; // guards the async QR render against invoice changes
       function showInvoice(bolt11: string, sats: number, isZap: boolean) {
         form?.classList.add('hidden');
         invoiceView?.classList.remove('hidden');
@@ -497,14 +508,21 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
         (document.getElementById('invoice-open') as HTMLAnchorElement).href = `lightning:${bolt11}`;
         document.getElementById('invoice-paid')?.classList.add('hidden');
 
-        // QR (qrcode is dynamically imported — only loads when an invoice shows).
+        // QR (qrcode is dynamically imported — only loads when an invoice
+        // shows). The previous QR is cleared up-front so a stale code is never
+        // visible next to a new invoice, and a sequence token stops an earlier,
+        // slower render from overwriting a newer invoice's QR.
         const qrImg = document.getElementById('invoice-qr') as HTMLImageElement | null;
         if (qrImg) {
+          const seq = ++qrSeq;
+          qrImg.classList.add('hidden');
+          qrImg.removeAttribute('src');
           import('qrcode')
             .then(({ default: QRCode }) =>
               QRCode.toDataURL(bolt11.toUpperCase(), { margin: 1, width: 240, errorCorrectionLevel: 'M' }),
             )
             .then((url) => {
+              if (seq !== qrSeq) return; // a newer invoice took over
               qrImg.src = url;
               qrImg.classList.remove('hidden');
             })

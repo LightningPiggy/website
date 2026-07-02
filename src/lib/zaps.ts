@@ -45,6 +45,13 @@ export function bolt11Msats(pr: string): number {
   return Number.isSafeInteger(msats) && msats > 0 ? msats : 0;
 }
 
+// Sanity ceiling for relay-supplied amounts: 21,000 BTC in msats (2.1e15 —
+// comfortably inside Number.MAX_SAFE_INTEGER ≈ 9e15, and orders of magnitude
+// above any plausible donation). Larger claims are hostile/garbage and are
+// rejected (per receipt) or clamped (totals) so every computation stays in
+// exact-integer territory.
+export const MAX_ZAP_MSATS = 21_000 * 1e11; // 2.1e15 (1 BTC = 1e11 msats)
+
 // Parse one kind-9735 zap receipt into { zapper, msats }.
 //   • sender  = `pubkey` of the zap request JSON embedded in the receipt's
 //     `description` tag (the receipt itself is signed by the LNURL server's
@@ -69,14 +76,23 @@ export function parseZapReceipt(ev: NostrEvent): ParsedZap | null {
   let msats = 0;
   if (Array.isArray(zr.tags)) {
     const amt = zr.tags.find((t: any) => Array.isArray(t) && t[0] === 'amount')?.[1];
-    if (typeof amt === 'string' && /^\d+$/.test(amt)) msats = parseInt(amt, 10);
+    // Bounded digit count + safe-integer + supply-cap checks: a hostile
+    // `amount` string can't smuggle in an imprecise float or absurd total.
+    if (typeof amt === 'string' && /^\d{1,16}$/.test(amt)) {
+      const n = parseInt(amt, 10);
+      if (Number.isSafeInteger(n) && n <= MAX_ZAP_MSATS) msats = n;
+    }
   }
   if (!msats) msats = bolt11Msats(tagVal(ev.tags, 'bolt11') || '');
+  if (msats > MAX_ZAP_MSATS) return null; // more than all bitcoin — hostile
   return msats > 0 ? { zapper, msats } : null;
 }
 
 // Sum zap amounts per sender across a pile of receipts (relay responses may
 // repeat events, so de-dupe by event id first). Returns hex pubkey → total msats.
+// Totals are clamped to MAX_ZAP_MSATS so even a flood of maxed-out hostile
+// receipts can't push a sum past Number.MAX_SAFE_INTEGER and corrupt
+// ordering/threshold comparisons.
 export function aggregateZaps(events: NostrEvent[]): Map<string, number> {
   const seen = new Set<string>();
   const totals = new Map<string, number>();
@@ -85,7 +101,7 @@ export function aggregateZaps(events: NostrEvent[]): Map<string, number> {
     seen.add(ev.id);
     const z = parseZapReceipt(ev);
     if (!z) continue;
-    totals.set(z.zapper, (totals.get(z.zapper) || 0) + z.msats);
+    totals.set(z.zapper, Math.min((totals.get(z.zapper) || 0) + z.msats, MAX_ZAP_MSATS));
   }
   return totals;
 }

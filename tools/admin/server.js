@@ -275,200 +275,8 @@ app.get('/api/og-preview', async (req, res) => {
   }
 });
 
-// --- Deploy (git push to trigger Netlify build) ---
-
-async function gitCmd(args, opts = {}) {
-  // Husky pre-commit hooks call npm/node, which live in /opt/homebrew/bin.
-  // Child processes from execFile inherit a stripped PATH, so we extend it.
-  const env = {
-    ...process.env,
-    PATH: ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].filter(Boolean).join(':'),
-  };
-  const { stdout, stderr } = await execFileAsync('git', args, { cwd: ROOT, env, ...opts });
-  return { stdout: stdout.toString(), stderr: stderr.toString() };
-}
-
-// --- Sync from GitHub (pull) ---
-
-// Fetch the remote, then return ahead/behind counts plus a list of remote
-// commits not yet local. Run on demand so the user controls when network IO happens.
-app.get('/api/sync/status', async (req, res) => {
-  try {
-    // Fetch latest refs from remote
-    await gitCmd(['fetch', '--quiet', 'origin']);
-
-    const branch = (await gitCmd(['rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
-
-    let ahead = 0, behind = 0;
-    try {
-      const counts = (await gitCmd(['rev-list', '--left-right', '--count', 'HEAD...@{u}'])).stdout.trim();
-      const [a, b] = counts.split(/\s+/).map(n => parseInt(n, 10));
-      ahead = a || 0; behind = b || 0;
-    } catch {}
-
-    // Get commits on remote that aren't on local
-    let remoteCommits = [];
-    if (behind > 0) {
-      try {
-        const log = (await gitCmd([
-          'log',
-          '--pretty=format:%H%x1f%h%x1f%an%x1f%ar%x1f%s',
-          '@{u}',
-          '^HEAD',
-        ])).stdout.trim();
-        remoteCommits = log.split('\n').filter(Boolean).map(line => {
-          const [sha, shortSha, author, when, subject] = line.split('\x1f');
-          return { sha, shortSha, author, when, subject };
-        });
-      } catch {}
-    }
-
-    // Check if there are uncommitted local changes that would block a clean pull
-    const localChanges = (await gitCmd(['status', '--porcelain'])).stdout.trim();
-    const hasLocalChanges = localChanges.length > 0;
-
-    res.json({ branch, ahead, behind, remoteCommits, hasLocalChanges });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/sync/pull', async (req, res) => {
-  try {
-    const log = [];
-    const run = async (args) => {
-      log.push('$ git ' + args.join(' '));
-      try {
-        const { stdout, stderr } = await gitCmd(args);
-        if (stdout) log.push(stdout.trim());
-        if (stderr) log.push(stderr.trim());
-      } catch (e) {
-        log.push('ERROR: ' + e.message);
-        throw e;
-      }
-    };
-
-    // Detect uncommitted changes; auto-stash + restore so the pull works cleanly
-    const dirty = (await gitCmd(['status', '--porcelain'])).stdout.trim().length > 0;
-    let stashed = false;
-    if (dirty) {
-      await run(['stash', 'push', '-u', '-m', 'admin-sync-auto-stash']);
-      stashed = true;
-    }
-
-    try {
-      await run(['pull', '--ff-only']);
-    } catch (e) {
-      if (stashed) {
-        // Try to restore the stash even if pull failed
-        try { await run(['stash', 'pop']); } catch {}
-      }
-      throw e;
-    }
-
-    if (stashed) {
-      try {
-        await run(['stash', 'pop']);
-      } catch (e) {
-        log.push('WARNING: stash pop failed - your changes are saved in git stash. Run `git stash pop` manually.');
-      }
-    }
-
-    res.json({ success: true, output: log.join('\n'), stashed });
-  } catch (err) {
-    res.status(500).json({
-      error: err.message,
-      output: (err.stdout || '') + (err.stderr || ''),
-    });
-  }
-});
-
-app.get('/api/deploy/status', async (req, res) => {
-  try {
-    // Get current branch and ahead/behind status
-    const branch = (await gitCmd(['rev-parse', '--abbrev-ref', 'HEAD'])).stdout.trim();
-    let ahead = 0, behind = 0;
-    try {
-      const counts = (await gitCmd(['rev-list', '--left-right', '--count', 'HEAD...@{u}'])).stdout.trim();
-      const [a, b] = counts.split(/\s+/).map(n => parseInt(n, 10));
-      ahead = a || 0; behind = b || 0;
-    } catch {}
-
-    // Parse porcelain status
-    const status = (await gitCmd(['status', '--porcelain'])).stdout;
-    const modified = []; // tracked files that are modified/deleted/etc
-    const untracked = []; // new files not yet tracked
-    status.split('\n').filter(Boolean).forEach(line => {
-      const code = line.slice(0, 2);
-      const path = line.slice(3);
-      if (code.startsWith('??')) {
-        untracked.push({ code, path });
-      } else {
-        modified.push({ code, path });
-      }
-    });
-
-    res.json({ branch, ahead, behind, modified, untracked });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Push-only (no new commits) - for when there are unpushed commits already
-app.post('/api/deploy/push-only', async (req, res) => {
-  try {
-    const log = ['$ git push'];
-    const { stdout, stderr } = await gitCmd(['push']);
-    if (stdout) log.push(stdout.trim());
-    if (stderr) log.push(stderr.trim());
-    res.json({ success: true, output: log.join('\n') });
-  } catch (err) {
-    res.status(500).json({ error: err.message, output: (err.stdout || '') + (err.stderr || '') });
-  }
-});
-
-app.post('/api/deploy/push', async (req, res) => {
-  try {
-    const { message, files } = req.body || {};
-    if (!message || !message.trim()) {
-      return res.status(400).json({ error: 'Commit message is required' });
-    }
-    if (!Array.isArray(files) || files.length === 0) {
-      return res.status(400).json({ error: 'No files selected to commit' });
-    }
-
-    const log = [];
-    const run = async (args) => {
-      log.push('$ git ' + args.join(' '));
-      try {
-        const { stdout, stderr } = await gitCmd(args);
-        if (stdout) log.push(stdout.trim());
-        if (stderr) log.push(stderr.trim());
-      } catch (e) {
-        log.push('ERROR: ' + e.message);
-        throw e;
-      }
-    };
-
-    // Stage the selected files. Use -f to allow gitignored files (e.g. tools/admin/*).
-    for (const f of files) {
-      await run(['add', '-f', f]);
-    }
-
-    // Commit
-    await run(['commit', '-m', message]);
-
-    // Push
-    await run(['push']);
-
-    res.json({ success: true, output: log.join('\n') });
-  } catch (err) {
-    res.status(500).json({
-      error: err.message,
-      output: (err.stdout || '') + (err.stderr || ''),
-    });
-  }
-});
+// Git deploy/sync intentionally removed: the admin tool edits local data files
+// only and must never reach GitHub. Publish via your normal git workflow.
 
 app.get('/api/fs/ls', (req, res) => {
   try {
@@ -854,7 +662,7 @@ function saveCredits(data) {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(CREDITS_FILE, JSON.stringify(data, null, 2));
   // Auto-sync the website export after every change so src/data/credits.json
-  // stays current without a manual "Sync to Website" step. (Deploy still
+  // stays current without a manual "Sync to Website" step. (git push still
   // publishes.) A sync failure must not break the save.
   try {
     syncCreditsToWebsite();
@@ -1511,7 +1319,7 @@ function saveTestimonials(data) {
   const dir = path.dirname(TESTIMONIALS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(TESTIMONIALS_FILE, JSON.stringify(data, null, 2));
-  // Auto-sync the website export after every change (deploy still publishes).
+  // Auto-sync the website export after every change (git push publishes).
   try {
     syncTestimonialsToWebsite();
   } catch (err) {
@@ -1694,7 +1502,7 @@ function saveVendors(data) {
   const dir = path.dirname(VENDORS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(VENDORS_FILE, JSON.stringify(data, null, 2));
-  // Auto-sync the website export after every change (deploy still publishes).
+  // Auto-sync the website export after every change (git push publishes).
   try {
     syncVendorsToWebsite();
   } catch (err) {

@@ -62,6 +62,10 @@ export interface ProductDetail {
   categories: string[]; // 't' tag hashtags
   location: string; // 'location' tag
   stock: string; // 'stock' tag ('' = unspecified/unlimited)
+  medium: string; // 'type' tag[2]: digital | physical | '' (digital skips shipping)
+  // Gamma `shipping_option` refs: coordinate (30406 direct or 30405 collection to
+  // inherit from) + optional extra cost in the PRODUCT's currency.
+  shippingRefs: { coord: string; extraCost: number }[];
   createdAt: number;
 }
 
@@ -419,6 +423,10 @@ export function parseProductDetail(ev: NostrEvent): ProductDetail {
     categories: tagsAll(ev.tags, 't'),
     location: tagVal(ev.tags, 'location') || '',
     stock: tagVal(ev.tags, 'stock') || (json.quantity != null ? String(json.quantity) : ''),
+    medium: (ev.tags.find((t) => t[0] === 'type')?.[2] || '').toLowerCase(),
+    shippingRefs: ev.tags
+      .filter((t) => t[0] === 'shipping_option' && /^(30406|30405):[0-9a-f]{64}:/.test(t[1] || ''))
+      .map((t) => ({ coord: t[1], extraCost: parseFloat(t[2] || '0') || 0 })),
     createdAt: ev.created_at,
   };
 }

@@ -26,8 +26,10 @@ interface Props {
   vendorName: string;
   vendorPicture: string; // vendor's Nostr profile image (may be '')
   storeUrl: string; // external fallback
+  medium: string; // digital products skip shipping (Gamma spec)
+  shippingRefs: string; // JSON: product's `shipping_option` refs (coord + extraCost)
 }
-const { lud16, vendorPubkey, priceAmount, priceCurrency, title, vendorName, vendorPicture, storeUrl } =
+const { lud16, vendorPubkey, priceAmount, priceCurrency, title, vendorName, vendorPicture, storeUrl, medium, shippingRefs } =
   Astro.props;
 const canPayOnSite = !!lud16 && !!priceAmount;
 ---
@@ -41,6 +43,8 @@ const canPayOnSite = !!lud16 && !!priceAmount;
   data-title={title}
   data-vendor={vendorName}
   data-store={storeUrl}
+  data-medium={medium}
+  data-shipping-refs={shippingRefs}
 >
   {canPayOnSite ? (
     <>
@@ -104,7 +108,9 @@ const canPayOnSite = !!lud16 && !!priceAmount;
                 <input id="ship-addr2" placeholder="Address line 2 (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <input id="ship-city" required placeholder="City *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <input id="ship-postcode" required placeholder="Post code *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
-                <input id="ship-country" required placeholder="Country *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <select id="ship-country" required class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-pink focus:ring-1 focus:ring-pink outline-none">
+                  <option value="">Country *</option>
+                </select>
                 <!-- Shipping method: populated live from the vendor's Nostr
                      shipping options (kind 30406). Hidden when the vendor has
                      none; REQUIRED when they do, and its price is added to the
@@ -264,13 +270,22 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       else openLogin();
     });
 
-    // ---- Shipping methods (vendor's Gamma Markets kind-30406 options) ----
-    // Fetched live when checkout opens. When the vendor has options, selecting
-    // one is REQUIRED and its price is added to the Lightning invoice; when they
-    // have none, the selector stays hidden and no shipping cost applies.
-    interface ShipOption { d: string; title: string; amount: number; currency: string; countries: string[] }
+    // ---- Shipping methods (Gamma Markets spec) ----
+    // A product declares its shipping via `shipping_option` refs — direct 30406
+    // options or 30405 collections whose options it inherits (spec: both MUST be
+    // merged) — each with an optional extra cost in the PRODUCT's currency.
+    // Digital products skip shipping. Products with no refs fall back to all of
+    // the vendor's options (pragmatic superset for not-yet-linked listings).
+    // Options are filtered by the buyer's country (spec: "validate constraints
+    // before offering"), selection is REQUIRED, and base + extra are added to
+    // the invoice.
+    interface ShipOption { coord: string; title: string; amount: number; currency: string; countries: string[]; extraCost: number }
+    const isDigital = (root.dataset.medium || '') === 'digital';
+    let productRefs: { coord: string; extraCost: number }[] = [];
+    try { productRefs = JSON.parse(root.dataset.shippingRefs || '[]'); } catch {}
     let shipOptions: ShipOption[] | null = null; // null = not loaded yet
-    function fetchShippingFromRelay(url: string): Promise<NostrEvent[]> {
+
+    function fetchGammaFromRelay(url: string, filter: any): Promise<NostrEvent[]> {
       return new Promise((resolve) => {
         const evs: NostrEvent[] = [];
         let ws: WebSocket | undefined;
@@ -290,7 +305,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         const t = window.setTimeout(finish, 6000);
         try { ws = new WebSocket(url); } catch { finish(); return; }
         const sub = Math.random().toString(36).slice(2, 10);
-        ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, { kinds: [30406, 5], authors: [vendorPubkey] }]));
+        ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, filter]));
         ws.onmessage = (e) => {
           try {
             const m = JSON.parse(e.data);
@@ -301,48 +316,128 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         ws.onerror = () => finish();
       });
     }
-    async function loadShippingOptions() {
-      if (shipOptions !== null || !vendorPubkey) return;
-      const raw = (await Promise.all(RELAYS.map((r) => fetchShippingFromRelay(r)))).flat();
+    async function fetchGamma(filter: any): Promise<NostrEvent[]> {
+      const raw = (await Promise.all(RELAYS.map((r) => fetchGammaFromRelay(r, filter)))).flat();
       const newest = new Map<string, NostrEvent>();
       for (const ev of applyDeletions(raw)) {
-        if (ev.kind !== 30406) continue;
-        const d = tagVal(ev.tags, 'd') || '';
-        const ex = newest.get(d);
-        if (!ex || ev.created_at > ex.created_at) newest.set(d, ev);
+        const key = `${ev.kind}:${ev.pubkey}:${tagVal(ev.tags, 'd') || ''}`;
+        const ex = newest.get(key);
+        if (!ex || ev.created_at > ex.created_at) newest.set(key, ev);
       }
-      shipOptions = [...newest.values()]
-        .map((ev) => {
-          const price = ev.tags.find((x) => x[0] === 'price');
-          const countryTag = ev.tags.find((x) => x[0] === 'country');
-          return {
-            d: tagVal(ev.tags, 'd') || '',
-            title: tagVal(ev.tags, 'title') || '',
-            amount: parseFloat(price?.[1] || ''),
-            currency: (price?.[2] || 'SATS').toUpperCase(),
-            countries: countryTag ? countryTag.slice(1).filter(Boolean) : [],
-          };
-        })
-        .filter((o) => o.title && isFinite(o.amount) && o.amount >= 0);
+      return [...newest.values()];
+    }
+    function parseOption(ev: NostrEvent, extraCost: number): ShipOption | null {
+      const price = ev.tags.find((x) => x[0] === 'price');
+      const countryTag = ev.tags.find((x) => x[0] === 'country');
+      const o = {
+        coord: `30406:${ev.pubkey}:${tagVal(ev.tags, 'd') || ''}`,
+        title: tagVal(ev.tags, 'title') || '',
+        amount: parseFloat(price?.[1] || ''),
+        currency: (price?.[2] || 'SATS').toUpperCase(),
+        countries: countryTag ? countryTag.slice(1).filter(Boolean).map((c) => c.toUpperCase()) : [],
+        extraCost,
+      };
+      return o.title && isFinite(o.amount) && o.amount >= 0 ? o : null;
+    }
+    async function loadShippingOptions() {
+      if (shipOptions !== null || !vendorPubkey) return;
+      if (isDigital) { shipOptions = []; return; } // spec: digital skips shipping
+
+      if (productRefs.length) {
+        // Resolve the product's declared refs (direct + collection-inherited).
+        const authors = [...new Set(productRefs.map((r) => r.coord.split(':')[1]))];
+        const ds = [...new Set(productRefs.map((r) => r.coord.split(':')[2]))];
+        const evs = await fetchGamma({ kinds: [30406, 30405, 5], authors, '#d': ds });
+        const byCoord = new Map(evs.map((ev) => [`${ev.kind}:${ev.pubkey}:${tagVal(ev.tags, 'd') || ''}`, ev]));
+        const wanted = new Map<string, number>(); // 30406 coord -> extra cost
+        const collectionRefs: { coord: string; extraCost: number }[] = [];
+        for (const r of productRefs) {
+          if (r.coord.startsWith('30406:')) wanted.set(r.coord, r.extraCost);
+          else collectionRefs.push(r);
+        }
+        // Collections: inherit their shipping_option refs (extra applies to all).
+        const missing: { coord: string; extraCost: number }[] = [];
+        for (const cr of collectionRefs) {
+          const cev = byCoord.get(cr.coord);
+          if (!cev) continue;
+          for (const t of cev.tags) {
+            if (t[0] !== 'shipping_option' || !/^30406:[0-9a-f]{64}:/.test(t[1] || '')) continue;
+            if (!wanted.has(t[1])) {
+              wanted.set(t[1], cr.extraCost);
+              if (!byCoord.has(t[1])) missing.push({ coord: t[1], extraCost: cr.extraCost });
+            }
+          }
+        }
+        if (missing.length) {
+          const evs2 = await fetchGamma({
+            kinds: [30406, 5],
+            authors: [...new Set(missing.map((m) => m.coord.split(':')[1]))],
+            '#d': [...new Set(missing.map((m) => m.coord.split(':')[2]))],
+          });
+          for (const ev of evs2) byCoord.set(`${ev.kind}:${ev.pubkey}:${tagVal(ev.tags, 'd') || ''}`, ev);
+        }
+        shipOptions = [...wanted.entries()]
+          .map(([coord, extra]) => {
+            const ev = byCoord.get(coord);
+            return ev && ev.kind === 30406 ? parseOption(ev, extra) : null;
+          })
+          .filter(Boolean) as ShipOption[];
+      } else {
+        // Fallback: no refs declared — offer all of the vendor's options.
+        const evs = await fetchGamma({ kinds: [30406, 5], authors: [vendorPubkey] });
+        shipOptions = evs.filter((e) => e.kind === 30406).map((e) => parseOption(e, 0)).filter(Boolean) as ShipOption[];
+      }
       renderShipOptions();
     }
+
+    // Country select: ISO 3166-1 alpha-2, names via Intl.DisplayNames.
+    const COUNTRY_CODES = 'AD AE AF AG AI AL AM AO AR AT AU AW AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GG GH GI GL GM GN GQ GR GT GW GY HK HN HR HT HU ID IE IL IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MR MS MT MU MV MW MX MY MZ NA NE NG NI NL NO NP NR NZ OM PA PE PG PH PK PL PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VN VU WS YE ZA ZM ZW'.split(' ');
+    (function populateCountries() {
+      const sel = document.getElementById('ship-country') as HTMLSelectElement | null;
+      if (!sel) return;
+      let names: any = null;
+      try { names = new (Intl as any).DisplayNames(['en'], { type: 'region' }); } catch {}
+      const opts = COUNTRY_CODES.map((c) => ({ c, n: (names && names.of(c)) || c })).sort((a, b) => a.n.localeCompare(b.n));
+      for (const { c, n } of opts) {
+        const o = document.createElement('option');
+        o.value = c;
+        o.textContent = n;
+        sel.appendChild(o);
+      }
+      sel.addEventListener('change', () => renderShipOptions());
+    })();
+
     function renderShipOptions() {
       const wrap = document.getElementById('ship-method-wrap');
       const sel = document.getElementById('ship-method') as HTMLSelectElement | null;
-      if (!wrap || !sel || !shipOptions?.length) return;
-      sel.innerHTML =
-        '<option value="">Select shipping method *</option>' +
-        shipOptions
-          .map((o, i) => {
-            const opt = document.createElement('option');
-            opt.value = String(i);
-            opt.textContent = `${o.title} — ${o.amount} ${o.currency}${o.countries.length ? ` (${o.countries.join(', ')})` : ''}`;
-            return opt.outerHTML;
-          })
-          .join('');
-      sel.required = true;
+      if (!wrap || !sel) return;
+      if (!shipOptions?.length) { wrap.classList.add('hidden'); sel.required = false; return; }
+      const country = (document.getElementById('ship-country') as HTMLSelectElement)?.value || '';
+      // Spec: `country` lists where an option is available — filter by the
+      // buyer's country (options without a country tag count as everywhere).
+      const avail = shipOptions.filter((o) => !o.countries.length || !country || o.countries.includes(country));
+      const prev = sel.value;
+      sel.innerHTML = '';
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = avail.length ? 'Select shipping method *' : `${vendor} doesn’t ship to this country`;
+      sel.appendChild(ph);
+      avail.forEach((o) => {
+        const opt = document.createElement('option');
+        opt.value = o.coord;
+        const extra = o.extraCost ? ` + ${o.extraCost} ${currency}` : '';
+        opt.textContent = `${o.title} — ${o.amount} ${o.currency}${extra}`;
+        sel.appendChild(opt);
+      });
+      if ([...sel.options].some((o) => o.value === prev)) sel.value = prev; // keep valid selection
+      sel.required = true; // options exist for this product → a choice is mandatory
+      sel.disabled = !avail.length && !!country;
       wrap.classList.remove('hidden');
     }
+    const currentShipChoice = (): ShipOption | null => {
+      const sel = document.getElementById('ship-method') as HTMLSelectElement | null;
+      return shipOptions?.find((o) => o.coord === sel?.value) || null;
+    };
 
     buyBtn?.addEventListener('click', () => {
       // Reset to step 1.
@@ -416,7 +511,8 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         `Price: ${amount} ${currency} (${fmtSats(totals.productSats)})`,
         ...(totals.ship
           ? [
-              `Shipping: ${totals.ship.title} — ${totals.ship.amount} ${totals.ship.currency} (${fmtSats(totals.shippingSats)})`,
+              `Shipping: ${totals.ship.title} — ${totals.ship.amount} ${totals.ship.currency}${totals.ship.extraCost ? ` + ${totals.ship.extraCost} ${currency} product surcharge` : ''} (${fmtSats(totals.shippingSats)})`,
+              `Shipping ref: ${totals.ship.coord}`,
               `Total: ${fmtSats(totals.totalSats)}`,
             ]
           : []),
@@ -427,7 +523,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         val('ship-addr1'),
         ...(addr2 ? [addr2] : []),
         `${val('ship-city')}, ${val('ship-postcode')}`,
-        val('ship-country'),
+        (document.getElementById('ship-country') as HTMLSelectElement)?.selectedOptions[0]?.textContent || val('ship-country'),
         ``,
         `Contact: ${val('ship-email')}`,
         placedBy,
@@ -442,13 +538,15 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       e.preventDefault();
       const shipStatus = document.getElementById('ship-status')!;
       const submitBtn = document.getElementById('ship-submit') as HTMLButtonElement;
-      // Shipping method is mandatory whenever the vendor offers options.
+      // Shipping method is mandatory whenever the product has options.
       const shipSel = document.getElementById('ship-method') as HTMLSelectElement | null;
       let chosenShip: ShipOption | null = null;
       if (shipOptions?.length) {
-        chosenShip = shipOptions[Number(shipSel?.value)] ?? null;
+        chosenShip = currentShipChoice();
         if (!chosenShip) {
-          shipStatus.textContent = 'Please select a shipping method.';
+          shipStatus.textContent = shipSel?.disabled
+            ? `${vendor} doesn’t ship to the selected country.`
+            : 'Please select a shipping method.';
           shipSel?.focus();
           return;
         }
@@ -458,7 +556,12 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       shipStatus.textContent = 'Preparing your order…';
 
       const productSats = await toSats(amount, currency);
-      const shippingSats = chosenShip ? await toSats(chosenShip.amount, chosenShip.currency) : 0;
+      let shippingSats: number | null = 0;
+      if (chosenShip) {
+        const base = await toSats(chosenShip.amount, chosenShip.currency);
+        const extra = chosenShip.extraCost ? await toSats(chosenShip.extraCost, currency) : 0;
+        shippingSats = base === null || extra === null ? null : base + extra;
+      }
       if (!productSats || shippingSats === null) {
         shipStatus.textContent = 'Could not work out the price. Try the vendor store.';
         submitBtn.disabled = false;

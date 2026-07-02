@@ -185,6 +185,8 @@ if (detail.priceAmount) {
           vendorName={vendorName}
           vendorPicture={merchantImg}
           storeUrl={storeUrl}
+          medium={detail.medium}
+          shippingRefs={JSON.stringify(detail.shippingRefs)}
         />
 
         {detail.categories.length > 0 && (

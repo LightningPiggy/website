@@ -1,0 +1,529 @@
+---
+// story.astro
+// "/story" — the Lightning Piggy story feed, modelled on robotechy.com/story.
+// A profile hero (the project's kind-0 Nostr profile) above a timeline of the
+// project's top-level kind-1 notes, each with an expandable NIP-10 reply
+// thread. Everything is fetched client-side from the shared market RELAYS —
+// no backend. Signed-in visitors (global Nostr login dialog) can reply and
+// delete their own replies (NIP-09), mirroring ProductReviews.
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// The project team's Nostr account — the "Danish Bacon" vendor in
+// src/data/vendors.json. Exposed as a data attribute so the E2E harness can
+// point the feed at a throwaway author without touching this constant.
+const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqdjts9p';
+---
+
+<BaseLayout
+  title="Story"
+  description="Follow the Lightning Piggy story — build logs, releases and behind-the-scenes updates, straight from the project's Nostr feed."
+>
+  <section id="story-feed" data-author-npub={PROJECT_NPUB}>
+    <!-- Profile hero -->
+    <div id="story-banner" class="relative h-40 sm:h-56 lg:h-64 w-full overflow-hidden bg-gradient-to-r from-pink/25 via-pink-light/40 to-yellow/30">
+      <!-- banner img injected client-side when the kind-0 profile has one -->
+    </div>
+
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="-mt-12 sm:-mt-14">
+        <div id="story-avatar" class="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white shadow-md bg-pink/10 flex items-center justify-center">
+          <span class="text-pink text-3xl font-bold">🐷</span>
+        </div>
+      </div>
+
+      <div class="mt-3">
+        <h1 id="story-name" class="text-2xl sm:text-3xl font-bold text-gray-900">
+          <span class="inline-block h-8 w-56 bg-gray-100 rounded animate-pulse align-middle"></span>
+        </h1>
+        <p id="story-about" class="mt-2 max-w-2xl text-sm leading-relaxed text-gray-600 whitespace-pre-line">
+          <span class="inline-block h-4 w-72 bg-gray-100 rounded animate-pulse align-middle"></span>
+        </p>
+      </div>
+
+      <div class="mt-5 flex items-center gap-2 border-t border-gray-100 pt-4 text-sm font-semibold text-pink">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h6z"></path>
+        </svg>
+        <span>Our Story</span>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div id="story-notes" class="space-y-0"></div>
+      <p id="story-empty" class="hidden py-12 text-center text-gray-500">
+        No posts yet — the story is just getting started. Follow Lightning Piggy on Nostr to be the first to know.
+      </p>
+    </main>
+  </section>
+</BaseLayout>
+
+<script>
+  import { RELAYS, escapeHtml, sanitizeUrl, npubToHex } from '../lib/market';
+  import { getSession, openLogin, signEvent, publish, shortId, type NostrSession } from '../lib/nostrAuth';
+
+  interface NostrEvent {
+    id: string;
+    pubkey: string;
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+    sig?: string;
+  }
+
+  const root = document.getElementById('story-feed')!;
+  const authorNpub = root.dataset.authorNpub || '';
+  const authorHex = npubToHex(authorNpub);
+
+  // ---- Relay read (same CONNECTING-safe pattern as ProductReviews) ----
+  const deadRelays = new Set<string>();
+  function fetchFromRelay(url: string, filter: any): Promise<NostrEvent[]> {
+    return new Promise((resolve) => {
+      if (deadRelays.has(url)) {
+        resolve([]);
+        return;
+      }
+      const events: NostrEvent[] = [];
+      let ws: WebSocket | undefined;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        // Only close an already-open socket; closing one that's still
+        // CONNECTING logs a noisy browser warning.
+        try {
+          if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+        } catch {}
+        resolve(events);
+      };
+      const timer = window.setTimeout(finish, 6000);
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        deadRelays.add(url);
+        finish();
+        return;
+      }
+      const sub = Math.random().toString(36).slice(2, 10);
+      ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, filter]));
+      ws.onmessage = (e) => {
+        try {
+          const m = JSON.parse(e.data);
+          if (m[0] === 'EVENT' && m[1] === sub) events.push(m[2]);
+          if (m[0] === 'EOSE' && m[1] === sub) finish();
+        } catch {}
+      };
+      ws.onerror = () => {
+        deadRelays.add(url);
+        finish();
+      };
+    });
+  }
+  async function fetchAll(filter: any): Promise<NostrEvent[]> {
+    return (await Promise.all(RELAYS.map((r) => fetchFromRelay(r, filter)))).flat();
+  }
+
+  // ---- Formatting helpers ----
+  function timeAgo(ts: number): string {
+    const s = Math.max(1, Math.floor(Date.now() / 1000 - ts));
+    const units: [number, string][] = [
+      [31536000, 'year'],
+      [2592000, 'month'],
+      [604800, 'week'],
+      [86400, 'day'],
+      [3600, 'hour'],
+      [60, 'minute'],
+    ];
+    for (const [secs, name] of units) {
+      const n = Math.floor(s / secs);
+      if (n >= 1) return `${n} ${name}${n > 1 ? 's' : ''} ago`;
+    }
+    return 'just now';
+  }
+
+  // Fresh RegExp each call so the shared g flag never leaks lastIndex state.
+  const urlRe = () => /https?:\/\/[^\s<>"']+/g;
+  const isImageUrl = (url: string): boolean => {
+    try {
+      return /\.(?:png|jpe?g|gif|webp|avif)$/i.test(new URL(url).pathname);
+    } catch {
+      return false;
+    }
+  };
+
+  // Image URLs for a note: NIP-92 imeta tags (image/* mime, or image-looking
+  // URL when no mime is declared) plus bare image URLs in the content.
+  function extractImages(ev: NostrEvent): string[] {
+    const urls: string[] = [];
+    for (const tag of ev.tags) {
+      if (tag[0] !== 'imeta') continue;
+      let url = '';
+      let mime = '';
+      for (const part of tag.slice(1)) {
+        if (typeof part !== 'string') continue;
+        if (part.startsWith('url ')) url = part.slice(4).trim();
+        else if (part.startsWith('m ')) mime = part.slice(2).trim();
+      }
+      const safe = sanitizeUrl(url);
+      if (!safe) continue;
+      if (mime ? mime.startsWith('image/') : isImageUrl(safe)) urls.push(safe);
+    }
+    for (const m of ev.content.match(urlRe()) || []) {
+      const safe = sanitizeUrl(m);
+      if (safe && isImageUrl(safe)) urls.push(safe);
+    }
+    return [...new Set(urls)];
+  }
+
+  // Escape content and auto-link URLs. Tokenises on the URL regex so escaping
+  // never mangles hrefs; image URLs are stripped (rendered separately below).
+  function contentHtml(content: string): string {
+    let out = '';
+    let last = 0;
+    const re = urlRe();
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(content))) {
+      out += escapeHtml(content.slice(last, m.index));
+      const safe = sanitizeUrl(m[0]);
+      if (safe && isImageUrl(safe)) {
+        // handled by the image grid
+      } else if (safe) {
+        out += `<a href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline break-all">${escapeHtml(safe)}</a>`;
+      } else {
+        out += escapeHtml(m[0]);
+      }
+      last = m.index + m[0].length;
+    }
+    out += escapeHtml(content.slice(last));
+    // Collapse the blank runs left behind by stripped image URLs.
+    return out.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  // A kind-1 note is a reply when it threads onto another note via an `e` tag
+  // (NIP-10). A `mention` marker is a quote, not a threading link.
+  const isReply = (ev: NostrEvent): boolean =>
+    ev.tags.some((t) => t[0] === 'e' && t[3] !== 'mention');
+  const isReplyToNote = (ev: NostrEvent, noteId: string): boolean =>
+    ev.tags.some((t) => t[0] === 'e' && t[1] === noteId && t[3] !== 'mention');
+
+  // ---- Author profiles (kind 0), cached ----
+  const profileCache = new Map<string, { name?: string; picture?: string }>();
+  function seedSelf(session: NostrSession | null) {
+    if (session?.pubkey) profileCache.set(session.pubkey, { name: session.name, picture: session.picture });
+  }
+  async function fetchProfiles(pubkeys: string[]) {
+    const missing = [...new Set(pubkeys)].filter((pk) => pk && !profileCache.has(pk));
+    if (!missing.length) return;
+    const evs = await fetchAll({ kinds: [0], authors: missing });
+    const newest = new Map<string, NostrEvent>();
+    for (const ev of evs) {
+      const ex = newest.get(ev.pubkey);
+      if (!ex || ev.created_at > ex.created_at) newest.set(ev.pubkey, ev);
+    }
+    for (const pk of missing) {
+      let prof: any = {};
+      const ev = newest.get(pk);
+      if (ev) { try { prof = JSON.parse(ev.content); } catch {} }
+      profileCache.set(pk, { name: prof.display_name || prof.name, picture: prof.picture });
+    }
+  }
+  function authorHtml(pubkey: string): string {
+    const p = profileCache.get(pubkey) || {};
+    const name = p.name || shortId(pubkey);
+    const initial = escapeHtml((name || '?').charAt(0).toUpperCase());
+    const pic = sanitizeUrl(p.picture || '');
+    const avatar = pic
+      ? `<img src="${escapeHtml(pic)}" alt="" referrerpolicy="no-referrer" class="w-8 h-8 rounded-full object-cover flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="w-8 h-8 rounded-full bg-pink/10 text-pink text-xs font-bold items-center justify-center flex-shrink-0 hidden">${initial}</span>`
+      : `<span class="w-8 h-8 rounded-full bg-pink/10 text-pink text-xs font-bold flex items-center justify-center flex-shrink-0">${initial}</span>`;
+    return `${avatar}<span class="reply-author text-sm font-semibold text-gray-800 truncate max-w-[180px]">${escapeHtml(name)}</span>`;
+  }
+
+  // ---- State ----
+  let notes: NostrEvent[] = [];
+  const repliesByNote = new Map<string, NostrEvent[]>();
+  const extraReplies = new Map<string, NostrEvent>(); // optimistic, by event id
+  const deletedIds = new Set<string>();
+  let selfPubkey = getSession()?.pubkey || '';
+
+  // ---- Hero ----
+  async function loadHero() {
+    const evs = await fetchAll({ kinds: [0], authors: [authorHex], limit: 1 });
+    let prof: any = {};
+    let newestAt = -1;
+    for (const ev of evs) {
+      if (ev.created_at > newestAt) {
+        newestAt = ev.created_at;
+        try { prof = JSON.parse(ev.content); } catch {}
+      }
+    }
+    const name = prof.display_name || prof.name || 'Lightning Piggy';
+    const about = prof.about || 'Bitcoin savings for the next generation — one oink at a time.';
+    // Warm the profile cache so replies from the project account reuse it.
+    profileCache.set(authorHex, { name, picture: prof.picture });
+    document.getElementById('story-name')!.textContent = name;
+    document.getElementById('story-about')!.textContent = about;
+    const banner = sanitizeUrl(prof.banner || '');
+    if (banner) {
+      document.getElementById('story-banner')!.innerHTML =
+        `<img src="${escapeHtml(banner)}" alt="${escapeHtml(name)} banner" referrerpolicy="no-referrer" class="absolute inset-0 w-full h-full object-cover" onerror="this.remove()">`;
+    }
+    const pic = sanitizeUrl(prof.picture || '');
+    if (pic) {
+      document.getElementById('story-avatar')!.innerHTML =
+        `<img src="${escapeHtml(pic)}" alt="${escapeHtml(name)}" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.remove()">`;
+    }
+  }
+
+  // ---- Note + reply rendering ----
+  function trashBtn(id: string, pubkey: string): string {
+    if (!selfPubkey || pubkey !== selfPubkey) return '';
+    return `<button type="button" class="reply-delete text-gray-300 hover:text-red-500 transition" data-id="${escapeHtml(id)}" title="Delete" aria-label="Delete reply">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </button>`;
+  }
+
+  function replyHtml(ev: NostrEvent): string {
+    return `
+      <div class="story-reply flex gap-3" data-id="${escapeHtml(ev.id)}">
+        ${authorHtml(ev.pubkey)}
+        <div class="min-w-0 flex-1 -ml-1">
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">${escapeHtml(timeAgo(ev.created_at))}</span>
+            ${trashBtn(ev.id, ev.pubkey)}
+          </div>
+          <p class="mt-0.5 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">${contentHtml(ev.content)}</p>
+        </div>
+      </div>`;
+  }
+
+  function repliesForNote(noteId: string): NostrEvent[] {
+    const base = repliesByNote.get(noteId) || [];
+    const all = [...base];
+    for (const ev of extraReplies.values()) if (isReplyToNote(ev, noteId)) all.push(ev);
+    const seen = new Set<string>();
+    return all
+      .filter((ev) => ev.id && !deletedIds.has(ev.id) && !seen.has(ev.id) && (seen.add(ev.id), true))
+      .sort((a, b) => a.created_at - b.created_at);
+  }
+
+  function renderThread(noteId: string) {
+    const card = document.querySelector(`.story-note[data-note-id="${CSS.escape(noteId)}"]`);
+    if (!card) return;
+    const list = card.querySelector('.reply-list') as HTMLElement;
+    const count = card.querySelector('.reply-count') as HTMLElement;
+    const replies = repliesForNote(noteId);
+    count.textContent = String(replies.length);
+    const label = card.querySelector('.reply-label') as HTMLElement | null;
+    if (label) label.textContent = replies.length === 1 ? 'reply' : 'replies';
+    list.innerHTML = replies.length
+      ? replies.map(replyHtml).join('')
+      : '<p class="text-sm text-gray-400">No replies yet — be the first to respond.</p>';
+  }
+
+  function noteHtml(ev: NostrEvent, isLast: boolean): string {
+    const images = extractImages(ev);
+    const text = contentHtml(ev.content);
+    const session = getSession();
+    const ts = new Date(ev.created_at * 1000);
+    const imgGrid = images.length
+      ? `<div class="grid gap-3 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}">${images
+          .map(
+            (src) =>
+              `<img src="${escapeHtml(src)}" alt="Lightning Piggy story post image" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="w-full rounded-xl border border-gray-100 object-cover" onerror="this.remove()">`,
+          )
+          .join('')}</div>`
+      : '';
+    return `
+      <div class="story-note relative flex gap-4 sm:gap-6" data-note-id="${escapeHtml(ev.id)}" data-note-pubkey="${escapeHtml(ev.pubkey)}">
+        <div class="flex flex-col items-center" aria-hidden="true">
+          <span class="mt-2 h-4 w-4 flex-shrink-0 rounded-full bg-pink ring-4 ring-pink/20"></span>
+          ${isLast ? '' : '<span class="mt-1 w-0.5 flex-grow bg-gradient-to-b from-pink/40 to-transparent"></span>'}
+        </div>
+        <article class="mb-8 flex-1 min-w-0 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md">
+          <div class="space-y-4 p-5 sm:p-6">
+            <time datetime="${ts.toISOString()}" title="${escapeHtml(ts.toLocaleString())}" class="block text-xs font-semibold uppercase tracking-wide text-pink">${escapeHtml(timeAgo(ev.created_at))}</time>
+            ${text ? `<p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${text}</p>` : ''}
+            ${imgGrid}
+            <div class="border-t border-gray-100 pt-3">
+              <button type="button" class="reply-toggle inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-pink transition-colors" aria-expanded="false">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span><span class="reply-count">…</span> <span class="reply-label">replies</span></span>
+              </button>
+              <div class="reply-thread hidden mt-4 space-y-4">
+                <div class="reply-list space-y-4">
+                  <div class="flex gap-3 animate-pulse"><div class="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0"></div><div class="flex-1 space-y-2 pt-1"><div class="h-3 w-24 bg-gray-200 rounded"></div><div class="h-3 w-2/3 bg-gray-100 rounded"></div></div></div>
+                </div>
+                <form class="reply-form space-y-2">
+                  <textarea rows="2" class="reply-text w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" placeholder="${session ? 'Write a reply…' : 'Sign in to join the conversation…'}"></textarea>
+                  <div class="flex items-center justify-end gap-3">
+                    <span class="reply-status text-xs text-gray-500"></span>
+                    <button type="submit" class="inline-flex items-center gap-1.5 px-4 py-1.5 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition-colors disabled:opacity-50">
+                      ${session ? 'Reply' : 'Sign in to reply'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </article>
+      </div>`;
+  }
+
+  function skeletonFeed(): string {
+    const card = `
+      <div class="flex gap-4 sm:gap-6">
+        <div class="mt-2 h-4 w-4 flex-shrink-0 rounded-full bg-gray-200 animate-pulse"></div>
+        <div class="mb-8 flex-1 rounded-2xl border border-gray-200 bg-white p-6 animate-pulse space-y-3">
+          <div class="h-3 w-24 bg-gray-200 rounded"></div>
+          <div class="h-4 w-full bg-gray-100 rounded"></div>
+          <div class="h-4 w-3/4 bg-gray-100 rounded"></div>
+          <div class="h-40 w-full bg-gray-100 rounded-xl"></div>
+        </div>
+      </div>`;
+    return card.repeat(3);
+  }
+
+  // ---- Load ----
+  const notesEl = document.getElementById('story-notes')!;
+  const emptyEl = document.getElementById('story-empty')!;
+
+  async function loadNotes() {
+    const evs = await fetchAll({ kinds: [1], authors: [authorHex], limit: 50 });
+    const seen = new Set<string>();
+    notes = evs
+      .filter((ev) => ev.id && !seen.has(ev.id) && (seen.add(ev.id), true))
+      .filter((ev) => !isReply(ev) && !deletedIds.has(ev.id))
+      .sort((a, b) => b.created_at - a.created_at)
+      .slice(0, 50);
+    renderFeed();
+    if (notes.length) await loadReplies();
+  }
+
+  function renderFeed() {
+    if (!notes.length) {
+      notesEl.innerHTML = '';
+      emptyEl.classList.remove('hidden');
+      return;
+    }
+    emptyEl.classList.add('hidden');
+    notesEl.innerHTML = notes.map((ev, i) => noteHtml(ev, i === notes.length - 1)).join('');
+    // Threads already fetched (e.g. re-render after auth change) paint at once.
+    for (const ev of notes) if (repliesByNote.has(ev.id)) renderThread(ev.id);
+  }
+
+  async function loadReplies() {
+    const ids = notes.map((n) => n.id);
+    const evs = await fetchAll({ kinds: [1], '#e': ids, limit: 500 });
+    for (const id of ids) {
+      repliesByNote.set(
+        id,
+        evs.filter((ev) => isReplyToNote(ev, id)),
+      );
+    }
+    await fetchProfiles(evs.map((ev) => ev.pubkey));
+    for (const id of ids) renderThread(id);
+  }
+
+  // ---- Delegated events (attached once — no listener stacking) ----
+  document.addEventListener('click', async (e) => {
+    const target = e.target as HTMLElement;
+
+    const toggle = target.closest?.('.reply-toggle') as HTMLElement | null;
+    if (toggle) {
+      const thread = toggle.closest('.story-note')?.querySelector('.reply-thread');
+      const open = thread?.classList.toggle('hidden');
+      toggle.setAttribute('aria-expanded', String(!open));
+      return;
+    }
+
+    const del = target.closest?.('.reply-delete') as HTMLButtonElement | null;
+    if (del) {
+      const session = getSession();
+      if (!session) {
+        openLogin();
+        return;
+      }
+      const id = del.dataset.id || '';
+      const noteId = del.closest('.story-note')?.getAttribute('data-note-id') || '';
+      if (!id || !confirm('Delete this reply? This can’t be undone.')) return;
+      del.disabled = true;
+      try {
+        const signed = await signEvent({
+          kind: 5,
+          created_at: Math.floor(Date.now() / 1000),
+          pubkey: session.pubkey,
+          tags: [['e', id], ['k', '1']],
+          content: '',
+        });
+        await publish(signed);
+        deletedIds.add(id);
+        extraReplies.delete(id);
+        if (noteId) renderThread(noteId);
+      } catch {
+        del.disabled = false;
+      }
+    }
+  });
+
+  document.addEventListener('submit', async (e) => {
+    const form = (e.target as HTMLElement)?.closest?.('.reply-form') as HTMLFormElement | null;
+    if (!form) return;
+    e.preventDefault();
+    const card = form.closest('.story-note') as HTMLElement;
+    const noteId = card.dataset.noteId || '';
+    const notePubkey = card.dataset.notePubkey || '';
+    const statusEl = form.querySelector('.reply-status') as HTMLElement;
+    const textEl = form.querySelector('.reply-text') as HTMLTextAreaElement;
+
+    const session = getSession();
+    if (!session) {
+      openLogin();
+      return;
+    }
+    const text = textEl.value.trim();
+    if (!text) {
+      statusEl.textContent = 'Write something first.';
+      return;
+    }
+    statusEl.textContent = 'Signing…';
+    try {
+      // NIP-10 marked tags: the story post is the thread root.
+      const signed = await signEvent({
+        kind: 1,
+        created_at: Math.floor(Date.now() / 1000),
+        pubkey: session.pubkey,
+        tags: [
+          ['e', noteId, '', 'root'],
+          ['p', notePubkey],
+        ],
+        content: text,
+      });
+      statusEl.textContent = 'Publishing…';
+      await publish(signed);
+      extraReplies.set(signed.id, signed); // optimistic, before relays index it
+      seedSelf(session);
+      statusEl.textContent = 'Posted!';
+      textEl.value = '';
+      renderThread(noteId);
+    } catch {
+      statusEl.textContent = 'Could not post — please try again.';
+    }
+  });
+
+  // Auth changes: refresh composer placeholders + own-reply trash icons.
+  window.addEventListener('nostr:auth', (e) => {
+    const s = (e as CustomEvent).detail as NostrSession | null;
+    selfPubkey = s?.pubkey || '';
+    seedSelf(s);
+    renderFeed();
+  });
+
+  // ---- Init ----
+  seedSelf(getSession());
+  notesEl.innerHTML = skeletonFeed();
+  loadHero();
+  loadNotes();
+</script>

@@ -30,8 +30,11 @@ export const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct972
 export const WRAP_TS_SLACK = 172800;
 
 export interface ChatMessage {
-  id: string; // rumor id (stable across the recipient + self copies? no — per-copy; dedupe below)
-  wrapId: string;
+  // Rumor id. The recipient and self copies wrap a rumor with identical fields,
+  // so getEventHash yields the SAME id for both — which is what lets
+  // wrapsToThread dedupe the copies (and relay duplicates) into one message.
+  id: string;
+  wrapId: string; // kind-1059 wrap this rumor arrived in ('' = local echo, not yet fetched back)
   from: string; // rumor author (hex)
   text: string;
   ts: number; // rumor created_at (real send time)

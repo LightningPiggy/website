@@ -23,11 +23,15 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
 <div id="nostr-chat" data-recipient={PROJECT_NPUB}>
   <!-- Slide-over panel: full-width sheet on mobile, 380px drawer on desktop.
        Opened by the header envelope icon via the `nostr:open-chat` event. -->
+  <!-- While closed the panel is `inert` + aria-hidden, keeping its controls out
+       of the tab order and away from assistive tech; both toggle on open. -->
   <div
     id="nostr-chat-panel"
     role="dialog"
     aria-modal="false"
     aria-labelledby="nc-title"
+    aria-hidden="true"
+    inert
     class="fixed inset-y-0 right-0 z-50 w-full sm:w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col translate-x-full transition-transform duration-300 ease-in-out"
   >
     <!-- Header -->
@@ -126,8 +130,10 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
   let guestSk: Uint8Array | null = null;
   const decryptCache = new Map<string, NostrEvent | null>();
   let thread: ChatMessage[] = [];
-  // Optimistic local echoes (shown immediately; replaced once the self copy
-  // comes back from the relays).
+  // Local echoes of messages already delivered to the team (wrapId ''), shown
+  // with a "syncing" hint until the self copy is fetched back from the relays
+  // and replaces them (or indefinitely if no relay kept the self copy — the
+  // message itself was still delivered).
   let pending: ChatMessage[] = [];
 
   function setStatus(msg: string) {
@@ -161,7 +167,9 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
     txt.textContent = m.text;
     const time = document.createElement('p');
     time.className = 'text-[10px] mt-1 text-right ' + (m.mine ? 'text-white/70' : 'text-gray-400');
-    time.textContent = m.id.startsWith('pending:') ? 'sending…' : stamp(m.ts);
+    // An empty wrapId marks a local echo: already SENT to the team (the send
+    // awaited), just not yet confirmed back from the relays via the self copy.
+    time.textContent = m.wrapId ? stamp(m.ts) : `${stamp(m.ts)} · syncing`;
     b.appendChild(txt);
     b.appendChild(time);
     row.appendChild(b);
@@ -250,6 +258,8 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
   function openPanel() {
     isOpen = true;
     panel.classList.remove('translate-x-full');
+    panel.removeAttribute('inert');
+    panel.setAttribute('aria-hidden', 'false');
     renderMode();
     if (getSession()) {
       if (!thread.length) {
@@ -263,7 +273,12 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
   }
   function closePanel() {
     isOpen = false;
+    // Move focus off the panel before hiding it, so aria-hidden/inert never
+    // land on an element that still contains the focused node.
+    if (panel.contains(document.activeElement)) (document.activeElement as HTMLElement | null)?.blur?.();
     panel.classList.add('translate-x-full');
+    panel.setAttribute('inert', '');
+    panel.setAttribute('aria-hidden', 'true');
     stopPolling();
   }
 
@@ -303,8 +318,9 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
       // Recipient copy + self copy (so the sent side is fetchable later).
       await sendGiftWrappedDM(peer, text);
       sendSelfCopy(peer, text).catch(() => {});
+      // Local echo — wrapId '' marks it as not-yet-confirmed (see bubble()).
       pending.push({
-        id: 'pending:' + Date.now() + Math.random().toString(36).slice(2),
+        id: 'local:' + Date.now() + Math.random().toString(36).slice(2),
         wrapId: '',
         from: getSession()!.pubkey,
         text,

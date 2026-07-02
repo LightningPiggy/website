@@ -122,7 +122,14 @@ async function run() {
       document.getElementById('nostr-chat').dataset.recipient = hex;
     }, teamPub);
     await page.locator('#hdr-chat').click();
-    await page.locator('#nostr-chat-panel').waitFor({ state: 'visible' });
+    // A transform-translated panel always has a box, so Playwright's "visible"
+    // is meaningless here — wait for the real open signal instead: the
+    // translate-x-full class being removed by the open handler.
+    await page.waitForFunction(
+      () => !document.getElementById('nostr-chat-panel').classList.contains('translate-x-full'),
+      undefined,
+      { timeout: 10000 },
+    );
     await sleep(600); // let the 300ms slide-in transition finish
     ok(
       await page.evaluate(() => {

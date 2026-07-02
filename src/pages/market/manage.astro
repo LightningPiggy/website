@@ -399,6 +399,14 @@ const owners = vendors
       btn.textContent = 'Publishing…';
       try {
         const signed = await signEvent({ ...unsigned, pubkey: vendor.hex });
+        // Guard: an extension user may have switched accounts in their signer
+        // since logging in — a mismatched author would publish the listing under
+        // the wrong key (invisible to this shop).
+        if (signed.pubkey !== vendor.hex) {
+          errEl.textContent =
+            'Your signer returned a different account. Switch back to your vendor key (or sign in again) and retry.';
+          return;
+        }
         await publish(signed, publishRelays);
         closeModal();
         status('Saved ✓');
@@ -416,6 +424,10 @@ const owners = vendors
       status('Removing…');
       try {
         const signed = await signEvent({ ...G.buildDelete(kind, vendor.hex, d), pubkey: vendor.hex });
+        if (signed.pubkey !== vendor.hex) {
+          status('Your signer returned a different account — sign in again and retry.');
+          return;
+        }
         await publish(signed, publishRelays);
         removed.add(`${kind}:${d}`);
         status('Removed ✓');

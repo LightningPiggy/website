@@ -114,8 +114,11 @@ const currentPath = Astro.url.pathname;
         ))}
       </div>
 
-      <!-- Header icon cluster (zap donation, chat; story's book icon lands here too) -->
+      <!-- Header icon cluster (story / zap / chat — mirrors robotechy.com) -->
       <div class="hidden lg:flex items-center gap-1 mr-1" id="hdr-icons">
+        <a href="/story" aria-label="Our story" title="Our story" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h6z"/></svg>
+        </a>
         <a href="/donate" aria-label="Zap a donation" title="Zap a donation" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </a>
@@ -197,6 +200,16 @@ const currentPath = Astro.url.pathname;
           )}
         </div>
       ))}
+      <a
+        href="/story"
+        class={`block px-3 py-2 text-base font-medium rounded-lg ${
+          currentPath.startsWith('/story')
+            ? 'text-pink bg-pink-light/30'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+        }`}
+      >
+        📖 Our story
+      </a>
       <!-- Zap / donate (replaces the old "Donate" text entry) -->
       <a
         href="/donate"

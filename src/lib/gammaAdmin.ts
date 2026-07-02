@@ -47,6 +47,8 @@ export interface ProductForm {
   categories: string[]; // free-text `t` tags (excludes the market marker)
   listed: boolean; // carries the `t`=lightningpiggy marker → shows in the LP market
 }
+// Note: 'client' is intentionally NOT managed — buildProduct() never writes one,
+// so treating it as unmanaged preserves any client tag another app added.
 const PRODUCT_MANAGED = new Set([
   'd',
   'title',
@@ -58,7 +60,6 @@ const PRODUCT_MANAGED = new Set([
   'location',
   't',
   'published_at',
-  'client',
 ]);
 
 export function buildProduct(form: ProductForm, existing?: NostrEvent): Unsigned {
@@ -95,7 +96,10 @@ export function parseProductForm(ev: NostrEvent): ProductForm {
     priceAmount: price?.[1] || '',
     priceCurrency: (price?.[2] || 'SATS').toUpperCase(),
     images: ev.tags.filter((t) => t[0] === 'image' && t[1]).map((t) => t[1]),
-    visibility: tagVal(ev.tags, 'visibility') || 'on-sale',
+    // Normalised to lowercase: the form <select> options and display-status
+    // checks are lowercase, so a differently-cased tag from another client
+    // would otherwise mis-render and be silently rewritten on save.
+    visibility: (tagVal(ev.tags, 'visibility') || 'on-sale').toLowerCase(),
     stock: tagVal(ev.tags, 'stock') || '',
     location: tagVal(ev.tags, 'location') || '',
     categories: tagsAll(ev.tags, 't').filter((c) => (c || '').toLowerCase() !== MARKET_TAG),
@@ -208,7 +212,7 @@ export function parseShippingForm(ev: NostrEvent): ShippingForm {
     priceAmount: price?.[1] || '',
     priceCurrency: (price?.[2] || 'SATS').toUpperCase(),
     countries: countryTag ? countryTag.slice(1).filter(Boolean) : [],
-    service: tagVal(ev.tags, 'service') || 'standard',
+    service: (tagVal(ev.tags, 'service') || 'standard').toLowerCase(),
     carrier: tagVal(ev.tags, 'carrier') || '',
   };
 }

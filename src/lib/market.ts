@@ -299,8 +299,14 @@ export function selectShopEvents(
   for (const shop of shops) {
     const hex = npubToHex(shop.npub);
     const mine = evList.filter((ev) => ev.pubkey === hex && matchesShop(ev, shop));
-    const order = (ev: NostrEvent) =>
-      shop.mode === 'curated' ? shop.include.indexOf(tagVal(ev.tags, 'd') || '') : 0;
+    // Curated order: include-list position first. Marker-listed products that
+    // aren't in the include list rank AFTER the curated ones (not before, which
+    // is what a raw indexOf() === -1 would do), newest first within each group.
+    const order = (ev: NostrEvent) => {
+      if (shop.mode !== 'curated') return 0;
+      const i = shop.include.indexOf(tagVal(ev.tags, 'd') || '');
+      return i === -1 ? 999 : i;
+    };
     mine.sort((a, b) => order(a) - order(b) || b.created_at - a.created_at);
     for (const ev of mine) {
       const title = tagVal(ev.tags, 'title') || '';

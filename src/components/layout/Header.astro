@@ -201,6 +201,7 @@ const currentPath = Astro.url.pathname;
         <span id="hdr-name-m" class="text-sm font-semibold text-gray-800 flex-1 truncate"></span>
         <button id="hdr-signout-m" type="button" class="text-sm text-pink font-semibold">Sign out</button>
       </div>
+      <a id="hdr-manage-m" href="/market/manage" class="hidden mt-2 items-center gap-2 px-3 py-2 rounded-xl border border-pink/30 bg-pink/5 text-sm font-semibold text-gray-800">🛍️ Manage my shop</a>
     </div>
   </div>
 </header>
@@ -254,6 +255,9 @@ const currentPath = Astro.url.pathname;
     signinBtn?.classList.toggle('hidden', !!s);
     accountBtn?.classList.toggle('hidden', !s);
     document.getElementById('hdr-manage')?.classList.toggle('hidden', !isVendor(s));
+    const manageM = document.getElementById('hdr-manage-m');
+    manageM?.classList.toggle('hidden', !isVendor(s));
+    manageM?.classList.toggle('flex', isVendor(s));
     if (s) {
       (document.getElementById('hdr-name') as HTMLElement).textContent = name;
       setAvatar('hdr-avatar', 'hdr-initial', s);

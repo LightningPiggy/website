@@ -238,7 +238,9 @@ const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqd
     const avatar = pic
       ? `<img src="${escapeHtml(pic)}" alt="" referrerpolicy="no-referrer" class="w-8 h-8 rounded-full object-cover flex-shrink-0" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="w-8 h-8 rounded-full bg-pink/10 text-pink text-xs font-bold items-center justify-center flex-shrink-0 hidden">${initial}</span>`
       : `<span class="w-8 h-8 rounded-full bg-pink/10 text-pink text-xs font-bold flex items-center justify-center flex-shrink-0">${initial}</span>`;
-    return `${avatar}<span class="reply-author text-sm font-semibold text-gray-800 truncate max-w-[180px]">${escapeHtml(name)}</span>`;
+    // Single container (like ProductReviews' authorHtml) so callers can drop it
+    // into a flex row without avatar/name becoming separate flex items.
+    return `<span class="inline-flex items-center gap-2 min-w-0">${avatar}<span class="reply-author text-sm font-semibold text-gray-800 truncate max-w-[180px]">${escapeHtml(name)}</span></span>`;
   }
 
   // ---- State ----
@@ -287,15 +289,15 @@ const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqd
 
   function replyHtml(ev: NostrEvent): string {
     return `
-      <div class="story-reply flex gap-3" data-id="${escapeHtml(ev.id)}">
-        ${authorHtml(ev.pubkey)}
-        <div class="min-w-0 flex-1 -ml-1">
-          <div class="flex items-center gap-2">
+      <div class="story-reply" data-id="${escapeHtml(ev.id)}">
+        <div class="flex items-center justify-between gap-2">
+          ${authorHtml(ev.pubkey)}
+          <div class="flex items-center gap-2 flex-shrink-0">
             <span class="text-xs text-gray-400">${escapeHtml(timeAgo(ev.created_at))}</span>
             ${trashBtn(ev.id, ev.pubkey)}
           </div>
-          <p class="mt-0.5 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">${contentHtml(ev.content)}</p>
         </div>
+        <p class="mt-1 pl-10 text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">${contentHtml(ev.content)}</p>
       </div>`;
   }
 
@@ -332,7 +334,7 @@ const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqd
       ? `<div class="grid gap-3 ${images.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}">${images
           .map(
             (src) =>
-              `<img src="${escapeHtml(src)}" alt="Lightning Piggy story post image" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="w-full rounded-xl border border-gray-100 object-cover" onerror="this.remove()">`,
+              `<img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" class="w-full rounded-xl border border-gray-100 object-cover" onerror="this.remove()">`,
           )
           .join('')}</div>`
       : '';

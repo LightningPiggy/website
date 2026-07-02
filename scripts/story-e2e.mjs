@@ -1,7 +1,10 @@
-// story-e2e.mjs — self-cleaning E2E for /story (NOT committed).
+// scripts/story-e2e.mjs — self-cleaning E2E for /story.
 // Publishes 2 test notes from a throwaway "project" key + a reply from a second
 // throwaway key, drives the page with Playwright, then NIP-09-deletes ALL test
-// events. Run from the repo root: node story-e2e.mjs
+// events (so nothing persists on the public relays).
+//
+// Run from the repo root (after `npm run build`; needs Playwright chromium):
+//   node scripts/story-e2e.mjs
 import { spawn } from 'node:child_process';
 import { generateSecretKey, getPublicKey, finalizeEvent } from 'nostr-tools/pure';
 import * as nip19 from 'nostr-tools/nip19';

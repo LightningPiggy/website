@@ -123,7 +123,17 @@ if (detail.priceAmount) {
       <div class="space-y-3">
         <div class="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
           {detail.images[0] ? (
-            <img id="main-image" src={detail.images[0]} alt={detail.title} referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+            <>
+              <img id="main-image" src={detail.images[0]} alt={detail.title} referrerpolicy="no-referrer" class="w-full h-full object-cover cursor-zoom-in" />
+              <button
+                id="img-expand"
+                type="button"
+                aria-label="View image full screen"
+                class="absolute top-3 right-3 p-2 rounded-lg bg-white/85 backdrop-blur text-gray-700 shadow hover:bg-white hover:text-pink transition"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M14 10l7-7M9 21H3v-6M10 14l-7 7" /></svg>
+              </button>
+            </>
           ) : (
             <div class="w-full h-full flex items-center justify-center text-6xl">🐽</div>
           )}
@@ -218,6 +228,14 @@ if (detail.priceAmount) {
     </div>
   </div>
 
+  <!-- Fullscreen image lightbox -->
+  <div id="img-lightbox" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/90 p-4">
+    <button id="img-lightbox-close" type="button" aria-label="Close" class="absolute top-4 right-4 text-white/80 hover:text-white transition">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    </button>
+    <img id="img-lightbox-img" src="" alt={detail.title} referrerpolicy="no-referrer" class="max-w-full max-h-[90vh] object-contain rounded-lg" />
+  </div>
+
   <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
 
   <script>
@@ -235,6 +253,32 @@ if (detail.priceAmount) {
         btn.classList.add('border-pink');
         btn.classList.remove('border-gray-200');
       });
+    });
+
+    // Fullscreen lightbox — open from the expand icon or by clicking the image.
+    const lb = document.getElementById('img-lightbox');
+    const lbImg = document.getElementById('img-lightbox-img') as HTMLImageElement | null;
+    const openLb = () => {
+      if (!lb || !lbImg || !main) return;
+      lbImg.src = main.src;
+      lb.classList.remove('hidden');
+      lb.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    };
+    const closeLb = () => {
+      if (!lb) return;
+      lb.classList.add('hidden');
+      lb.classList.remove('flex');
+      document.body.style.overflow = '';
+    };
+    document.getElementById('img-expand')?.addEventListener('click', openLb);
+    main?.addEventListener('click', openLb);
+    document.getElementById('img-lightbox-close')?.addEventListener('click', closeLb);
+    lb?.addEventListener('click', (e) => {
+      if (e.target === lb) closeLb();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lb && !lb.classList.contains('hidden')) closeLb();
     });
   </script>
 </BaseLayout>

@@ -43,7 +43,7 @@ If you already have the single board computer, follow these steps:
 
 **Single Board Computer (SBC):** WaveShare ESP32-S3-Touch with a 2inch screen - including the optional camera makes setup a breeze. Available direct from [WaveShare](https://www.waveshare.com/esp32-s3-touch-lcd-2.htm) or from resellers.
 
-**Case:** One homemade case using materials of your choice.
+**Case:** One homemade case using materials of your choice. Check out our [cases and enclosures](/build/cases) page if you wish to use one of ours. Please note depending on your selection there may be extra hardware to source.
 
 **USB-C data cable:** Available cheaply for bulk purchases from [Aliexpress](https://www.aliexpress.com) or [Amazon](http://amazon.com) if you don't have one lying around.
 

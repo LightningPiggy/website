@@ -48,7 +48,7 @@ If you already have the single board computer, follow these steps:
 
 - [MakerFocus](https://www.makerfocus.com/products/4pcs-952540-3-7v-1000mah-battery-with-jst1-25-connector-lithium-rechargeable-battery) 1000mAh. Note: The size of this battery 26 *44* 9 mm (1.02 *1.73* 0.35 inch) doesn't fit perfectly in the Genesis and Robotechy pig cases.
 
-**Case:** One homemade case using materials of your choice.
+**Case:** One homemade case using materials of your choice. Check out our [cases and enclosures](/build/cases) page if you wish to use one of ours. Please note depending on your selection there may be extra hardware to source.
 
 **Micro USB data cable:** Available cheaply for bulk purchases from [Aliexpress](https://www.aliexpress.com) or [Amazon](http://amazon.com) if you don't have one lying around.
 

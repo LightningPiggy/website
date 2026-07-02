@@ -2716,3 +2716,44 @@ document.getElementById('og-refresh-btn')?.addEventListener('click', () => loadO
 document.querySelectorAll('.tab').forEach(tab => {
   if (tab.dataset.tab === 'og-preview') tab.addEventListener('click', () => loadOgPreview(false));
 });
+
+// ─── Deploy (direct to Netlify - no GitHub) ──────────────────────────────
+{
+  const deployBtn = document.getElementById('deploy-btn');
+  const deployMsgEl = document.getElementById('deploy-message');
+  const deployResultEl = document.getElementById('deploy-result');
+  const deployOutputEl = document.getElementById('deploy-output');
+
+  if (deployBtn) {
+    deployBtn.addEventListener('click', async () => {
+      const orig = deployBtn.textContent;
+      deployBtn.disabled = true;
+      deployBtn.textContent = '⏳ Building & deploying…';
+      deployResultEl.hidden = false;
+      deployResultEl.className = 'result';
+      deployResultEl.textContent = 'Building the site and uploading to Netlify — this can take a minute…';
+      deployOutputEl.style.display = 'none';
+      try {
+        const res = await fetch('/api/deploy/netlify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: deployMsgEl ? deployMsgEl.value : '' }),
+        });
+        const data = await res.json();
+        if (deployOutputEl && data.output) {
+          deployOutputEl.style.display = 'block';
+          deployOutputEl.textContent = data.output;
+        }
+        if (!res.ok) throw new Error(data.error || 'Deploy failed');
+        deployResultEl.className = 'result success';
+        deployResultEl.textContent = '✓ Deployed to Netlify' + (data.url ? ' — ' + data.url : '');
+      } catch (err) {
+        deployResultEl.className = 'result error';
+        deployResultEl.textContent = '✗ Deploy failed: ' + err.message;
+      } finally {
+        deployBtn.disabled = false;
+        deployBtn.textContent = orig;
+      }
+    });
+  }
+}

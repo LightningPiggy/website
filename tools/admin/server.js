@@ -275,8 +275,58 @@ app.get('/api/og-preview', async (req, res) => {
   }
 });
 
-// Git deploy/sync intentionally removed: the admin tool edits local data files
-// only and must never reach GitHub. Publish via your normal git workflow.
+// --- Deploy (direct to Netlify - no git, no GitHub) ---
+//
+// Git-based deploy/sync was removed on purpose: the admin tool must never
+// reach GitHub. Instead we build the site locally and upload dist/ straight
+// to Netlify with the CLI (uses your `netlify login` session and the site
+// link in .netlify/state.json).
+//
+// Caveat: anything published this way that is NOT also committed to the repo
+// will be reverted the next time a git push triggers a Netlify build.
+
+let deployRunning = false;
+
+app.post('/api/deploy/netlify', async (req, res) => {
+  if (deployRunning) {
+    return res.status(409).json({ error: 'A deploy is already in progress' });
+  }
+  deployRunning = true;
+  const log = [];
+  // Homebrew binaries (node/npm/netlify) aren't on execFile's stripped PATH.
+  const env = {
+    ...process.env,
+    PATH: ['/opt/homebrew/bin', '/usr/local/bin', process.env.PATH].filter(Boolean).join(':'),
+  };
+  const run = async (cmd, args, label) => {
+    log.push('$ ' + label);
+    const { stdout, stderr } = await execFileAsync(cmd, args, {
+      cwd: ROOT, env, maxBuffer: 32 * 1024 * 1024, timeout: 10 * 60 * 1000,
+    });
+    if (stdout) log.push(stdout.toString().trim());
+    if (stderr) log.push(stderr.toString().trim());
+    return stdout.toString();
+  };
+  try {
+    await run('npm', ['run', 'build'], 'npm run build');
+    const message = ((req.body || {}).message || 'Admin tool deploy').toString().slice(0, 200);
+    const out = await run(
+      'netlify',
+      ['deploy', '--prod', '--dir', 'dist', '--message', message, '--json'],
+      `netlify deploy --prod --dir dist --message "${message}"`,
+    );
+    let deployUrl = null;
+    try { deployUrl = JSON.parse(out).url || JSON.parse(out).deploy_url || null; } catch {}
+    res.json({ success: true, url: deployUrl, output: log.join('\n') });
+  } catch (err) {
+    log.push('ERROR: ' + err.message);
+    if (err.stdout) log.push(err.stdout.toString().trim());
+    if (err.stderr) log.push(err.stderr.toString().trim());
+    res.status(500).json({ error: err.message, output: log.join('\n') });
+  } finally {
+    deployRunning = false;
+  }
+});
 
 app.get('/api/fs/ls', (req, res) => {
   try {

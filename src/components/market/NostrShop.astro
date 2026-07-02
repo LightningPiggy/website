@@ -9,7 +9,7 @@
 //   "products": { "mode": "all" }
 //
 // SEO: products are fetched from relays AT BUILD TIME and rendered as a static,
-// crawlable grid (plus JSON-LD). The client <script> then refreshes the grid
+// crawlable grid (plus JSON-LD). The client script then refreshes the grid
 // live on load, so humans get up-to-date listings and bots/no-JS get the
 // build-time snapshot. Build-time fetch is fail-safe: if relays are unreachable
 // the grid falls back to client-only rendering and the build still succeeds.
@@ -37,7 +37,8 @@ interface Props {
 const { vendors } = Astro.props;
 
 // Shape just what the client script needs (npub pulled from nostrUrl, store URL
-// from `url`). Shared with the product detail pages via shopsFromVendors.
+// from `url`). Shared with the product detail pages via shopsFromVendors — this
+// supersedes the inline mapping from #12 (same behaviour, one source of truth).
 const shops: Shop[] = shopsFromVendors(vendors);
 
 // ---- Build-time prerender ----

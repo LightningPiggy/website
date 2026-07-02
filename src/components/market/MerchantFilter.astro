@@ -63,7 +63,14 @@ const { merchants } = Astro.props;
       if (label) label.textContent = vendor || 'All merchants';
       if (avatar) {
         if (vendor && logo) {
-          avatar.innerHTML = `<img src="${logo}" alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover">`;
+          // Build via DOM (not an HTML string) so the URL can't break out of the
+          // attribute — defence in depth even though logos come from vendors.json.
+          const img = document.createElement('img');
+          img.src = logo;
+          img.alt = '';
+          img.referrerPolicy = 'no-referrer';
+          img.className = 'w-full h-full object-cover';
+          avatar.replaceChildren(img);
         } else if (vendor) {
           avatar.textContent = vendor.charAt(0).toUpperCase();
         } else {

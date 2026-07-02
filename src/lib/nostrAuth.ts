@@ -131,7 +131,7 @@ export async function nip44Encrypt(recipientHex: string, plaintext: string): Pro
 // ---- Publish ----
 // Publish a signed event to the relays; resolves once one accepts (or after a
 // short grace period). Shared by the reviews + comments + order flows.
-export function publish(signed: any): Promise<void> {
+export function publish(signed: any, relays: string[] = RELAYS): Promise<void> {
   return new Promise((resolve) => {
     let settled = false;
     const done = () => {
@@ -140,7 +140,7 @@ export function publish(signed: any): Promise<void> {
       resolve();
     };
     const overall = window.setTimeout(done, 4000);
-    RELAYS.forEach((url) => {
+    relays.forEach((url) => {
       let ws: WebSocket;
       try {
         ws = new WebSocket(url);

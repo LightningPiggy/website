@@ -1,5 +1,14 @@
 ---
 import NostrLoginModal from '../market/NostrLoginModal.astro';
+import { npubToHex } from '../../lib/market';
+import vendorsData from '../../data/vendors.json';
+
+// Hex pubkeys of the vendors LP sells for — they see a "Manage my shop" link.
+const vendorHexes = ((vendorsData as any).vendors || [])
+  .map((v: any) => (String(v.nostrUrl || '').match(/npub1[0-9a-z]+/) || [])[0] || '')
+  .filter(Boolean)
+  .map((npub: string) => npubToHex(npub))
+  .filter(Boolean);
 
 const navItems = [
   { label: 'About', href: '/about' },
@@ -103,7 +112,7 @@ const currentPath = Astro.url.pathname;
       </div>
 
       <!-- Sign in / account (Nostr) -->
-      <div class="hidden lg:flex items-center relative" id="hdr-auth">
+      <div class="hidden lg:flex items-center relative" id="hdr-auth" data-vendor-hexes={JSON.stringify(vendorHexes)}>
         <button
           id="hdr-signin"
           type="button"
@@ -124,7 +133,8 @@ const currentPath = Astro.url.pathname;
           <span id="hdr-name" class="text-sm font-semibold text-gray-800 max-w-[120px] truncate"></span>
           <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
-        <div id="hdr-menu" class="hidden absolute right-0 top-full mt-1 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+        <div id="hdr-menu" class="hidden absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+          <a id="hdr-manage" href="/market/manage" class="hidden px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">🛍️ Manage my shop</a>
           <button id="hdr-signout" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Sign out</button>
         </div>
       </div>
@@ -231,11 +241,19 @@ const currentPath = Astro.url.pathname;
     }
   }
 
+  // Vendors (matching a vendors.json npub) get a "Manage my shop" link.
+  let vendorHexes: string[] = [];
+  try {
+    vendorHexes = JSON.parse(document.getElementById('hdr-auth')?.dataset.vendorHexes || '[]');
+  } catch {}
+  const isVendor = (s: NostrSession | null) => !!s && vendorHexes.includes(s.pubkey);
+
   function renderAuth(s: NostrSession | null) {
     const name = s ? s.name || shortId(s.pubkey) : '';
     // Desktop
     signinBtn?.classList.toggle('hidden', !!s);
     accountBtn?.classList.toggle('hidden', !s);
+    document.getElementById('hdr-manage')?.classList.toggle('hidden', !isVendor(s));
     if (s) {
       (document.getElementById('hdr-name') as HTMLElement).textContent = name;
       setAvatar('hdr-avatar', 'hdr-initial', s);

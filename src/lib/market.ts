@@ -187,11 +187,24 @@ export function isTest(title: string, d: string): boolean {
   return /\b(localhost|staging|test|demo|sample)\b/i.test(title + ' ' + d);
 }
 
+// A vendor tags a product with `t`=lightningpiggy to list it in this market, and
+// sets visibility=hidden to temporarily hide it. Both are honoured below and by
+// the management console.
+export const MARKET_TAG = 'lightningpiggy';
+export function isMarketListed(ev: NostrEvent): boolean {
+  return tagsAll(ev.tags, 't').some((t) => (t || '').toLowerCase() === MARKET_TAG);
+}
+export function isHidden(ev: NostrEvent): boolean {
+  return (tagVal(ev.tags, 'visibility') || '').toLowerCase() === 'hidden';
+}
+
 export function matchesShop(ev: NostrEvent, shop: Shop): boolean {
   const d = tagVal(ev.tags, 'd') || '';
   const title = tagVal(ev.tags, 'title') || '';
   if (!d || !title) return false;
   if (isTestProduct(title, d)) return false;
+  if (isHidden(ev)) return false; // vendor hid it
+  if (isMarketListed(ev)) return true; // tagged for the LP market
   if (shop.mode === 'curated') return shop.include.includes(d);
   if (shop.mode === 'keywords') {
     const hay = (
@@ -210,6 +223,8 @@ export function productMatches(ev: NostrEvent, seed: Seed): boolean {
   const d = tagVal(ev.tags, 'd') || '';
   const title = tagVal(ev.tags, 'title') || '';
   if (!d || !title || isTest(title, d)) return false;
+  if (isHidden(ev)) return false;
+  if (isMarketListed(ev)) return true;
   const inInclude = seed.include.includes(d);
   const kwHay = (
     title +

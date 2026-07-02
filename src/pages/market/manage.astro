@@ -1,0 +1,482 @@
+---
+// /market/manage — vendor management console.
+//
+// Any user whose signed-in Nostr key matches a vendor in src/data/vendors.json
+// (the shops Lightning Piggy sells for) can manage THEIR OWN shop here: add /
+// edit / remove products (kind 30402), categories/collections (kind 30405) and
+// shipping options (kind 30406). All changes are Gamma Markets Nostr events
+// signed by the vendor and published to relays — no backend. Relays also enforce
+// authorship, so a vendor can only replace/delete their own events.
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { npubToHex } from '../../lib/market';
+import vendorsData from '../../data/vendors.json';
+
+const { vendors = [] } = vendorsData as any;
+// The vendor identities that may manage a shop here (npub → hex).
+const owners = vendors
+  .map((v: any) => {
+    const npub = (String(v.nostrUrl || '').match(/npub1[0-9a-z]+/) || [])[0] || '';
+    return { name: v.name, logo: v.logo || '', npub, hex: npub ? npubToHex(npub) : '' };
+  })
+  .filter((o: any) => o.hex);
+---
+
+<BaseLayout title="Manage your shop" description="Vendors: manage your Lightning Piggy market listings.">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14" data-owners={JSON.stringify(owners)}>
+    <a href="/market" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-pink mb-6 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+      Back to Market
+    </a>
+
+    <!-- Signed out -->
+    <div id="mg-signedout" class="hidden text-center py-16">
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Manage your shop</h1>
+      <p class="text-gray-600 mb-5">Sign in with your vendor Nostr key to manage your listings.</p>
+      <button id="mg-signin" type="button" class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-full hover:bg-pink/90 transition">Sign in with Nostr</button>
+    </div>
+
+    <!-- Signed in, but not a vendor -->
+    <div id="mg-notvendor" class="hidden text-center py-16">
+      <h1 class="text-2xl font-bold text-gray-900 mb-2">Vendors only</h1>
+      <p class="text-gray-600">This area is for Lightning Piggy market vendors. Your signed-in key isn't a registered vendor. Want to sell? <a href="/market#become-a-vendor" class="text-pink hover:underline">Apply to sell →</a></p>
+    </div>
+
+    <!-- Console -->
+    <div id="mg-console" class="hidden">
+      <header class="flex items-center gap-3 mb-8">
+        <img id="mg-vendor-logo" src="" alt="" referrerpolicy="no-referrer" class="w-12 h-12 rounded-full object-cover bg-pink/10 hidden" />
+        <div>
+          <p class="text-sm text-gray-500">Managing</p>
+          <h1 id="mg-vendor-name" class="text-2xl font-bold text-gray-900"></h1>
+        </div>
+      </header>
+
+      <!-- Products -->
+      <section class="mb-10">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-bold text-gray-900">Products</h2>
+          <button data-add="product" class="mg-add inline-flex items-center gap-1.5 px-4 py-2 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">+ Add product</button>
+        </div>
+        <div id="mg-products" class="space-y-2"></div>
+        <p id="mg-products-empty" class="hidden text-sm text-gray-500 py-3">No products yet.</p>
+      </section>
+
+      <!-- Categories -->
+      <section class="mb-10">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-bold text-gray-900">Categories</h2>
+          <button data-add="collection" class="mg-add inline-flex items-center gap-1.5 px-4 py-2 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">+ Add category</button>
+        </div>
+        <div id="mg-collections" class="space-y-2"></div>
+        <p id="mg-collections-empty" class="hidden text-sm text-gray-500 py-3">No categories yet.</p>
+      </section>
+
+      <!-- Shipping -->
+      <section class="mb-10">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-bold text-gray-900">Shipping options</h2>
+          <button data-add="shipping" class="mg-add inline-flex items-center gap-1.5 px-4 py-2 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">+ Add shipping</button>
+        </div>
+        <div id="mg-shipping" class="space-y-2"></div>
+        <p id="mg-shipping-empty" class="hidden text-sm text-gray-500 py-3">No shipping options yet.</p>
+      </section>
+
+      <p id="mg-status" class="text-sm text-center text-gray-500 h-5"></p>
+    </div>
+  </div>
+
+  <!-- ===== Modals ===== -->
+  <div id="mg-modal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div id="mg-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+    <div class="relative w-full max-w-lg max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6">
+      <button id="mg-close" type="button" aria-label="Close" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+      <h3 id="mg-modal-title" class="text-xl font-bold text-gray-900 mb-4"></h3>
+      <form id="mg-form" class="space-y-3"></form>
+      <p id="mg-form-err" class="text-sm text-red-500 mt-2 whitespace-pre-line"></p>
+      <div class="flex gap-2 mt-4">
+        <button id="mg-save" type="button" class="flex-1 px-5 py-2.5 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition disabled:opacity-60">Publish</button>
+        <button id="mg-cancel" type="button" class="px-5 py-2.5 rounded-xl border border-gray-300 font-semibold hover:border-gray-400 transition">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import { getSession, signEvent, publish, openLogin, shortId, type NostrSession } from '../../lib/nostrAuth';
+    import { RELAYS, tagVal, type NostrEvent } from '../../lib/market';
+    import * as G from '../../lib/gammaAdmin';
+
+    const root = document.querySelector('[data-owners]') as HTMLElement;
+    const owners: { name: string; logo: string; npub: string; hex: string }[] = JSON.parse(
+      root?.dataset.owners || '[]',
+    );
+
+    let vendor: { name: string; logo: string; hex: string } | null = null;
+    let products: NostrEvent[] = [];
+    let collections: NostrEvent[] = [];
+    let shipping: NostrEvent[] = [];
+    const removed = new Set<string>(); // `${kind}:${d}` deleted this session
+    // Publish to the LP default relays AND the vendor's own relays (NIP-65).
+    let publishRelays: string[] = RELAYS;
+
+    const $ = (id: string) => document.getElementById(id)!;
+    const esc = (s: string) => {
+      const d = document.createElement('div');
+      d.textContent = s ?? '';
+      return d.innerHTML;
+    };
+    const show = (id: string) => $(id).classList.remove('hidden');
+    const hide = (id: string) => $(id).classList.add('hidden');
+    const status = (m: string) => ($('mg-status').textContent = m);
+
+    // ---- Relay IO ----
+    function fetchFromRelay(url: string, filter: any): Promise<NostrEvent[]> {
+      return new Promise((resolve) => {
+        const evs: NostrEvent[] = [];
+        let ws: WebSocket | undefined;
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          try {
+            if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+          } catch {}
+          resolve(evs);
+        };
+        const t = window.setTimeout(finish, 6000);
+        try {
+          ws = new WebSocket(url);
+        } catch {
+          finish();
+          return;
+        }
+        const sub = Math.random().toString(36).slice(2, 10);
+        ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, filter]));
+        ws.onmessage = (e) => {
+          try {
+            const m = JSON.parse(e.data);
+            if (m[0] === 'EVENT' && m[1] === sub) evs.push(m[2]);
+            if (m[0] === 'EOSE' && m[1] === sub) finish();
+          } catch {}
+        };
+        ws.onerror = () => finish();
+      });
+    }
+    async function fetchAll(filter: any): Promise<NostrEvent[]> {
+      return (await Promise.all(RELAYS.map((r) => fetchFromRelay(r, filter)))).flat();
+    }
+
+    // Newest event per addressable coordinate (kind:d), dropping locally-removed.
+    function newestByD(evs: NostrEvent[], kind: number): NostrEvent[] {
+      const map = new Map<string, NostrEvent>();
+      for (const ev of evs) {
+        if (ev.kind !== kind) continue;
+        const d = tagVal(ev.tags, 'd') || '';
+        if (removed.has(`${kind}:${d}`)) continue;
+        const ex = map.get(d);
+        if (!ex || ev.created_at > ex.created_at) map.set(d, ev);
+      }
+      return [...map.values()].sort((a, b) => b.created_at - a.created_at);
+    }
+
+    async function loadEvents() {
+      if (!vendor) return;
+      status('Loading your listings…');
+      const evs = await fetchAll({
+        kinds: [G.PRODUCT_KIND, G.COLLECTION_KIND, G.SHIPPING_KIND, 10002],
+        authors: [vendor.hex],
+      });
+      // Merge the vendor's own write relays (NIP-65, kind 10002) with the defaults.
+      const relayList = evs
+        .filter((e) => e.kind === 10002)
+        .sort((a, b) => b.created_at - a.created_at)[0];
+      if (relayList) {
+        const write = relayList.tags
+          .filter((t) => t[0] === 'r' && (!t[2] || t[2] === 'write'))
+          .map((t) => t[1])
+          .filter((u) => /^wss?:\/\//.test(u || ''));
+        publishRelays = [...new Set([...RELAYS, ...write])];
+      }
+      products = newestByD(evs, G.PRODUCT_KIND);
+      collections = newestByD(evs, G.COLLECTION_KIND);
+      shipping = newestByD(evs, G.SHIPPING_KIND);
+      renderProducts();
+      renderCollections();
+      renderShipping();
+      status('');
+    }
+
+    // ---- Renderers ----
+    function row(inner: string, kind: number, d: string): string {
+      return `<div class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3">
+        <div class="flex-1 min-w-0">${inner}</div>
+        <button class="mg-edit text-sm font-semibold text-gray-600 hover:text-pink" data-kind="${kind}" data-d="${esc(d)}">Edit</button>
+        <button class="mg-del text-sm font-semibold text-gray-400 hover:text-red-500" data-kind="${kind}" data-d="${esc(d)}">Remove</button>
+      </div>`;
+    }
+    function renderProducts() {
+      const el = $('mg-products');
+      $('mg-products-empty').classList.toggle('hidden', products.length > 0);
+      el.innerHTML = products
+        .map((ev) => {
+          const p = G.parseProductForm(ev);
+          const img = p.images[0]
+            ? `<img src="${esc(p.images[0])}" referrerpolicy="no-referrer" class="w-10 h-10 rounded object-cover inline-block mr-2 align-middle" />`
+            : '';
+          const price = p.priceAmount ? `${esc(p.priceAmount)} ${esc(p.priceCurrency)}` : '';
+          const st = G.productDisplayStatus(p);
+          const badge = `<span class="ml-1 text-[11px] px-1.5 py-0.5 rounded-full ${st.shown ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}"${st.hint ? ` title="${esc(st.hint)}"` : ''}>${st.shown ? '✓ ' : ''}${st.label}</span>`;
+          return row(
+            `${img}<span class="font-semibold text-gray-900">${esc(p.title)}</span> ${badge} <span class="text-gray-400 text-sm">${price}</span>`,
+            G.PRODUCT_KIND,
+            p.id,
+          );
+        })
+        .join('');
+    }
+    function renderCollections() {
+      const el = $('mg-collections');
+      $('mg-collections-empty').classList.toggle('hidden', collections.length > 0);
+      el.innerHTML = collections
+        .map((ev) => {
+          const c = G.parseCollectionForm(ev);
+          return row(
+            `<span class="font-semibold text-gray-900">${esc(c.title)}</span> <span class="text-gray-400 text-sm">${c.productIds.length} product${c.productIds.length === 1 ? '' : 's'}</span>`,
+            G.COLLECTION_KIND,
+            c.id,
+          );
+        })
+        .join('');
+    }
+    function renderShipping() {
+      const el = $('mg-shipping');
+      $('mg-shipping-empty').classList.toggle('hidden', shipping.length > 0);
+      el.innerHTML = shipping
+        .map((ev) => {
+          const s = G.parseShippingForm(ev);
+          const meta = [s.priceAmount ? `${esc(s.priceAmount)} ${esc(s.priceCurrency)}` : '', s.countries.join(', '), s.service]
+            .filter(Boolean)
+            .join(' · ');
+          return row(
+            `<span class="font-semibold text-gray-900">${esc(s.title)}</span> <span class="text-gray-400 text-sm">${esc(meta)}</span>`,
+            G.SHIPPING_KIND,
+            s.id,
+          );
+        })
+        .join('');
+    }
+
+    // ---- Modal / forms ----
+    let modalKind = 0;
+    let editingEvent: NostrEvent | null = null;
+
+    const field = (label: string, id: string, value = '', type = 'text', ph = '') =>
+      `<label class="block"><span class="block text-sm font-medium text-gray-700 mb-1">${label}</span>
+        <input id="${id}" type="${type}" value="${esc(value)}" placeholder="${esc(ph)}" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" /></label>`;
+    const area = (label: string, id: string, value = '', rows = 3, ph = '') =>
+      `<label class="block"><span class="block text-sm font-medium text-gray-700 mb-1">${label}</span>
+        <textarea id="${id}" rows="${rows}" placeholder="${esc(ph)}" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none">${esc(value)}</textarea></label>`;
+    const currencySel = (id: string, value = 'SATS') => {
+      const opts = ['SATS', 'BTC', 'USD', 'GBP', 'EUR']
+        .map((c) => `<option${c === value.toUpperCase() ? ' selected' : ''}>${c}</option>`)
+        .join('');
+      return `<label class="block"><span class="block text-sm font-medium text-gray-700 mb-1">Currency</span><select id="${id}" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">${opts}</select></label>`;
+    };
+
+    function openModal(kind: number, ev: NostrEvent | null) {
+      modalKind = kind;
+      editingEvent = ev;
+      const form = $('mg-form') as HTMLFormElement;
+      $('mg-form-err').textContent = '';
+      if (kind === G.PRODUCT_KIND) {
+        const f = ev ? G.parseProductForm(ev) : ({ title: '', summary: '', description: '', priceAmount: '', priceCurrency: 'SATS', images: [], visibility: 'on-sale', stock: '', location: '', categories: [], listed: true } as any);
+        $('mg-modal-title').textContent = ev ? 'Edit product' : 'Add product';
+        form.innerHTML =
+          field('Title *', 'f-title', f.title) +
+          area('Summary', 'f-summary', f.summary, 2, 'Short tagline shown on the card') +
+          area('Description', 'f-description', f.description, 4) +
+          `<div class="grid grid-cols-2 gap-3">${field('Price *', 'f-price', f.priceAmount, 'text')}${currencySel('f-currency', f.priceCurrency)}</div>` +
+          area('Image URLs (one per line)', 'f-images', f.images.join('\n'), 3, 'https://…') +
+          `<div class="grid grid-cols-2 gap-3">
+            <label class="block"><span class="block text-sm font-medium text-gray-700 mb-1">Visibility</span><select id="f-visibility" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">${['on-sale', 'pre-order', 'hidden'].map((v) => `<option${v === f.visibility ? ' selected' : ''}>${v}</option>`).join('')}</select></label>
+            ${field('Stock (blank = ∞)', 'f-stock', f.stock)}
+          </div>` +
+          field('Location', 'f-location', f.location, 'text', 'e.g. UK') +
+          field('Categories (comma-separated)', 'f-categories', f.categories.join(', ')) +
+          `<label class="flex items-start gap-2 mt-1 rounded-lg bg-pink/5 border border-pink/20 p-3">
+            <input type="checkbox" id="f-listed"${f.listed !== false ? ' checked' : ''} class="mt-0.5" />
+            <span class="text-sm"><span class="font-semibold text-gray-800">List in the Lightning Piggy market</span><br /><span class="text-gray-500 text-xs">Adds the <code>#lightningpiggy</code> tag so it shows on lightningpiggy.com. Leave off for products you only sell elsewhere.</span></span>
+          </label>`;
+      } else if (kind === G.COLLECTION_KIND) {
+        const f = ev ? G.parseCollectionForm(ev) : ({ title: '', description: '', image: '', productIds: [] } as any);
+        $('mg-modal-title').textContent = ev ? 'Edit category' : 'Add category';
+        const checks = products
+          .map((pe) => {
+            const p = G.parseProductForm(pe);
+            const on = f.productIds.includes(p.id);
+            return `<label class="flex items-center gap-2 text-sm py-1"><input type="checkbox" class="f-pid" value="${esc(p.id)}"${on ? ' checked' : ''} /> ${esc(p.title)}</label>`;
+          })
+          .join('');
+        form.innerHTML =
+          field('Title *', 'f-title', f.title) +
+          area('Description', 'f-description', f.description, 3) +
+          field('Image URL', 'f-image', f.image, 'text', 'https://…') +
+          `<div><span class="block text-sm font-medium text-gray-700 mb-1">Products in this category</span><div class="max-h-40 overflow-y-auto rounded-lg border border-gray-200 p-2">${checks || '<p class="text-sm text-gray-400">Add products first.</p>'}</div></div>`;
+      } else {
+        const f = ev ? G.parseShippingForm(ev) : ({ title: '', priceAmount: '', priceCurrency: 'SATS', countries: [], service: 'standard', carrier: '' } as any);
+        $('mg-modal-title').textContent = ev ? 'Edit shipping option' : 'Add shipping option';
+        form.innerHTML =
+          field('Title *', 'f-title', f.title, 'text', 'e.g. UK Standard') +
+          `<div class="grid grid-cols-2 gap-3">${field('Price *', 'f-price', f.priceAmount)}${currencySel('f-currency', f.priceCurrency)}</div>` +
+          field('Countries (comma-separated ISO codes) *', 'f-countries', f.countries.join(', '), 'text', 'GB, IE, US') +
+          `<label class="block"><span class="block text-sm font-medium text-gray-700 mb-1">Service</span><select id="f-service" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm">${['standard', 'express', 'overnight', 'pickup'].map((v) => `<option${v === f.service ? ' selected' : ''}>${v}</option>`).join('')}</select></label>` +
+          field('Carrier', 'f-carrier', f.carrier, 'text', 'e.g. Royal Mail');
+      }
+      $('mg-modal').classList.remove('hidden');
+      $('mg-modal').classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      $('mg-modal').classList.add('hidden');
+      $('mg-modal').classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+    const val = (id: string) => (document.getElementById(id) as HTMLInputElement | HTMLTextAreaElement)?.value ?? '';
+    const list = (s: string, sep: RegExp) => s.split(sep).map((x) => x.trim()).filter(Boolean);
+
+    async function save() {
+      if (!vendor) return;
+      const errEl = $('mg-form-err');
+      let unsigned: any;
+      let errs: string[] = [];
+      if (modalKind === G.PRODUCT_KIND) {
+        const form: G.ProductForm = {
+          id: '',
+          title: val('f-title'),
+          summary: val('f-summary'),
+          description: val('f-description'),
+          priceAmount: val('f-price'),
+          priceCurrency: val('f-currency'),
+          images: list(val('f-images'), /\n+/),
+          visibility: val('f-visibility'),
+          stock: val('f-stock'),
+          location: val('f-location'),
+          categories: list(val('f-categories'), /,/),
+          listed: (document.getElementById('f-listed') as HTMLInputElement)?.checked ?? true,
+        };
+        errs = G.validateProduct(form);
+        if (!errs.length) unsigned = G.buildProduct(form, editingEvent || undefined);
+      } else if (modalKind === G.COLLECTION_KIND) {
+        const form: G.CollectionForm = {
+          id: '',
+          title: val('f-title'),
+          description: val('f-description'),
+          image: val('f-image'),
+          productIds: Array.from(document.querySelectorAll('.f-pid:checked')).map((c) => (c as HTMLInputElement).value),
+        };
+        errs = G.validateCollection(form);
+        if (!errs.length) unsigned = G.buildCollection(form, vendor.hex, editingEvent || undefined);
+      } else {
+        const form: G.ShippingForm = {
+          id: '',
+          title: val('f-title'),
+          priceAmount: val('f-price'),
+          priceCurrency: val('f-currency'),
+          countries: list(val('f-countries'), /,/),
+          service: val('f-service'),
+          carrier: val('f-carrier'),
+        };
+        errs = G.validateShipping(form);
+        if (!errs.length) unsigned = G.buildShipping(form, editingEvent || undefined);
+      }
+      if (errs.length) {
+        errEl.textContent = errs.join('\n');
+        return;
+      }
+      const btn = $('mg-save') as HTMLButtonElement;
+      btn.disabled = true;
+      btn.textContent = 'Publishing…';
+      try {
+        const signed = await signEvent({ ...unsigned, pubkey: vendor.hex });
+        await publish(signed, publishRelays);
+        closeModal();
+        status('Saved ✓');
+        await loadEvents();
+      } catch (e: any) {
+        errEl.textContent = e?.message === 'no-nip44' ? 'Signer error.' : 'Could not publish — please try again.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Publish';
+      }
+    }
+
+    async function del(kind: number, d: string) {
+      if (!vendor || !confirm('Remove this? This publishes a deletion request.')) return;
+      status('Removing…');
+      try {
+        const signed = await signEvent({ ...G.buildDelete(kind, vendor.hex, d), pubkey: vendor.hex });
+        await publish(signed, publishRelays);
+        removed.add(`${kind}:${d}`);
+        status('Removed ✓');
+        await loadEvents();
+      } catch {
+        status('Could not remove — try again.');
+      }
+    }
+
+    // ---- Wiring ----
+    document.querySelectorAll('.mg-add').forEach((b) =>
+      b.addEventListener('click', () => {
+        const kindMap: Record<string, number> = { product: G.PRODUCT_KIND, collection: G.COLLECTION_KIND, shipping: G.SHIPPING_KIND };
+        openModal(kindMap[(b as HTMLElement).dataset.add!], null);
+      }),
+    );
+    document.addEventListener('click', (e) => {
+      const t = e.target as HTMLElement;
+      const edit = t.closest('.mg-edit') as HTMLElement | null;
+      const dele = t.closest('.mg-del') as HTMLElement | null;
+      if (edit) {
+        const kind = Number(edit.dataset.kind);
+        const d = edit.dataset.d!;
+        const src = kind === G.PRODUCT_KIND ? products : kind === G.COLLECTION_KIND ? collections : shipping;
+        const ev = src.find((x) => (tagVal(x.tags, 'd') || '') === d) || null;
+        openModal(kind, ev);
+      } else if (dele) {
+        del(Number(dele.dataset.kind), dele.dataset.d!);
+      }
+    });
+    $('mg-save').addEventListener('click', save);
+    $('mg-cancel').addEventListener('click', closeModal);
+    $('mg-close').addEventListener('click', closeModal);
+    $('mg-backdrop').addEventListener('click', closeModal);
+    $('mg-signin').addEventListener('click', () => openLogin());
+
+    // ---- Gate ----
+    function gate(session: NostrSession | null) {
+      hide('mg-signedout');
+      hide('mg-notvendor');
+      hide('mg-console');
+      if (!session) {
+        show('mg-signedout');
+        return;
+      }
+      const match = owners.find((o) => o.hex === session.pubkey);
+      if (!match) {
+        show('mg-notvendor');
+        return;
+      }
+      vendor = { name: match.name, logo: match.logo, hex: match.hex };
+      $('mg-vendor-name').textContent = match.name;
+      const logo = $('mg-vendor-logo') as HTMLImageElement;
+      if (match.logo) {
+        logo.src = match.logo;
+        logo.classList.remove('hidden');
+      }
+      show('mg-console');
+      loadEvents();
+    }
+    window.addEventListener('nostr:auth', (e) => gate((e as CustomEvent).detail));
+    gate(getSession());
+  </script>
+</BaseLayout>

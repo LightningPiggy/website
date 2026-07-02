@@ -24,6 +24,9 @@ export interface ParsedZap {
 // Amount encoded in a bolt11 invoice's human-readable part, in millisats.
 // `lnbc21u1p…` → 21 micro-BTC → 2,100,000 msats. Returns 0 when absent/invalid.
 // (1 BTC = 1e11 msats; m/u/n/p are the standard bolt11 multipliers.)
+// Integer arithmetic throughout: `p` (pico-BTC) is 0.1 msat per unit and the
+// BOLT11 spec requires pico amounts to end in 0 (whole msats) — a sub-msat
+// amount like lnbc15p is INVALID and is rejected, never rounded up.
 export function bolt11Msats(pr: string): number {
   const s = String(pr || '').toLowerCase();
   if (!s.startsWith('ln')) return 0;
@@ -31,9 +34,15 @@ export function bolt11Msats(pr: string): number {
   if (sep < 3) return 0;
   const m = /^ln[a-z]+?(\d+)([munp]?)$/.exec(s.slice(0, sep));
   if (!m) return 0;
-  const mult: Record<string, number> = { '': 1e11, m: 1e8, u: 1e5, n: 100, p: 0.1 };
-  const msats = parseInt(m[1], 10) * mult[m[2]];
-  return Number.isFinite(msats) && msats > 0 ? Math.round(msats) : 0;
+  const num = parseInt(m[1], 10);
+  if (!Number.isSafeInteger(num) || num <= 0) return 0;
+  if (m[2] === 'p') {
+    if (num % 10 !== 0) return 0; // sub-msat precision — invalid per BOLT11
+    return num / 10;
+  }
+  const mult: Record<string, number> = { '': 1e11, m: 1e8, u: 1e5, n: 100 };
+  const msats = num * mult[m[2]];
+  return Number.isSafeInteger(msats) && msats > 0 ? msats : 0;
 }
 
 // Parse one kind-9735 zap receipt into { zapper, msats }.

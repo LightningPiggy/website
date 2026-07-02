@@ -60,6 +60,10 @@ function receipt({ sender, amountMsats, bolt11, id }) {
 eq(bolt11Msats('lnbc210u1pjfake'), 21_000_000, 'lnbc210u → 21,000 sats in msats');
 eq(bolt11Msats('lnbc1m1pjfake'), 100_000_000, 'lnbc1m → 100,000 sats in msats');
 eq(bolt11Msats('lnbc500n1pjfake'), 50_000, 'lnbc500n → 50 sats in msats');
+eq(bolt11Msats('lnbc10p1pjfake'), 1, 'lnbc10p → exactly 1 msat (pico multiple of 10 is valid)');
+eq(bolt11Msats('lnbc2500p1pjfake'), 250, 'lnbc2500p → 250 msats via integer arithmetic');
+eq(bolt11Msats('lnbc15p1pjfake'), 0, 'lnbc15p → sub-msat pico amount REJECTED (BOLT11 requires ×10)');
+eq(bolt11Msats('lnbc1p1pjfake'), 0, 'lnbc1p → 0.1 msat rejected, not rounded');
 eq(bolt11Msats('lnbc1pjfake'), 0, 'amountless invoice → 0');
 eq(bolt11Msats(''), 0, 'empty string → 0');
 eq(bolt11Msats('garbage'), 0, 'garbage → 0');

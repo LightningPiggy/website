@@ -161,7 +161,7 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
             <div class="space-y-2">
               <button id="invoice-webln" type="button" class="hidden w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-pink text-white font-semibold hover:bg-pink/90 transition disabled:opacity-60">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                Pay with WebLN
+                <span id="invoice-webln-text">Pay with WebLN</span>
               </button>
               <a id="invoice-open" href="#" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 font-semibold text-gray-700 hover:border-pink hover:text-pink transition">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
@@ -187,7 +187,7 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
 
   <script>
     import { getSession, openLogin, logout, signEvent, shortId, type NostrSession } from '../lib/nostrAuth';
-    import { RELAYS, escapeHtml, sanitizeUrl, tagVal, type NostrEvent } from '../lib/market';
+    import { RELAYS, escapeHtml, sanitizeUrl, type NostrEvent } from '../lib/market';
     import { topZappers, thresholdSatsForUsd, FALLBACK_THRESHOLD_SATS } from '../lib/zaps';
 
     const root = document.getElementById('zap-root');
@@ -280,10 +280,12 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
           return;
         }
 
-        // Profiles (kind 0) + npubs for the qualifying zappers only.
-        const pubkeys = zappers.map((z) => z.pubkey);
+        // Profiles (kind 0) + npubs for the qualifying zappers only. Kind 0 is
+        // replaceable so relays should hold one per author — the limit is a
+        // belt-and-braces cap against relays that keep old versions.
+        const authors = [...new Set(zappers.map((z) => z.pubkey))];
         const [profileEvents, { npubEncode }] = await Promise.all([
-          fetchAll({ kinds: [0], authors: [...new Set(pubkeys)] }),
+          fetchAll({ kinds: [0], authors, limit: authors.length * 2 }),
           import('nostr-tools/nip19'),
         ]);
         const profiles = new Map<string, { name: string; picture: string }>();
@@ -523,21 +525,25 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
 
         const webln = (window as any).webln;
         const weblnBtn = document.getElementById('invoice-webln') as HTMLButtonElement | null;
-        if (webln && weblnBtn) {
+        // Update only the label span — setting the button's textContent would
+        // wipe the zap icon SVG next to it.
+        const weblnText = document.getElementById('invoice-webln-text');
+        if (webln && weblnBtn && weblnText) {
           weblnBtn.classList.remove('hidden');
           weblnBtn.disabled = false;
+          weblnText.textContent = 'Pay with WebLN';
           weblnBtn.onclick = async () => {
             weblnBtn.disabled = true;
-            weblnBtn.textContent = 'Paying…';
+            weblnText.textContent = 'Paying…';
             try {
               await webln.enable();
               await webln.sendPayment(bolt11);
               document.getElementById('invoice-paid')?.classList.remove('hidden');
-              weblnBtn.textContent = 'Paid ✓';
+              weblnText.textContent = 'Paid ✓';
               loadWall(); // the new zap may already tip someone over the bar
             } catch {
               weblnBtn.disabled = false;
-              weblnBtn.textContent = 'Pay with WebLN';
+              weblnText.textContent = 'Pay with WebLN';
             }
           };
         }

@@ -105,6 +105,15 @@ const canPayOnSite = !!lud16 && !!priceAmount;
                 <input id="ship-city" required placeholder="City *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <input id="ship-postcode" required placeholder="Post code *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
                 <input id="ship-country" required placeholder="Country *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <!-- Shipping method: populated live from the vendor's Nostr
+                     shipping options (kind 30406). Hidden when the vendor has
+                     none; REQUIRED when they do, and its price is added to the
+                     Lightning invoice. -->
+                <div id="ship-method-wrap" class="col-span-2 hidden">
+                  <select id="ship-method" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-pink focus:ring-1 focus:ring-pink outline-none">
+                    <option value="">Select shipping method *</option>
+                  </select>
+                </div>
                 <textarea id="ship-note" rows="2" placeholder="Note to vendor (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none"></textarea>
               </div>
               <button type="submit" id="ship-submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition disabled:opacity-60">
@@ -172,6 +181,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
 <script>
   import { getSession, openLogin, logout, shortId, type NostrSession } from '../../lib/nostrAuth';
   import { sendGiftWrappedDM } from '../../lib/nostrOrder';
+  import { RELAYS, applyDeletions, tagVal, type NostrEvent } from '../../lib/market';
 
   const root = document.getElementById('product-purchase');
   if (root && root.dataset.lud16 && root.dataset.amount) {
@@ -254,24 +264,111 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       else openLogin();
     });
 
+    // ---- Shipping methods (vendor's Gamma Markets kind-30406 options) ----
+    // Fetched live when checkout opens. When the vendor has options, selecting
+    // one is REQUIRED and its price is added to the Lightning invoice; when they
+    // have none, the selector stays hidden and no shipping cost applies.
+    interface ShipOption { d: string; title: string; amount: number; currency: string; countries: string[] }
+    let shipOptions: ShipOption[] | null = null; // null = not loaded yet
+    function fetchShippingFromRelay(url: string): Promise<NostrEvent[]> {
+      return new Promise((resolve) => {
+        const evs: NostrEvent[] = [];
+        let ws: WebSocket | undefined;
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          try {
+            if (ws) {
+              ws.onopen = () => { try { ws!.close(); } catch {} };
+              ws.close();
+            }
+          } catch {}
+          resolve(evs);
+        };
+        const t = window.setTimeout(finish, 6000);
+        try { ws = new WebSocket(url); } catch { finish(); return; }
+        const sub = Math.random().toString(36).slice(2, 10);
+        ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, { kinds: [30406, 5], authors: [vendorPubkey] }]));
+        ws.onmessage = (e) => {
+          try {
+            const m = JSON.parse(e.data);
+            if (m[0] === 'EVENT' && m[1] === sub) evs.push(m[2]);
+            if (m[0] === 'EOSE' && m[1] === sub) finish();
+          } catch {}
+        };
+        ws.onerror = () => finish();
+      });
+    }
+    async function loadShippingOptions() {
+      if (shipOptions !== null || !vendorPubkey) return;
+      const raw = (await Promise.all(RELAYS.map((r) => fetchShippingFromRelay(r)))).flat();
+      const newest = new Map<string, NostrEvent>();
+      for (const ev of applyDeletions(raw)) {
+        if (ev.kind !== 30406) continue;
+        const d = tagVal(ev.tags, 'd') || '';
+        const ex = newest.get(d);
+        if (!ex || ev.created_at > ex.created_at) newest.set(d, ev);
+      }
+      shipOptions = [...newest.values()]
+        .map((ev) => {
+          const price = ev.tags.find((x) => x[0] === 'price');
+          const countryTag = ev.tags.find((x) => x[0] === 'country');
+          return {
+            d: tagVal(ev.tags, 'd') || '',
+            title: tagVal(ev.tags, 'title') || '',
+            amount: parseFloat(price?.[1] || ''),
+            currency: (price?.[2] || 'SATS').toUpperCase(),
+            countries: countryTag ? countryTag.slice(1).filter(Boolean) : [],
+          };
+        })
+        .filter((o) => o.title && isFinite(o.amount) && o.amount >= 0);
+      renderShipOptions();
+    }
+    function renderShipOptions() {
+      const wrap = document.getElementById('ship-method-wrap');
+      const sel = document.getElementById('ship-method') as HTMLSelectElement | null;
+      if (!wrap || !sel || !shipOptions?.length) return;
+      sel.innerHTML =
+        '<option value="">Select shipping method *</option>' +
+        shipOptions
+          .map((o, i) => {
+            const opt = document.createElement('option');
+            opt.value = String(i);
+            opt.textContent = `${o.title} — ${o.amount} ${o.currency}${o.countries.length ? ` (${o.countries.join(', ')})` : ''}`;
+            return opt.outerHTML;
+          })
+          .join('');
+      sel.required = true;
+      wrap.classList.remove('hidden');
+    }
+
     buyBtn?.addEventListener('click', () => {
       // Reset to step 1.
       viewShipping?.classList.remove('hidden');
       viewPayment?.classList.add('hidden');
       renderShipAuth(getSession());
+      loadShippingOptions(); // async; the selector appears when options arrive
       openModal();
     });
 
-    async function toSats(): Promise<number | null> {
-      if (!amount || amount <= 0) return null;
-      if (currency === 'SAT' || currency === 'SATS' || currency === '') return Math.round(amount);
-      if (currency === 'BTC') return Math.round(amount * 1e8);
+    // Convert any (amount, currency) to sats; the BTC spot rate is fetched once
+    // and cached so product + shipping conversions share it.
+    let btcRates: any = null;
+    async function toSats(amt: number, cur: string): Promise<number | null> {
+      if (!isFinite(amt) || amt < 0) return null;
+      cur = (cur || '').toUpperCase();
+      if (cur === 'SAT' || cur === 'SATS' || cur === '') return Math.round(amt);
+      if (cur === 'BTC') return Math.round(amt * 1e8);
       try {
-        const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=BTC');
-        const data = await res.json();
-        const perBtc = parseFloat(data?.data?.rates?.[currency]);
+        if (!btcRates) {
+          const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=BTC');
+          btcRates = (await res.json())?.data?.rates || {};
+        }
+        const perBtc = parseFloat(btcRates[cur]);
         if (!isFinite(perBtc) || perBtc <= 0) return null;
-        return Math.round((amount / perBtc) * 1e8);
+        return Math.round((amt / perBtc) * 1e8);
       } catch {
         return null;
       }
@@ -300,7 +397,11 @@ const canPayOnSite = !!lud16 && !!priceAmount;
     const fmtSats = (n: number) => `${n.toLocaleString()} sats`;
     const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value.trim() || '';
 
-    function orderMessage(orderId: string, sats: number, bolt11: string): string {
+    function orderMessage(
+      orderId: string,
+      totals: { productSats: number; shippingSats: number; totalSats: number; ship: ShipOption | null },
+      bolt11: string,
+    ): string {
       const addr2 = val('ship-addr2');
       const note = val('ship-note');
       const session = getSession();
@@ -312,7 +413,13 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         `🐷⚡ New Lightning Piggy order`,
         ``,
         `Product: ${title}`,
-        `Price: ${amount} ${currency} (${fmtSats(sats)})`,
+        `Price: ${amount} ${currency} (${fmtSats(totals.productSats)})`,
+        ...(totals.ship
+          ? [
+              `Shipping: ${totals.ship.title} — ${totals.ship.amount} ${totals.ship.currency} (${fmtSats(totals.shippingSats)})`,
+              `Total: ${fmtSats(totals.totalSats)}`,
+            ]
+          : []),
         `Order ID: ${orderId}`,
         ``,
         `Ship to:`,
@@ -335,20 +442,34 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       e.preventDefault();
       const shipStatus = document.getElementById('ship-status')!;
       const submitBtn = document.getElementById('ship-submit') as HTMLButtonElement;
+      // Shipping method is mandatory whenever the vendor offers options.
+      const shipSel = document.getElementById('ship-method') as HTMLSelectElement | null;
+      let chosenShip: ShipOption | null = null;
+      if (shipOptions?.length) {
+        chosenShip = shipOptions[Number(shipSel?.value)] ?? null;
+        if (!chosenShip) {
+          shipStatus.textContent = 'Please select a shipping method.';
+          shipSel?.focus();
+          return;
+        }
+      }
+
       submitBtn.disabled = true;
       shipStatus.textContent = 'Preparing your order…';
 
-      const sats = await toSats();
-      if (!sats) {
+      const productSats = await toSats(amount, currency);
+      const shippingSats = chosenShip ? await toSats(chosenShip.amount, chosenShip.currency) : 0;
+      if (!productSats || shippingSats === null) {
         shipStatus.textContent = 'Could not work out the price. Try the vendor store.';
         submitBtn.disabled = false;
         return;
       }
+      const totalSats = productSats + (shippingSats || 0);
 
       const orderId = (crypto as any).randomUUID ? crypto.randomUUID() : String(Date.now());
       let bolt11: string;
       try {
-        bolt11 = await requestInvoice(sats, `LP order ${orderId}`);
+        bolt11 = await requestInvoice(totalSats, `LP order ${orderId}`);
       } catch {
         shipStatus.textContent = 'Could not create an invoice. Try the vendor store.';
         submitBtn.disabled = false;
@@ -358,7 +479,10 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       // Send the order + shipping address to the vendor as an encrypted DM.
       try {
         shipStatus.textContent = 'Sending your order to the vendor…';
-        await sendGiftWrappedDM(vendorPubkey, orderMessage(orderId, sats, bolt11));
+        await sendGiftWrappedDM(
+          vendorPubkey,
+          orderMessage(orderId, { productSats, shippingSats: shippingSats || 0, totalSats, ship: chosenShip }, bolt11),
+        );
       } catch (err: any) {
         submitBtn.disabled = false;
         console.error('[order] gift-wrap send failed:', err);
@@ -377,7 +501,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       // Move to payment.
       viewShipping?.classList.add('hidden');
       viewPayment?.classList.remove('hidden');
-      showInvoice(bolt11, sats, orderId);
+      showInvoice(bolt11, { productSats, shippingSats: shippingSats || 0, totalSats, ship: chosenShip }, orderId);
       submitBtn.disabled = false;
     });
 
@@ -388,14 +512,23 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       errEl?.classList.remove('hidden');
     }
 
-    function showInvoice(bolt11: string, sats: number, orderId: string) {
+    function showInvoice(
+      bolt11: string,
+      totals: { productSats: number; shippingSats: number; totalSats: number; ship: ShipOption | null },
+      orderId: string,
+    ) {
       statusEl?.classList.add('hidden');
       errEl?.classList.add('hidden');
       bodyEl?.classList.remove('hidden');
-      (document.getElementById('invoice-amount') as HTMLElement).textContent = fmtSats(sats);
+      (document.getElementById('invoice-amount') as HTMLElement).textContent = fmtSats(totals.totalSats);
       const sym: Record<string, string> = { GBP: '£', USD: '$', EUR: '€' };
       const fiatEl = document.getElementById('invoice-fiat') as HTMLElement;
-      fiatEl.textContent = sym[currency] && amount ? `≈ ${sym[currency]}${amount}` : '';
+      // Itemise when shipping applies; otherwise show the fiat approximation.
+      fiatEl.textContent = totals.ship
+        ? `Product ${fmtSats(totals.productSats)} · Shipping (${totals.ship.title}) ${fmtSats(totals.shippingSats)}`
+        : sym[currency] && amount
+          ? `≈ ${sym[currency]}${amount}`
+          : '';
       (document.getElementById('invoice-bolt11') as HTMLInputElement).value = bolt11;
       (document.getElementById('invoice-open') as HTMLAnchorElement).href = `lightning:${bolt11}`;
 

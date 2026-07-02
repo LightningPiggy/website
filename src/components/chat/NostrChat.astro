@@ -178,8 +178,16 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
 
   function renderThread() {
     messagesEl.replaceChildren();
-    // Drop optimistic echoes once the real (self-copy) message shows up.
-    pending = pending.filter((p) => !thread.some((m) => m.mine && m.text === p.text && m.ts >= p.ts - 60));
+    // Drop each local echo once its confirmed (self-copy) message shows up.
+    // A confirmed message consumes at most ONE pending entry, so sending the
+    // same text twice keeps both bubbles until both copies are fetched back.
+    const unclaimed = thread.filter((m) => m.mine);
+    pending = pending.filter((p) => {
+      const i = unclaimed.findIndex((m) => m.text === p.text && m.ts >= p.ts - 60);
+      if (i === -1) return true;
+      unclaimed.splice(i, 1);
+      return false;
+    });
     const all = [...thread, ...pending].sort((a, b) => a.ts - b.ts);
     if (!all.length) {
       const empty = document.createElement('p');

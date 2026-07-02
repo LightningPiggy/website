@@ -162,7 +162,9 @@ export async function wrapsToThread(
     }
     if (!rumor || rumor.kind !== 14) continue;
     const mine = rumor.pubkey === session.pubkey;
-    const taggedPeer = (rumor.tags || []).some((t) => t[0] === 'p' && t[1] === peerHex);
+    // Relay-supplied rumor: individual tag entries may be anything, so guard
+    // the shape before indexing.
+    const taggedPeer = (rumor.tags || []).some((t) => Array.isArray(t) && t[0] === 'p' && t[1] === peerHex);
     // Keep only this conversation: messages I sent to the peer (self copy) or
     // messages the peer sent to me.
     if (!(mine ? taggedPeer : rumor.pubkey === peerHex)) continue;

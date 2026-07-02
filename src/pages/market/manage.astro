@@ -102,7 +102,8 @@ const owners = vendors
       <h3 id="mg-modal-title" class="text-xl font-bold text-gray-900 mb-4"></h3>
       <form id="mg-form" class="space-y-3"></form>
       <p id="mg-form-err" class="text-sm text-red-500 mt-2 whitespace-pre-line"></p>
-      <div class="flex gap-2 mt-4">
+      <!-- Sticky footer: Publish/Cancel stay visible while a long form scrolls -->
+      <div class="sticky bottom-0 -mx-6 -mb-6 px-6 py-4 mt-4 bg-white border-t border-gray-100 flex gap-2">
         <button id="mg-save" type="button" class="flex-1 px-5 py-2.5 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition disabled:opacity-60">Publish</button>
         <button id="mg-cancel" type="button" class="px-5 py-2.5 rounded-xl border border-gray-300 font-semibold hover:border-gray-400 transition">Cancel</button>
       </div>
@@ -238,11 +239,15 @@ const owners = vendors
     }
 
     // ---- Renderers ----
+    // Row actions use Lucide iconography (pencil / trash-2) with aria-labels +
+    // titles, matching the reference robotechy admin UI.
+    const PENCIL_SVG = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
+    const TRASH_SVG = `<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>`;
     function row(inner: string, kind: number, d: string): string {
-      return `<div class="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3">
+      return `<div class="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white p-3">
         <div class="flex-1 min-w-0">${inner}</div>
-        <button class="mg-edit text-sm font-semibold text-gray-600 hover:text-pink" data-kind="${kind}" data-d="${esc(d)}">Edit</button>
-        <button class="mg-del text-sm font-semibold text-gray-400 hover:text-red-500" data-kind="${kind}" data-d="${esc(d)}">Remove</button>
+        <button class="mg-edit p-2 rounded-lg text-gray-500 hover:text-pink hover:bg-pink/5 transition" data-kind="${kind}" data-d="${esc(d)}" title="Edit" aria-label="Edit">${PENCIL_SVG}</button>
+        <button class="mg-del p-2 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition" data-kind="${kind}" data-d="${esc(d)}" title="Remove" aria-label="Remove">${TRASH_SVG}</button>
       </div>`;
     }
     function renderProducts() {

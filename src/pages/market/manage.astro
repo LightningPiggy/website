@@ -111,7 +111,7 @@ const owners = vendors
 
   <script>
     import { getSession, signEvent, publish, openLogin, type NostrSession } from '../../lib/nostrAuth';
-    import { RELAYS, tagVal, sanitizeUrl, type NostrEvent } from '../../lib/market';
+    import { RELAYS, tagVal, sanitizeUrl, applyDeletions, type NostrEvent } from '../../lib/market';
     import * as G from '../../lib/gammaAdmin';
 
     const root = document.querySelector('[data-owners]') as HTMLElement;
@@ -201,8 +201,10 @@ const owners = vendors
     async function loadEvents() {
       if (!vendor) return;
       status('Loading your listings…');
+      // Kind 5 is fetched too so NIP-09 deletions survive a reload — on relays
+      // that retain deleted events, removed listings would otherwise reappear.
       const listingFilter = {
-        kinds: [G.PRODUCT_KIND, G.COLLECTION_KIND, G.SHIPPING_KIND],
+        kinds: [G.PRODUCT_KIND, G.COLLECTION_KIND, G.SHIPPING_KIND, 5],
         authors: [vendor.hex],
       };
       const evs = await fetchAll({ ...listingFilter, kinds: [...listingFilter.kinds, 10002] });
@@ -221,9 +223,12 @@ const owners = vendors
         const extra = publishRelays.filter((r) => !RELAYS.includes(r));
         if (extra.length) evs.push(...(await fetchAll(listingFilter, extra)));
       }
-      products = newestByD(evs, G.PRODUCT_KIND);
-      collections = newestByD(evs, G.COLLECTION_KIND);
-      shipping = newestByD(evs, G.SHIPPING_KIND);
+      // Honour the vendor's NIP-09 deletions from the relays (shared logic with
+      // the market grid), then drop this session's local removals on top.
+      const alive = applyDeletions(evs);
+      products = newestByD(alive, G.PRODUCT_KIND);
+      collections = newestByD(alive, G.COLLECTION_KIND);
+      shipping = newestByD(alive, G.SHIPPING_KIND);
       renderProducts();
       renderCollections();
       renderShipping();

@@ -32,7 +32,7 @@ export async function getStaticPaths() {
   const { vendors = [] } = vendorsData as any;
   const shops = shopsFromVendors(vendors);
   const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];
-  const events = await fetchMarketEvents(authors, [0, 30402, 30018]);
+  const events = await fetchMarketEvents(authors, [0, 30402, 30018, 5]);
 
   // Merchant profile (Lightning address, avatar, name) from the newest kind-0
   // event per author. Used to pay the vendor and to show their real Nostr

@@ -280,10 +280,37 @@ export function shopsFromVendors(vendors: any[]): Shop[] {
 // display order. Shared by buildShopProducts (grid) and the [slug].astro
 // getStaticPaths (detail pages) so the two never disagree about which products
 // exist or how they're keyed.
+// ---------- NIP-09 deletions ----------
+// Drop addressable events the author has deleted. A kind-5 deletion with an
+// 'a' tag `<kind>:<pubkey>:<d>` tombstones all versions up to the deletion's
+// created_at; a LATER re-publish of the same coordinate is honoured again.
+// Only deletions signed by the coordinate's own author count. Also strips the
+// kind-5 events themselves from the returned list.
+export function applyDeletions(events: NostrEvent[]): NostrEvent[] {
+  const del = new Map<string, number>();
+  for (const ev of events) {
+    if (ev.kind !== 5) continue;
+    for (const t of ev.tags) {
+      if (t[0] !== 'a' || !t[1]) continue;
+      const pk = t[1].split(':')[1];
+      if (pk !== ev.pubkey) continue; // only the author can delete their events
+      if (ev.created_at > (del.get(t[1]) || 0)) del.set(t[1], ev.created_at);
+    }
+  }
+  return events.filter((e) => {
+    if (e.kind === 5) return false;
+    const d = tagVal(e.tags, 'd');
+    if (d === undefined) return true; // non-addressable (profiles, relay lists…)
+    const dt = del.get(`${e.kind}:${e.pubkey}:${d}`);
+    return !dt || e.created_at > dt;
+  });
+}
+
 export function selectShopEvents(
   events: NostrEvent[],
   shops: Shop[],
 ): { ev: NostrEvent; shop: Shop }[] {
+  events = applyDeletions(events); // honour vendor NIP-09 removals
   const newest = new Map<string, NostrEvent>();
   for (const ev of events) {
     if (ev.kind !== 30402 && ev.kind !== 30018) continue;
@@ -402,6 +429,7 @@ export function buildVendorViews(
   seeds: Seed[],
   showProducts: boolean,
 ): VendorView[] {
+  events = applyDeletions(events); // honour vendor NIP-09 removals
   const profiles = new Map<string, NostrEvent>();
   const products = new Map<string, NostrEvent>();
   for (const ev of events) {

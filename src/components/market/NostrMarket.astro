@@ -66,7 +66,7 @@ const seeds: Seed[] = vendors.map((v) => ({
 // ---- Build-time prerender (always renders every vendor from the JSON
 // fallback; enriched from relays when they're reachable at build) ----
 const authors = [...new Set(seeds.map((s) => npubToHex(s.npub)).filter(Boolean))];
-const events = await fetchMarketEvents(authors, showProducts ? [0, 30402, 30018] : [0]);
+const events = await fetchMarketEvents(authors, showProducts ? [0, 30402, 30018, 5] : [0]);
 const views = buildVendorViews(events, seeds, showProducts);
 const prerenderHtml = views.map((v) => vendorHtml(v, showProducts)).join('');
 const hasPrerender = views.length > 0;
@@ -102,7 +102,7 @@ const hasPrerender = views.length > 0;
 
   const SHOW_PRODUCTS =
     document.getElementById('nostr-market')?.dataset.showProducts !== 'false';
-  const REQ_KINDS = SHOW_PRODUCTS ? [0, 30402, 30018] : [0];
+  const REQ_KINDS = SHOW_PRODUCTS ? [0, 30402, 30018, 5] : [0];
 
   function fetchFromRelay(url: string, authors: string[]): Promise<NostrEvent[]> {
     return new Promise((resolve) => {

@@ -2,6 +2,7 @@
 import '../styles/global.css';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
+import NostrChat from '../components/chat/NostrChat.astro';
 
 interface Props {
   title: string;
@@ -128,6 +129,7 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
       <slot />
     </main>
     <Footer />
+    <NostrChat />
 
     <!--
       Give every section heading a stable anchor id so deep links like

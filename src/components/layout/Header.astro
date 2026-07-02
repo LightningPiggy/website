@@ -120,6 +120,16 @@ const currentPath = Astro.url.pathname;
         ))}
       </div>
 
+      <!-- Header icon cluster (chat envelope; sibling PRs add zap + book icons) -->
+      <div class="hidden lg:flex items-center gap-1 mr-1" id="hdr-icons">
+        <button type="button" id="hdr-chat" aria-label="Message us" title="Message us" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="20" height="16" x="2" y="4" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+        </button>
+      </div>
+
       <!-- Sign in / account (Nostr) -->
       <div class="hidden lg:flex items-center relative" id="hdr-auth" data-vendor-hexes={JSON.stringify(vendorHexes)}>
         <button
@@ -195,6 +205,13 @@ const currentPath = Astro.url.pathname;
           )}
         </div>
       ))}
+      <button
+        id="hdr-chat-m"
+        type="button"
+        class="block w-full text-left px-3 py-2 text-base font-medium rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+      >
+        ✉️ Message us
+      </button>
       <button
         id="hdr-signin-m"
         type="button"
@@ -282,6 +299,14 @@ const currentPath = Astro.url.pathname;
       setAvatar('hdr-avatar-m', 'hdr-initial-m', s);
     }
   }
+
+  // Chat envelope — opens the global Nostr chat slide-over (NostrChat.astro).
+  const openChat = () => window.dispatchEvent(new CustomEvent('nostr:open-chat'));
+  document.getElementById('hdr-chat')?.addEventListener('click', openChat);
+  document.getElementById('hdr-chat-m')?.addEventListener('click', () => {
+    mobileMenu?.classList.add('hidden');
+    openChat();
+  });
 
   // Open the login dialog (Extension / Secret key) — never redirect off-site.
   signinBtn?.addEventListener('click', () => openLogin());

@@ -222,7 +222,14 @@ const canPayOnSite = !!lud16 && !!priceAmount;
     // optional for signed-in buyers (the vendor can reply over Nostr).
     function renderShipAuth(session: NostrSession | null) {
       if (session) {
-        if (shipWho) shipWho.innerHTML = `Signed in as <strong>${session.name || shortId(session.pubkey)}</strong>`;
+        if (shipWho) {
+          // session.name comes from a relay-published profile — set via textContent
+          // so it can never be interpreted as HTML.
+          shipWho.textContent = 'Signed in as ';
+          const who = document.createElement('strong');
+          who.textContent = session.name || shortId(session.pubkey);
+          shipWho.appendChild(who);
+        }
         if (shipAction) shipAction.textContent = 'Sign out';
         if (shipBanner) shipBanner.className = 'flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-green-800';
         if (shipSubmit) shipSubmit.textContent = 'Continue to payment';
@@ -406,21 +413,24 @@ const canPayOnSite = !!lud16 && !!priceAmount;
           .catch(() => {});
       }
 
-      const copyBtn = document.getElementById('invoice-copy');
-      copyBtn?.addEventListener(
-        'click',
-        () => {
+      // Use onclick ASSIGNMENT (not addEventListener): showInvoice can run more
+      // than once per page (repeat checkout), and stacked listeners would fire
+      // stale closures — paying an outdated invoice.
+      const copyBtn = document.getElementById('invoice-copy') as HTMLButtonElement | null;
+      if (copyBtn) {
+        copyBtn.onclick = () => {
           navigator.clipboard?.writeText(bolt11);
-          if (copyBtn) copyBtn.textContent = 'Copied!';
-        },
-        { once: true },
-      );
+          copyBtn.textContent = 'Copied!';
+        };
+      }
 
       const webln = (window as any).webln;
       const weblnBtn = document.getElementById('invoice-webln') as HTMLButtonElement | null;
       if (webln && weblnBtn) {
         weblnBtn.classList.remove('hidden');
-        weblnBtn.addEventListener('click', async () => {
+        weblnBtn.disabled = false;
+        weblnBtn.textContent = 'Pay with WebLN';
+        weblnBtn.onclick = async () => {
           weblnBtn.disabled = true;
           weblnBtn.textContent = 'Paying…';
           try {
@@ -438,7 +448,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
             weblnBtn.disabled = false;
             weblnBtn.textContent = 'Pay with WebLN';
           }
-        });
+        };
       }
     }
   }

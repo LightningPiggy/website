@@ -83,7 +83,7 @@ const currentPath = Astro.url.pathname;
           <div class="relative group">
             <a
               href={item.href}
-              class={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              class={`px-2.5 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                 currentPath.startsWith(item.href) && item.href !== '/'
                   ? 'text-pink bg-pink-light/30'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -119,8 +119,8 @@ const currentPath = Astro.url.pathname;
         <a href="/story" aria-label="Our story" title="Our story" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h6z"/></svg>
         </a>
-        <a href="/donate" aria-label="Zap a donation" title="Zap a donation" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
-          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <a href="/donate" aria-label="Zap a donation" title="Zap a donation" class="p-2 rounded-lg hover:bg-pink-light/30 transition-colors">
+          <svg class="w-5 h-5" fill="#FFDB00" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         </a>
         <button type="button" id="hdr-chat" aria-label="Message us" title="Message us" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -239,7 +239,7 @@ const currentPath = Astro.url.pathname;
           currentPath.startsWith('/donate') ? 'text-pink bg-pink-light/30' : 'text-pink hover:bg-pink-light/30'
         }`}
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <svg class="w-5 h-5" fill="#FFDB00" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
         Zap a donation
       </a>
       <button

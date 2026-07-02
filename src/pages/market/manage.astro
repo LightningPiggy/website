@@ -111,7 +111,7 @@ const owners = vendors
 
   <script>
     import { getSession, signEvent, publish, openLogin, type NostrSession } from '../../lib/nostrAuth';
-    import { RELAYS, tagVal, type NostrEvent } from '../../lib/market';
+    import { RELAYS, tagVal, sanitizeUrl, type NostrEvent } from '../../lib/market';
     import * as G from '../../lib/gammaAdmin';
 
     const root = document.querySelector('[data-owners]') as HTMLElement;
@@ -149,6 +149,16 @@ const owners = vendors
           clearTimeout(t);
           try {
             if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+            else if (ws && ws.readyState === WebSocket.CONNECTING) {
+              // Close once it opens — a socket that connects after our timeout
+              // would otherwise stay attached for the rest of the session.
+              ws.onopen = () => {
+                try {
+                  ws!.close();
+                } catch {}
+              };
+              ws.onmessage = null;
+            }
           } catch {}
           resolve(evs);
         };
@@ -234,8 +244,11 @@ const owners = vendors
       el.innerHTML = products
         .map((ev) => {
           const p = G.parseProductForm(ev);
-          const img = p.images[0]
-            ? `<img src="${esc(p.images[0])}" referrerpolicy="no-referrer" class="w-10 h-10 rounded object-cover inline-block mr-2 align-middle" />`
+          // Relay-supplied URL: allow only http(s) (sanitizeUrl), and give the
+          // thumbnail a name for screen readers.
+          const imgUrl = sanitizeUrl(p.images[0] || '');
+          const img = imgUrl
+            ? `<img src="${esc(imgUrl)}" alt="${esc(p.title)}" referrerpolicy="no-referrer" class="w-10 h-10 rounded object-cover inline-block mr-2 align-middle" />`
             : '';
           const price = p.priceAmount ? `${esc(p.priceAmount)} ${esc(p.priceCurrency)}` : '';
           const st = G.productDisplayStatus(p);

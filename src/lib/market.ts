@@ -305,7 +305,7 @@ export function selectShopEvents(
     const order = (ev: NostrEvent) => {
       if (shop.mode !== 'curated') return 0;
       const i = shop.include.indexOf(tagVal(ev.tags, 'd') || '');
-      return i === -1 ? 999 : i;
+      return i === -1 ? Number.MAX_SAFE_INTEGER : i;
     };
     mine.sort((a, b) => order(a) - order(b) || b.created_at - a.created_at);
     for (const ev of mine) {

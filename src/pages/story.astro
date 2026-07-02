@@ -252,6 +252,14 @@ const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqd
 
   // ---- Hero ----
   async function loadHero() {
+    // Invalid/missing npub → no relay traffic and no empty-string cache key;
+    // just render the static fallbacks.
+    if (!authorHex) {
+      document.getElementById('story-name')!.textContent = 'Lightning Piggy';
+      document.getElementById('story-about')!.textContent =
+        'Bitcoin savings for the next generation — one oink at a time.';
+      return;
+    }
     const evs = await fetchAll({ kinds: [0], authors: [authorHex], limit: 1 });
     let prof: any = {};
     let newestAt = -1;
@@ -274,8 +282,12 @@ const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqd
     }
     const pic = sanitizeUrl(prof.picture || '');
     if (pic) {
+      // Keep a piggy fallback behind the image so a failed load doesn't leave
+      // the avatar circle empty (same hide-img/show-sibling pattern as
+      // ProductReviews' authorHtml).
       document.getElementById('story-avatar')!.innerHTML =
-        `<img src="${escapeHtml(pic)}" alt="${escapeHtml(name)}" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.remove()">`;
+        `<img src="${escapeHtml(pic)}" alt="${escapeHtml(name)}" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` +
+        `<span class="w-full h-full text-pink text-3xl font-bold items-center justify-center hidden">🐷</span>`;
     }
   }
 
@@ -393,6 +405,13 @@ const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqd
   const emptyEl = document.getElementById('story-empty')!;
 
   async function loadNotes() {
+    // Invalid/missing npub → skip the relay query entirely (matching the other
+    // npubToHex() callers that filter falsy hex) and render the empty state.
+    if (!authorHex) {
+      notes = [];
+      renderFeed();
+      return;
+    }
     const evs = await fetchAll({ kinds: [1], authors: [authorHex], limit: 50 });
     const seen = new Set<string>();
     notes = evs

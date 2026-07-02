@@ -24,7 +24,38 @@
 
 import { publish, signEvent, nip44Encrypt, getSession } from './nostrAuth';
 
-export async function sendGiftWrappedDM(recipientHex: string, message: string): Promise<void> {
+// One-time guest key: create ONE per order and pass it to every send for that
+// order, so the vendor sees the kind-14 note and the kind-16 order from the
+// same (throwaway) sender and can correlate them.
+export async function makeGuestKey(): Promise<Uint8Array> {
+  const { generateSecretKey } = await import('nostr-tools/pure');
+  return generateSecretKey();
+}
+
+// Send a gift-wrapped kind-14 chat message (human-readable).
+export function sendGiftWrappedDM(recipientHex: string, message: string, guestSk?: Uint8Array): Promise<void> {
+  return sendGiftWrapped(recipientHex, 14, [['p', recipientHex]], message, guestSk);
+}
+
+// Send a gift-wrapped structured event (e.g. Gamma kind-16 order, kind-17
+// receipt). Tags are the rumor's tags; a ['p', recipient] is expected in them.
+export function sendGiftWrappedEvent(
+  recipientHex: string,
+  kind: number,
+  tags: string[][],
+  content: string,
+  guestSk?: Uint8Array,
+): Promise<void> {
+  return sendGiftWrapped(recipientHex, kind, tags, content, guestSk);
+}
+
+async function sendGiftWrapped(
+  recipientHex: string,
+  rumorKind: number,
+  rumorTags: string[][],
+  message: string,
+  guestSk?: Uint8Array,
+): Promise<void> {
   const session = getSession();
 
   const [pure, nip44] = await Promise.all([import('nostr-tools/pure'), import('nostr-tools/nip44')]);
@@ -43,18 +74,18 @@ export async function sendGiftWrappedDM(recipientHex: string, message: string): 
     sealEncrypt = (pt) => nip44Encrypt(recipientHex, pt);
     sealSign = (tmpl) => signEvent(tmpl);
   } else {
-    const guestSk = generateSecretKey();
-    senderPubkey = getPublicKey(guestSk);
-    sealEncrypt = (pt) => nip44.encrypt(pt, nip44.getConversationKey(guestSk, recipientHex));
-    sealSign = (tmpl) => finalizeEvent(tmpl, guestSk);
+    const gk = guestSk || generateSecretKey();
+    senderPubkey = getPublicKey(gk);
+    sealEncrypt = (pt) => nip44.encrypt(pt, nip44.getConversationKey(gk, recipientHex));
+    sealSign = (tmpl) => finalizeEvent(tmpl, gk);
   }
 
-  // 1. Rumor — unsigned kind-14 message.
+  // 1. Rumor — unsigned inner event (kind 14 chat, or structured kind 16/17).
   const rumor: any = {
-    kind: 14,
+    kind: rumorKind,
     pubkey: senderPubkey,
     created_at: now,
-    tags: [['p', recipientHex]],
+    tags: rumorTags,
     content: message,
   };
   rumor.id = getEventHash(rumor);

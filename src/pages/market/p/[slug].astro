@@ -26,6 +26,7 @@ import {
   type ProductDetail,
 } from '../../../lib/market';
 import { fetchMarketEvents } from '../../../lib/marketServer';
+import { npubEncode } from 'nostr-tools/nip19';
 import vendorsData from '../../../data/vendors.json';
 
 export async function getStaticPaths() {
@@ -187,6 +188,8 @@ if (detail.priceAmount) {
           storeUrl={storeUrl}
           medium={detail.medium}
           shippingRefs={JSON.stringify(detail.shippingRefs)}
+          vendorNpub={npubEncode(detail.pubkey)}
+          productCoord={detail.coord}
         />
 
         {detail.categories.length > 0 && (

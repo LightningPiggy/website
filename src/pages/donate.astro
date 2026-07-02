@@ -374,7 +374,14 @@ const PRESETS = [1000, 5000, 21000, 50000, 100000];
         else openLogin();
       });
 
-      const currentSats = () => Math.floor(parseFloat(amountInput?.value || '0')) || 0;
+      // Sats must stay a safe integer even after ×1000 to msats — otherwise a
+      // huge input stringifies into scientific notation in the LNURL callback
+      // URL (amount=1e+21) and dodges the min/max clamping. Invalid → 0.
+      const MAX_SATS = Math.floor(Number.MAX_SAFE_INTEGER / 1000);
+      const currentSats = () => {
+        const n = Math.floor(parseFloat(amountInput?.value || '0'));
+        return Number.isSafeInteger(n) && n > 0 && n <= MAX_SATS ? n : 0;
+      };
       function refreshSubmitLabel() {
         if (submitText) {
           const sats = currentSats();

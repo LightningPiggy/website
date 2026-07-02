@@ -126,6 +126,16 @@ try {
     paid2.length === 2 && paid2[1] === bolt11b && bolt11b !== bolt11,
     'second invoice pays the NEW bolt11 exactly once (no stale stacked handlers)',
   );
+
+  // --- absurdly large amount: rejected before any URL is built ---
+  await page.click('#invoice-back');
+  await page.fill('#zap-amount', '99999999999999999999'); // > MAX_SAFE_INTEGER/1000 sats
+  await page.click('#zap-submit');
+  await page.waitForSelector('#zap-error:not(.hidden)', { timeout: 5000 });
+  ok(
+    /valid amount/i.test(await page.locator('#zap-error').textContent()),
+    'unsafe-integer sats amount shows the validation error (no scientific-notation LNURL amount)',
+  );
 } catch (err) {
   failed = true;
   console.error('❌ test run crashed:', err);

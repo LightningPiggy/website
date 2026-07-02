@@ -534,12 +534,24 @@ const PROJECT_NPUB = 'npub15v9wrmt8dmfzzt9d5vk4fyww63nzsv0m50vcuw3wzct9728r0vnqd
     }
   });
 
-  // Auth changes: refresh composer placeholders + own-reply trash icons.
+  // Auth changes: update auth-dependent UI IN PLACE. A full renderFeed() here
+  // would collapse expanded reply threads and wipe any draft typed while the
+  // login dialog was open (type a reply → sign in → draft gone).
   window.addEventListener('nostr:auth', (e) => {
     const s = (e as CustomEvent).detail as NostrSession | null;
     selfPubkey = s?.pubkey || '';
     seedSelf(s);
-    renderFeed();
+    // Composer placeholders + submit labels, without touching typed drafts.
+    document.querySelectorAll('.reply-form').forEach((form) => {
+      const ta = form.querySelector('.reply-text') as HTMLTextAreaElement | null;
+      if (ta) ta.placeholder = s ? 'Write a reply…' : 'Sign in to join the conversation…';
+      const btn = form.querySelector('button[type="submit"]') as HTMLButtonElement | null;
+      if (btn) btn.textContent = s ? 'Reply' : 'Sign in to reply';
+    });
+    // Re-render only already-fetched reply lists so own-reply trash icons
+    // appear/disappear — renderThread() replaces .reply-list only, leaving the
+    // forms and the threads' open/closed state untouched.
+    for (const ev of notes) if (repliesByNote.has(ev.id)) renderThread(ev.id);
   });
 
   // ---- Init ----

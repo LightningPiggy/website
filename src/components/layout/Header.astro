@@ -1,13 +1,22 @@
 ---
 import NostrLoginModal from '../market/NostrLoginModal.astro';
-import { npubToHex } from '../../lib/market';
+import { decode } from 'nostr-tools/nip19';
 import vendorsData from '../../data/vendors.json';
 
 // Hex pubkeys of the vendors LP sells for — they see a "Manage my shop" link.
+// Gating data, so decode with nip19.decode (checksum-validating): a typo'd npub
+// is rejected rather than silently decoding to an unintended pubkey. Build-time.
 const vendorHexes = ((vendorsData as any).vendors || [])
   .map((v: any) => (String(v.nostrUrl || '').match(/npub1[0-9a-z]+/) || [])[0] || '')
   .filter(Boolean)
-  .map((npub: string) => npubToHex(npub))
+  .map((npub: string) => {
+    try {
+      const d = decode(npub);
+      return d.type === 'npub' ? (d.data as string) : '';
+    } catch {
+      return '';
+    }
+  })
   .filter(Boolean);
 
 const navItems = [

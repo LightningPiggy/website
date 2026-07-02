@@ -9,15 +9,23 @@
 // authorship, so a vendor can only replace/delete their own events.
 
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { npubToHex } from '../../lib/market';
+import { decode } from 'nostr-tools/nip19';
 import vendorsData from '../../data/vendors.json';
 
 const { vendors = [] } = vendorsData as any;
-// The vendor identities that may manage a shop here (npub → hex).
+// The vendor identities that may manage a shop here (npub → hex). This list
+// gates access, so decode with nip19.decode (checksum-validating) — a typo'd
+// npub in vendors.json is rejected instead of silently decoding to an
+// unintended pubkey. Build-time only, so no client-bundle impact.
 const owners = vendors
   .map((v: any) => {
     const npub = (String(v.nostrUrl || '').match(/npub1[0-9a-z]+/) || [])[0] || '';
-    return { name: v.name, logo: v.logo || '', npub, hex: npub ? npubToHex(npub) : '' };
+    let hex = '';
+    try {
+      const d = decode(npub);
+      if (d.type === 'npub') hex = d.data as string;
+    } catch {}
+    return { name: v.name, logo: v.logo || '', npub, hex };
   })
   .filter((o: any) => o.hex);
 ---
@@ -163,8 +171,8 @@ const owners = vendors
         ws.onerror = () => finish();
       });
     }
-    async function fetchAll(filter: any): Promise<NostrEvent[]> {
-      return (await Promise.all(RELAYS.map((r) => fetchFromRelay(r, filter)))).flat();
+    async function fetchAll(filter: any, relays: string[] = RELAYS): Promise<NostrEvent[]> {
+      return (await Promise.all(relays.map((r) => fetchFromRelay(r, filter)))).flat();
     }
 
     // Newest event per addressable coordinate (kind:d), dropping locally-removed.
@@ -183,10 +191,11 @@ const owners = vendors
     async function loadEvents() {
       if (!vendor) return;
       status('Loading your listings…');
-      const evs = await fetchAll({
-        kinds: [G.PRODUCT_KIND, G.COLLECTION_KIND, G.SHIPPING_KIND, 10002],
+      const listingFilter = {
+        kinds: [G.PRODUCT_KIND, G.COLLECTION_KIND, G.SHIPPING_KIND],
         authors: [vendor.hex],
-      });
+      };
+      const evs = await fetchAll({ ...listingFilter, kinds: [...listingFilter.kinds, 10002] });
       // Merge the vendor's own write relays (NIP-65, kind 10002) with the defaults.
       const relayList = evs
         .filter((e) => e.kind === 10002)
@@ -197,6 +206,10 @@ const owners = vendors
           .map((t) => t[1])
           .filter((u) => /^wss?:\/\//.test(u || ''));
         publishRelays = [...new Set([...RELAYS, ...write])];
+        // Re-fetch listings from the vendor's OWN relays too — a vendor whose
+        // events live only there would otherwise see an empty console.
+        const extra = publishRelays.filter((r) => !RELAYS.includes(r));
+        if (extra.length) evs.push(...(await fetchAll(listingFilter, extra)));
       }
       products = newestByD(evs, G.PRODUCT_KIND);
       collections = newestByD(evs, G.COLLECTION_KIND);
@@ -412,7 +425,15 @@ const owners = vendors
         status('Saved ✓');
         await loadEvents();
       } catch (e: any) {
-        errEl.textContent = e?.message === 'no-nip44' ? 'Signer error.' : 'Could not publish — please try again.';
+        // Map the errors signEvent() can actually throw to actionable feedback.
+        if (e?.message === 'not-signed-in') {
+          errEl.textContent = 'Your session has expired — please sign in again.';
+          openLogin();
+        } else if (e?.message === 'no-extension') {
+          errEl.textContent = 'Your Nostr extension isn’t available — unlock it (or sign in with your key) and retry.';
+        } else {
+          errEl.textContent = 'Could not publish — please try again.';
+        }
       } finally {
         btn.disabled = false;
         btn.textContent = 'Publish';
@@ -483,7 +504,11 @@ const owners = vendors
       const logo = $('mg-vendor-logo') as HTMLImageElement;
       if (match.logo) {
         logo.src = match.logo;
+        logo.alt = `${match.name} logo`;
         logo.classList.remove('hidden');
+      } else {
+        logo.alt = '';
+        logo.classList.add('hidden');
       }
       show('mg-console');
       loadEvents();

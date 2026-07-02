@@ -32,7 +32,7 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
     aria-labelledby="nc-title"
     aria-hidden="true"
     inert
-    class="fixed inset-y-0 right-0 z-50 w-full sm:w-[380px] bg-white shadow-2xl border-l border-gray-200 flex flex-col translate-x-full transition-transform duration-300 ease-in-out"
+    class="fixed inset-y-0 right-0 z-50 w-full sm:w-[380px] bg-white shadow-2xl border-l border-gray-200 hidden flex-col translate-x-full transition-transform duration-300 ease-in-out"
   >
     <!-- Header -->
     <div class="flex items-start gap-3 p-4 border-b border-gray-100 bg-pink/5">
@@ -265,7 +265,14 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
 
   function openPanel() {
     isOpen = true;
-    panel.classList.remove('translate-x-full');
+    // Un-hide first (display:none while closed keeps the off-screen panel from
+    // widening the page's scroll area), then start the slide-in on the next
+    // frames so the transition actually runs.
+    panel.classList.remove('hidden');
+    panel.classList.add('flex');
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => panel.classList.remove('translate-x-full')),
+    );
     panel.removeAttribute('inert');
     panel.setAttribute('aria-hidden', 'false');
     renderMode();
@@ -288,6 +295,13 @@ import { PROJECT_NPUB } from '../../lib/nostrChat';
     panel.setAttribute('inert', '');
     panel.setAttribute('aria-hidden', 'true');
     stopPolling();
+    // After the slide-out finishes, remove it from layout entirely (see open).
+    window.setTimeout(() => {
+      if (!isOpen) {
+        panel.classList.add('hidden');
+        panel.classList.remove('flex');
+      }
+    }, 320);
   }
 
   // Opened from the header envelope (desktop icon or mobile menu entry).

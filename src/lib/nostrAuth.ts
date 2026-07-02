@@ -131,12 +131,36 @@ export async function nip44Encrypt(recipientHex: string, plaintext: string): Pro
 // ---- Publish ----
 // Publish a signed event to the relays; resolves once one accepts (or after a
 // short grace period). Shared by the reviews + comments + order flows.
+// All sockets are cleaned up when the publish settles: open ones are closed
+// (close() flushes the already-queued EVENT first), and still-connecting ones
+// send-then-close on open, so the event still propagates best-effort to slower
+// relays without leaking connections.
 export function publish(signed: any, relays: string[] = RELAYS): Promise<void> {
   return new Promise((resolve) => {
+    const payload = JSON.stringify(['EVENT', signed]);
+    const sockets: WebSocket[] = [];
     let settled = false;
     const done = () => {
       if (settled) return;
       settled = true;
+      clearTimeout(overall);
+      for (const ws of sockets) {
+        try {
+          if (ws.readyState === WebSocket.OPEN) ws.close();
+          else if (ws.readyState === WebSocket.CONNECTING) {
+            // Let it finish connecting, deliver the event, then close.
+            ws.onopen = () => {
+              try {
+                ws.send(payload);
+              } catch {}
+              try {
+                ws.close();
+              } catch {}
+            };
+            ws.onmessage = null;
+          }
+        } catch {}
+      }
       resolve();
     };
     const overall = window.setTimeout(done, 4000);
@@ -147,17 +171,12 @@ export function publish(signed: any, relays: string[] = RELAYS): Promise<void> {
       } catch {
         return;
       }
-      ws.onopen = () => ws.send(JSON.stringify(['EVENT', signed]));
+      sockets.push(ws);
+      ws.onopen = () => ws.send(payload);
       ws.onmessage = (e) => {
         try {
           const m = JSON.parse(e.data);
-          if (m[0] === 'OK' && m[1] === signed.id) {
-            try {
-              ws.close();
-            } catch {}
-            clearTimeout(overall);
-            done();
-          }
+          if (m[0] === 'OK' && m[1] === signed.id) done();
         } catch {}
       };
       ws.onerror = () => {

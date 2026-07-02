@@ -152,8 +152,29 @@ const currentPath = Astro.url.pathname;
           <span id="hdr-name" class="text-sm font-semibold text-gray-800 max-w-[120px] truncate"></span>
           <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
         </button>
-        <div id="hdr-menu" class="hidden absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-          <a id="hdr-manage" href="/market/manage" class="hidden px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">🛍️ Manage my shop</a>
+        <div id="hdr-menu" class="hidden absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+          <!-- Store manager section: shown only for vendor keys; deep-links open
+               the matching part of /market/manage directly. -->
+          <div id="hdr-vendor-menu" class="hidden">
+            <p class="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Store manager</p>
+            <a href="/market/manage#add-product" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              Add product
+            </a>
+            <a href="/market/manage#products" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>
+              My products
+            </a>
+            <a href="/market/manage#categories" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+              Categories &amp; collections
+            </a>
+            <a href="/market/manage#shipping" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+              Shipping options
+            </a>
+            <div class="my-1 border-t border-gray-100"></div>
+          </div>
           <button id="hdr-signout" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Sign out</button>
         </div>
       </div>
@@ -296,7 +317,7 @@ const currentPath = Astro.url.pathname;
     // Desktop
     signinBtn?.classList.toggle('hidden', !!s);
     accountBtn?.classList.toggle('hidden', !s);
-    document.getElementById('hdr-manage')?.classList.toggle('hidden', !isVendor(s));
+    document.getElementById('hdr-vendor-menu')?.classList.toggle('hidden', !isVendor(s));
     const manageM = document.getElementById('hdr-manage-m');
     manageM?.classList.toggle('hidden', !isVendor(s));
     manageM?.classList.toggle('flex', isVendor(s));

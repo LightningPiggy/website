@@ -61,7 +61,7 @@ const owners = vendors
       </header>
 
       <!-- Products -->
-      <section class="mb-10">
+      <section id="products" class="mb-10 scroll-mt-24">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-xl font-bold text-gray-900">Products</h2>
           <button data-add="product" class="mg-add inline-flex items-center gap-1.5 px-4 py-2 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">+ Add product</button>
@@ -71,7 +71,7 @@ const owners = vendors
       </section>
 
       <!-- Categories -->
-      <section class="mb-10">
+      <section id="categories" class="mb-10 scroll-mt-24">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-xl font-bold text-gray-900">Categories</h2>
           <button data-add="collection" class="mg-add inline-flex items-center gap-1.5 px-4 py-2 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">+ Add category</button>
@@ -81,7 +81,7 @@ const owners = vendors
       </section>
 
       <!-- Shipping -->
-      <section class="mb-10">
+      <section id="shipping" class="mb-10 scroll-mt-24">
         <div class="flex items-center justify-between mb-3">
           <h2 class="text-xl font-bold text-gray-900">Shipping options</h2>
           <button data-add="shipping" class="mg-add inline-flex items-center gap-1.5 px-4 py-2 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">+ Add shipping</button>
@@ -547,7 +547,18 @@ const owners = vendors
       }
       show('mg-console');
       loadEvents();
+      applyHash();
     }
+    // Deep links from the header "Store manager" menu: #add-product opens the
+    // product form; #products/#categories/#shipping scroll to their section.
+    function applyHash() {
+      if (!vendor) return;
+      const h = location.hash;
+      if (h === '#add-product') openModal(G.PRODUCT_KIND, null);
+      else if (h === '#products' || h === '#categories' || h === '#shipping')
+        document.getElementById(h.slice(1))?.scrollIntoView({ behavior: 'smooth' });
+    }
+    window.addEventListener('hashchange', applyHash);
     window.addEventListener('nostr:auth', (e) => gate((e as CustomEvent).detail));
     gate(getSession());
   </script>

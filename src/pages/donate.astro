@@ -1,44 +1,25 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Button from '../components/ui/Button.astro';
-import supporters from '../data/supporters.json';
-import creditsData from '../data/credits.json';
 
-// Community Supporters = curated credits tagged "Community Supporters" in the
-// admin tool, plus $50+ donors (avatar-only, added by the BTCPay webhook).
-// They render in one grid, so donors become avatar cards that link to a profile.
-const communitySupporters = (creditsData as Record<string, any[]>).communitySupporters || [];
+// The zap page. Fully client-side (no backend): the wall of zappers is read
+// straight from the public relays (kind-9735 zap receipts to the project
+// pubkey) and the donation itself is a NIP-57 zap — a signed kind-9734 zap
+// request passed to the project's LNURL-pay callback — so it shows up on the
+// wall. Signed-out visitors (or a non-zap LNURL server) fall back to a plain
+// LNURL invoice with the message as the LNURL comment.
 
-// Dedupe: a curated supporter who also donates should appear once. Match donors
-// to curated supporters by npub / X handle (from the profile link) or by the
-// underlying avatar image, and drop any donor that's already a curated supporter.
-function profileKey(url?: string): string {
-  if (!url) return '';
-  const npub = url.match(/(npub1[0-9a-z]+)/i);
-  if (npub) return 'nostr:' + npub[1].toLowerCase();
-  const x = url.match(/(?:x\.com|twitter\.com)\/([^\/?#]+)/i);
-  if (x) return 'x:' + x[1].toLowerCase();
-  return url;
-}
-function donorImageSource(avatarUrl?: string): string {
-  if (!avatarUrl) return '';
-  try { return new URL(avatarUrl).searchParams.get('u') || avatarUrl; } catch { return avatarUrl; }
-}
-const curatedKeys = new Set<string>();
-const curatedLogos = new Set<string>();
-for (const c of communitySupporters) {
-  if (c.nostrUrl) curatedKeys.add(profileKey(c.nostrUrl));
-  if (c.xUrl) curatedKeys.add(profileKey(c.xUrl));
-  if (c.logo) curatedLogos.add(c.logo);
-}
-const donorCards = (supporters as any[])
-  .filter((s) => !(s.profileUrl && curatedKeys.has(profileKey(s.profileUrl))) && !curatedLogos.has(donorImageSource(s.avatarUrl)))
-  .map((s) => ({ name: '', logo: s.avatarUrl, url: s.profileUrl }));
+// Lightning Piggy's Nostr pubkey (npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq)
+// — the zap recipient and the `#p` the wall queries.
+const PROJECT_PUBKEY = '22818ec33d8078e64964b561c839b74433f2371552d7f5bd6ab0af325a79f429';
+// The project's Lightning address (same one the page has always used). Its
+// LNURL-pay metadata advertises `allowsNostr`, so zap requests become real zaps.
+const LUD16 = 'oink@lightningpiggy.com';
 
-const allSupporters = [...communitySupporters, ...donorCards];
+const PRESETS = [1000, 5000, 21000, 50000, 100000];
 ---
 
-<BaseLayout title="Donate" description="Support Lightning Piggy - an open source Bitcoin piggy bank for kids. Donate with Bitcoin on-chain or over Lightning.">
+<BaseLayout title="Zap us a donation" description="Support Lightning Piggy — an open source Bitcoin piggy bank for kids. Zap sats over Nostr/Lightning and join the wall of zappers.">
 
   <!-- Hero -->
   <div class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 text-white">
@@ -48,360 +29,562 @@ const allSupporters = [...communitySupporters, ...donorCards];
         alt="LightningPiggy mascot"
         class="w-20 h-20 mx-auto mb-6 rounded-2xl"
       />
-      <h1 class="text-4xl md:text-5xl font-bold mb-6">Support Lightning Piggy</h1>
+      <h1 class="text-4xl md:text-5xl font-bold mb-6">⚡ Zap Lightning Piggy</h1>
       <p class="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
-        Lightning Piggy is free, open source, and community funded. Your donation helps the
+        Lightning Piggy is free, open source, and community funded. Zap the
         <a href="/about" class="text-pink hover:underline">Lightning Piggy project</a>
-        keep building sound money tools for the next generation.
+        some sats to keep sound money tools coming for the next generation.
       </p>
     </div>
   </div>
 
-  <!-- Community Supporters: curated credits + $50+ donors, one grid -->
-  {allSupporters.length > 0 && (
+  <div id="zap-root" data-pubkey={PROJECT_PUBKEY} data-lud16={LUD16}>
+
+    <!-- Wall of zappers: live kind-9735 receipts from the relays -->
     <section class="py-12 bg-gray-50">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Community Supporters</h2>
-        <p class="text-gray-600 mb-8">Generous supporters helping keep Lightning Piggy free and open source.</p>
-        <div class="flex flex-wrap justify-center items-center gap-4">
-          {allSupporters.map((p) => {
-            const link = p.nostrUrl || p.xUrl || p.url;
-            return (
-              <a
-                href={link || undefined}
-                target={link ? '_blank' : undefined}
-                rel={link ? 'noopener noreferrer' : undefined}
-                title={p.name || undefined}
-                class="block w-16 h-16 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-pink/50 transition"
-              >
-                {p.logo ? (
-                  <img src={p.logo} alt={p.name || 'Supporter'} class="w-full h-full object-cover" loading="lazy"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                ) : null}
-                <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink font-bold" style={p.logo ? 'display:none;' : ''}>
-                  {(p.name || '?').charAt(0).toUpperCase()}
-                </div>
-              </a>
-            );
-          })}
+        <h2 class="text-xl font-bold text-gray-900 mb-2">Wall of Zappers</h2>
+        <p class="text-gray-600 mb-8">
+          Everyone whose zaps add up to <span id="wall-threshold" class="font-semibold">$50 worth of sats</span> earns a spot on the wall — straight from Nostr, no sign-up.
+        </p>
+        <!-- Loading skeleton (replaced by the client script) -->
+        <div id="wall-skeleton" class="flex flex-wrap justify-center items-center gap-4" aria-hidden="true">
+          {Array.from({ length: 8 }).map(() => (
+            <div class="w-16 h-16 rounded-full bg-gray-200 animate-pulse"></div>
+          ))}
         </div>
-      </div>
-    </section>
-  )}
-
-  <!-- Bitcoin Donation Form -->
-  <section class="py-10 md:py-16 bg-white">
-    <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Support our mission with Bitcoin</h2>
-        <p class="text-lg text-gray-600 max-w-xl mx-auto">
-          On-chain or Lightning - any amount is appreciated. Donate $50 and your profile pic will appear here :)
+        <div id="wall-avatars" class="hidden flex-wrap justify-center items-center gap-4"></div>
+        <p id="wall-empty" class="hidden text-gray-500">
+          The wall is waiting for its first big zapper — will it be you? ⚡
         </p>
       </div>
+    </section>
 
-      <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
-        <form id="donate-form" class="space-y-6">
+    <!-- Zap form -->
+    <section class="py-10 md:py-16 bg-white">
+      <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-8">
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">Send a zap</h2>
+          <p class="text-lg text-gray-600 max-w-xl mx-auto">
+            Pick an amount in sats, add a message if you like, and pay with any Lightning wallet.
+          </p>
+        </div>
 
-          <!-- Amount selection -->
-          <div>
-            <label class="block text-sm font-semibold text-gray-900 mb-3">Donation amount (USD)</label>
-            <div class="grid grid-cols-4 gap-2 mb-3" id="preset-amounts">
-              <button type="button" data-amount="5"
-                class="preset-btn py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm hover:border-pink hover:text-pink transition-all">$5</button>
-              <button type="button" data-amount="21"
-                class="preset-btn py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm hover:border-pink hover:text-pink transition-all">$21</button>
-              <button type="button" data-amount="50"
-                class="preset-btn py-2.5 rounded-xl border-2 border-pink bg-pink/5 text-pink font-semibold text-sm transition-all">$50</button>
-              <button type="button" data-amount="121"
-                class="preset-btn py-2.5 rounded-xl border-2 border-gray-200 text-gray-700 font-semibold text-sm hover:border-pink hover:text-pink transition-all">$121</button>
-            </div>
-            <div class="relative">
-              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">$</span>
-              <input
-                type="number"
-                id="donate-amount"
-                name="amount"
-                min="1"
-                step="any"
-                value="50"
-                required
-                placeholder="Enter amount"
-                class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
-              />
-            </div>
+        <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
+
+          <!-- Sign-in state: signed-in zaps carry your Nostr identity onto the wall -->
+          <div id="zap-auth" class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5 mb-6">
+            <span id="zap-auth-text" class="text-sm"></span>
+            <button type="button" id="zap-auth-action" class="text-sm font-semibold text-pink hover:underline whitespace-nowrap"></button>
           </div>
 
-          <!-- Optional donor info (shown for donations of $50+) -->
-          <div id="donor-info-fields" class="space-y-6">
-            <!-- Optional: Nostr npub -->
+          <form id="zap-form" class="space-y-6">
+            <!-- Amount (sats) -->
             <div>
-              <label for="donate-npub" class="block text-sm font-semibold text-gray-900 mb-1.5">
-                Nostr npub <span class="font-normal text-gray-400">(optional)</span>
-              </label>
-              <input
-                type="text"
-                id="donate-npub"
-                name="npub"
-                placeholder="npub1..."
-                autocapitalize="none"
-                autocomplete="off"
-                spellcheck="false"
-                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
-              />
-              <p id="npub-status" class="text-sm mt-1.5 h-5"></p>
-            </div>
-
-            <!-- Optional: X/Twitter handle -->
-            <div>
-              <label for="donate-xhandle" class="block text-sm font-semibold text-gray-900 mb-1.5">
-                X / Twitter handle <span class="font-normal text-gray-400">(optional)</span>
-              </label>
+              <label class="block text-sm font-semibold text-gray-900 mb-3">Zap amount (sats)</label>
+              <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3" id="zap-presets">
+                {PRESETS.map((sats) => (
+                  <button type="button" data-sats={sats}
+                    class={`preset-btn py-2.5 px-1 rounded-xl border-2 font-semibold text-sm transition-all ${
+                      sats === 21000
+                        ? 'border-pink bg-pink/5 text-pink'
+                        : 'border-gray-200 text-gray-700 hover:border-pink hover:text-pink'
+                    }`}>{sats.toLocaleString('en-US')}</button>
+                ))}
+              </div>
               <div class="relative">
-                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">@</span>
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">⚡</span>
                 <input
-                  type="text"
-                  id="donate-xhandle"
-                  name="xhandle"
-                  placeholder="yourhandle"
-                  class="w-full pl-8 pr-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
+                  type="number"
+                  id="zap-amount"
+                  name="amount"
+                  min="1"
+                  step="1"
+                  value="21000"
+                  required
+                  placeholder="Custom amount in sats"
+                  class="w-full pl-10 pr-14 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
                 />
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 text-sm">sats</span>
               </div>
             </div>
+
+            <!-- Optional message -->
+            <div>
+              <label for="zap-message" class="block text-sm font-semibold text-gray-900 mb-1.5">
+                Message <span class="font-normal text-gray-400">(optional)</span>
+              </label>
+              <textarea
+                id="zap-message"
+                name="message"
+                rows="2"
+                maxlength="255"
+                placeholder="Oink oink! 🐷⚡"
+                class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-pink focus:ring-2 focus:ring-pink/20 outline-none transition-all text-gray-900 placeholder-gray-400"
+              ></textarea>
+            </div>
+
+            <!-- Submit -->
+            <button
+              type="submit"
+              id="zap-submit"
+              class="w-full inline-flex items-center justify-center gap-2 py-3 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+              <span id="zap-submit-text">Zap 21,000 sats</span>
+            </button>
+
+            <p id="zap-error" class="text-sm text-red-500 text-center hidden"></p>
+
+            <p class="text-xs text-gray-500 text-center">
+              Donations are voluntary and non-refundable. By donating you agree to our
+              <a href="/terms" class="underline underline-offset-2 hover:text-pink">Terms</a>
+              and
+              <a href="/privacy" class="underline underline-offset-2 hover:text-pink">Privacy Policy</a>.
+            </p>
+          </form>
+
+          <!-- Invoice view (swapped in after submit) -->
+          <div id="zap-invoice" class="hidden">
+            <p id="invoice-heading" class="text-center text-sm font-semibold text-green-600 mb-3"></p>
+            <div class="flex justify-center mb-3">
+              <img id="invoice-qr" alt="Scan to pay with a Lightning wallet" width="220" height="220" class="hidden w-56 h-56 rounded-xl border border-gray-200 bg-white p-2" />
+            </div>
+            <p id="invoice-amount" class="text-center text-2xl font-bold text-gray-900 mb-4"></p>
+            <label class="block text-sm text-gray-500 mb-1">Lightning invoice</label>
+            <div class="flex gap-2 mb-4">
+              <input id="invoice-bolt11" readonly class="flex-1 min-w-0 text-xs font-mono rounded-lg border border-gray-300 bg-gray-50 px-3 py-2" />
+              <button id="invoice-copy" type="button" title="Copy invoice" aria-label="Copy invoice" class="shrink-0 px-3 rounded-lg border border-gray-300 text-gray-500 hover:border-pink hover:text-pink transition text-xs font-semibold">
+                Copy
+              </button>
+            </div>
+            <div class="space-y-2">
+              <button id="invoice-webln" type="button" class="hidden w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-pink text-white font-semibold hover:bg-pink/90 transition disabled:opacity-60">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                <span id="invoice-webln-text">Pay with WebLN</span>
+              </button>
+              <a id="invoice-open" href="#" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 font-semibold text-gray-700 hover:border-pink hover:text-pink transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                Open in wallet
+              </a>
+            </div>
+            <p id="invoice-paid" class="hidden mt-3 text-center text-sm font-semibold text-green-600">✓ Paid — thank you, and welcome to the herd! 🐷⚡</p>
+            <p class="text-xs text-gray-400 text-center mt-3">Scan the QR or copy the invoice to pay with any Lightning wallet.</p>
+            <button id="invoice-back" type="button" class="mt-4 w-full text-sm font-semibold text-gray-500 hover:text-pink transition">
+              ← Change amount
+            </button>
           </div>
 
-          <!-- Submit button -->
-          <button
-            type="submit"
-            id="donate-submit"
-            class="w-full py-3 px-6 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <span class="btn-text">Donate with Bitcoin</span>
-            <span class="btn-loading hidden">
-              <svg class="animate-spin h-5 w-5 mx-auto" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </span>
-          </button>
+        </div>
 
-          <!-- Error message -->
-          <p id="donate-error" class="text-sm text-red-500 text-center hidden"></p>
-
-          <p class="text-xs text-gray-500 text-center">
-            Donations are voluntary and non-refundable. By donating you agree to our
-            <a href="/terms" class="underline underline-offset-2 hover:text-pink">Terms</a>
-            and
-            <a href="/privacy" class="underline underline-offset-2 hover:text-pink">Privacy Policy</a>.
-          </p>
-
-        </form>
+        <p class="text-sm text-gray-400 mt-6 text-center">
+          Zaps go straight to the project's Lightning address — no middleman, no backend, no sign-up.
+        </p>
       </div>
+    </section>
 
-      <p class="text-sm text-gray-400 mt-6 text-center">
-        Payments are processed through our self-hosted BTCPay Server to protect your privacy.
-      </p>
-    </div>
-  </section>
+  </div>
 
-  <script is:inline>
-    document.addEventListener('DOMContentLoaded', function () {
-      var INVOICE_ENDPOINT = '/.netlify/functions/create-invoice';
+  <script>
+    import { getSession, openLogin, logout, signEvent, shortId, type NostrSession } from '../lib/nostrAuth';
+    import { RELAYS, escapeHtml, sanitizeUrl, type NostrEvent } from '../lib/market';
+    import { topZappers, thresholdSatsForUsd, FALLBACK_THRESHOLD_SATS } from '../lib/zaps';
 
-      var form = document.getElementById('donate-form');
-      var amountInput = document.getElementById('donate-amount');
-      var npubInput = document.getElementById('donate-npub');
-      var xHandleInput = document.getElementById('donate-xhandle');
-      var submitBtn = document.getElementById('donate-submit');
-      var btnText = submitBtn.querySelector('.btn-text');
-      var btnLoading = submitBtn.querySelector('.btn-loading');
-      var errorEl = document.getElementById('donate-error');
-      var npubStatusEl = document.getElementById('npub-status');
-      var presetBtns = document.querySelectorAll('.preset-btn');
-      var donorFields = document.getElementById('donor-info-fields');
+    const root = document.getElementById('zap-root');
+    if (root) {
+      const PROJECT_PUBKEY = root.dataset.pubkey!;
+      const LUD16 = root.dataset.lud16!;
 
-      function toggleDonorFields() {
-        var amount = parseFloat(amountInput.value) || 0;
-        var enabled = amount >= 50;
-        npubInput.disabled = !enabled;
-        xHandleInput.disabled = !enabled;
-        if (enabled) {
-          donorFields.classList.remove('opacity-40');
-        } else {
-          donorFields.classList.add('opacity-40');
-          npubInput.value = '';
-          xHandleInput.value = '';
-        }
-      }
-
-      function setActivePreset(activeBtn) {
-        presetBtns.forEach(function (btn) {
-          btn.classList.remove('border-pink', 'bg-pink/5', 'text-pink');
-          btn.classList.add('border-gray-200', 'text-gray-700');
+      // ---- shared: relay fetch (same close-on-finish pattern as the market;
+      // close() on a CONNECTING socket cancels the attempt so nothing dangles) ----
+      function fetchFromRelay(url: string, filter: any): Promise<NostrEvent[]> {
+        return new Promise((resolve) => {
+          const evs: NostrEvent[] = [];
+          let ws: WebSocket | undefined;
+          let done = false;
+          const finish = () => {
+            if (done) return;
+            done = true;
+            clearTimeout(t);
+            try {
+              if (ws) {
+                ws.onopen = () => {
+                  try {
+                    ws!.close();
+                  } catch {}
+                };
+                ws.onmessage = null;
+                ws.close();
+              }
+            } catch {}
+            resolve(evs);
+          };
+          const t = window.setTimeout(finish, 6000);
+          try {
+            ws = new WebSocket(url);
+          } catch {
+            finish();
+            return;
+          }
+          const sub = Math.random().toString(36).slice(2, 10);
+          ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, filter]));
+          ws.onmessage = (e) => {
+            try {
+              const m = JSON.parse(e.data);
+              if (m[0] === 'EVENT' && m[1] === sub) evs.push(m[2]);
+              if (m[0] === 'EOSE' && m[1] === sub) finish();
+            } catch {}
+          };
+          ws.onerror = () => finish();
         });
-        if (activeBtn) {
-          activeBtn.classList.remove('border-gray-200', 'text-gray-700');
-          activeBtn.classList.add('border-pink', 'bg-pink/5', 'text-pink');
+      }
+      async function fetchAll(filter: any): Promise<NostrEvent[]> {
+        return (await Promise.all(RELAYS.map((r) => fetchFromRelay(r, filter)))).flat();
+      }
+
+      // ---- shared: cached Coinbase BTC rate (same source as the market's toSats) ----
+      let btcRates: any = null;
+      async function usdPerBtc(): Promise<number | null> {
+        try {
+          if (!btcRates) {
+            const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=BTC');
+            btcRates = (await res.json())?.data?.rates || {};
+          }
+          const r = parseFloat(btcRates['USD']);
+          return isFinite(r) && r > 0 ? r : null;
+        } catch {
+          return null;
         }
       }
 
-      presetBtns.forEach(function (btn) {
-        btn.addEventListener('click', function () {
-          amountInput.value = btn.getAttribute('data-amount');
-          setActivePreset(btn);
-          toggleDonorFields();
-          errorEl.classList.add('hidden');
-        });
-      });
+      // ================= Wall of zappers =================
+      // loadWall can run more than once (initial load + after a WebLN payment),
+      // so it fully resets the empty/avatars states each pass, and a run token
+      // makes sure an overlapping earlier run can't clobber a newer one's UI.
+      let wallRun = 0;
+      async function loadWall() {
+        const skeleton = document.getElementById('wall-skeleton');
+        const wallEl = document.getElementById('wall-avatars');
+        const emptyEl = document.getElementById('wall-empty');
+        const thresholdEl = document.getElementById('wall-threshold');
+        if (!wallEl || !skeleton || !emptyEl) return;
+        const run = ++wallRun;
 
-      amountInput.addEventListener('input', function () {
-        var val = amountInput.value;
-        var matched = null;
-        presetBtns.forEach(function (btn) {
-          if (btn.getAttribute('data-amount') === val) matched = btn;
-        });
-        setActivePreset(matched);
-        toggleDonorFields();
-      });
+        // Receipts + the $50-in-sats bar (nearest 1,000; 50k-sat fallback).
+        const [receipts, rate] = await Promise.all([
+          fetchAll({ kinds: [9735], '#p': [PROJECT_PUBKEY], limit: 500 }),
+          usdPerBtc(),
+        ]);
+        if (run !== wallRun) return; // a newer run took over
+        const threshold = rate ? thresholdSatsForUsd(rate) : FALLBACK_THRESHOLD_SATS;
+        if (thresholdEl) thresholdEl.textContent = `${threshold.toLocaleString('en-US')} sats (~$50)`;
 
-      npubInput.addEventListener('input', function () {
-        var val = npubInput.value.trim();
-        npubStatusEl.className = 'text-sm mt-1.5 h-5';
-        if (!val) {
-          npubStatusEl.textContent = '';
-        } else if (!val.startsWith('npub')) {
-          npubStatusEl.classList.add('text-red-500');
-          npubStatusEl.textContent = '✗ Must start with npub';
-        } else if (/^npub1[a-z0-9]{58}$/.test(val)) {
-          npubStatusEl.classList.add('text-green-600');
-          npubStatusEl.textContent = '✓ Valid npub';
-        } else {
-          npubStatusEl.classList.add('text-gray-400');
-          npubStatusEl.textContent = 'Keep typing…';
-        }
-      });
-
-      function showError(msg) {
-        errorEl.textContent = msg;
-        errorEl.classList.remove('hidden');
-      }
-
-      function setLoading(loading) {
-        submitBtn.disabled = loading;
-        if (loading) {
-          btnText.classList.add('hidden');
-          btnLoading.classList.remove('hidden');
-        } else {
-          btnText.classList.remove('hidden');
-          btnLoading.classList.add('hidden');
-        }
-      }
-
-      function createInvoice(amount, metadata) {
-        var body = {
-          amount: String(amount),
-          currency: 'USD',
-          metadata: metadata
-        };
-
-        fetch(INVOICE_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
-        })
-          .then(function (response) {
-            if (!response.ok) {
-              return response.text().then(function (text) {
-                throw new Error('BTCPay returned status ' + response.status + ': ' + text);
-              });
-            }
-            return response.json();
-          })
-          .then(function (data) {
-            if (data.checkoutLink) {
-              window.location.href = data.checkoutLink;
-            } else {
-              throw new Error('No checkout link in response.');
-            }
-          })
-          .catch(function (err) {
-            console.error('Donation error:', err);
-            showError('Something went wrong creating the invoice. Please try again or use one of the alternative methods below.');
-            setLoading(false);
-          });
-      }
-
-      form.addEventListener('submit', function (e) {
-        e.preventDefault();
-        errorEl.classList.add('hidden');
-
-        var amount = parseFloat(amountInput.value);
-        if (!amount || amount <= 0) {
-          showError('Please enter a valid donation amount.');
+        const zappers = topZappers(receipts, threshold);
+        skeleton.classList.add('hidden');
+        if (!zappers.length) {
+          wallEl.classList.add('hidden');
+          wallEl.classList.remove('flex');
+          emptyEl.classList.remove('hidden');
           return;
         }
+        emptyEl.classList.add('hidden');
 
-        var metadata = {};
-        var npub = npubInput.value.trim();
-        var xHandle = xHandleInput.value.trim().replace(/^@/, '');
-
-        // Validate npub format
-        if (npub) {
-          if (!/^npub1[a-z0-9]{58}$/.test(npub)) {
-            showError('Invalid npub format. It should start with npub1 and be 63 characters long.');
-            return;
-          }
-          metadata.nostrNpub = npub;
+        // Profiles (kind 0) + npubs for the qualifying zappers only. Kind 0 is
+        // replaceable so relays should hold one per author — the limit is a
+        // belt-and-braces cap against relays that keep old versions.
+        const authors = [...new Set(zappers.map((z) => z.pubkey))];
+        const [profileEvents, { npubEncode }] = await Promise.all([
+          fetchAll({ kinds: [0], authors, limit: authors.length * 2 }),
+          import('nostr-tools/nip19'),
+        ]);
+        if (run !== wallRun) return; // a newer run took over
+        const profiles = new Map<string, { name: string; picture: string }>();
+        const newest = new Map<string, NostrEvent>();
+        for (const ev of profileEvents) {
+          if (ev.kind !== 0) continue;
+          const ex = newest.get(ev.pubkey);
+          if (!ex || ev.created_at > ex.created_at) newest.set(ev.pubkey, ev);
         }
-
-        // Validate X handle: 1-15 alphanumeric or underscore characters
-        if (xHandle) {
-          if (!/^[A-Za-z0-9_]{1,15}$/.test(xHandle)) {
-            showError('That doesn\'t look like a valid X handle. It should be 1\u201315 characters using letters, numbers, or underscores.');
-            return;
-          }
-          metadata.xHandle = xHandle;
-        }
-
-        setLoading(true);
-
-        // Validate profile before creating invoice (for $50+ with a handle)
-        if (amount >= 50 && (npub || xHandle)) {
-          btnText.textContent = 'Validating profile…';
-          btnText.classList.remove('hidden');
-          btnLoading.classList.add('hidden');
-
-          fetch('/.netlify/functions/validate-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ npub: npub, xHandle: xHandle })
-          })
-            .then(function (res) { return res.json(); })
-            .then(function (data) {
-              btnText.textContent = 'Donate with Bitcoin';
-              if (data.valid) {
-                metadata.avatarUrl = data.avatarUrl;
-                setLoading(true);
-                createInvoice(amount, metadata);
-              } else {
-                showError(data.error || "We couldn't find a profile for that npub/handle. Please check and try again, or clear the fields to donate without recognition.");
-                setLoading(false);
-              }
-            })
-            .catch(function (err) {
-              console.error('Profile validation error:', err);
-              btnText.textContent = 'Donate with Bitcoin';
-              // Proceed without avatar on validation failure
-              setLoading(true);
-              createInvoice(amount, metadata);
+        for (const [pk, ev] of newest) {
+          try {
+            const p = JSON.parse(ev.content);
+            profiles.set(pk, {
+              name: String(p.display_name || p.name || ''),
+              picture: sanitizeUrl(String(p.picture || '')),
             });
+          } catch {}
+        }
+
+        // Everything below came off the relays → escape before innerHTML.
+        wallEl.innerHTML = zappers
+          .map((z) => {
+            const p = profiles.get(z.pubkey);
+            const name = p?.name || shortId(z.pubkey);
+            let npub = '';
+            try {
+              npub = npubEncode(z.pubkey);
+            } catch {}
+            const tooltip = `${name} — ${z.sats.toLocaleString('en-US')} sats`;
+            const img = p?.picture
+              ? `<img src="${escapeHtml(p.picture)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+              : '';
+            const initial = `<div class="w-full h-full bg-pink/10 items-center justify-center text-pink font-bold ${p?.picture ? 'hidden' : 'flex'}" style="${p?.picture ? 'display:none' : ''}">${escapeHtml((name || '?').charAt(0).toUpperCase())}</div>`;
+            return `<a href="https://njump.me/${escapeHtml(npub)}" target="_blank" rel="noopener noreferrer" title="${escapeHtml(tooltip)}"
+                       class="block w-16 h-16 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-pink/50 transition">${img}${initial}</a>`;
+          })
+          .join('');
+        wallEl.classList.remove('hidden');
+        wallEl.classList.add('flex');
+      }
+      loadWall();
+
+      // ================= Zap form =================
+      const form = document.getElementById('zap-form') as HTMLFormElement | null;
+      const amountInput = document.getElementById('zap-amount') as HTMLInputElement | null;
+      const messageInput = document.getElementById('zap-message') as HTMLTextAreaElement | null;
+      const submitBtn = document.getElementById('zap-submit') as HTMLButtonElement | null;
+      const submitText = document.getElementById('zap-submit-text');
+      const errorEl = document.getElementById('zap-error');
+      const invoiceView = document.getElementById('zap-invoice');
+      const presetBtns = document.querySelectorAll<HTMLButtonElement>('#zap-presets .preset-btn');
+
+      // Sign-in banner: a signed-in zap is a REAL zap (it can reach the wall).
+      const authText = document.getElementById('zap-auth-text');
+      const authAction = document.getElementById('zap-auth-action');
+      const authBox = document.getElementById('zap-auth');
+      function renderAuth(s: NostrSession | null) {
+        if (!authText || !authAction || !authBox) return;
+        if (s) {
+          authText.textContent = '';
+          const strong = document.createElement('strong');
+          strong.textContent = s.name || shortId(s.pubkey); // relay-supplied → textContent
+          authText.append('⚡ Zapping as ', strong, ' — your zap can appear on the wall.');
+          authAction.textContent = 'Sign out';
+          authBox.className = 'flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 mb-6 text-green-800';
         } else {
-          createInvoice(amount, metadata);
+          authText.textContent = 'Sign in with Nostr so your zap counts towards the wall.';
+          authAction.textContent = 'Sign in';
+          authBox.className = 'flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 mb-6 text-amber-800';
+        }
+      }
+      window.addEventListener('nostr:auth', (e) => renderAuth((e as CustomEvent).detail));
+      renderAuth(getSession());
+      authAction?.addEventListener('click', () => {
+        if (getSession()) logout();
+        else openLogin();
+      });
+
+      // Sats must stay a safe integer even after ×1000 to msats — otherwise a
+      // huge input stringifies into scientific notation in the LNURL callback
+      // URL (amount=1e+21) and dodges the min/max clamping. Invalid → 0.
+      const MAX_SATS = Math.floor(Number.MAX_SAFE_INTEGER / 1000);
+      const currentSats = () => {
+        const n = Math.floor(parseFloat(amountInput?.value || '0'));
+        return Number.isSafeInteger(n) && n > 0 && n <= MAX_SATS ? n : 0;
+      };
+      function refreshSubmitLabel() {
+        if (submitText) {
+          const sats = currentSats();
+          submitText.textContent = sats > 0 ? `Zap ${sats.toLocaleString('en-US')} sats` : 'Zap sats';
+        }
+      }
+      function setActivePreset(active: HTMLButtonElement | null) {
+        presetBtns.forEach((btn) => {
+          const on = btn === active;
+          btn.classList.toggle('border-pink', on);
+          btn.classList.toggle('bg-pink/5', on);
+          btn.classList.toggle('text-pink', on);
+          btn.classList.toggle('border-gray-200', !on);
+          btn.classList.toggle('text-gray-700', !on);
+        });
+      }
+      presetBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (amountInput) amountInput.value = btn.dataset.sats || '';
+          setActivePreset(btn);
+          refreshSubmitLabel();
+          errorEl?.classList.add('hidden');
+        });
+      });
+      amountInput?.addEventListener('input', () => {
+        let matched: HTMLButtonElement | null = null;
+        presetBtns.forEach((btn) => {
+          if (btn.dataset.sats === amountInput.value) matched = btn;
+        });
+        setActivePreset(matched);
+        refreshSubmitLabel();
+      });
+
+      function showError(msg: string) {
+        if (errorEl) {
+          errorEl.textContent = msg;
+          errorEl.classList.remove('hidden');
+        }
+      }
+
+      // LNURL-pay metadata, fetched once per page.
+      let lnurlMeta: any = null;
+      async function getLnurlMeta(): Promise<any> {
+        if (lnurlMeta) return lnurlMeta;
+        const at = LUD16.indexOf('@');
+        if (at < 1) throw new Error('bad lud16');
+        const res = await fetch(`https://${LUD16.slice(at + 1)}/.well-known/lnurlp/${LUD16.slice(0, at)}`);
+        const meta = await res.json();
+        if (!meta || !meta.callback) throw new Error('no callback');
+        lnurlMeta = meta;
+        return meta;
+      }
+
+      // Build + sign the NIP-57 kind-9734 zap request. Returned signed event is
+      // URL-encoded into the LNURL callback's `nostr` param.
+      async function buildZapRequest(msats: number, message: string): Promise<any> {
+        const s = getSession();
+        if (!s) throw new Error('not-signed-in');
+        const unsigned = {
+          kind: 9734,
+          created_at: Math.floor(Date.now() / 1000),
+          content: message,
+          tags: [
+            ['p', PROJECT_PUBKEY],
+            ['amount', String(msats)],
+            ['relays', ...RELAYS],
+          ],
+          pubkey: s.pubkey,
+        };
+        return signEvent(unsigned);
+      }
+
+      form?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        errorEl?.classList.add('hidden');
+        const sats = currentSats();
+        if (!sats || sats < 1) {
+          showError('Please enter a valid amount in sats.');
+          return;
+        }
+        const message = (messageInput?.value || '').trim();
+        if (submitBtn) submitBtn.disabled = true;
+        if (submitText) submitText.textContent = 'Fetching invoice…';
+        try {
+          const meta = await getLnurlMeta();
+          let msats = sats * 1000;
+          if (meta.minSendable) msats = Math.max(msats, meta.minSendable);
+          if (meta.maxSendable) msats = Math.min(msats, meta.maxSendable);
+
+          const sep = meta.callback.includes('?') ? '&' : '?';
+          let url = `${meta.callback}${sep}amount=${msats}`;
+          let isZap = false;
+          if (meta.allowsNostr && getSession()) {
+            // Real zap: the LNURL server publishes a kind-9735 receipt → wall.
+            try {
+              const zapRequest = await buildZapRequest(msats, message);
+              url += `&nostr=${encodeURIComponent(JSON.stringify(zapRequest))}`;
+              isZap = true;
+            } catch (err) {
+              console.error('[zap] zap request signing failed, falling back to plain LNURL:', err);
+            }
+          }
+          if (!isZap && message && meta.commentAllowed > 0) {
+            url += `&comment=${encodeURIComponent(message.slice(0, meta.commentAllowed))}`;
+          }
+
+          const inv = await (await fetch(url)).json();
+          if (!inv || !inv.pr) throw new Error(inv?.reason || 'no invoice');
+          showInvoice(inv.pr as string, Math.floor(msats / 1000), isZap);
+        } catch (err: any) {
+          console.error('[zap] invoice failed:', err);
+          showError('Could not fetch an invoice right now. Please try again, or use one of the other ways to donate below.');
+        } finally {
+          if (submitBtn) submitBtn.disabled = false;
+          refreshSubmitLabel();
         }
       });
-    });
+
+      let qrSeq = 0; // guards the async QR render against invoice changes
+      function showInvoice(bolt11: string, sats: number, isZap: boolean) {
+        form?.classList.add('hidden');
+        invoiceView?.classList.remove('hidden');
+        const heading = document.getElementById('invoice-heading');
+        if (heading)
+          heading.textContent = isZap
+            ? '✓ Zap request signed — pay the invoice to land on the wall:'
+            : '✓ Invoice ready — pay with any Lightning wallet:';
+        (document.getElementById('invoice-amount') as HTMLElement).textContent =
+          `${sats.toLocaleString('en-US')} sats`;
+        (document.getElementById('invoice-bolt11') as HTMLInputElement).value = bolt11;
+        (document.getElementById('invoice-open') as HTMLAnchorElement).href = `lightning:${bolt11}`;
+        document.getElementById('invoice-paid')?.classList.add('hidden');
+
+        // QR (qrcode is dynamically imported — only loads when an invoice
+        // shows). The previous QR is cleared up-front so a stale code is never
+        // visible next to a new invoice, and a sequence token stops an earlier,
+        // slower render from overwriting a newer invoice's QR.
+        const qrImg = document.getElementById('invoice-qr') as HTMLImageElement | null;
+        if (qrImg) {
+          const seq = ++qrSeq;
+          qrImg.classList.add('hidden');
+          qrImg.removeAttribute('src');
+          import('qrcode')
+            .then(({ default: QRCode }) =>
+              QRCode.toDataURL(bolt11.toUpperCase(), { margin: 1, width: 240, errorCorrectionLevel: 'M' }),
+            )
+            .then((url) => {
+              if (seq !== qrSeq) return; // a newer invoice took over
+              qrImg.src = url;
+              qrImg.classList.remove('hidden');
+            })
+            .catch(() => {});
+        }
+
+        // onclick ASSIGNMENT (not addEventListener): showInvoice can run more
+        // than once (change amount → new invoice) and stacked listeners would
+        // fire stale closures — copying/paying an outdated invoice.
+        const copyBtn = document.getElementById('invoice-copy') as HTMLButtonElement | null;
+        if (copyBtn) {
+          copyBtn.textContent = 'Copy';
+          copyBtn.onclick = () => {
+            navigator.clipboard?.writeText(bolt11);
+            copyBtn.textContent = 'Copied!';
+          };
+        }
+
+        const webln = (window as any).webln;
+        const weblnBtn = document.getElementById('invoice-webln') as HTMLButtonElement | null;
+        // Update only the label span — setting the button's textContent would
+        // wipe the zap icon SVG next to it.
+        const weblnText = document.getElementById('invoice-webln-text');
+        if (webln && weblnBtn && weblnText) {
+          weblnBtn.classList.remove('hidden');
+          weblnBtn.disabled = false;
+          weblnText.textContent = 'Pay with WebLN';
+          weblnBtn.onclick = async () => {
+            weblnBtn.disabled = true;
+            weblnText.textContent = 'Paying…';
+            try {
+              await webln.enable();
+              await webln.sendPayment(bolt11);
+              document.getElementById('invoice-paid')?.classList.remove('hidden');
+              weblnText.textContent = 'Paid ✓';
+              loadWall(); // the new zap may already tip someone over the bar
+            } catch {
+              weblnBtn.disabled = false;
+              weblnText.textContent = 'Pay with WebLN';
+            }
+          };
+        }
+
+        const backBtn = document.getElementById('invoice-back') as HTMLButtonElement | null;
+        if (backBtn) {
+          backBtn.onclick = () => {
+            invoiceView?.classList.add('hidden');
+            form?.classList.remove('hidden');
+          };
+        }
+      }
+    }
   </script>
 
-  <!-- Alternative ways to donate -->
+  <!-- Other ways to support -->
   <section class="py-10 md:py-16 bg-gray-50">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Other ways to donate</h2>

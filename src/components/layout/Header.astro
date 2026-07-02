@@ -64,7 +64,6 @@ const navItems = [
       { label: 'Software Updates', href: '/news#software-updates' },
     ]
   },
-  { label: 'Donate', href: '/donate' },
 ];
 
 const currentPath = Astro.url.pathname;
@@ -87,14 +86,9 @@ const currentPath = Astro.url.pathname;
               class={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 currentPath.startsWith(item.href) && item.href !== '/'
                   ? 'text-pink bg-pink-light/30'
-                  : item.label === 'Donate'
-                    ? 'text-pink hover:text-pink hover:bg-pink-light/30'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              {item.label === 'Donate' && (
-                <svg class="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              )}
               {item.label}
               {item.children && (
                 <svg class="inline-block w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -120,8 +114,11 @@ const currentPath = Astro.url.pathname;
         ))}
       </div>
 
-      <!-- Header icon cluster (chat envelope; sibling PRs add zap + book icons) -->
+      <!-- Header icon cluster (zap donation, chat; story's book icon lands here too) -->
       <div class="hidden lg:flex items-center gap-1 mr-1" id="hdr-icons">
+        <a href="/donate" aria-label="Zap a donation" title="Zap a donation" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </a>
         <button type="button" id="hdr-chat" aria-label="Message us" title="Message us" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect width="20" height="16" x="2" y="4" rx="2"/>
@@ -181,14 +178,9 @@ const currentPath = Astro.url.pathname;
             class={`block px-3 py-2 text-base font-medium rounded-lg ${
               currentPath.startsWith(item.href) && item.href !== '/'
                 ? 'text-pink bg-pink-light/30'
-                : item.label === 'Donate'
-                  ? 'text-pink hover:text-pink hover:bg-pink-light/30'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
-            {item.label === 'Donate' && (
-              <svg class="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            )}
             {item.label}
           </a>
           {item.children && (
@@ -205,6 +197,17 @@ const currentPath = Astro.url.pathname;
           )}
         </div>
       ))}
+      <!-- Zap / donate (replaces the old "Donate" text entry) -->
+      <a
+        href="/donate"
+        aria-label="Zap a donation"
+        class={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg ${
+          currentPath.startsWith('/donate') ? 'text-pink bg-pink-light/30' : 'text-pink hover:bg-pink-light/30'
+        }`}
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Zap a donation
+      </a>
       <button
         id="hdr-chat-m"
         type="button"

@@ -148,16 +148,18 @@ const owners = vendors
           done = true;
           clearTimeout(t);
           try {
-            if (ws && ws.readyState === WebSocket.OPEN) ws.close();
-            else if (ws && ws.readyState === WebSocket.CONNECTING) {
-              // Close once it opens — a socket that connects after our timeout
-              // would otherwise stay attached for the rest of the session.
+            // Abort immediately whatever state the socket is in — close() on a
+            // CONNECTING socket cancels the attempt, so a relay that never
+            // finishes connecting can't dangle for the rest of the session.
+            // (onopen-close kept as a belt-and-braces fallback.)
+            if (ws) {
               ws.onopen = () => {
                 try {
                   ws!.close();
                 } catch {}
               };
               ws.onmessage = null;
+              ws.close();
             }
           } catch {}
           resolve(evs);
@@ -501,6 +503,10 @@ const owners = vendors
     $('mg-cancel').addEventListener('click', closeModal);
     $('mg-close').addEventListener('click', closeModal);
     $('mg-backdrop').addEventListener('click', closeModal);
+    // Esc dismisses the dialog, consistent with every other modal on the site.
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !$('mg-modal').classList.contains('hidden')) closeModal();
+    });
     $('mg-signin').addEventListener('click', () => openLogin());
 
     // ---- Gate ----

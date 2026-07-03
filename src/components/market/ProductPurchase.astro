@@ -454,8 +454,22 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       viewShipping?.classList.remove('hidden');
       viewPayment?.classList.add('hidden');
       renderShipAuth(getSession());
-      loadShippingOptions(); // async; the selector appears when options arrive
       openModal();
+      // Shipping options load async (up to ~6s of relay round-trips). Block
+      // Continue until they resolve, otherwise a fast submit races the load and
+      // the total + kind-16 order silently omit shipping.
+      const submitBtn = document.getElementById('ship-submit') as HTMLButtonElement | null;
+      const shipStatus = document.getElementById('ship-status');
+      if (shipOptions === null && submitBtn) {
+        submitBtn.disabled = true;
+        if (shipStatus) shipStatus.textContent = 'Loading shipping options…';
+        loadShippingOptions().finally(() => {
+          submitBtn.disabled = false;
+          if (shipStatus && shipStatus.textContent === 'Loading shipping options…') shipStatus.textContent = '';
+        });
+      } else {
+        loadShippingOptions(); // already loaded (or loading); selector appears when ready
+      }
     });
 
     // Convert any (amount, currency) to sats; the BTC spot rate is fetched once
@@ -486,9 +500,15 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       const domain = lud16.slice(at + 1);
       const meta = await (await fetch(`https://${domain}/.well-known/lnurlp/${name}`)).json();
       if (!meta || !meta.callback) throw new Error('no callback');
-      let msats = sats * 1000;
-      if (meta.minSendable) msats = Math.max(msats, meta.minSendable);
-      if (meta.maxSendable) msats = Math.min(msats, meta.maxSendable);
+      const msats = sats * 1000;
+      // Do NOT silently clamp to the vendor's LNURL range — the UI, the kind-16
+      // `amount` tag and the readable note all quote the un-clamped total, so
+      // clamping would make the buyer over/underpay vs. the order record. Reject
+      // and let the caller surface the real limit instead.
+      if (meta.minSendable && msats < meta.minSendable)
+        throw new Error(`range:min:${Math.ceil(meta.minSendable / 1000)}`);
+      if (meta.maxSendable && msats > meta.maxSendable)
+        throw new Error(`range:max:${Math.floor(meta.maxSendable / 1000)}`);
       const sep = meta.callback.includes('?') ? '&' : '?';
       let url = `${meta.callback}${sep}amount=${msats}`;
       if (meta.commentAllowed && meta.commentAllowed > 0) {
@@ -554,10 +574,17 @@ const canPayOnSite = !!lud16 && !!priceAmount;
         countryInput?.focus();
         return;
       }
+      // Shipping options not loaded yet (Enter can submit past the disabled
+      // button) — wait rather than proceed with shipping missing from the order.
+      if (shipOptions === null) {
+        shipStatus.textContent = 'Still loading shipping options — one moment…';
+        loadShippingOptions();
+        return;
+      }
       // Shipping method is mandatory whenever the product has options.
       const shipSel = document.getElementById('ship-method') as HTMLSelectElement | null;
       let chosenShip: ShippingOption | null = null;
-      if (shipOptions?.length) {
+      if (shipOptions.length) {
         chosenShip = currentShipChoice();
         if (!chosenShip) {
           const anyAvail = filterShippingOptions(shipOptions, countryCodeEl.value).length > 0;
@@ -584,8 +611,17 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       let bolt11: string;
       try {
         bolt11 = await requestInvoice(totalSats, `LP order ${orderId}`);
-      } catch {
-        shipStatus.textContent = 'Could not create an invoice. Try the vendor store.';
+      } catch (e: any) {
+        const range = /^range:(min|max):(\d+)$/.exec(e?.message || '');
+        if (range) {
+          const limit = fmtSats(Number(range[2]));
+          shipStatus.textContent =
+            range[1] === 'min'
+              ? `This vendor’s minimum payment is ${limit}, but your order is ${fmtSats(totalSats)}. Please buy more or order via the vendor store.`
+              : `This vendor’s maximum payment is ${limit}, but your order is ${fmtSats(totalSats)}. Please order via the vendor store.`;
+        } else {
+          shipStatus.textContent = 'Could not create an invoice. Try the vendor store.';
+        }
         submitBtn.disabled = false;
         return;
       }
@@ -594,9 +630,12 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       // the item + chosen `shipping` coordinate (spec), plus a human-readable
       // kind-14 note — both gift-wrapped, from the SAME sender (one guest key
       // per order when not signed in) so the vendor can correlate them.
+      // One guest key per order, declared out here so the later payment-receipt
+      // DM is sent from the SAME pubkey the vendor received the order from.
+      let guestSk: Uint8Array | undefined;
       try {
         shipStatus.textContent = 'Sending your order to the vendor…';
-        const guestSk = getSession() ? undefined : await makeGuestKey();
+        guestSk = getSession() ? undefined : await makeGuestKey();
         const fullAddress = [val('ship-name'), val('ship-addr1'), val('ship-addr2'), `${val('ship-city')}, ${val('ship-postcode')}`, val('ship-country-input')]
           .filter(Boolean)
           .join(', ');
@@ -639,7 +678,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       // Move to payment.
       viewShipping?.classList.add('hidden');
       viewPayment?.classList.remove('hidden');
-      showInvoice(bolt11, { productSats, shippingSats: shippingSats || 0, totalSats, ship: chosenShip }, orderId);
+      showInvoice(bolt11, { productSats, shippingSats: shippingSats || 0, totalSats, ship: chosenShip }, orderId, guestSk);
       submitBtn.disabled = false;
     });
 
@@ -654,6 +693,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
       bolt11: string,
       totals: { productSats: number; shippingSats: number; totalSats: number; ship: ShippingOption | null },
       orderId: string,
+      guestSk?: Uint8Array,
     ) {
       statusEl?.classList.add('hidden');
       errEl?.classList.add('hidden');
@@ -714,6 +754,7 @@ const canPayOnSite = !!lud16 && !!priceAmount;
             sendGiftWrappedDM(
               vendorPubkey,
               `✅ Paid — Lightning Piggy order ${orderId}${preimage ? `\nPreimage: ${preimage}` : ''}`,
+              guestSk, // same key as the order, so the vendor can correlate the receipt
             ).catch(() => {});
           } catch {
             weblnBtn.disabled = false;

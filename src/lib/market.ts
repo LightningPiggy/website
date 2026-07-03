@@ -37,6 +37,7 @@ export interface Product {
   summary: string;
   storeUrl: string;
   productUrl: string;
+  slug: string;
   vendor: string;
   vendorLogo: string;
   createdAt: number;
@@ -352,10 +353,21 @@ export function selectShopEvents(
 
 // Build the flat product grid (NostrShop). Mirrors the client init() exactly so
 // build-time and live renders agree.
-export function buildShopProducts(events: NostrEvent[], shops: Shop[]): Product[] {
+// `validSlugs`, when given, is the set of slugs that actually have a static
+// `/market/p/<slug>` page (the build-time snapshot). The live client refresh
+// passes it so a product published AFTER the last build — which has no page yet
+// — links to the vendor's external store instead of a 404. Omit it at build
+// time, where every rendered product is one that getStaticPaths also emits.
+export function buildShopProducts(
+  events: NostrEvent[],
+  shops: Shop[],
+  validSlugs?: Set<string> | null,
+): Product[] {
   return selectShopEvents(events, shops).map(({ ev, shop }) => {
     const priceTag = ev.tags.find((x) => x[0] === 'price');
     const dtag = tagVal(ev.tags, 'd') || '';
+    const slug = productSlug(shop.name, dtag);
+    const hasPage = !validSlugs || validSlugs.has(slug);
     return {
       title: tagVal(ev.tags, 'title') || '',
       price: formatPrice(ev.tags),
@@ -364,7 +376,10 @@ export function buildShopProducts(events: NostrEvent[], shops: Shop[]): Product[
       image: sanitizeUrl(tagVal(ev.tags, 'image') || ''),
       summary: tagVal(ev.tags, 'summary') || ev.content || '',
       storeUrl: shop.storeUrl,
-      productUrl: `/market/p/${productSlug(shop.name, dtag)}`,
+      // Internal page only when it exists; otherwise shopCardHtml falls back to
+      // the vendor store (external).
+      productUrl: hasPage ? `/market/p/${slug}` : '',
+      slug,
       vendor: shop.name,
       vendorLogo: sanitizeUrl(shop.logo) || (shop.logo.startsWith('/') ? shop.logo : ''),
       createdAt: ev.created_at,

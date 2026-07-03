@@ -121,7 +121,18 @@ const productKind = coord.split(':')[0] || '30402';
   function esc(s: string): string {
     const d = document.createElement('div');
     d.textContent = s ?? '';
-    return d.innerHTML;
+    // textContent→innerHTML escapes <>& but NOT quotes; escape them too so the
+    // result is safe inside a double- or single-quoted HTML attribute.
+    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  // Only allow http(s) URLs to reach an attribute — a relay-sourced kind-0
+  // `picture` is attacker-controlled, so block javascript:/data: and junk.
+  function sanitizeUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url;
+    } catch {}
+    return '';
   }
   function starRow(stars: number): string {
     const n = Math.max(0, Math.min(5, Math.round(stars)));
@@ -225,8 +236,9 @@ const productKind = coord.split(':')[0] || '30402';
     const p = profileCache.get(pubkey) || {};
     const name = p.name || shortId(pubkey);
     const initial = esc((name || '?').charAt(0).toUpperCase());
-    const avatar = p.picture
-      ? `<img src="${esc(p.picture)}" alt="" referrerpolicy="no-referrer" class="w-6 h-6 rounded-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="w-6 h-6 rounded-full bg-pink/10 text-pink text-[10px] font-bold items-center justify-center hidden">${initial}</span>`
+    const safePic = sanitizeUrl(p.picture || '');
+    const avatar = safePic
+      ? `<img src="${esc(safePic)}" alt="" referrerpolicy="no-referrer" class="w-6 h-6 rounded-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="w-6 h-6 rounded-full bg-pink/10 text-pink text-[10px] font-bold items-center justify-center hidden">${initial}</span>`
       : `<span class="w-6 h-6 rounded-full bg-pink/10 text-pink text-[10px] font-bold flex items-center justify-center">${initial}</span>`;
     return `<span class="inline-flex items-center gap-1.5">${avatar}<span class="text-xs font-medium text-gray-700 truncate max-w-[160px]">${esc(name)}</span></span>`;
   }
@@ -262,7 +274,10 @@ const productKind = coord.split(':')[0] || '30402';
         return {
           id: ev.id || '',
           pubkey: ev.pubkey,
-          stars: Math.round((rt ? parseFloat(rt[1]) : 0) * 5),
+          // Gamma rating is 0..1, but this coordinate is shared with any client,
+          // so clamp to 0..5 stars — a stray `rating=5` can't render 25 stars or
+          // pin the aggregate average.
+          stars: Math.max(0, Math.min(5, Math.round((rt ? parseFloat(rt[1]) : 0) * 5))),
           text: ev.content || '',
           createdAt: ev.created_at || 0,
         };

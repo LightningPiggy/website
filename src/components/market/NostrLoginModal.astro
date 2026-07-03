@@ -1,0 +1,161 @@
+---
+// NostrLoginModal.astro
+// Global "Sign in with Nostr" dialog, modelled on the robotechy login dialog.
+// Two methods: a NIP-07 browser Extension (recommended) and a Secret key (nsec)
+// signed locally. Opened from anywhere by dispatching the `nostr:open-login`
+// window event (header button, checkout, review/comment forms). Mounted once in
+// the site header so it's available on every page.
+---
+
+<div id="nostr-login-modal" class="fixed inset-0 z-[60] hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="nlm-title">
+  <div id="nlm-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+  <div class="relative w-full max-w-sm max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6">
+    <button id="nlm-close" type="button" aria-label="Close" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+    </button>
+
+    <div class="text-center mb-5">
+      <h2 id="nlm-title" class="text-xl font-bold text-gray-900">Sign in with Nostr</h2>
+      <p class="text-sm text-gray-500 mt-1">Your key is your account — no email, no password.</p>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 p-1 bg-gray-100 rounded-xl mb-4">
+      <button id="nlm-tab-ext" type="button" class="nlm-tab flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold bg-white shadow-sm text-gray-900">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Extension
+      </button>
+      <button id="nlm-tab-key" type="button" class="nlm-tab flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        Secret key
+      </button>
+    </div>
+
+    <!-- Extension panel -->
+    <div id="nlm-panel-ext" class="text-center">
+      <div class="rounded-xl bg-gray-50 p-5">
+        <svg class="w-10 h-10 mx-auto mb-2 text-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <p class="text-sm text-gray-600 mb-4">One-click sign-in with a NIP-07 browser extension.</p>
+        <button id="nlm-ext-btn" type="button" class="w-full py-3 rounded-full bg-pink text-white font-semibold hover:bg-pink/90 transition disabled:opacity-60">Log in with extension</button>
+        <p id="nlm-ext-err" class="hidden text-sm text-red-500 mt-3">
+          No Nostr extension found. Install
+          <a href="https://getalby.com" target="_blank" rel="noopener noreferrer" class="underline">Alby</a>
+          or
+          <a href="https://github.com/fiatjaf/nos2x" target="_blank" rel="noopener noreferrer" class="underline">nos2x</a>,
+          or use a secret key.
+        </p>
+      </div>
+    </div>
+
+    <!-- Key panel -->
+    <div id="nlm-panel-key" class="hidden">
+      <label for="nlm-nsec" class="block text-sm font-medium text-gray-700 mb-1">Secret key (nsec)</label>
+      <input id="nlm-nsec" type="password" autocomplete="off" placeholder="nsec1…" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+      <p id="nlm-key-err" class="hidden text-sm text-red-500 mt-1"></p>
+      <div class="flex items-start gap-2 mt-3 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+        <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        <span>Your key is kept in this browser only. A browser extension is safer — only paste a key you're comfortable storing here.</span>
+      </div>
+      <button id="nlm-key-btn" type="button" class="w-full mt-3 py-3 rounded-full bg-pink text-white font-semibold hover:bg-pink/90 transition disabled:opacity-60">Log in</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { loginExtension, loginNsec } from '../../lib/nostrAuth';
+
+  const modal = document.getElementById('nostr-login-modal');
+  const backdrop = document.getElementById('nlm-backdrop');
+  const closeBtn = document.getElementById('nlm-close');
+  const tabExt = document.getElementById('nlm-tab-ext');
+  const tabKey = document.getElementById('nlm-tab-key');
+  const panelExt = document.getElementById('nlm-panel-ext');
+  const panelKey = document.getElementById('nlm-panel-key');
+  const extBtn = document.getElementById('nlm-ext-btn') as HTMLButtonElement | null;
+  const extErr = document.getElementById('nlm-ext-err');
+  const nsecInput = document.getElementById('nlm-nsec') as HTMLInputElement | null;
+  const keyBtn = document.getElementById('nlm-key-btn') as HTMLButtonElement | null;
+  const keyErr = document.getElementById('nlm-key-err');
+
+  const activeTab = 'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold bg-white shadow-sm text-gray-900';
+  const idleTab = 'flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold text-gray-500';
+
+  function selectTab(which: 'ext' | 'key') {
+    const ext = which === 'ext';
+    panelExt?.classList.toggle('hidden', !ext);
+    panelKey?.classList.toggle('hidden', ext);
+    if (tabExt) tabExt.className = 'nlm-tab ' + (ext ? activeTab : idleTab);
+    if (tabKey) tabKey.className = 'nlm-tab ' + (!ext ? activeTab : idleTab);
+  }
+  tabExt?.addEventListener('click', () => selectTab('ext'));
+  tabKey?.addEventListener('click', () => selectTab('key'));
+
+  function open() {
+    modal?.classList.remove('hidden');
+    modal?.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    // Default to the method most likely to work.
+    selectTab((window as any).nostr ? 'ext' : 'key');
+    extErr?.classList.add('hidden');
+    keyErr?.classList.add('hidden');
+  }
+  function close() {
+    modal?.classList.add('hidden');
+    modal?.classList.remove('flex');
+    document.body.style.overflow = '';
+  }
+  window.addEventListener('nostr:open-login', open);
+  // Close automatically once signed in.
+  window.addEventListener('nostr:auth', (e) => {
+    if ((e as CustomEvent).detail) close();
+  });
+  backdrop?.addEventListener('click', close);
+  closeBtn?.addEventListener('click', close);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) close();
+  });
+
+  extBtn?.addEventListener('click', async () => {
+    extErr?.classList.add('hidden');
+    if (!(window as any).nostr) {
+      extErr?.classList.remove('hidden');
+      return;
+    }
+    extBtn.disabled = true;
+    extBtn.textContent = 'Waiting for extension…';
+    try {
+      await loginExtension();
+    } catch {
+      extErr?.classList.remove('hidden');
+    } finally {
+      extBtn.disabled = false;
+      extBtn.textContent = 'Log in with extension';
+    }
+  });
+
+  keyBtn?.addEventListener('click', async () => {
+    keyErr?.classList.add('hidden');
+    const nsec = nsecInput?.value.trim() || '';
+    if (!/^nsec1[0-9a-z]{20,}$/.test(nsec)) {
+      if (keyErr) {
+        keyErr.textContent = 'Enter a valid secret key starting with nsec1.';
+        keyErr.classList.remove('hidden');
+      }
+      return;
+    }
+    keyBtn.disabled = true;
+    keyBtn.textContent = 'Signing in…';
+    try {
+      await loginNsec(nsec);
+      if (nsecInput) nsecInput.value = '';
+    } catch {
+      if (keyErr) {
+        keyErr.textContent = 'Could not sign in with that key.';
+        keyErr.classList.remove('hidden');
+      }
+    } finally {
+      keyBtn.disabled = false;
+      keyBtn.textContent = 'Log in';
+    }
+  });
+</script>

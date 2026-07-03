@@ -1,0 +1,289 @@
+---
+// Per-product detail page: /market/p/<slug>
+//
+// Pages are generated AT BUILD TIME from the vendors' live Nostr listings
+// (NIP-99 kind 30402 / NIP-15 kind 30018), mirroring the reference
+// robotechy-website product pages. Each page carries a full ProductDetail plus
+// the vendor's Lightning address (lud16, from their kind-0 profile) so the
+// on-page purchase island can invoice the vendor directly. Reviews are loaded
+// live client-side (kind 31555).
+//
+// NOTE: because these are statically generated from a live source, a product
+// that appears only after the last build won't have a page yet. If the relays
+// are unreachable at build time, no product pages are emitted (the build still
+// succeeds). See the PR roadmap for the hybrid/SSR follow-up.
+
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductReviews from '../../../components/market/ProductReviews.astro';
+import ProductPurchase from '../../../components/market/ProductPurchase.astro';
+import {
+  npubToHex,
+  shopsFromVendors,
+  selectShopEvents,
+  parseProductDetail,
+  productSlug,
+  sanitizeUrl,
+  type ProductDetail,
+} from '../../../lib/market';
+import { fetchMarketEvents } from '../../../lib/marketServer';
+import { npubEncode } from 'nostr-tools/nip19';
+import vendorsData from '../../../data/vendors.json';
+
+export async function getStaticPaths() {
+  const { vendors = [] } = vendorsData as any;
+  const shops = shopsFromVendors(vendors);
+  const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];
+  const events = await fetchMarketEvents(authors, [0, 30402, 30018, 5]);
+
+  // Merchant profile (Lightning address, avatar, name) from the newest kind-0
+  // event per author. Used to pay the vendor and to show their real Nostr
+  // identity on the page.
+  const profileByPubkey = new Map<string, { lud16: string; picture: string; name: string }>();
+  const profileAt = new Map<string, number>();
+  for (const ev of events) {
+    if (ev.kind !== 0) continue;
+    if ((profileAt.get(ev.pubkey) || 0) >= ev.created_at) continue;
+    try {
+      const p = JSON.parse(ev.content);
+      profileByPubkey.set(ev.pubkey, {
+        lud16: p.lud16 || p.lud06 || '',
+        picture: p.picture || '',
+        name: p.display_name || p.name || '',
+      });
+      profileAt.set(ev.pubkey, ev.created_at);
+    } catch {}
+  }
+
+  return selectShopEvents(events, shops).map(({ ev, shop }) => {
+    const detail = parseProductDetail(ev);
+    const prof = profileByPubkey.get(ev.pubkey);
+    return {
+      // Slug keeps the JSON vendor name so it matches the grid link exactly.
+      params: { slug: productSlug(shop.name, detail.dtag) },
+      props: {
+        detail,
+        vendorName: prof?.name || shop.name,
+        vendorPicture: sanitizeUrl(prof?.picture || '') || '',
+        vendorLogo: shop.logo,
+        storeUrl: shop.storeUrl,
+        lud16: prof?.lud16 || '',
+      },
+    };
+  });
+}
+
+interface Props {
+  detail: ProductDetail;
+  vendorName: string;
+  vendorPicture: string;
+  vendorLogo: string;
+  storeUrl: string;
+  lud16: string;
+}
+
+const { detail, vendorName, vendorPicture, vendorLogo, storeUrl, lud16 } = Astro.props;
+// Prefer the merchant's live Nostr profile picture; fall back to the JSON logo.
+const merchantImg = vendorPicture || vendorLogo || '';
+
+// JSON-LD Product for SEO.
+const jsonLd: any = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: detail.title,
+  ...(detail.images.length ? { image: detail.images } : {}),
+  ...(detail.description || detail.summary
+    ? { description: (detail.description || detail.summary).slice(0, 500) }
+    : {}),
+  ...(vendorName ? { brand: { '@type': 'Brand', name: vendorName } } : {}),
+};
+if (detail.priceAmount) {
+  jsonLd.offers = {
+    '@type': 'Offer',
+    price: detail.priceAmount,
+    ...(detail.priceCurrency && detail.priceCurrency !== 'SAT' && detail.priceCurrency !== 'SATS'
+      ? { priceCurrency: detail.priceCurrency }
+      : {}),
+    availability: 'https://schema.org/InStock',
+  };
+}
+---
+
+<BaseLayout
+  title={detail.title}
+  description={detail.summary || `${detail.title} — buy from ${vendorName} with Bitcoin over Lightning.`}
+  image={detail.images[0] || '/images/og-image.png'}
+>
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
+    <a href="/market" class="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-pink mb-6 transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+      Back to Market
+    </a>
+
+    <div class="grid md:grid-cols-2 gap-8 lg:gap-12">
+      <!-- Gallery: main image + thumbnail grid (mirrors robotechy) -->
+      <div class="space-y-3">
+        <div class="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+          {detail.images[0] ? (
+            <>
+              <img id="main-image" src={detail.images[0]} alt={detail.title} referrerpolicy="no-referrer" class="w-full h-full object-cover cursor-zoom-in" />
+              <button
+                id="img-expand"
+                type="button"
+                aria-label="View image full screen"
+                class="absolute top-3 right-3 p-2 rounded-lg bg-white/85 backdrop-blur text-gray-700 shadow hover:bg-white hover:text-pink transition"
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 3h6v6M14 10l7-7M9 21H3v-6M10 14l-7 7" /></svg>
+              </button>
+            </>
+          ) : (
+            <div class="w-full h-full flex items-center justify-center text-6xl">🐽</div>
+          )}
+        </div>
+        {detail.images.length > 1 && (
+          <div class="grid grid-cols-4 gap-2">
+            {detail.images.slice(0, 8).map((src, i) => (
+              <button
+                type="button"
+                class:list={[
+                  'thumb aspect-square rounded-lg overflow-hidden border-2 transition-all',
+                  i === 0 ? 'border-pink' : 'border-gray-200 hover:border-gray-300',
+                ]}
+                data-src={src}
+              >
+                <img src={src} alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <!-- Info -->
+      <div>
+        <!-- Merchant: live Nostr profile picture (circular) + name -->
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-full overflow-hidden bg-pink/10 flex-shrink-0 flex items-center justify-center">
+            {merchantImg ? (
+              <img src={merchantImg} alt={vendorName} referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+            ) : (
+              <span class="text-pink font-bold">{(vendorName || '?').charAt(0).toUpperCase()}</span>
+            )}
+          </div>
+          <div class="min-w-0">
+            <p class="text-xs text-gray-400 leading-none mb-1">Sold by</p>
+            <span class="text-sm font-semibold text-gray-900 truncate">{vendorName}</span>
+          </div>
+        </div>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-3">{detail.title}</h1>
+        {detail.price && <p class="text-2xl font-bold text-pink mb-4">{detail.price}</p>}
+        {detail.summary && <p class="text-gray-600 leading-relaxed mb-4">{detail.summary}</p>}
+
+        <ProductPurchase
+          lud16={lud16}
+          vendorPubkey={detail.pubkey}
+          priceAmount={detail.priceAmount}
+          priceCurrency={detail.priceCurrency}
+          title={detail.title}
+          vendorName={vendorName}
+          vendorPicture={merchantImg}
+          storeUrl={storeUrl}
+          medium={detail.medium}
+          shippingRefs={JSON.stringify(detail.shippingRefs)}
+          vendorNpub={npubEncode(detail.pubkey)}
+          productCoord={detail.coord}
+        />
+
+        {detail.categories.length > 0 && (
+          <div class="mt-6 flex flex-wrap gap-2">
+            {detail.categories.slice(0, 8).map((c) => (
+              <span class="text-xs bg-gray-100 text-gray-600 px-2.5 py-1 rounded-full">#{c}</span>
+            ))}
+          </div>
+        )}
+
+        <!-- Description: under the buy button, in the info column beside the images -->
+        {detail.description && (
+          <div class="mt-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Description</h2>
+            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{detail.description}</p>
+          </div>
+        )}
+      </div>
+    </div>
+
+    <!-- Specs -->
+    {detail.specs.length > 0 && (
+      <div class="mt-10">
+        <h2 class="text-2xl font-bold text-gray-900 mb-3">Specifications</h2>
+        <table class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden">
+          <tbody>
+            {detail.specs.map(([k, v], i) => (
+              <tr class={i % 2 ? 'bg-gray-50' : 'bg-white'}>
+                <td class="px-4 py-2 font-medium text-gray-700 w-1/3">{k}</td>
+                <td class="px-4 py-2 text-gray-600">{v}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+
+    <!-- Reviews (client-side, Nostr kind 31555) -->
+    <div class="mt-4">
+      <ProductReviews coord={detail.coord} productPubkey={detail.pubkey} />
+    </div>
+  </div>
+
+  <!-- Fullscreen image lightbox -->
+  <div id="img-lightbox" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/90 p-4">
+    <button id="img-lightbox-close" type="button" aria-label="Close" class="absolute top-4 right-4 text-white/80 hover:text-white transition">
+      <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+    </button>
+    <img id="img-lightbox-img" src="" alt={detail.title} referrerpolicy="no-referrer" class="max-w-full max-h-[90vh] object-contain rounded-lg" />
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+
+  <script>
+    // Thumbnail → main image swap, with active-border highlight.
+    const main = document.getElementById('main-image') as HTMLImageElement | null;
+    const thumbs = Array.from(document.querySelectorAll('.thumb')) as HTMLElement[];
+    thumbs.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const src = btn.dataset.src;
+        if (main && src) main.src = src;
+        thumbs.forEach((b) => {
+          b.classList.remove('border-pink');
+          b.classList.add('border-gray-200');
+        });
+        btn.classList.add('border-pink');
+        btn.classList.remove('border-gray-200');
+      });
+    });
+
+    // Fullscreen lightbox — open from the expand icon or by clicking the image.
+    const lb = document.getElementById('img-lightbox');
+    const lbImg = document.getElementById('img-lightbox-img') as HTMLImageElement | null;
+    const openLb = () => {
+      if (!lb || !lbImg || !main) return;
+      lbImg.src = main.src;
+      lb.classList.remove('hidden');
+      lb.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    };
+    const closeLb = () => {
+      if (!lb) return;
+      lb.classList.add('hidden');
+      lb.classList.remove('flex');
+      document.body.style.overflow = '';
+    };
+    document.getElementById('img-expand')?.addEventListener('click', openLb);
+    main?.addEventListener('click', openLb);
+    document.getElementById('img-lightbox-close')?.addEventListener('click', closeLb);
+    lb?.addEventListener('click', (e) => {
+      if (e.target === lb) closeLb();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && lb && !lb.classList.contains('hidden')) closeLb();
+    });
+  </script>
+</BaseLayout>

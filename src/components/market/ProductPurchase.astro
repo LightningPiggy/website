@@ -1,0 +1,767 @@
+---
+// ProductPurchase.astro
+// Client-side, Nostr-native checkout island (no backend). Modelled on the
+// robotechy checkout, adapted for a multi-vendor market:
+//
+//   1. Buy now → pop-up. Step 1 collects the shipping address (requires a Nostr
+//      sign-in, since the order is sent AS the buyer).
+//   2. "Continue to payment": the order + shipping address is sent to the vendor
+//      as a NIP-17 gift-wrapped (encrypted) DM (kind 14) — see nostrOrder.ts —
+//      and an invoice is fetched from the vendor's own Lightning address (lud16,
+//      LNURL-pay). No single-merchant order-service: each vendor is paid + DM'd
+//      directly.
+//   3. Pay the invoice (WebLN / wallet / copy). On WebLN success a receipt DM
+//      (with the payment preimage) is sent to the vendor.
+//
+// The vendor reads the order as an encrypted Nostr DM in their client (Damus,
+// Primal, Alby, …) and ships it. The LNURL comment carries the order id so
+// manually-paid invoices can be correlated.
+
+interface Props {
+  lud16: string; // vendor Lightning address, e.g. name@domain (may be '')
+  vendorPubkey: string; // vendor hex pubkey (the product author) — DM recipient
+  priceAmount: string;
+  priceCurrency: string;
+  title: string;
+  vendorName: string;
+  vendorPicture: string; // vendor's Nostr profile image (may be '')
+  storeUrl: string; // external fallback
+  medium: string; // digital products skip shipping (Gamma spec)
+  shippingRefs: string; // JSON: product's `shipping_option` refs (coord + extraCost)
+  vendorNpub: string; // for the "message the shop" link
+  productCoord: string; // "<kind>:<pubkey>:<d>" for the kind-16 order's item tag
+}
+const { lud16, vendorPubkey, priceAmount, priceCurrency, title, vendorName, vendorPicture, storeUrl, medium, shippingRefs, vendorNpub, productCoord } =
+  Astro.props;
+const canPayOnSite = !!lud16 && !!priceAmount;
+---
+
+<div
+  id="product-purchase"
+  data-lud16={lud16}
+  data-vendor-pubkey={vendorPubkey}
+  data-amount={priceAmount}
+  data-currency={priceCurrency}
+  data-title={title}
+  data-vendor={vendorName}
+  data-store={storeUrl}
+  data-medium={medium}
+  data-shipping-refs={shippingRefs}
+  data-vendor-npub={vendorNpub}
+  data-product-coord={productCoord}
+>
+  {canPayOnSite ? (
+    <>
+      <button
+        id="buy-btn"
+        type="button"
+        class="group w-full sm:w-auto inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-pink text-white text-base font-bold shadow-lg shadow-pink/25 hover:bg-pink/90 hover:shadow-xl active:scale-[0.99] transition-all disabled:opacity-60 disabled:pointer-events-none"
+      >
+        <svg class="w-5 h-5 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
+        Buy now with Lightning
+      </button>
+      <p class="text-xs text-gray-500 mt-2.5 max-w-sm flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        Paid directly to {vendorName} over Lightning — no middleman, no sign-up.
+      </p>
+
+      <!-- Checkout pop-up -->
+      <div id="pay-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="pay-title">
+        <div id="pay-backdrop" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+        <div class="relative w-full max-w-md max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6 md:p-7">
+          <button id="pay-close" type="button" aria-label="Close" class="absolute top-4 right-4 text-gray-400 hover:text-gray-700 transition-colors">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+
+          <div class="flex items-center gap-2 mb-1">
+            <svg class="w-5 h-5 text-pink" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
+            <h3 id="pay-title" class="text-xl font-bold text-gray-900">Checkout</h3>
+          </div>
+          <p class="text-sm font-medium text-gray-800 truncate">{title}</p>
+
+          <!-- Seller attribution: order is with the vendor, not Lightning Piggy. -->
+          <div class="flex items-center gap-2.5 mt-2 rounded-lg bg-gray-50 border border-gray-200 px-3 py-2">
+            <span class="w-8 h-8 rounded-full overflow-hidden bg-pink/10 flex items-center justify-center flex-shrink-0">
+              {vendorPicture ? (
+                <img src={vendorPicture} alt={vendorName} referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+              ) : (
+                <span class="text-pink text-sm font-bold">{(vendorName || '?').charAt(0).toUpperCase()}</span>
+              )}
+            </span>
+            <div class="min-w-0 leading-tight">
+              <p class="text-[11px] text-gray-500">Sold &amp; shipped by</p>
+              <p class="text-sm font-semibold text-gray-900 truncate">{vendorName}</p>
+            </div>
+          </div>
+          <p class="text-[11px] text-gray-400 mt-2 mb-4">
+            Lightning Piggy is the marketplace — your order &amp; payment go directly to {vendorName}, not Lightning Piggy.
+          </p>
+
+          <!-- Step 1: shipping (guest by default; sign-in optional) -->
+          <div id="view-shipping">
+            <form id="ship-form" class="space-y-3">
+              <div id="ship-auth-banner" class="flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5">
+                <span id="ship-who" class="text-sm"></span>
+                <button type="button" id="ship-auth-action" class="text-sm font-semibold text-pink hover:underline whitespace-nowrap"></button>
+              </div>
+              <p class="text-sm text-gray-500">Where should {vendorName} ship this? <span class="text-gray-400">(<span class="text-pink">*</span> required)</span></p>
+              <div class="grid grid-cols-2 gap-3">
+                <!-- Country FIRST (searchable; drives which shipping methods exist) -->
+                <div class="col-span-2">
+                  <label for="ship-country-input" class="block text-xs font-medium text-gray-500 mb-1">Ship to <span class="text-pink">*</span></label>
+                  <input id="ship-country-input" list="ship-country-list" required autocomplete="off" placeholder="Start typing your country…" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                  <datalist id="ship-country-list"></datalist>
+                  <input type="hidden" id="ship-country" />
+                  <p id="ship-noship" class="hidden text-xs text-amber-700 mt-1.5"></p>
+                </div>
+                <input id="ship-name" required placeholder="Full name *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-email" type="email" placeholder="Email *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-addr1" required placeholder="Address *" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-addr2" placeholder="Address line 2 (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-city" required placeholder="City *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <input id="ship-postcode" required placeholder="Post code *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none" />
+                <!-- Shipping method: populated live from the vendor's Nostr
+                     shipping options (kind 30406). Hidden when the vendor has
+                     none; REQUIRED when they do, and its price is added to the
+                     Lightning invoice. -->
+                <div id="ship-method-wrap" class="col-span-2 hidden">
+                  <select id="ship-method" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:border-pink focus:ring-1 focus:ring-pink outline-none">
+                    <option value="">Select shipping method *</option>
+                  </select>
+                </div>
+                <textarea id="ship-note" rows="2" placeholder="Note to vendor (optional)" class="col-span-2 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none"></textarea>
+              </div>
+              <button type="submit" id="ship-submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition disabled:opacity-60">
+                Continue to payment
+              </button>
+              <p id="ship-status" class="text-sm text-center text-gray-500"></p>
+            </form>
+          </div>
+
+          <!-- Step 2: payment -->
+          <div id="view-payment" class="hidden">
+            <div id="invoice-status" class="py-6 text-center text-sm text-gray-600">
+              <div class="inline-block animate-spin rounded-full h-7 w-7 border-4 border-pink border-t-transparent mb-3"></div>
+              <p id="invoice-status-text">Requesting invoice…</p>
+            </div>
+            <div id="invoice-body" class="hidden">
+              <p class="text-green-600 text-sm font-semibold mb-3">✓ Order sent to {vendorName}. Now pay to confirm:</p>
+              <div class="flex justify-center mb-3">
+                <img id="invoice-qr" alt="Scan to pay with a Lightning wallet" width="200" height="200" class="hidden w-52 h-52 rounded-xl border border-gray-200 bg-white p-2" />
+              </div>
+              <p id="invoice-amount" class="text-center text-2xl font-bold text-gray-900"></p>
+              <p id="invoice-fiat" class="text-center text-sm text-gray-500 mb-4"></p>
+              <label class="block text-sm text-gray-500 mb-1">Lightning invoice</label>
+              <div class="flex gap-2 mb-4">
+                <input id="invoice-bolt11" readonly class="flex-1 min-w-0 text-xs font-mono rounded-lg border border-gray-300 bg-gray-50 px-3 py-2" />
+                <button id="invoice-copy" type="button" title="Copy invoice" aria-label="Copy invoice" class="shrink-0 px-3 rounded-lg border border-gray-300 text-gray-500 hover:border-pink hover:text-pink transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+                </button>
+              </div>
+              <!-- Payment options: WebLN (one-click, if a wallet is present) is primary -->
+              <div class="space-y-2">
+                <button id="invoice-webln" type="button" class="hidden w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-pink text-white font-semibold hover:bg-pink/90 transition disabled:opacity-60">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>
+                  Pay with WebLN
+                </button>
+                <a id="invoice-open" href="#" class="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-gray-300 font-semibold text-gray-700 hover:border-pink hover:text-pink transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  Open in wallet
+                </a>
+              </div>
+              <p class="text-xs text-gray-400 text-center mt-3">Scan the QR or copy the invoice to pay with any Lightning wallet.</p>
+              <p id="invoice-paid" class="hidden mt-3 text-center text-sm font-semibold text-green-600">✓ Paid — thank you! {vendorName} has your order.</p>
+            </div>
+            <div id="invoice-error" class="hidden py-4 text-center text-sm text-red-500">
+              <span id="invoice-error-text">Couldn't create an invoice.</span><br />
+              <a href={storeUrl} target="_blank" rel="noopener noreferrer" class="underline">Buy on the {vendorName} store instead →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  ) : (
+    <a
+      href={storeUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="group w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-pink text-white text-base font-bold shadow-lg shadow-pink/25 hover:bg-pink/90 hover:shadow-xl transition-all"
+    >
+      Buy on the {vendorName} store
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </a>
+  )}
+</div>
+
+<script>
+  import { getSession, openLogin, logout, shortId, type NostrSession } from '../../lib/nostrAuth';
+  import { sendGiftWrappedDM, sendGiftWrappedEvent, makeGuestKey } from '../../lib/nostrOrder';
+  import { RELAYS, applyDeletions, tagVal, type NostrEvent } from '../../lib/market';
+  import {
+    resolveShippingRefs,
+    parseShippingOption,
+    filterShippingOptions,
+    orderTotalSats,
+    countryFromLocale,
+    type ShippingOption,
+    type ShippingRef,
+  } from '../../lib/gammaShipping';
+
+  const root = document.getElementById('product-purchase');
+  if (root && root.dataset.lud16 && root.dataset.amount) {
+    const lud16 = root.dataset.lud16!;
+    const vendorPubkey = root.dataset.vendorPubkey || '';
+    const amount = parseFloat(root.dataset.amount || '0');
+    const currency = (root.dataset.currency || '').toUpperCase();
+    const title = root.dataset.title || 'Product';
+    const vendor = root.dataset.vendor || 'the vendor';
+
+    const modal = document.getElementById('pay-modal');
+    const backdrop = document.getElementById('pay-backdrop');
+    const closeBtn = document.getElementById('pay-close');
+    const buyBtn = document.getElementById('buy-btn') as HTMLButtonElement | null;
+    const viewShipping = document.getElementById('view-shipping');
+    const viewPayment = document.getElementById('view-payment');
+    const shipForm = document.getElementById('ship-form') as HTMLFormElement | null;
+    const shipWho = document.getElementById('ship-who');
+    const statusEl = document.getElementById('invoice-status');
+    const statusText = document.getElementById('invoice-status-text');
+    const bodyEl = document.getElementById('invoice-body');
+    const errEl = document.getElementById('invoice-error');
+    const errText = document.getElementById('invoice-error-text');
+
+    function openModal() {
+      modal?.classList.remove('hidden');
+      modal?.classList.add('flex');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeModal() {
+      modal?.classList.add('hidden');
+      modal?.classList.remove('flex');
+      document.body.style.overflow = '';
+    }
+    backdrop?.addEventListener('click', closeModal);
+    closeBtn?.addEventListener('click', closeModal);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal && !modal.classList.contains('hidden')) closeModal();
+    });
+
+    const shipBanner = document.getElementById('ship-auth-banner');
+    const shipAction = document.getElementById('ship-auth-action');
+    const shipSubmit = document.getElementById('ship-submit');
+    const shipEmail = document.getElementById('ship-email') as HTMLInputElement | null;
+
+    // Make the guest-vs-signed-in state unmistakable: a banner, a submit label
+    // that changes, and email required for guests (their only contact) but
+    // optional for signed-in buyers (the vendor can reply over Nostr).
+    function renderShipAuth(session: NostrSession | null) {
+      if (session) {
+        if (shipWho) {
+          // session.name comes from a relay-published profile — set via textContent
+          // so it can never be interpreted as HTML.
+          shipWho.textContent = 'Signed in as ';
+          const who = document.createElement('strong');
+          who.textContent = session.name || shortId(session.pubkey);
+          shipWho.appendChild(who);
+        }
+        if (shipAction) shipAction.textContent = 'Sign out';
+        if (shipBanner) shipBanner.className = 'flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-green-800';
+        if (shipSubmit) shipSubmit.textContent = 'Continue to payment';
+        if (shipEmail) {
+          shipEmail.required = false;
+          shipEmail.placeholder = 'Email (optional)';
+        }
+      } else {
+        if (shipWho) shipWho.innerHTML = '👤 Checking out as <strong>guest</strong>';
+        if (shipAction) shipAction.textContent = 'Sign in';
+        if (shipBanner) shipBanner.className = 'flex items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-amber-800';
+        if (shipSubmit) shipSubmit.textContent = 'Continue as guest';
+        if (shipEmail) {
+          shipEmail.required = true;
+          shipEmail.placeholder = 'Email *';
+        }
+      }
+    }
+    window.addEventListener('nostr:auth', (e) => renderShipAuth((e as CustomEvent).detail));
+    shipAction?.addEventListener('click', () => {
+      if (getSession()) logout();
+      else openLogin();
+    });
+
+    // ---- Shipping methods (Gamma Markets spec; logic in lib/gammaShipping) ----
+    // Country-first flow: the buyer picks a destination (searchable, locale-
+    // preselected), and only options available there are offered. The product's
+    // `shipping_option` refs are resolved (collections merged); no refs → all
+    // vendor options as a fallback. Digital products skip shipping.
+    const isDigital = (root.dataset.medium || '') === 'digital';
+    const vendorNpub = root.dataset.vendorNpub || '';
+    const productCoord = root.dataset.productCoord || '';
+    let productRefs: ShippingRef[] = [];
+    try { productRefs = JSON.parse(root.dataset.shippingRefs || '[]'); } catch {}
+    let shipOptions: ShippingOption[] | null = null; // null = not loaded yet
+
+    function fetchGammaFromRelay(url: string, filter: any): Promise<NostrEvent[]> {
+      return new Promise((resolve) => {
+        const evs: NostrEvent[] = [];
+        let ws: WebSocket | undefined;
+        let done = false;
+        const finish = () => {
+          if (done) return;
+          done = true;
+          clearTimeout(t);
+          try {
+            if (ws) {
+              ws.onopen = () => { try { ws!.close(); } catch {} };
+              ws.close();
+            }
+          } catch {}
+          resolve(evs);
+        };
+        const t = window.setTimeout(finish, 6000);
+        try { ws = new WebSocket(url); } catch { finish(); return; }
+        const sub = Math.random().toString(36).slice(2, 10);
+        ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, filter]));
+        ws.onmessage = (e) => {
+          try {
+            const m = JSON.parse(e.data);
+            if (m[0] === 'EVENT' && m[1] === sub) evs.push(m[2]);
+            if (m[0] === 'EOSE' && m[1] === sub) finish();
+          } catch {}
+        };
+        ws.onerror = () => finish();
+      });
+    }
+    async function fetchGamma(filter: any): Promise<NostrEvent[]> {
+      const raw = (await Promise.all(RELAYS.map((r) => fetchGammaFromRelay(r, filter)))).flat();
+      const newest = new Map<string, NostrEvent>();
+      for (const ev of applyDeletions(raw)) {
+        const key = `${ev.kind}:${ev.pubkey}:${tagVal(ev.tags, 'd') || ''}`;
+        const ex = newest.get(key);
+        if (!ex || ev.created_at > ex.created_at) newest.set(key, ev);
+      }
+      return [...newest.values()];
+    }
+    async function loadShippingOptions() {
+      if (shipOptions !== null || !vendorPubkey) return;
+      if (isDigital) { shipOptions = []; return; } // spec: digital skips shipping
+      if (productRefs.length) {
+        const coordParts = (c: string) => c.split(':');
+        let events = await fetchGamma({
+          kinds: [30406, 30405, 5],
+          authors: [...new Set(productRefs.map((r) => coordParts(r.coord)[1]))],
+          '#d': [...new Set(productRefs.map((r) => coordParts(r.coord)[2]))],
+        });
+        let res = resolveShippingRefs(productRefs, events);
+        if (res.missingCoords.length) {
+          // collection-inherited options we haven't fetched yet
+          events = events.concat(
+            await fetchGamma({
+              kinds: [30406, 5],
+              authors: [...new Set(res.missingCoords.map((c) => coordParts(c)[1]))],
+              '#d': [...new Set(res.missingCoords.map((c) => coordParts(c)[2]))],
+            }),
+          );
+          res = resolveShippingRefs(productRefs, events);
+        }
+        shipOptions = res.options;
+      } else {
+        const evs = await fetchGamma({ kinds: [30406, 5], authors: [vendorPubkey] });
+        shipOptions = evs.map((e) => parseShippingOption(e, 0)).filter(Boolean) as ShippingOption[];
+      }
+      renderShipOptions();
+    }
+
+    // ---- Country-first searchable picker (datalist combobox) ----
+    const COUNTRY_CODES = 'AD AE AF AG AI AL AM AO AR AT AU AW AZ BA BB BD BE BF BG BH BI BJ BM BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FO FR GA GB GD GE GG GH GI GL GM GN GQ GR GT GW GY HK HN HR HT HU ID IE IL IM IN IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MO MR MS MT MU MV MW MX MY MZ NA NE NG NI NL NO NP NR NZ OM PA PE PG PH PK PL PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VN VU WS YE ZA ZM ZW'.split(' ');
+    const countryInput = document.getElementById('ship-country-input') as HTMLInputElement | null;
+    const countryCodeEl = document.getElementById('ship-country') as HTMLInputElement | null;
+    const nameToCode = new Map<string, string>();
+    (function initCountryPicker() {
+      if (!countryInput) return;
+      let names: any = null;
+      try { names = new (Intl as any).DisplayNames(['en'], { type: 'region' }); } catch {}
+      const list = document.getElementById('ship-country-list')!;
+      for (const c of COUNTRY_CODES) {
+        const n = (names && names.of(c)) || c;
+        nameToCode.set(n.toLowerCase(), c);
+        const o = document.createElement('option');
+        o.value = n;
+        list.appendChild(o);
+      }
+      const sync = () => {
+        const code = nameToCode.get((countryInput.value || '').trim().toLowerCase()) || '';
+        if (countryCodeEl) countryCodeEl.value = code;
+        countryInput.classList.toggle('border-amber-400', !!countryInput.value && !code);
+        renderShipOptions();
+      };
+      countryInput.addEventListener('input', sync);
+      countryInput.addEventListener('change', sync);
+      // Pre-select from the device locale; the buyer can change it.
+      const guess = countryFromLocale(navigator.language || '');
+      if (guess && COUNTRY_CODES.includes(guess)) {
+        countryInput.value = (names && names.of(guess)) || guess;
+        sync();
+      }
+    })();
+
+    function renderShipOptions() {
+      const wrap = document.getElementById('ship-method-wrap');
+      const sel = document.getElementById('ship-method') as HTMLSelectElement | null;
+      const noship = document.getElementById('ship-noship');
+      if (!wrap || !sel) return;
+      if (!shipOptions?.length) { wrap.classList.add('hidden'); sel.required = false; return; }
+      const country = countryCodeEl?.value || '';
+      const avail = filterShippingOptions(shipOptions, country);
+      // Zero matches for a chosen country → honest empty state + contact link.
+      if (!avail.length && country) {
+        wrap.classList.add('hidden');
+        sel.required = false;
+        sel.innerHTML = '';
+        if (noship) {
+          noship.innerHTML = `${vendor} doesn’t ship to ${countryInput?.value || 'this country'} yet — <a href="https://njump.me/${vendorNpub}" target="_blank" rel="noopener noreferrer" class="underline font-semibold">message the shop</a> or pick another country.`;
+          noship.classList.remove('hidden');
+        }
+        return;
+      }
+      noship?.classList.add('hidden');
+      const prev = sel.value;
+      sel.innerHTML = '';
+      const ph = document.createElement('option');
+      ph.value = '';
+      ph.textContent = 'Select shipping method *';
+      sel.appendChild(ph);
+      avail.forEach((o) => {
+        const opt = document.createElement('option');
+        opt.value = o.coord;
+        const extra = o.extraCost ? ` + ${o.extraCost} ${currency}` : '';
+        opt.textContent = `${o.title} — ${o.amount} ${o.currency}${extra}`;
+        sel.appendChild(opt);
+      });
+      // Changing country invalidates an incompatible selection (cleared here);
+      // a still-valid one is kept.
+      if ([...sel.options].some((o) => o.value === prev)) sel.value = prev;
+      sel.disabled = false;
+      sel.required = true;
+      wrap.classList.remove('hidden');
+    }
+    const currentShipChoice = (): ShippingOption | null => {
+      const sel = document.getElementById('ship-method') as HTMLSelectElement | null;
+      return shipOptions?.find((o) => o.coord === sel?.value) || null;
+    };
+
+    buyBtn?.addEventListener('click', () => {
+      // Reset to step 1.
+      viewShipping?.classList.remove('hidden');
+      viewPayment?.classList.add('hidden');
+      renderShipAuth(getSession());
+      openModal();
+      // Shipping options load async (up to ~6s of relay round-trips). Block
+      // Continue until they resolve, otherwise a fast submit races the load and
+      // the total + kind-16 order silently omit shipping.
+      const submitBtn = document.getElementById('ship-submit') as HTMLButtonElement | null;
+      const shipStatus = document.getElementById('ship-status');
+      if (shipOptions === null && submitBtn) {
+        submitBtn.disabled = true;
+        if (shipStatus) shipStatus.textContent = 'Loading shipping options…';
+        loadShippingOptions().finally(() => {
+          submitBtn.disabled = false;
+          if (shipStatus && shipStatus.textContent === 'Loading shipping options…') shipStatus.textContent = '';
+        });
+      } else {
+        loadShippingOptions(); // already loaded (or loading); selector appears when ready
+      }
+    });
+
+    // Convert any (amount, currency) to sats; the BTC spot rate is fetched once
+    // and cached so product + shipping conversions share it.
+    let btcRates: any = null;
+    async function toSats(amt: number, cur: string): Promise<number | null> {
+      if (!isFinite(amt) || amt < 0) return null;
+      cur = (cur || '').toUpperCase();
+      if (cur === 'SAT' || cur === 'SATS' || cur === '') return Math.round(amt);
+      if (cur === 'BTC') return Math.round(amt * 1e8);
+      try {
+        if (!btcRates) {
+          const res = await fetch('https://api.coinbase.com/v2/exchange-rates?currency=BTC');
+          btcRates = (await res.json())?.data?.rates || {};
+        }
+        const perBtc = parseFloat(btcRates[cur]);
+        if (!isFinite(perBtc) || perBtc <= 0) return null;
+        return Math.round((amt / perBtc) * 1e8);
+      } catch {
+        return null;
+      }
+    }
+
+    async function requestInvoice(sats: number, comment: string): Promise<string> {
+      const at = lud16.indexOf('@');
+      if (at < 1) throw new Error('bad lud16');
+      const name = lud16.slice(0, at);
+      const domain = lud16.slice(at + 1);
+      const meta = await (await fetch(`https://${domain}/.well-known/lnurlp/${name}`)).json();
+      if (!meta || !meta.callback) throw new Error('no callback');
+      const msats = sats * 1000;
+      // Do NOT silently clamp to the vendor's LNURL range — the UI, the kind-16
+      // `amount` tag and the readable note all quote the un-clamped total, so
+      // clamping would make the buyer over/underpay vs. the order record. Reject
+      // and let the caller surface the real limit instead.
+      if (meta.minSendable && msats < meta.minSendable)
+        throw new Error(`range:min:${Math.ceil(meta.minSendable / 1000)}`);
+      if (meta.maxSendable && msats > meta.maxSendable)
+        throw new Error(`range:max:${Math.floor(meta.maxSendable / 1000)}`);
+      const sep = meta.callback.includes('?') ? '&' : '?';
+      let url = `${meta.callback}${sep}amount=${msats}`;
+      if (meta.commentAllowed && meta.commentAllowed > 0) {
+        url += `&comment=${encodeURIComponent(comment.slice(0, meta.commentAllowed))}`;
+      }
+      const inv = await (await fetch(url)).json();
+      if (!inv || !inv.pr) throw new Error('no invoice');
+      return inv.pr as string;
+    }
+
+    const fmtSats = (n: number) => `${n.toLocaleString()} sats`;
+    const val = (id: string) => (document.getElementById(id) as HTMLInputElement)?.value.trim() || '';
+
+    function orderMessage(
+      orderId: string,
+      totals: { productSats: number; shippingSats: number; totalSats: number; ship: ShippingOption | null },
+      bolt11: string,
+    ): string {
+      const addr2 = val('ship-addr2');
+      const note = val('ship-note');
+      const session = getSession();
+      // Tell the store owner how the order was placed, so they know how to reply.
+      const placedBy = session
+        ? `Buyer: ${session.name ? session.name + ' · ' : ''}Nostr ${session.pubkey.slice(0, 12)}… (you can reply to this DM on Nostr)`
+        : `Buyer: GUEST checkout — this Nostr key is one-time, so please reply via the email above, not on Nostr.`;
+      return [
+        `🐷⚡ New Lightning Piggy order`,
+        ``,
+        `Product: ${title}`,
+        `Price: ${amount} ${currency} (${fmtSats(totals.productSats)})`,
+        ...(totals.ship
+          ? [
+              `Shipping: ${totals.ship.title} — ${totals.ship.amount} ${totals.ship.currency}${totals.ship.extraCost ? ` + ${totals.ship.extraCost} ${currency} product surcharge` : ''} (${fmtSats(totals.shippingSats)})`,
+              `Shipping ref: ${totals.ship.coord}`,
+              `Total: ${fmtSats(totals.totalSats)}`,
+            ]
+          : []),
+        `Order ID: ${orderId}`,
+        ``,
+        `Ship to:`,
+        val('ship-name'),
+        val('ship-addr1'),
+        ...(addr2 ? [addr2] : []),
+        `${val('ship-city')}, ${val('ship-postcode')}`,
+        val('ship-country-input'),
+        ``,
+        `Contact: ${val('ship-email')}`,
+        placedBy,
+        ...(note ? [`Note: ${note}`] : []),
+        ``,
+        `Invoice: ${bolt11}`,
+      ].join('\n');
+    }
+
+    // Step 1 → 2: build order, DM the vendor, fetch the invoice.
+    shipForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const shipStatus = document.getElementById('ship-status')!;
+      const submitBtn = document.getElementById('ship-submit') as HTMLButtonElement;
+      // Country must be a real pick from the list (the combobox allows typing).
+      if (!countryCodeEl?.value) {
+        shipStatus.textContent = 'Please pick a country from the list.';
+        countryInput?.focus();
+        return;
+      }
+      // Shipping options not loaded yet (Enter can submit past the disabled
+      // button) — wait rather than proceed with shipping missing from the order.
+      if (shipOptions === null) {
+        shipStatus.textContent = 'Still loading shipping options — one moment…';
+        loadShippingOptions();
+        return;
+      }
+      // Shipping method is mandatory whenever the product has options.
+      const shipSel = document.getElementById('ship-method') as HTMLSelectElement | null;
+      let chosenShip: ShippingOption | null = null;
+      if (shipOptions.length) {
+        chosenShip = currentShipChoice();
+        if (!chosenShip) {
+          const anyAvail = filterShippingOptions(shipOptions, countryCodeEl.value).length > 0;
+          shipStatus.textContent = anyAvail
+            ? 'Please select a shipping method.'
+            : `${vendor} doesn’t ship to the selected country.`;
+          (anyAvail ? shipSel : countryInput)?.focus();
+          return;
+        }
+      }
+
+      submitBtn.disabled = true;
+      shipStatus.textContent = 'Preparing your order…';
+
+      const totals0 = await orderTotalSats([{ amount, currency }], chosenShip, currency, toSats);
+      if (!totals0 || !totals0.productSats) {
+        shipStatus.textContent = 'Could not work out the price. Try the vendor store.';
+        submitBtn.disabled = false;
+        return;
+      }
+      const { productSats, shippingSats, totalSats } = totals0;
+
+      const orderId = (crypto as any).randomUUID ? crypto.randomUUID() : String(Date.now());
+      let bolt11: string;
+      try {
+        bolt11 = await requestInvoice(totalSats, `LP order ${orderId}`);
+      } catch (e: any) {
+        const range = /^range:(min|max):(\d+)$/.exec(e?.message || '');
+        if (range) {
+          const limit = fmtSats(Number(range[2]));
+          shipStatus.textContent =
+            range[1] === 'min'
+              ? `This vendor’s minimum payment is ${limit}, but your order is ${fmtSats(totalSats)}. Please buy more or order via the vendor store.`
+              : `This vendor’s maximum payment is ${limit}, but your order is ${fmtSats(totalSats)}. Please order via the vendor store.`;
+        } else {
+          shipStatus.textContent = 'Could not create an invoice. Try the vendor store.';
+        }
+        submitBtn.disabled = false;
+        return;
+      }
+
+      // Send the order to the vendor: a structured Gamma kind-16 (type 1) with
+      // the item + chosen `shipping` coordinate (spec), plus a human-readable
+      // kind-14 note — both gift-wrapped, from the SAME sender (one guest key
+      // per order when not signed in) so the vendor can correlate them.
+      // One guest key per order, declared out here so the later payment-receipt
+      // DM is sent from the SAME pubkey the vendor received the order from.
+      let guestSk: Uint8Array | undefined;
+      try {
+        shipStatus.textContent = 'Sending your order to the vendor…';
+        guestSk = getSession() ? undefined : await makeGuestKey();
+        const fullAddress = [val('ship-name'), val('ship-addr1'), val('ship-addr2'), `${val('ship-city')}, ${val('ship-postcode')}`, val('ship-country-input')]
+          .filter(Boolean)
+          .join(', ');
+        const orderTags: string[][] = [
+          ['p', vendorPubkey],
+          ['subject', 'order-info'],
+          ['type', '1'],
+          ['order', orderId],
+          ['amount', String(totalSats)],
+          ['item', productCoord, '1'],
+          ...(chosenShip ? [['shipping', chosenShip.coord]] : []),
+          ['address', fullAddress],
+          ...(val('ship-email') ? [['email', val('ship-email')]] : []),
+        ];
+        // Structured order is best-effort (older vendor clients may only render
+        // the kind-14); the readable note is the one we require to succeed.
+        sendGiftWrappedEvent(vendorPubkey, 16, orderTags, val('ship-note'), guestSk).catch((e) =>
+          console.error('[order] kind-16 send failed:', e),
+        );
+        await sendGiftWrappedDM(
+          vendorPubkey,
+          orderMessage(orderId, { productSats, shippingSats: shippingSats || 0, totalSats, ship: chosenShip }, bolt11),
+          guestSk,
+        );
+      } catch (err: any) {
+        submitBtn.disabled = false;
+        console.error('[order] gift-wrap send failed:', err);
+        if (err?.message === 'no-nip44') {
+          shipStatus.textContent =
+            'Your Nostr signer can’t send encrypted DMs (NIP-44). Try Alby, or use the vendor store.';
+        } else if (err?.message === 'not-signed-in') {
+          shipStatus.textContent = 'Please sign in and try again.';
+          openLogin();
+        } else {
+          shipStatus.textContent = `Could not send your order privately (${err?.message || 'unknown error'}). Please try again.`;
+        }
+        return;
+      }
+
+      // Move to payment.
+      viewShipping?.classList.add('hidden');
+      viewPayment?.classList.remove('hidden');
+      showInvoice(bolt11, { productSats, shippingSats: shippingSats || 0, totalSats, ship: chosenShip }, orderId, guestSk);
+      submitBtn.disabled = false;
+    });
+
+    function showError(msg?: string) {
+      statusEl?.classList.add('hidden');
+      bodyEl?.classList.add('hidden');
+      if (errText && msg) errText.textContent = msg;
+      errEl?.classList.remove('hidden');
+    }
+
+    function showInvoice(
+      bolt11: string,
+      totals: { productSats: number; shippingSats: number; totalSats: number; ship: ShippingOption | null },
+      orderId: string,
+      guestSk?: Uint8Array,
+    ) {
+      statusEl?.classList.add('hidden');
+      errEl?.classList.add('hidden');
+      bodyEl?.classList.remove('hidden');
+      (document.getElementById('invoice-amount') as HTMLElement).textContent = fmtSats(totals.totalSats);
+      const sym: Record<string, string> = { GBP: '£', USD: '$', EUR: '€' };
+      const fiatEl = document.getElementById('invoice-fiat') as HTMLElement;
+      // Itemise when shipping applies; otherwise show the fiat approximation.
+      fiatEl.textContent = totals.ship
+        ? `Product ${fmtSats(totals.productSats)} · Shipping (${totals.ship.title}) ${fmtSats(totals.shippingSats)}`
+        : sym[currency] && amount
+          ? `≈ ${sym[currency]}${amount}`
+          : '';
+      (document.getElementById('invoice-bolt11') as HTMLInputElement).value = bolt11;
+      (document.getElementById('invoice-open') as HTMLAnchorElement).href = `lightning:${bolt11}`;
+
+      // Render the invoice QR (qrcode is dynamically imported — only loads here).
+      const qrImg = document.getElementById('invoice-qr') as HTMLImageElement | null;
+      if (qrImg) {
+        import('qrcode')
+          .then(({ default: QRCode }) =>
+            QRCode.toDataURL(bolt11.toUpperCase(), { margin: 1, width: 220, errorCorrectionLevel: 'M' }),
+          )
+          .then((url) => {
+            qrImg.src = url;
+            qrImg.classList.remove('hidden');
+          })
+          .catch(() => {});
+      }
+
+      // Use onclick ASSIGNMENT (not addEventListener): showInvoice can run more
+      // than once per page (repeat checkout), and stacked listeners would fire
+      // stale closures — paying an outdated invoice.
+      const copyBtn = document.getElementById('invoice-copy') as HTMLButtonElement | null;
+      if (copyBtn) {
+        copyBtn.onclick = () => {
+          navigator.clipboard?.writeText(bolt11);
+          copyBtn.textContent = 'Copied!';
+        };
+      }
+
+      const webln = (window as any).webln;
+      const weblnBtn = document.getElementById('invoice-webln') as HTMLButtonElement | null;
+      if (webln && weblnBtn) {
+        weblnBtn.classList.remove('hidden');
+        weblnBtn.disabled = false;
+        weblnBtn.textContent = 'Pay with WebLN';
+        weblnBtn.onclick = async () => {
+          weblnBtn.disabled = true;
+          weblnBtn.textContent = 'Paying…';
+          try {
+            await webln.enable();
+            const res = await webln.sendPayment(bolt11);
+            document.getElementById('invoice-paid')?.classList.remove('hidden');
+            weblnBtn.textContent = 'Paid';
+            // Send a payment receipt (with preimage) to the vendor — best effort.
+            const preimage = (res && (res.preimage as string)) || '';
+            sendGiftWrappedDM(
+              vendorPubkey,
+              `✅ Paid — Lightning Piggy order ${orderId}${preimage ? `\nPreimage: ${preimage}` : ''}`,
+              guestSk, // same key as the order, so the vendor can correlate the receipt
+            ).catch(() => {});
+          } catch {
+            weblnBtn.disabled = false;
+            weblnBtn.textContent = 'Pay with WebLN';
+          }
+        };
+      }
+    }
+  }
+</script>

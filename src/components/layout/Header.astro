@@ -1,4 +1,24 @@
 ---
+import NostrLoginModal from '../market/NostrLoginModal.astro';
+import { decode } from 'nostr-tools/nip19';
+import vendorsData from '../../data/vendors.json';
+
+// Hex pubkeys of the vendors LP sells for — they see a "Manage my shop" link.
+// Gating data, so decode with nip19.decode (checksum-validating): a typo'd npub
+// is rejected rather than silently decoding to an unintended pubkey. Build-time.
+const vendorHexes = ((vendorsData as any).vendors || [])
+  .map((v: any) => (String(v.nostrUrl || '').match(/npub1[0-9a-z]+/) || [])[0] || '')
+  .filter(Boolean)
+  .map((npub: string) => {
+    try {
+      const d = decode(npub);
+      return d.type === 'npub' ? (d.data as string) : '';
+    } catch {
+      return '';
+    }
+  })
+  .filter(Boolean);
+
 const navItems = [
   { label: 'About', href: '/about' },
   {
@@ -44,7 +64,6 @@ const navItems = [
       { label: 'Software Updates', href: '/news#software-updates' },
     ]
   },
-  { label: 'Donate', href: '/donate' },
 ];
 
 const currentPath = Astro.url.pathname;
@@ -64,17 +83,12 @@ const currentPath = Astro.url.pathname;
           <div class="relative group">
             <a
               href={item.href}
-              class={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+              class={`px-2.5 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
                 currentPath.startsWith(item.href) && item.href !== '/'
                   ? 'text-pink bg-pink-light/30'
-                  : item.label === 'Donate'
-                    ? 'text-pink hover:text-pink hover:bg-pink-light/30'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              {item.label === 'Donate' && (
-                <svg class="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              )}
               {item.label}
               {item.children && (
                 <svg class="inline-block w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -100,13 +114,70 @@ const currentPath = Astro.url.pathname;
         ))}
       </div>
 
-      <!-- CTA Button -->
-      <a
-        href="/build"
-        class="hidden lg:inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
-      >
-        Build Your Own
-      </a>
+      <!-- Header icon cluster (story / zap / chat — mirrors robotechy.com) -->
+      <div class="hidden lg:flex items-center gap-1 mr-1" id="hdr-icons">
+        <a href="/story" aria-label="Our story" title="Our story" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h6z"/></svg>
+        </a>
+        <a href="/donate" aria-label="Zap a donation" title="Zap a donation" class="p-2 rounded-lg hover:bg-pink-light/30 transition-colors">
+          <svg class="w-5 h-5" fill="#FFDB00" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </a>
+        <button type="button" id="hdr-chat" aria-label="Message us" title="Message us" class="p-2 rounded-lg text-gray-600 hover:text-pink hover:bg-pink-light/30 transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect width="20" height="16" x="2" y="4" rx="2"/>
+            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Sign in / account (Nostr) -->
+      <div class="hidden lg:flex items-center relative" id="hdr-auth" data-vendor-hexes={JSON.stringify(vendorHexes)}>
+        <button
+          id="hdr-signin"
+          type="button"
+          class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zM4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/></svg>
+          Sign in
+        </button>
+        <button
+          id="hdr-account"
+          type="button"
+          class="hidden inline-flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-gray-200 hover:border-pink transition-colors"
+        >
+          <span class="w-7 h-7 rounded-full overflow-hidden bg-pink/10 flex items-center justify-center flex-shrink-0">
+            <img id="hdr-avatar" src="" alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover hidden" />
+            <span id="hdr-initial" class="text-pink text-xs font-bold"></span>
+          </span>
+          <span id="hdr-name" class="text-sm font-semibold text-gray-800 max-w-[120px] truncate"></span>
+          <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+        </button>
+        <div id="hdr-menu" class="hidden absolute right-0 top-full mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+          <!-- Store manager section: shown only for vendor keys; deep-links open
+               the matching part of /market/manage directly. -->
+          <div id="hdr-vendor-menu" class="hidden">
+            <p class="px-4 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Store manager</p>
+            <a href="/market/manage#add-product" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+              Add product
+            </a>
+            <a href="/market/manage#products" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></svg>
+              My products
+            </a>
+            <a href="/market/manage#categories" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+              Categories &amp; collections
+            </a>
+            <a href="/market/manage#shipping" class="flex items-center gap-2.5 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+              <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2"/><path d="M15 18H9"/><path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14"/><circle cx="17" cy="18" r="2"/><circle cx="7" cy="18" r="2"/></svg>
+              Shipping options
+            </a>
+            <div class="my-1 border-t border-gray-100"></div>
+          </div>
+          <button id="hdr-signout" type="button" class="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-50">Sign out</button>
+        </div>
+      </div>
 
       <!-- Mobile Menu Button -->
       <button
@@ -131,14 +202,9 @@ const currentPath = Astro.url.pathname;
             class={`block px-3 py-2 text-base font-medium rounded-lg ${
               currentPath.startsWith(item.href) && item.href !== '/'
                 ? 'text-pink bg-pink-light/30'
-                : item.label === 'Donate'
-                  ? 'text-pink hover:text-pink hover:bg-pink-light/30'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
-            {item.label === 'Donate' && (
-              <svg class="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-            )}
             {item.label}
           </a>
           {item.children && (
@@ -156,14 +222,54 @@ const currentPath = Astro.url.pathname;
         </div>
       ))}
       <a
-        href="/build"
+        href="/story"
+        class={`block px-3 py-2 text-base font-medium rounded-lg ${
+          currentPath.startsWith('/story')
+            ? 'text-pink bg-pink-light/30'
+            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+        }`}
+      >
+        📖 Our story
+      </a>
+      <!-- Zap / donate (replaces the old "Donate" text entry) -->
+      <a
+        href="/donate"
+        aria-label="Zap a donation"
+        class={`flex items-center gap-2 px-3 py-2 text-base font-medium rounded-lg ${
+          currentPath.startsWith('/donate') ? 'text-pink bg-pink-light/30' : 'text-pink hover:bg-pink-light/30'
+        }`}
+      >
+        <svg class="w-5 h-5" fill="#FFDB00" stroke="#111827" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        Zap a donation
+      </a>
+      <button
+        id="hdr-chat-m"
+        type="button"
+        class="block w-full text-left px-3 py-2 text-base font-medium rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+      >
+        ✉️ Message us
+      </button>
+      <button
+        id="hdr-signin-m"
+        type="button"
         class="block w-full text-center px-4 py-3 text-base font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors mt-4"
       >
-        Build Your Own
-      </a>
+        Sign in with Nostr
+      </button>
+      <div id="hdr-account-m" class="hidden mt-4 items-center gap-3 px-3 py-2 rounded-xl border border-gray-200">
+        <span class="w-8 h-8 rounded-full overflow-hidden bg-pink/10 flex items-center justify-center flex-shrink-0">
+          <img id="hdr-avatar-m" src="" alt="" referrerpolicy="no-referrer" class="w-full h-full object-cover hidden" />
+          <span id="hdr-initial-m" class="text-pink text-sm font-bold"></span>
+        </span>
+        <span id="hdr-name-m" class="text-sm font-semibold text-gray-800 flex-1 truncate"></span>
+        <button id="hdr-signout-m" type="button" class="text-sm text-pink font-semibold">Sign out</button>
+      </div>
+      <a id="hdr-manage-m" href="/market/manage" class="hidden mt-2 items-center gap-2 px-3 py-2 rounded-xl border border-pink/30 bg-pink/5 text-sm font-semibold text-gray-800">🛍️ Manage my shop</a>
     </div>
   </div>
 </header>
+
+<NostrLoginModal />
 
 <script>
   const menuButton = document.getElementById('mobile-menu-button');
@@ -172,4 +278,87 @@ const currentPath = Astro.url.pathname;
   menuButton?.addEventListener('click', () => {
     mobileMenu?.classList.toggle('hidden');
   });
+
+  // --- Nostr sign-in (header, global) ---
+  import { getSession, logout, shortId, openLogin, type NostrSession } from '../../lib/nostrAuth';
+
+  const signinBtn = document.getElementById('hdr-signin');
+  const accountBtn = document.getElementById('hdr-account');
+  const menu = document.getElementById('hdr-menu');
+  const signoutBtn = document.getElementById('hdr-signout');
+  const signinBtnM = document.getElementById('hdr-signin-m');
+  const accountM = document.getElementById('hdr-account-m');
+  const signoutBtnM = document.getElementById('hdr-signout-m');
+
+  function setAvatar(imgId: string, initialId: string, s: NostrSession) {
+    const img = document.getElementById(imgId) as HTMLImageElement | null;
+    const initial = document.getElementById(initialId);
+    const name = s.name || shortId(s.pubkey);
+    if (s.picture && img) {
+      img.src = s.picture;
+      img.classList.remove('hidden');
+      initial?.classList.add('hidden');
+    } else {
+      img?.classList.add('hidden');
+      initial?.classList.remove('hidden');
+      if (initial) initial.textContent = (name || '?').charAt(0).toUpperCase();
+    }
+  }
+
+  // Vendors (matching a vendors.json npub) get a "Manage my shop" link.
+  let vendorHexes: string[] = [];
+  try {
+    vendorHexes = JSON.parse(document.getElementById('hdr-auth')?.dataset.vendorHexes || '[]');
+  } catch {}
+  const isVendor = (s: NostrSession | null) => !!s && vendorHexes.includes(s.pubkey);
+
+  function renderAuth(s: NostrSession | null) {
+    const name = s ? s.name || shortId(s.pubkey) : '';
+    // Desktop
+    signinBtn?.classList.toggle('hidden', !!s);
+    accountBtn?.classList.toggle('hidden', !s);
+    document.getElementById('hdr-vendor-menu')?.classList.toggle('hidden', !isVendor(s));
+    const manageM = document.getElementById('hdr-manage-m');
+    manageM?.classList.toggle('hidden', !isVendor(s));
+    manageM?.classList.toggle('flex', isVendor(s));
+    if (s) {
+      (document.getElementById('hdr-name') as HTMLElement).textContent = name;
+      setAvatar('hdr-avatar', 'hdr-initial', s);
+    } else {
+      menu?.classList.add('hidden');
+    }
+    // Mobile
+    signinBtnM?.classList.toggle('hidden', !!s);
+    accountM?.classList.toggle('hidden', !s);
+    accountM?.classList.toggle('flex', !!s);
+    if (s) {
+      (document.getElementById('hdr-name-m') as HTMLElement).textContent = name;
+      setAvatar('hdr-avatar-m', 'hdr-initial-m', s);
+    }
+  }
+
+  // Chat envelope — opens the global Nostr chat slide-over (NostrChat.astro).
+  const openChat = () => window.dispatchEvent(new CustomEvent('nostr:open-chat'));
+  document.getElementById('hdr-chat')?.addEventListener('click', openChat);
+  document.getElementById('hdr-chat-m')?.addEventListener('click', () => {
+    mobileMenu?.classList.add('hidden');
+    openChat();
+  });
+
+  // Open the login dialog (Extension / Secret key) — never redirect off-site.
+  signinBtn?.addEventListener('click', () => openLogin());
+  signinBtnM?.addEventListener('click', () => {
+    mobileMenu?.classList.add('hidden');
+    openLogin();
+  });
+  accountBtn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => menu?.classList.add('hidden'));
+  signoutBtn?.addEventListener('click', () => logout());
+  signoutBtnM?.addEventListener('click', () => logout());
+
+  window.addEventListener('nostr:auth', (e) => renderAuth((e as CustomEvent).detail));
+  renderAuth(getSession());
 </script>

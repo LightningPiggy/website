@@ -1,0 +1,545 @@
+---
+// ProductReviews.astro
+// Client-side, Nostr-native feedback island with two tabs (mirrors the reference
+// robotechy-website product page):
+//
+//   • Reviews  — rated feedback, NIP-99 / Gamma Markets product review events
+//                (kind 31555). d tag = `a:<kind>:<pubkey>:<dtag>`, a `rating`
+//                tag (0..1) + free text. One review per author (replaceable).
+//   • Comments — plain-text discussion, NIP-22 comments (kind 1111) scoped to
+//                the product's addressable coordinate.
+//
+// Reading is public; posting needs a signed-in Nostr identity (see NostrSignIn /
+// nostrAuth — the sign-in card on the market page). Uses the same review
+// coordinate as robotechy, so reviews are shared across both sites.
+
+interface Props {
+  coord: string; // `<kind>:<pubkey>:<dtag>` from ProductDetail.coord
+  productPubkey: string; // hex author of the product
+}
+const { coord, productPubkey } = Astro.props;
+const reviewCoord = `a:${coord}`; // kind-31555 d tag
+const productKind = coord.split(':')[0] || '30402';
+---
+
+<section
+  id="product-reviews"
+  class="mt-14 pt-10 border-t border-gray-100"
+  data-review-coord={reviewCoord}
+  data-comment-coord={coord}
+  data-product-pubkey={productPubkey}
+  data-product-kind={productKind}
+>
+  <div class="flex items-center justify-between flex-wrap gap-3 mb-4">
+    <h2 class="text-2xl font-bold text-gray-900">Ratings &amp; feedback</h2>
+    <div id="reviews-aggregate" class="text-sm text-gray-500"></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="flex gap-6 border-b border-gray-200 mb-6" role="tablist">
+    <button id="tab-reviews" type="button" role="tab" aria-selected="true" class="tab-btn -mb-px border-b-2 border-pink text-pink font-semibold pb-2.5 transition-colors">
+      Reviews
+    </button>
+    <button id="tab-comments" type="button" role="tab" aria-selected="false" class="tab-btn -mb-px border-b-2 border-transparent text-gray-500 hover:text-gray-800 font-semibold pb-2.5 transition-colors">
+      Comments
+    </button>
+  </div>
+
+  <!-- Reviews panel -->
+  <div id="panel-reviews">
+    <div id="reviews-list" class="space-y-4"></div>
+    <p id="reviews-empty" class="text-gray-500 hidden py-4">No reviews yet — be the first!</p>
+
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6">
+      <h3 class="text-lg font-bold text-gray-900 mb-3">Write a review</h3>
+      <div class="signin-gate hidden">
+        <p class="text-sm text-gray-500 mb-3">Sign in with Nostr to leave a rated review.</p>
+        <button type="button" class="connect-btn inline-flex items-center gap-2 px-5 py-2.5 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">Connect Nostr</button>
+        <span class="connect-msg text-sm text-gray-500 ml-2"></span>
+      </div>
+      <form id="review-form" class="signin-form space-y-4 hidden">
+        <div>
+          <span class="block text-sm font-medium text-gray-700 mb-1">Your rating</span>
+          <div id="star-input" class="flex gap-1 text-2xl text-gray-300 cursor-pointer select-none" role="radiogroup" aria-label="Rating">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <span class="star" data-value={n} role="radio" aria-label={`${n} star${n > 1 ? 's' : ''}`}>★</span>
+            ))}
+          </div>
+        </div>
+        <textarea id="review-text" rows="4" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-pink focus:ring-1 focus:ring-pink outline-none" placeholder="What did you think?"></textarea>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-pink text-white font-semibold rounded-full hover:bg-pink/90 transition-colors disabled:opacity-50">Publish review</button>
+          <span id="review-status" class="text-sm text-gray-500"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Comments panel -->
+  <div id="panel-comments" class="hidden">
+    <div id="comments-list" class="space-y-4"></div>
+    <p id="comments-empty" class="text-gray-500 hidden py-4">No comments yet — start the conversation!</p>
+
+    <div class="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-6">
+      <h3 class="text-lg font-bold text-gray-900 mb-3">Add a comment</h3>
+      <div class="signin-gate hidden">
+        <p class="text-sm text-gray-500 mb-3">Sign in with Nostr to comment.</p>
+        <button type="button" class="connect-btn inline-flex items-center gap-2 px-5 py-2.5 bg-pink text-white text-sm font-semibold rounded-full hover:bg-pink/90 transition">Connect Nostr</button>
+        <span class="connect-msg text-sm text-gray-500 ml-2"></span>
+      </div>
+      <form id="comment-form" class="signin-form space-y-4 hidden">
+        <textarea id="comment-text" rows="3" class="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-pink focus:ring-1 focus:ring-pink outline-none" placeholder="Ask a question or share a thought…"></textarea>
+        <div class="flex items-center gap-3">
+          <button type="submit" class="inline-flex items-center gap-2 px-5 py-2.5 bg-pink text-white font-semibold rounded-full hover:bg-pink/90 transition-colors disabled:opacity-50">Post comment</button>
+          <span id="comment-status" class="text-sm text-gray-500"></span>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<script>
+  import { RELAYS } from '../../lib/market';
+  import { getSession, openLogin, signEvent, publish, shortId, type NostrSession } from '../../lib/nostrAuth';
+
+  interface NostrEvent {
+    id?: string;
+    pubkey: string;
+    kind: number;
+    content: string;
+    tags: string[][];
+    created_at: number;
+    sig?: string;
+  }
+
+  const root = document.getElementById('product-reviews')!;
+  const reviewCoord = root.dataset.reviewCoord || '';
+  const commentCoord = root.dataset.commentCoord || '';
+  const productPubkey = root.dataset.productPubkey || '';
+  const productKind = root.dataset.productKind || '30402';
+
+  function esc(s: string): string {
+    const d = document.createElement('div');
+    d.textContent = s ?? '';
+    // textContent→innerHTML escapes <>& but NOT quotes; escape them too so the
+    // result is safe inside a double- or single-quoted HTML attribute.
+    return d.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+  // Only allow http(s) URLs to reach an attribute — a relay-sourced kind-0
+  // `picture` is attacker-controlled, so block javascript:/data: and junk.
+  function sanitizeUrl(url: string): string {
+    try {
+      const parsed = new URL(url);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url;
+    } catch {}
+    return '';
+  }
+  function starRow(stars: number): string {
+    const n = Math.max(0, Math.min(5, Math.round(stars)));
+    return `<span class="text-yellow-500">${'★'.repeat(n)}</span><span class="text-gray-300">${'★'.repeat(5 - n)}</span>`;
+  }
+  function fmtDate(ts: number): string {
+    return ts ? new Date(ts * 1000).toLocaleDateString() : '';
+  }
+
+  // ---- Tabs ----
+  const tabReviews = document.getElementById('tab-reviews')!;
+  const tabComments = document.getElementById('tab-comments')!;
+  const panelReviews = document.getElementById('panel-reviews')!;
+  const panelComments = document.getElementById('panel-comments')!;
+  function selectTab(which: 'reviews' | 'comments') {
+    const r = which === 'reviews';
+    panelReviews.classList.toggle('hidden', !r);
+    panelComments.classList.toggle('hidden', r);
+    tabReviews.setAttribute('aria-selected', String(r));
+    tabComments.setAttribute('aria-selected', String(!r));
+    tabReviews.className = `tab-btn -mb-px border-b-2 pb-2.5 font-semibold transition-colors ${r ? 'border-pink text-pink' : 'border-transparent text-gray-500 hover:text-gray-800'}`;
+    tabComments.className = `tab-btn -mb-px border-b-2 pb-2.5 font-semibold transition-colors ${!r ? 'border-pink text-pink' : 'border-transparent text-gray-500 hover:text-gray-800'}`;
+  }
+  tabReviews.addEventListener('click', () => selectTab('reviews'));
+  tabComments.addEventListener('click', () => selectTab('comments'));
+
+  // ---- Relay read: newest event per author (reviews) or all (comments) ----
+  // Relays that failed to connect this page session are skipped on later queries,
+  // so a down relay (e.g. an unreachable one) isn't retried for every load —
+  // cutting the repeated "WebSocket connection failed" console noise.
+  const deadRelays = new Set<string>();
+  function fetchFromRelay(url: string, filter: any): Promise<NostrEvent[]> {
+    return new Promise((resolve) => {
+      if (deadRelays.has(url)) {
+        resolve([]);
+        return;
+      }
+      const events: NostrEvent[] = [];
+      let ws: WebSocket | undefined;
+      let done = false;
+      const finish = () => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        // Only close an already-open socket; closing one that's still CONNECTING
+        // logs a noisy "closed before the connection is established" warning.
+        try {
+          if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+        } catch {}
+        resolve(events);
+      };
+      const timer = window.setTimeout(finish, 6000);
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        deadRelays.add(url);
+        finish();
+        return;
+      }
+      const sub = Math.random().toString(36).slice(2, 10);
+      ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, filter]));
+      ws.onmessage = (e) => {
+        try {
+          const m = JSON.parse(e.data);
+          if (m[0] === 'EVENT' && m[1] === sub) events.push(m[2]);
+          if (m[0] === 'EOSE' && m[1] === sub) finish();
+        } catch {}
+      };
+      ws.onerror = () => {
+        deadRelays.add(url);
+        finish();
+      };
+    });
+  }
+  async function fetchAll(filter: any): Promise<NostrEvent[]> {
+    return (await Promise.all(RELAYS.map((r) => fetchFromRelay(r, filter)))).flat();
+  }
+
+  // ---- Author profiles (kind 0): show name + avatar, cached ----
+  const profileCache = new Map<string, { name?: string; picture?: string }>();
+  function seedSelf(session: NostrSession | null) {
+    if (session?.pubkey) profileCache.set(session.pubkey, { name: session.name, picture: session.picture });
+  }
+  async function fetchProfiles(pubkeys: string[]) {
+    const missing = [...new Set(pubkeys)].filter((pk) => pk && !profileCache.has(pk));
+    if (!missing.length) return;
+    const evs = await fetchAll({ kinds: [0], authors: missing });
+    const newest = new Map<string, NostrEvent>();
+    for (const ev of evs) {
+      const ex = newest.get(ev.pubkey);
+      if (!ex || ev.created_at > ex.created_at) newest.set(ev.pubkey, ev);
+    }
+    for (const pk of missing) {
+      let prof: any = {};
+      const ev = newest.get(pk);
+      if (ev) { try { prof = JSON.parse(ev.content); } catch {} }
+      profileCache.set(pk, { name: prof.display_name || prof.name, picture: prof.picture });
+    }
+  }
+  function authorHtml(pubkey: string): string {
+    const p = profileCache.get(pubkey) || {};
+    const name = p.name || shortId(pubkey);
+    const initial = esc((name || '?').charAt(0).toUpperCase());
+    const safePic = sanitizeUrl(p.picture || '');
+    const avatar = safePic
+      ? `<img src="${esc(safePic)}" alt="" referrerpolicy="no-referrer" class="w-6 h-6 rounded-full object-cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><span class="w-6 h-6 rounded-full bg-pink/10 text-pink text-[10px] font-bold items-center justify-center hidden">${initial}</span>`
+      : `<span class="w-6 h-6 rounded-full bg-pink/10 text-pink text-[10px] font-bold flex items-center justify-center">${initial}</span>`;
+    return `<span class="inline-flex items-center gap-1.5">${avatar}<span class="text-xs font-medium text-gray-700 truncate max-w-[160px]">${esc(name)}</span></span>`;
+  }
+
+  // Delete (trash) control — only rendered on the signed-in user's own posts.
+  let selfPubkey = getSession()?.pubkey || '';
+  const deletedIds = new Set<string>();
+  function deleteBtn(id: string, kind: number, pubkey: string): string {
+    if (!selfPubkey || pubkey !== selfPubkey) return '';
+    return `<button type="button" class="post-delete text-gray-300 hover:text-red-500 transition" data-id="${esc(id)}" data-kind="${kind}" title="Delete" aria-label="Delete">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+    </button>`;
+  }
+
+  // Optimistically-kept posts so a fresh submit shows before relays index it.
+  const extraReviews = new Map<string, NostrEvent>(); // keyed by author pubkey
+  const extraComments = new Map<string, NostrEvent>(); // keyed by event id
+
+  // ---- Reviews (kind 31555) ----
+  async function loadReviews() {
+    const evs = (await fetchAll({ kinds: [31555], '#d': [reviewCoord] })).filter(
+      (ev) => !deletedIds.has(ev.id || ''),
+    );
+    for (const ev of extraReviews.values()) if (!deletedIds.has(ev.id || '')) evs.push(ev);
+    const byAuthor = new Map<string, NostrEvent>();
+    for (const ev of evs) {
+      const ex = byAuthor.get(ev.pubkey);
+      if (!ex || ev.created_at > ex.created_at) byAuthor.set(ev.pubkey, ev);
+    }
+    const reviews = [...byAuthor.values()]
+      .map((ev) => {
+        const rt = ev.tags.find((t) => t[0] === 'rating');
+        return {
+          id: ev.id || '',
+          pubkey: ev.pubkey,
+          // Gamma rating is 0..1, but this coordinate is shared with any client,
+          // so clamp to 0..5 stars — a stray `rating=5` can't render 25 stars or
+          // pin the aggregate average.
+          stars: Math.max(0, Math.min(5, Math.round((rt ? parseFloat(rt[1]) : 0) * 5))),
+          text: ev.content || '',
+          createdAt: ev.created_at || 0,
+        };
+      })
+      .sort((a, b) => b.createdAt - a.createdAt);
+
+    const aggEl = document.getElementById('reviews-aggregate')!;
+    if (reviews.length) {
+      const avg = reviews.reduce((s, r) => s + r.stars, 0) / reviews.length;
+      aggEl.innerHTML = `${starRow(avg)} <span class="ml-1 font-semibold text-gray-700">${avg.toFixed(1)}</span> <span class="text-gray-400">(${reviews.length})</span>`;
+    } else {
+      aggEl.textContent = '';
+    }
+
+    const listEl = document.getElementById('reviews-list')!;
+    const emptyEl = document.getElementById('reviews-empty')!;
+    if (!reviews.length) {
+      emptyEl.classList.remove('hidden');
+      listEl.innerHTML = '';
+      return;
+    }
+    await fetchProfiles(reviews.map((r) => r.pubkey));
+    emptyEl.classList.add('hidden');
+    listEl.innerHTML = reviews
+      .map(
+        (r) => `
+      <div class="rounded-xl border border-gray-200 bg-white p-4">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          ${authorHtml(r.pubkey)}
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">${esc(fmtDate(r.createdAt))}</span>
+            ${deleteBtn(r.id, 31555, r.pubkey)}
+          </div>
+        </div>
+        <div class="text-sm mb-1">${starRow(r.stars)}</div>
+        ${r.text ? `<p class="text-sm text-gray-700 whitespace-pre-wrap">${esc(r.text)}</p>` : ''}
+      </div>`,
+      )
+      .join('');
+  }
+
+  // ---- Comments (kind 1111, NIP-22) ----
+  async function loadComments() {
+    const evs = await fetchAll({ kinds: [1111], '#a': [commentCoord] });
+    for (const ev of extraComments.values()) evs.push(ev);
+    const seen = new Set<string>();
+    const comments = evs
+      .filter((ev) =>
+        ev.id && !seen.has(ev.id) && !deletedIds.has(ev.id) ? (seen.add(ev.id), true) : false,
+      )
+      .sort((a, b) => b.created_at - a.created_at);
+
+    const listEl = document.getElementById('comments-list')!;
+    const emptyEl = document.getElementById('comments-empty')!;
+    if (!comments.length) {
+      emptyEl.classList.remove('hidden');
+      listEl.innerHTML = '';
+      return;
+    }
+    await fetchProfiles(comments.map((c) => c.pubkey));
+    emptyEl.classList.add('hidden');
+    listEl.innerHTML = comments
+      .map(
+        (c) => `
+      <div class="rounded-xl border border-gray-200 bg-white p-4">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          ${authorHtml(c.pubkey)}
+          <div class="flex items-center gap-2">
+            <span class="text-xs text-gray-400">${esc(fmtDate(c.created_at))}</span>
+            ${deleteBtn(c.id, 1111, c.pubkey)}
+          </div>
+        </div>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap">${esc(c.content)}</p>
+      </div>`,
+      )
+      .join('');
+  }
+
+  // ---- Auth-aware forms ----
+  function renderAuth(session: NostrSession | null) {
+    document.querySelectorAll('.signin-gate').forEach((el) =>
+      el.classList.toggle('hidden', !!session),
+    );
+    document.querySelectorAll('.signin-form').forEach((el) =>
+      el.classList.toggle('hidden', !session),
+    );
+  }
+  document.querySelectorAll('.connect-btn').forEach((btn) =>
+    btn.addEventListener('click', () => openLogin()),
+  );
+  window.addEventListener('nostr:auth', (e) => {
+    const s = (e as CustomEvent).detail as NostrSession | null;
+    selfPubkey = s?.pubkey || '';
+    seedSelf(s);
+    renderAuth(s);
+    // Re-render so the delete controls appear/disappear for the current user.
+    loadReviews();
+    loadComments();
+  });
+
+  // Delete your own post — publishes a NIP-09 deletion (kind 5).
+  document.addEventListener('click', async (e) => {
+    const btn = (e.target as HTMLElement)?.closest?.('.post-delete') as HTMLButtonElement | null;
+    if (!btn) return;
+    const session = getSession();
+    if (!session) {
+      openLogin();
+      return;
+    }
+    const id = btn.dataset.id || '';
+    const kind = Number(btn.dataset.kind);
+    if (!id || !confirm('Delete this post? This can’t be undone.')) return;
+    btn.disabled = true;
+    try {
+      const del = await signEvent({
+        kind: 5,
+        created_at: Math.floor(Date.now() / 1000),
+        pubkey: session.pubkey,
+        tags: [['e', id], ['k', String(kind)]],
+        content: '',
+      });
+      await publish(del);
+      deletedIds.add(id);
+      extraComments.delete(id);
+      for (const [pk, ev] of extraReviews) if (ev.id === id) extraReviews.delete(pk);
+      if (kind === 1111) await loadComments();
+      else await loadReviews();
+    } catch {
+      btn.disabled = false;
+    }
+  });
+
+  // ---- Review submit ----
+  let selectedStars = 0;
+  const stars = Array.from(document.querySelectorAll('#star-input .star')) as HTMLElement[];
+  const paint = (val: number) =>
+    stars.forEach((s) => {
+      const v = Number(s.dataset.value);
+      s.classList.toggle('text-yellow-500', v <= val);
+      s.classList.toggle('text-gray-300', v > val);
+    });
+  stars.forEach((s) => {
+    s.addEventListener('mouseenter', () => paint(Number(s.dataset.value)));
+    s.addEventListener('mouseleave', () => paint(selectedStars));
+    s.addEventListener('click', () => {
+      selectedStars = Number(s.dataset.value);
+      paint(selectedStars);
+    });
+  });
+  document.getElementById('review-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const statusEl = document.getElementById('review-status')!;
+    const text = (document.getElementById('review-text') as HTMLTextAreaElement).value.trim();
+    if (!selectedStars) {
+      statusEl.textContent = 'Pick a star rating first.';
+      return;
+    }
+    const rSession = getSession();
+    if (!rSession) {
+      statusEl.textContent = 'Sign in to post your review.';
+      openLogin();
+      return;
+    }
+    statusEl.textContent = 'Signing…';
+    try {
+      const pubkey = rSession.pubkey;
+      const signed = await signEvent({
+        kind: 31555,
+        created_at: Math.floor(Date.now() / 1000),
+        pubkey,
+        tags: [
+          ['d', reviewCoord],
+          ['rating', (selectedStars / 5).toFixed(2), 'thumb'],
+          ['p', productPubkey],
+        ],
+        content: text,
+      });
+      statusEl.textContent = 'Publishing…';
+      await publish(signed);
+      extraReviews.set(signed.pubkey, signed); // show immediately, before relays index it
+      seedSelf(rSession);
+      statusEl.textContent = 'Thanks — your review is live!';
+      (document.getElementById('review-text') as HTMLTextAreaElement).value = '';
+      selectedStars = 0;
+      paint(0);
+      await loadReviews();
+    } catch {
+      statusEl.textContent = 'Could not publish — please try again.';
+    }
+  });
+
+  // ---- Comment submit ----
+  document.getElementById('comment-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const statusEl = document.getElementById('comment-status')!;
+    const text = (document.getElementById('comment-text') as HTMLTextAreaElement).value.trim();
+    if (!text) {
+      statusEl.textContent = 'Write something first.';
+      return;
+    }
+    const cSession = getSession();
+    if (!cSession) {
+      statusEl.textContent = 'Sign in to comment.';
+      openLogin();
+      return;
+    }
+    statusEl.textContent = 'Signing…';
+    try {
+      const pubkey = cSession.pubkey;
+      const signed = await signEvent({
+        kind: 1111,
+        created_at: Math.floor(Date.now() / 1000),
+        pubkey,
+        tags: [
+          // Root scope = the product (NIP-22 uppercase), and same as parent for a
+          // top-level comment (lowercase).
+          ['A', commentCoord],
+          ['K', productKind],
+          ['P', productPubkey],
+          ['a', commentCoord],
+          ['k', productKind],
+          ['p', productPubkey],
+        ],
+        content: text,
+      });
+      statusEl.textContent = 'Publishing…';
+      await publish(signed);
+      extraComments.set(signed.id, signed); // show immediately, before relays index it
+      seedSelf(cSession);
+      statusEl.textContent = 'Posted!';
+      (document.getElementById('comment-text') as HTMLTextAreaElement).value = '';
+      await loadComments();
+    } catch {
+      statusEl.textContent = 'Could not post — please try again.';
+    }
+  });
+
+  // ---- Loading skeletons (shown until the first relay results arrive) ----
+  function skeletonCards(n: number): string {
+    const card = `
+      <div class="rounded-xl border border-gray-200 bg-white p-4 animate-pulse">
+        <div class="flex items-center justify-between gap-2 mb-3">
+          <div class="flex items-center gap-1.5">
+            <div class="w-6 h-6 rounded-full bg-gray-200"></div>
+            <div class="h-3 w-24 bg-gray-200 rounded"></div>
+          </div>
+          <div class="h-3 w-16 bg-gray-100 rounded"></div>
+        </div>
+        <div class="h-3 w-full bg-gray-100 rounded mb-2"></div>
+        <div class="h-3 w-2/3 bg-gray-100 rounded"></div>
+      </div>`;
+    return card.repeat(n);
+  }
+
+  // ---- Init ----
+  const initSession = getSession();
+  seedSelf(initSession);
+  renderAuth(initSession);
+  document.getElementById('reviews-list')!.innerHTML = skeletonCards(2);
+  document.getElementById('comments-list')!.innerHTML = skeletonCards(2);
+  document.getElementById('reviews-aggregate')!.innerHTML =
+    '<span class="inline-block h-4 w-28 bg-gray-100 rounded animate-pulse align-middle"></span>';
+  loadReviews();
+  loadComments();
+</script>

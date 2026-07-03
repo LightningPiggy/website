@@ -1,0 +1,401 @@
+---
+// NostrChat.astro
+// Site-wide "message the team" chat, modelled on the robotechy MessagesDrawer:
+// the header envelope icon (Header.astro's #hdr-chat / #hdr-chat-m) dispatches
+// `nostr:open-chat`, which slides open this right-hand panel where visitors DM
+// the Lightning Piggy team over Nostr (NIP-17 gift-wrapped kind-14 messages —
+// see src/lib/nostrChat.ts).
+//
+//   • Signed in (extension or nsec) — messages are sent under the user's
+//     identity and the panel shows the full thread: their sent messages (via a
+//     self-addressed wrap copy) plus the team's replies, polled every 15s
+//     while the panel is open.
+//   • Signed out — a prompt to sign in (dispatches `nostr:open-login`), or a
+//     one-way guest message from a throwaway key (no replies possible).
+//
+// Mounted once globally in BaseLayout.astro. The recipient defaults to the
+// project npub (PROJECT_NPUB) and can be overridden via the root element's
+// `data-recipient` attribute (npub or hex) — used by the E2E test so it never
+// DMs the real team.
+import { PROJECT_NPUB } from '../../lib/nostrChat';
+---
+
+<div id="nostr-chat" data-recipient={PROJECT_NPUB}>
+  <!-- Slide-over panel: full-width sheet on mobile, 380px drawer on desktop.
+       Opened by the header envelope icon via the `nostr:open-chat` event. -->
+  <!-- While closed the panel is `inert` + aria-hidden, keeping its controls out
+       of the tab order and away from assistive tech; both toggle on open. -->
+  <div
+    id="nostr-chat-panel"
+    role="dialog"
+    aria-modal="false"
+    aria-labelledby="nc-title"
+    aria-hidden="true"
+    inert
+    class="fixed inset-y-0 right-0 z-50 w-full sm:w-[380px] bg-white shadow-2xl border-l border-gray-200 hidden flex-col translate-x-full transition-transform duration-300 ease-in-out"
+  >
+    <!-- Header -->
+    <div class="flex items-start gap-3 p-4 border-b border-gray-100 bg-pink/5">
+      <span class="w-10 h-10 rounded-full bg-pink text-white flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect width="20" height="16" x="2" y="4" rx="2"/>
+          <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+        </svg>
+      </span>
+      <div class="flex-1 min-w-0">
+        <h2 id="nc-title" class="font-bold text-gray-900 leading-tight">Message the Piggy team</h2>
+        <p class="text-xs text-gray-500 mt-0.5">Private, end-to-end encrypted DMs over Nostr</p>
+      </div>
+      <button id="nc-close" type="button" aria-label="Close chat" class="text-gray-400 hover:text-gray-700 transition-colors p-1 -m-1">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Signed-out view: sign in, or send a one-way guest message -->
+    <div id="nc-guest" class="flex-1 min-h-0 flex flex-col overflow-y-auto">
+      <div class="p-5 text-center border-b border-gray-100">
+        <svg class="w-10 h-10 mx-auto mb-2 text-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+        <h3 class="font-semibold text-gray-900">Sign in to chat</h3>
+        <p class="text-sm text-gray-500 mt-1 mb-3">Chat under your Nostr identity and see the team's replies right here.</p>
+        <button id="nc-signin" type="button" class="px-6 py-2.5 rounded-full bg-pink text-white font-semibold hover:bg-pink/90 transition">Sign in with Nostr</button>
+      </div>
+      <div class="p-5">
+        <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">Or send a quick message as a guest</p>
+        <div class="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-3">
+          <svg class="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          <span>Guest messages are one-way — we can't reply over Nostr. Include an email or npub if you'd like a reply.</span>
+        </div>
+        <div id="nc-guest-sent" class="space-y-2 mb-3"></div>
+        <textarea id="nc-guest-text" rows="3" placeholder="Hi Piggy team…" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none resize-none"></textarea>
+        <p id="nc-guest-err" class="hidden text-sm text-red-500 mt-1"></p>
+        <button id="nc-guest-send" type="button" class="w-full mt-2 py-2.5 rounded-full bg-pink text-white font-semibold hover:bg-pink/90 transition disabled:opacity-60">Send message</button>
+      </div>
+    </div>
+
+    <!-- Signed-in view: thread + composer -->
+    <div id="nc-chat" class="hidden flex-1 min-h-0 flex-col">
+      <div id="nc-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3" aria-live="polite"></div>
+      <p id="nc-status" class="hidden text-xs text-gray-400 text-center px-4 pb-2"></p>
+      <div class="p-3 border-t border-gray-100">
+        <div class="flex items-end gap-2">
+          <textarea id="nc-text" rows="2" placeholder="Type a message… (Enter to send)" class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-pink focus:ring-1 focus:ring-pink outline-none resize-none"></textarea>
+          <button id="nc-send" type="button" aria-label="Send message" class="w-11 h-11 rounded-full bg-pink text-white flex items-center justify-center flex-shrink-0 hover:bg-pink/90 transition disabled:opacity-60">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>
+          </button>
+        </div>
+        <p id="nc-err" class="hidden text-sm text-red-500 mt-1.5"></p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  import { getSession } from '../../lib/nostrAuth';
+  import { sendGiftWrappedDM, makeGuestKey } from '../../lib/nostrOrder';
+  import {
+    toHexPubkey,
+    fetchWraps,
+    wrapsToThread,
+    sendSelfCopy,
+    WRAP_TS_SLACK,
+    type ChatMessage,
+  } from '../../lib/nostrChat';
+  import type { NostrEvent } from '../../lib/market';
+
+  const root = document.getElementById('nostr-chat')!;
+  const panel = document.getElementById('nostr-chat-panel')!;
+  const closeBtn = document.getElementById('nc-close')!;
+  const guestView = document.getElementById('nc-guest')!;
+  const chatView = document.getElementById('nc-chat')!;
+  const signinBtn = document.getElementById('nc-signin')!;
+  const guestText = document.getElementById('nc-guest-text') as HTMLTextAreaElement;
+  const guestSend = document.getElementById('nc-guest-send') as HTMLButtonElement;
+  const guestErr = document.getElementById('nc-guest-err')!;
+  const guestSent = document.getElementById('nc-guest-sent')!;
+  const messagesEl = document.getElementById('nc-messages')!;
+  const statusEl = document.getElementById('nc-status')!;
+  const textEl = document.getElementById('nc-text') as HTMLTextAreaElement;
+  const sendBtn = document.getElementById('nc-send') as HTMLButtonElement;
+  const errEl = document.getElementById('nc-err')!;
+
+  // The recipient is re-read on every use so the E2E test can retarget the
+  // panel by setting data-recipient (npub or hex) at any point before sending.
+  const recipientHex = () => toHexPubkey(root.dataset.recipient || '');
+
+  let isOpen = false;
+  let pollTimer: number | undefined;
+  let loading = false;
+  // One guest key per panel session, so multiple guest messages arrive from
+  // the same (throwaway) sender and the team can read them as one thread.
+  let guestSk: Uint8Array | null = null;
+  const decryptCache = new Map<string, NostrEvent | null>();
+  let thread: ChatMessage[] = [];
+  // Local echoes of messages already delivered to the team (wrapId ''), shown
+  // with a "syncing" hint until the self copy is fetched back from the relays
+  // and replaces them (or indefinitely if no relay kept the self copy — the
+  // message itself was still delivered).
+  let pending: ChatMessage[] = [];
+
+  function setStatus(msg: string) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle('hidden', !msg);
+  }
+  function setErr(el: HTMLElement, msg: string) {
+    el.textContent = msg;
+    el.classList.toggle('hidden', !msg);
+  }
+
+  const timeFmt = new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' });
+  const dateFmt = new Intl.DateTimeFormat(undefined, { day: 'numeric', month: 'short' });
+  function stamp(ts: number): string {
+    if (!ts) return '';
+    const d = new Date(ts * 1000);
+    const sameDay = new Date().toDateString() === d.toDateString();
+    return sameDay ? timeFmt.format(d) : `${dateFmt.format(d)} ${timeFmt.format(d)}`;
+  }
+
+  // Bubbles are built with createElement + textContent, so relay-supplied
+  // message content is never interpreted as HTML.
+  function bubble(m: ChatMessage): HTMLElement {
+    const row = document.createElement('div');
+    row.className = 'flex ' + (m.mine ? 'justify-end' : 'justify-start');
+    const b = document.createElement('div');
+    b.className =
+      'max-w-[80%] rounded-2xl px-3.5 py-2 text-sm whitespace-pre-wrap break-words ' +
+      (m.mine ? 'bg-pink text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm');
+    const txt = document.createElement('p');
+    txt.textContent = m.text;
+    const time = document.createElement('p');
+    time.className = 'text-[10px] mt-1 text-right ' + (m.mine ? 'text-white/70' : 'text-gray-400');
+    // An empty wrapId marks a local echo: already SENT to the team (the send
+    // awaited), just not yet confirmed back from the relays via the self copy.
+    time.textContent = m.wrapId ? stamp(m.ts) : `${stamp(m.ts)} · syncing`;
+    b.appendChild(txt);
+    b.appendChild(time);
+    row.appendChild(b);
+    return row;
+  }
+
+  function renderThread() {
+    messagesEl.replaceChildren();
+    // Drop each local echo once its confirmed (self-copy) message shows up.
+    // A confirmed message consumes at most ONE pending entry, so sending the
+    // same text twice keeps both bubbles until both copies are fetched back.
+    const unclaimed = thread.filter((m) => m.mine);
+    pending = pending.filter((p) => {
+      const i = unclaimed.findIndex((m) => m.text === p.text && m.ts >= p.ts - 60);
+      if (i === -1) return true;
+      unclaimed.splice(i, 1);
+      return false;
+    });
+    const all = [...thread, ...pending].sort((a, b) => a.ts - b.ts);
+    if (!all.length) {
+      const empty = document.createElement('p');
+      empty.className = 'text-sm text-gray-400 text-center pt-8';
+      empty.textContent = 'No messages yet — say hi! 🐷';
+      messagesEl.appendChild(empty);
+      return;
+    }
+    for (const m of all) messagesEl.appendChild(bubble(m));
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function guestBubble(text: string) {
+    const b = document.createElement('div');
+    b.className = 'ml-6 rounded-2xl rounded-br-sm bg-pink text-white px-3.5 py-2 text-sm whitespace-pre-wrap break-words';
+    b.textContent = text;
+    guestSent.appendChild(b);
+  }
+
+  // ---- Loading / polling (signed-in only) ----
+  async function loadThread() {
+    const session = getSession();
+    const peer = recipientHex();
+    if (!session || !peer || loading) return;
+    loading = true;
+    try {
+      const newest = thread.length ? thread[thread.length - 1].ts : 0;
+      // First load: last 30 days. Refresh: since the newest known message,
+      // minus the NIP-59 slack (wrap timestamps are randomised up to 2 days
+      // into the past). Already-decrypted wraps hit the cache.
+      const since = newest
+        ? newest - WRAP_TS_SLACK
+        : Math.floor(Date.now() / 1000) - 30 * 86400;
+      const wraps = await fetchWraps(session.pubkey, since);
+      const fresh = await wrapsToThread(wraps, session, peer, decryptCache);
+      if (fresh.length || !newest) {
+        // Merge (poll queries overlap the old window by design).
+        const byId = new Map(thread.map((m) => [m.id, m]));
+        for (const m of fresh) byId.set(m.id, m);
+        thread = [...byId.values()].sort((a, b) => a.ts - b.ts);
+      }
+      renderThread();
+      setStatus('');
+    } catch (e: any) {
+      setStatus(
+        e?.message === 'no-nip44'
+          ? "Your Nostr extension doesn't support NIP-44 decryption, so past messages can't be shown."
+          : 'Could not load messages from the relays.',
+      );
+    } finally {
+      loading = false;
+    }
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = window.setInterval(() => {
+      if (isOpen && getSession()) loadThread();
+    }, 15000);
+  }
+  function stopPolling() {
+    if (pollTimer) {
+      clearInterval(pollTimer);
+      pollTimer = undefined;
+    }
+  }
+
+  // ---- Views / open / close ----
+  function renderMode() {
+    const signedIn = !!getSession();
+    guestView.classList.toggle('hidden', signedIn);
+    chatView.classList.toggle('hidden', !signedIn);
+    chatView.classList.toggle('flex', signedIn);
+  }
+
+  function openPanel() {
+    isOpen = true;
+    // Un-hide first (display:none while closed keeps the off-screen panel from
+    // widening the page's scroll area), then start the slide-in on the next
+    // frames so the transition actually runs.
+    panel.classList.remove('hidden');
+    panel.classList.add('flex');
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => panel.classList.remove('translate-x-full')),
+    );
+    panel.removeAttribute('inert');
+    panel.setAttribute('aria-hidden', 'false');
+    renderMode();
+    if (getSession()) {
+      if (!thread.length) {
+        setStatus('Loading your conversation…');
+        renderThread();
+      }
+      loadThread();
+      startPolling();
+      textEl.focus();
+    }
+  }
+  function closePanel() {
+    isOpen = false;
+    // Move focus off the panel before hiding it, so aria-hidden/inert never
+    // land on an element that still contains the focused node.
+    if (panel.contains(document.activeElement)) (document.activeElement as HTMLElement | null)?.blur?.();
+    panel.classList.add('translate-x-full');
+    panel.setAttribute('inert', '');
+    panel.setAttribute('aria-hidden', 'true');
+    stopPolling();
+    // After the slide-out finishes, remove it from layout entirely (see open).
+    window.setTimeout(() => {
+      if (!isOpen) {
+        panel.classList.add('hidden');
+        panel.classList.remove('flex');
+      }
+    }, 320);
+  }
+
+  // Opened from the header envelope (desktop icon or mobile menu entry).
+  window.addEventListener('nostr:open-chat', openPanel);
+  closeBtn.addEventListener('click', closePanel);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isOpen) closePanel();
+  });
+  signinBtn.addEventListener('click', () => window.dispatchEvent(new CustomEvent('nostr:open-login')));
+
+  // React to sign-in/out while the panel is open; a new identity means a new thread.
+  window.addEventListener('nostr:auth', () => {
+    thread = [];
+    pending = [];
+    decryptCache.clear();
+    renderMode();
+    if (isOpen && getSession()) {
+      setStatus('Loading your conversation…');
+      renderThread();
+      loadThread();
+      startPolling();
+    } else {
+      stopPolling();
+    }
+  });
+
+  // ---- Sending ----
+  async function sendSignedIn() {
+    const text = textEl.value.trim();
+    const peer = recipientHex();
+    if (!text || !peer || !getSession()) return;
+    setErr(errEl, '');
+    sendBtn.disabled = true;
+    textEl.disabled = true;
+    try {
+      // Recipient copy + self copy (so the sent side is fetchable later).
+      await sendGiftWrappedDM(peer, text);
+      sendSelfCopy(peer, text).catch(() => {});
+      // Local echo — wrapId '' marks it as not-yet-confirmed (see bubble()).
+      pending.push({
+        id: 'local:' + Date.now() + Math.random().toString(36).slice(2),
+        wrapId: '',
+        from: getSession()!.pubkey,
+        text,
+        ts: Math.floor(Date.now() / 1000),
+        mine: true,
+      });
+      textEl.value = '';
+      renderThread();
+    } catch (e: any) {
+      setErr(
+        errEl,
+        e?.message === 'no-nip44'
+          ? 'Your Nostr extension needs NIP-44 support to send private messages.'
+          : 'Could not send — please try again.',
+      );
+    } finally {
+      sendBtn.disabled = false;
+      textEl.disabled = false;
+      textEl.focus();
+    }
+  }
+  sendBtn.addEventListener('click', sendSignedIn);
+  textEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      sendSignedIn();
+    }
+  });
+
+  guestSend.addEventListener('click', async () => {
+    const text = guestText.value.trim();
+    const peer = recipientHex();
+    if (!text || !peer) return;
+    setErr(guestErr, '');
+    guestSend.disabled = true;
+    guestSend.textContent = 'Sending…';
+    try {
+      if (!guestSk) guestSk = await makeGuestKey();
+      await sendGiftWrappedDM(peer, text, guestSk);
+      guestBubble(text);
+      guestText.value = '';
+      guestSend.textContent = 'Sent! Send another';
+    } catch {
+      setErr(guestErr, 'Could not send — please try again.');
+      guestSend.textContent = 'Send message';
+    } finally {
+      guestSend.disabled = false;
+    }
+  });
+  guestText.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      guestSend.click();
+    }
+  });
+</script>

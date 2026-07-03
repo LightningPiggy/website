@@ -19,6 +19,7 @@ import {
   buildShopProducts,
   shopCardHtml,
   productsJsonLd,
+  shopsFromVendors,
   type Shop,
 } from '../../lib/market';
 import { fetchMarketEvents } from '../../lib/marketServer';
@@ -35,31 +36,26 @@ interface Props {
 }
 const { vendors } = Astro.props;
 
-// Shape just what the client script needs, and pull the npub out of nostrUrl.
-const shops: Shop[] = vendors
-  .filter((v) => v.products && v.nostrUrl)
-  .map((v) => ({
-    name: v.name,
-    storeUrl: v.url || '',
-    logo: v.logo || '',
-    npub: (v.nostrUrl!.match(/npub1[0-9a-z]+/) || [])[0] || '',
-    mode: v.products!.mode || 'curated',
-    include: v.products!.include || [],
-    keywords: v.products!.keywords || [],
-  }))
-  .filter((s) => s.npub);
+// Shape just what the client script needs (npub pulled from nostrUrl, store URL
+// from `url`). Shared with the product detail pages via shopsFromVendors — this
+// supersedes the inline mapping from #12 (same behaviour, one source of truth).
+const shops: Shop[] = shopsFromVendors(vendors);
 
 // ---- Build-time prerender ----
 const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];
-const events = await fetchMarketEvents(authors, [30402, 30018]);
+const events = await fetchMarketEvents(authors, [30402, 30018, 5]);
 const products = buildShopProducts(events, shops);
 const prerenderHtml = products.map(shopCardHtml).join('');
 const hasPrerender = products.length > 0;
+// The slugs that got a static /market/p/<slug> page this build. Handed to the
+// client so its live refresh only links internally to pages that exist — a
+// product published after this build links to the vendor store, not a 404.
+const validSlugs = products.map((p) => p.slug);
 const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.site).href) : '';
 ---
 
 {shops.length > 0 && (
-  <div id="nostr-shop" class="not-prose" data-shops={JSON.stringify(shops)}>
+  <div id="nostr-shop" class="not-prose" data-shops={JSON.stringify(shops)} data-valid-slugs={JSON.stringify(validSlugs)}>
     <!-- Loading (only shown when there's no prerendered snapshot) -->
     <div id="shop-loading" class={`text-center py-10 ${hasPrerender ? 'hidden' : ''}`}>
       <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-pink border-t-transparent"></div>
@@ -117,7 +113,7 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
         return;
       }
       const sub = Math.random().toString(36).slice(2, 10);
-      ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, { kinds: [30402, 30018], authors }]));
+      ws.onopen = () => ws!.send(JSON.stringify(['REQ', sub, { kinds: [30402, 30018, 5], authors }]));
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);
@@ -128,6 +124,21 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
       ws.onerror = () => finish();
     });
   }
+
+  // --- Merchant filter (driven by MerchantFilter via the `market:filter` event) ---
+  let activeVendor = '';
+  function applyMarketFilter() {
+    const grid = document.getElementById('shop-grid');
+    if (!grid) return;
+    Array.from(grid.children).forEach((card) => {
+      const el = card as HTMLElement;
+      el.style.display = !activeVendor || el.dataset.vendor === activeVendor ? '' : 'none';
+    });
+  }
+  window.addEventListener('market:filter', (e) => {
+    activeVendor = ((e as CustomEvent).detail as string) || '';
+    applyMarketFilter();
+  });
 
   async function init() {
     const root = document.getElementById('nostr-shop');
@@ -140,6 +151,11 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
     try {
       shops = JSON.parse(root.dataset.shops || '[]');
     } catch {}
+    // Slugs with a static page this build; new products not in it link external.
+    let validSlugs: Set<string> | null = null;
+    try {
+      validSlugs = new Set(JSON.parse(root.dataset.validSlugs || '[]'));
+    } catch {}
     const authors = [...new Set(shops.map((s) => npubToHex(s.npub)).filter(Boolean))];
     if (authors.length === 0) {
       loadingEl?.classList.add('hidden');
@@ -149,7 +165,7 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
     }
 
     const results = await Promise.all(RELAYS.map((r) => fetchFromRelay(r, authors)));
-    const products = buildShopProducts(results.flat(), shops);
+    const products = buildShopProducts(results.flat(), shops, validSlugs);
 
     loadingEl?.classList.add('hidden');
     if (products.length === 0) {
@@ -161,6 +177,7 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
     if (gridEl) {
       gridEl.innerHTML = products.map(shopCardHtml).join('');
       gridEl.classList.remove('hidden');
+      applyMarketFilter(); // preserve any active filter across the live refresh
     }
   }
 

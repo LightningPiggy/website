@@ -1,0 +1,84 @@
+---
+// MerchantFilter.astro
+// Dropdown to filter the "Shop the Market" grid by merchant. Each option shows
+// the merchant's profile image. Selecting one dispatches a `market:filter` event
+// (with the vendor name, or '' for all) that NostrShop listens for to show/hide
+// product cards by their data-vendor.
+
+interface Props {
+  merchants: { name: string; logo: string }[];
+}
+const { merchants } = Astro.props;
+---
+
+<div id="merchant-filter" class="relative flex-shrink-0">
+  <button
+    id="mf-btn"
+    type="button"
+    aria-haspopup="listbox"
+    class="inline-flex items-center gap-2 rounded-full border border-gray-300 bg-white pl-2 pr-3 py-1.5 text-sm font-medium text-gray-700 hover:border-pink transition"
+  >
+    <span id="mf-avatar" class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0 text-gray-400">★</span>
+    <span id="mf-label">All merchants</span>
+    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+  </button>
+
+  <div id="mf-menu" role="listbox" class="hidden absolute right-0 mt-2 w-56 max-h-72 overflow-y-auto bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-30">
+    <button type="button" class="mf-option flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-50" data-vendor="" data-logo="">
+      <span class="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 flex-shrink-0">★</span>
+      All merchants
+    </button>
+    {merchants.map((m) => (
+      <button type="button" class="mf-option flex items-center gap-2.5 w-full px-3 py-2 text-sm text-left text-gray-700 hover:bg-gray-50" data-vendor={m.name} data-logo={m.logo}>
+        <span class="w-6 h-6 rounded-full overflow-hidden bg-pink/10 flex items-center justify-center flex-shrink-0">
+          {m.logo ? (
+            <img src={m.logo} alt={m.name} referrerpolicy="no-referrer" class="w-full h-full object-cover" />
+          ) : (
+            <span class="text-pink text-xs font-bold">{(m.name || '?').charAt(0).toUpperCase()}</span>
+          )}
+        </span>
+        <span class="truncate">{m.name}</span>
+      </button>
+    ))}
+  </div>
+</div>
+
+<script>
+  const btn = document.getElementById('mf-btn');
+  const menu = document.getElementById('mf-menu');
+  const label = document.getElementById('mf-label');
+  const avatar = document.getElementById('mf-avatar');
+
+  btn?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    menu?.classList.toggle('hidden');
+  });
+  document.addEventListener('click', () => menu?.classList.add('hidden'));
+
+  document.querySelectorAll('.mf-option').forEach((opt) =>
+    opt.addEventListener('click', () => {
+      const el = opt as HTMLElement;
+      const vendor = el.dataset.vendor || '';
+      const logo = el.dataset.logo || '';
+      if (label) label.textContent = vendor || 'All merchants';
+      if (avatar) {
+        if (vendor && logo) {
+          // Build via DOM (not an HTML string) so the URL can't break out of the
+          // attribute — defence in depth even though logos come from vendors.json.
+          const img = document.createElement('img');
+          img.src = logo;
+          img.alt = '';
+          img.referrerPolicy = 'no-referrer';
+          img.className = 'w-full h-full object-cover';
+          avatar.replaceChildren(img);
+        } else if (vendor) {
+          avatar.textContent = vendor.charAt(0).toUpperCase();
+        } else {
+          avatar.textContent = '★';
+        }
+      }
+      menu?.classList.add('hidden');
+      window.dispatchEvent(new CustomEvent('market:filter', { detail: vendor }));
+    }),
+  );
+</script>

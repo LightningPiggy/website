@@ -34,6 +34,16 @@
   status = 200
   force = true
 
+# Treasure detail pages are keyed by a Nostr `naddr` in the path
+# (/treasure/naddr1…), resolved client-side. There is no per-cache build
+# output, so rewrite every /treasure/* URL to the single static page, which
+# reads the naddr from the path. No `force` - real files (the page's own
+# assets) are still served directly.
+[[redirects]]
+  from = "/treasure/*"
+  to = "/treasure/index.html"
+  status = 200
+
 # Subdomain: pos.lightningpiggy.com → /pos page
 [[redirects]]
   from = "https://pos.lightningpiggy.com/*"

@@ -14,8 +14,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     output.
   -->
   <style is:global>
-    /* Two-column on desktop (map + card left, details/share sidebar right),
-       single column on mobile. The find log spans the full width below both. */
+    /* Two-column on desktop (map + card + find log on the left, details/share
+       sidebar on the right), single column on mobile. */
     .pg-detail-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -27,9 +27,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         align-items: start;
         column-gap: 24px;
       }
-      .pg-detail-findlog {
-        grid-column: 1 / -1;
-      }
+    }
+    /* Left column stacks the main card and the find-log card. */
+    .pg-detail-left {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
     }
     .pg-detail-main,
     .pg-detail-findlog,
@@ -50,6 +54,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
     .pg-side-card {
       padding: 16px;
+    }
+
+    /* Share-to-Nostr modal dialog */
+    .pg-share-dialog {
+      width: 92vw;
+      max-width: 480px;
+      border: none;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+    .pg-share-dialog::backdrop {
+      background: rgba(17, 24, 39, 0.55);
     }
   </style>
 
@@ -84,6 +101,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <div id="treasure-content" class="hidden mt-4"></div>
   </div>
 
+  <!-- Modals, populated + opened from the detail page's buttons. -->
+  <dialog id="pg-share-dialog" class="pg-share-dialog"></dialog>
+  <dialog id="pg-log-dialog" class="pg-share-dialog"></dialog>
+  <dialog id="pg-zap-dialog" class="pg-share-dialog"></dialog>
+
   <script>
     import {
       naddrDecode,
@@ -93,6 +115,13 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       loadFindLog,
       buildShareNote,
       shareToNostr,
+      shareDialogHtml,
+      findLogDialogHtml,
+      postFindLog,
+      zapDialogHtml,
+      zapHider,
+      hiderLnAddress,
+      BRAND_PINK,
       type ParsedCache,
     } from '../scripts/treasure-nostr';
 
@@ -140,35 +169,53 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
     }
 
+    // Wire a "copy to clipboard" button that briefly confirms. `onDone` renders
+    // the confirmation (icon swap or label change), returning a revert fn.
+    function wireCopy(btn: HTMLButtonElement, value: () => string, confirm: () => () => void): void {
+      btn.addEventListener('click', async () => {
+        if (!(await copyText(value()))) return;
+        const revert = confirm();
+        window.setTimeout(() => {
+          if (btn.isConnected) revert();
+        }, 1300);
+      });
+    }
+
     // Wire the copy buttons (coordinates / geohash / copy-link) and the Share
-    // controls (native share where available, and the Nostr composer).
+    // controls: native share where available, and the "Share to Nostr" modal.
     function wireShare(root: HTMLElement, cache: ParsedCache): void {
       const note = buildShareNote(cache);
 
       // Generic icon copy buttons (coordinates, geohash).
       root.querySelectorAll<HTMLButtonElement>('.pg-copy').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          if (!(await copyText(btn.dataset.copy || ''))) return;
-          const original = btn.innerHTML;
-          btn.innerHTML = CHECK_SVG;
-          window.setTimeout(() => {
-            if (btn.isConnected) btn.innerHTML = original;
-          }, 1200);
-        });
+        wireCopy(
+          btn,
+          () => btn.dataset.copy || '',
+          () => {
+            const original = btn.innerHTML;
+            btn.innerHTML = CHECK_SVG;
+            return () => {
+              btn.innerHTML = original;
+            };
+          },
+        );
       });
 
-      // "Copy link" button (swaps its label to confirm).
+      // Sidebar "Copy link" button (swaps its label to confirm).
       const copyBtn = root.querySelector('.pg-share-copy') as HTMLButtonElement | null;
       const copyLabel = root.querySelector('.pg-share-copy-label') as HTMLElement | null;
-      copyBtn?.addEventListener('click', async () => {
-        if (!(await copyText(copyBtn.dataset.copy || note.lpUrl))) return;
-        if (copyLabel) {
-          copyLabel.textContent = 'Copied!';
-          window.setTimeout(() => {
-            if (copyLabel.isConnected) copyLabel.textContent = 'Copy link';
-          }, 1400);
-        }
-      });
+      if (copyBtn) {
+        wireCopy(
+          copyBtn,
+          () => copyBtn.dataset.copy || note.lpUrl,
+          () => {
+            if (copyLabel) copyLabel.textContent = 'Copied!';
+            return () => {
+              if (copyLabel) copyLabel.textContent = 'Copy link';
+            };
+          },
+        );
+      }
 
       // Native share sheet - only shown where the browser supports it (mobile).
       const nativeBtn = root.querySelector('.pg-share-native') as HTMLButtonElement | null;
@@ -182,19 +229,44 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         });
       }
 
-      // Share to Nostr: reveal the composer, then publish via a NIP-07 signer.
+      // Share to Nostr: a modal dialog, populated once and opened from the
+      // sidebar button. Publishes a kind-1 note via a NIP-07 signer.
+      const dialog = document.getElementById('pg-share-dialog') as HTMLDialogElement | null;
       const nostrBtn = root.querySelector('.pg-share-nostr') as HTMLButtonElement | null;
-      const compose = root.querySelector('.pg-share-compose') as HTMLElement | null;
-      const textArea = root.querySelector('.pg-share-text') as HTMLTextAreaElement | null;
-      const postBtn = root.querySelector('.pg-share-post') as HTMLButtonElement | null;
-      const status = root.querySelector('.pg-share-status') as HTMLElement | null;
+      if (!dialog || !nostrBtn) return;
 
-      nostrBtn?.addEventListener('click', () => {
-        if (!compose) return;
-        const open = compose.hidden === false;
-        compose.hidden = open;
-        if (!open) textArea?.focus();
+      dialog.innerHTML = shareDialogHtml();
+      const textArea = dialog.querySelector('.pg-share-text') as HTMLTextAreaElement | null;
+      const status = dialog.querySelector('.pg-share-status') as HTMLElement | null;
+      const postBtn = dialog.querySelector('.pg-share-post') as HTMLButtonElement | null;
+      const closeBtn = dialog.querySelector('.pg-share-close') as HTMLButtonElement | null;
+      const modalCopy = dialog.querySelector('.pg-share-modal-copy') as HTMLButtonElement | null;
+      const modalCopyLabel = dialog.querySelector('.pg-share-modal-copy-label') as HTMLElement | null;
+
+      nostrBtn.addEventListener('click', () => {
+        if (textArea) textArea.value = note.content;
+        if (status) status.textContent = '';
+        dialog.showModal();
+        textArea?.focus();
       });
+      closeBtn?.addEventListener('click', () => dialog.close());
+      // Click outside the card (on the backdrop) closes it.
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) dialog.close();
+      });
+
+      if (modalCopy) {
+        wireCopy(
+          modalCopy,
+          () => note.lpUrl,
+          () => {
+            if (modalCopyLabel) modalCopyLabel.textContent = 'Copied!';
+            return () => {
+              if (modalCopyLabel) modalCopyLabel.textContent = 'Copy link';
+            };
+          },
+        );
+      }
 
       postBtn?.addEventListener('click', async () => {
         if (!postBtn || !status) return;
@@ -220,6 +292,179 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           }
         } finally {
           postBtn.disabled = false;
+        }
+      });
+    }
+
+    // Close a <dialog> on its close button and on a backdrop click.
+    function wireDismiss(dialog: HTMLDialogElement, closeSelector: string): void {
+      dialog.querySelector<HTMLButtonElement>(closeSelector)?.addEventListener('click', () =>
+        dialog.close(),
+      );
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) dialog.close();
+      });
+    }
+
+    function statusError(code: string, map: Record<string, string>, fallback: string): string {
+      return map[code] || fallback;
+    }
+
+    // "Log a find": a modal composer that posts a NIP-22 comment to the find
+    // log (prompting to connect a signer if needed), then refreshes the log.
+    function wireFindLogPost(root: HTMLElement, cache: ParsedCache): void {
+      const addBtn = root.querySelector('.pg-findlog-add') as HTMLButtonElement | null;
+      const dialog = document.getElementById('pg-log-dialog') as HTMLDialogElement | null;
+      if (!addBtn || !dialog) return;
+
+      dialog.innerHTML = findLogDialogHtml();
+      const textArea = dialog.querySelector('.pg-log-text') as HTMLTextAreaElement | null;
+      const status = dialog.querySelector('.pg-log-status') as HTMLElement | null;
+      const postBtn = dialog.querySelector('.pg-log-post') as HTMLButtonElement | null;
+      wireDismiss(dialog, '.pg-log-close');
+
+      addBtn.addEventListener('click', () => {
+        if (textArea) textArea.value = '';
+        if (status) status.textContent = '';
+        dialog.showModal();
+        textArea?.focus();
+      });
+
+      postBtn?.addEventListener('click', async () => {
+        if (!postBtn || !status) return;
+        postBtn.disabled = true;
+        status.style.color = '#6b7280';
+        status.textContent = 'Signing with your Nostr extension…';
+        try {
+          await postFindLog(cache, textArea?.value || '');
+          status.style.color = '#16a34a';
+          status.textContent = 'Posted! Refreshing the find log…';
+          window.setTimeout(() => {
+            const body = root.querySelector('.pg-findlog-body') as HTMLElement | null;
+            if (body) loadFindLog(cache.coord, body).catch(() => {});
+            dialog.close();
+          }, 1600);
+        } catch (e) {
+          const code = e instanceof Error ? e.message : '';
+          status.style.color = '#b91c1c';
+          status.textContent = statusError(
+            code,
+            {
+              NO_SIGNER:
+                'Connect a Nostr extension (Alby or nos2x) to post a find, then try again.',
+              EMPTY: 'Please write a note first.',
+              PUBLISH_FAILED: 'Signed, but no relay accepted it. Please try again.',
+            },
+            'Could not post your find. Please try again.',
+          );
+        } finally {
+          postBtn.disabled = false;
+        }
+      });
+    }
+
+    // "Zap the hider": revealed only for Piglets whose hider has a Lightning
+    // address. Opens a modal with amount presets and pays via WebLN, falling
+    // back to a bolt11 invoice for any wallet.
+    async function wireZap(root: HTMLElement, cache: ParsedCache): Promise<void> {
+      if (!cache.isLpPiggy) return;
+      const section = root.querySelector('.pg-support-section') as HTMLElement | null;
+      const zapBtn = root.querySelector('.pg-zap-btn') as HTMLButtonElement | null;
+      const dialog = document.getElementById('pg-zap-dialog') as HTMLDialogElement | null;
+      if (!section || !zapBtn || !dialog) return;
+
+      // Only surface the zap section once we confirm the hider can receive sats.
+      const addr = await hiderLnAddress(cache.hiderPubkey).catch(() => null);
+      if (!addr) return;
+      section.hidden = false;
+
+      dialog.innerHTML = zapDialogHtml(cache);
+      const amounts = [...dialog.querySelectorAll<HTMLButtonElement>('.pg-zap-amount')];
+      const custom = dialog.querySelector('.pg-zap-custom') as HTMLInputElement | null;
+      const sendBtn = dialog.querySelector('.pg-zap-send') as HTMLButtonElement | null;
+      const sendLabel = dialog.querySelector('.pg-zap-send-label') as HTMLElement | null;
+      const status = dialog.querySelector('.pg-zap-status') as HTMLElement | null;
+      const invoiceBox = dialog.querySelector('.pg-zap-invoice') as HTMLElement | null;
+      const invoiceText = dialog.querySelector('.pg-zap-invoice-text') as HTMLTextAreaElement | null;
+      const invoiceOpen = dialog.querySelector('.pg-zap-invoice-open') as HTMLAnchorElement | null;
+      const invoiceCopy = dialog.querySelector('.pg-zap-invoice-copy') as HTMLButtonElement | null;
+      const invoiceCopyLabel = dialog.querySelector('.pg-zap-invoice-copy-label') as HTMLElement | null;
+      wireDismiss(dialog, '.pg-zap-close');
+
+      let amount = 21;
+      const highlight = (activeSats: number | null) => {
+        amounts.forEach((b) => {
+          const on = activeSats != null && Number(b.dataset.sats) === activeSats;
+          b.style.borderColor = on ? BRAND_PINK : '#e5e7eb';
+          b.style.background = on ? '#fce7f3' : '#fff';
+        });
+      };
+      const setAmount = (sats: number, fromPreset: boolean) => {
+        amount = sats;
+        if (sendLabel) sendLabel.textContent = `Zap ${sats.toLocaleString()} sats`;
+        highlight(fromPreset ? sats : null);
+      };
+      amounts.forEach((b) =>
+        b.addEventListener('click', () => {
+          if (custom) custom.value = '';
+          setAmount(Number(b.dataset.sats), true);
+        }),
+      );
+      custom?.addEventListener('input', () => {
+        const v = parseInt(custom.value, 10);
+        if (v > 0) setAmount(v, false);
+      });
+      setAmount(21, true);
+
+      zapBtn.addEventListener('click', () => {
+        if (status) status.textContent = '';
+        if (invoiceBox) invoiceBox.hidden = true;
+        dialog.showModal();
+      });
+
+      sendBtn?.addEventListener('click', async () => {
+        if (!sendBtn || !status) return;
+        sendBtn.disabled = true;
+        status.style.color = '#6b7280';
+        status.textContent = 'Requesting a Lightning invoice…';
+        if (invoiceBox) invoiceBox.hidden = true;
+        try {
+          const res = await zapHider(cache, amount);
+          if (res.paid) {
+            status.style.color = '#16a34a';
+            status.textContent = `Zapped ${amount.toLocaleString()} sats — thanks for supporting the hunt!`;
+          } else {
+            status.style.color = '#6b7280';
+            status.textContent = 'Invoice ready — pay it with any Lightning wallet:';
+            if (invoiceText) invoiceText.value = res.invoice;
+            if (invoiceOpen) invoiceOpen.href = `lightning:${res.invoice}`;
+            if (invoiceBox) invoiceBox.hidden = false;
+          }
+        } catch (e) {
+          const code = e instanceof Error ? e.message : '';
+          status.style.color = '#b91c1c';
+          status.textContent = statusError(
+            code,
+            {
+              NO_ADDRESS: 'This hider has no Lightning address set on their profile.',
+              AMOUNT_RANGE: "That amount is outside the hider's allowed range. Try another.",
+              LNURL_FAILED: "Couldn't reach the hider's Lightning address. Please try again.",
+              NO_INVOICE: "The Lightning service didn't return an invoice. Please try again.",
+            },
+            'Could not create the zap. Please try again.',
+          );
+        } finally {
+          sendBtn.disabled = false;
+        }
+      });
+
+      invoiceCopy?.addEventListener('click', async () => {
+        if (!invoiceText || !(await copyText(invoiceText.value))) return;
+        if (invoiceCopyLabel) {
+          invoiceCopyLabel.textContent = 'Copied!';
+          window.setTimeout(() => {
+            if (invoiceCopyLabel.isConnected) invoiceCopyLabel.textContent = 'Copy invoice';
+          }, 1300);
         }
       });
     }
@@ -267,6 +512,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       // hint + photo/map toggle + hider. Then the find log and share controls.
       wireCacheCard(content, cache);
       wireShare(content, cache);
+      wireFindLogPost(content, cache);
+      wireZap(content, cache).catch(() => {});
 
       const logBody = content.querySelector('.pg-findlog-body') as HTMLElement | null;
       if (logBody) {

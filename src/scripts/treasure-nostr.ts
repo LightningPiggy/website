@@ -339,10 +339,13 @@ function parseFindLog(ev: NostrEvent): FindLogEntry {
   };
 }
 
-// A finder's resolved Nostr profile (kind-0 metadata): the bits we render.
+// A finder's resolved Nostr profile (kind-0 metadata): the bits we render, plus
+// the Lightning address (lud16) / LNURL (lud06) used to zap them.
 export interface FinderProfile {
   name: string | null;
   picture: string | null;
+  lud16: string | null;
+  lud06: string | null;
 }
 
 // Profiles are shared across caches and rarely change, so cache them for
@@ -364,10 +367,11 @@ async function fetchProfiles(pubkeys: string[]): Promise<void> {
     if (!existing || ev.created_at > existing.created_at) newest.set(ev.pubkey, ev);
   }
 
+  const empty: FinderProfile = { name: null, picture: null, lud16: null, lud06: null };
   for (const pk of missing) {
     const ev = newest.get(pk);
     if (!ev) {
-      profileCache.set(pk, { name: null, picture: null });
+      profileCache.set(pk, { ...empty });
       continue;
     }
     try {
@@ -376,9 +380,11 @@ async function fetchProfiles(pubkeys: string[]): Promise<void> {
       profileCache.set(pk, {
         name: meta.display_name || meta.displayName || meta.name || null,
         picture: picture || null,
+        lud16: typeof meta.lud16 === 'string' && meta.lud16.includes('@') ? meta.lud16 : null,
+        lud06: typeof meta.lud06 === 'string' && meta.lud06 ? meta.lud06 : null,
       });
     } catch {
-      profileCache.set(pk, { name: null, picture: null });
+      profileCache.set(pk, { ...empty });
     }
   }
 }
@@ -716,6 +722,8 @@ const ICON_CHECK = '<path d="M20 6 9 17l-5-5"/>';
 const ICON_NAV = '<polygon points="3 11 22 2 13 21 11 13 3 11"/>';
 const ICON_SHARE =
   '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>';
+const ICON_PENCIL =
+  '<path d="M12 20h9"/><path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>';
 // Lucide `eye` / `eye-off` - the app's hint reveal/hide toggle glyphs.
 const ICON_EYE =
   '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>';
@@ -924,13 +932,46 @@ export function heroBlock(cache: ParsedCache, h: number): string {
   return `<div style="position:relative;width:100%;height:${h}px;border-radius:10px;overflow:hidden;margin-bottom:12px;">${map}${photo}${toggle}</div>`;
 }
 
+// The "Hidden by …" attribution row (avatar + name + trust caveat). The name
+// starts as an npub placeholder; loadHider upgrades it to the profile once
+// resolved. Shared by the popup (inline) and the detail page (sidebar).
+export function hiderRowHtml(cache: ParsedCache): string {
+  return `<div style="display:flex;gap:8px;align-items:flex-start;">
+      <span class="pg-hider-avatar" style="flex:none;">${avatarHtml(null)}</span>
+      <div style="min-width:0;flex:1;">
+        <div class="pg-hider-name" style="font-size:12px;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hidden by ${escapeHtml(
+          shortNpub(cache.hiderPubkey),
+        )}</div>
+        <div style="font-size:11px;color:#9ca3af;font-style:italic;line-height:1.4;">Verify you trust them before going to the location.</div>
+      </div>
+    </div>`;
+}
+
+// A "how to claim" callout for prize Piglets: the sats are withdrawn by tapping
+// the cache's NFC tag with the Lightning Piggy app. Shown on the detail page.
+export function claimNoteHtml(cache: ParsedCache): string {
+  if (!hasPrize(cache)) return '';
+  return `
+    <div style="margin-top:16px;display:flex;gap:9px;align-items:flex-start;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:11px 12px;">
+      <span style="flex:none;margin-top:1px;">${ZAP_SVG}</span>
+      <p style="font-size:12.5px;color:#78350f;line-height:1.5;">
+        Found it? Claim the <strong>${cache.payoutSats!.toLocaleString()} sats</strong> by tapping the hidden NFC tag with the
+        <a href="/app/" style="color:#b45309;font-weight:700;text-decoration:underline;">Lightning Piggy app</a>. <strong>#TapTheSats</strong>
+      </p>
+    </div>`;
+}
+
 // The shared middle of a cache card (everything between the hero and the
 // find-log / call-to-action): icon + name, spec pills, rating meters,
-// description, reveal-able hint, and the hider attribution row. The detail
-// page moves the rating meters into its right-hand sidebar, so it opts out
-// with `includeMeters: false`.
-export function cacheBodyHtml(cache: ParsedCache, opts: { includeMeters?: boolean } = {}): string {
+// description, reveal-able hint, and the hider attribution row. The detail page
+// moves the meters and hider into its right-hand sidebar, so it opts out with
+// `includeMeters: false` / `includeHider: false`.
+export function cacheBodyHtml(
+  cache: ParsedCache,
+  opts: { includeMeters?: boolean; includeHider?: boolean } = {},
+): string {
   const includeMeters = opts.includeMeters !== false;
+  const includeHider = opts.includeHider !== false;
   const iconBadge = iconBadgeHtml(cache.isLpPiggy, 24);
 
   const descBlock = cache.description
@@ -966,15 +1007,7 @@ export function cacheBodyHtml(cache: ParsedCache, opts: { includeMeters?: boolea
     ${includeMeters ? metersHtml(cache) : ''}
     ${descBlock}
     ${hintBlock}
-    <div style="margin-top:12px;display:flex;gap:8px;align-items:flex-start;">
-      <span class="pg-hider-avatar" style="flex:none;">${avatarHtml(null)}</span>
-      <div style="min-width:0;flex:1;">
-        <div class="pg-hider-name" style="font-size:12px;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hidden by ${escapeHtml(
-          shortNpub(cache.hiderPubkey),
-        )}</div>
-        <div style="font-size:11px;color:#9ca3af;font-style:italic;line-height:1.4;">Verify you trust them before going to the location.</div>
-      </div>
-    </div>
+    ${includeHider ? `<div style="margin-top:12px;">${hiderRowHtml(cache)}</div>` : ''}
   `;
 }
 
@@ -1153,29 +1186,182 @@ function publishToRelays(event: { id: string }): Promise<number> {
   });
 }
 
-// Sign a kind-1 share note with the visitor's NIP-07 signer (Alby, nos2x, …)
-// and publish it to the relays so it lands on Primal/Damus/etc. Throws
-// `NO_SIGNER` when no extension is present (the UI then points the user at
-// copy/native share), or `PUBLISH_FAILED` when no relay accepted the note.
-// `contentOverride` lets the visitor edit the note before posting.
-export async function shareToNostr(cache: ParsedCache, contentOverride?: string): Promise<number> {
+interface UnsignedTemplate {
+  kind: number;
+  tags: string[][];
+  content: string;
+}
+interface SignedEvent {
+  id: string;
+  sig: string;
+  pubkey: string;
+  kind: number;
+  tags: string[][];
+  content: string;
+  created_at: number;
+}
+
+// True when the browser exposes a NIP-07 signer (Alby, nos2x, …). The "login"
+// on a static site is simply having such an extension: our writes call
+// `window.nostr.signEvent`, which pops the extension's own approval prompt.
+export function hasNostrSigner(): boolean {
+  const nostr = (window as any).nostr;
+  return !!nostr && typeof nostr.signEvent === 'function';
+}
+
+// Sign an event template with the NIP-07 signer and publish it to the relays.
+// Throws `NO_SIGNER` (no extension - the UI prompts the user to connect one),
+// `SIGN_FAILED` (rejected in the extension), or `PUBLISH_FAILED` (no relay
+// accepted it). Returns the signed event + how many relays accepted it.
+async function signAndPublish(
+  template: UnsignedTemplate,
+): Promise<{ event: SignedEvent; accepted: number }> {
   const nostr = (window as any).nostr;
   if (!nostr || typeof nostr.signEvent !== 'function') throw new Error('NO_SIGNER');
 
-  const note = buildShareNote(cache);
-  const unsigned = {
-    kind: 1,
+  const signed: SignedEvent = await nostr.signEvent({
+    ...template,
     created_at: Math.floor(Date.now() / 1000),
-    tags: note.tags,
-    content: (contentOverride && contentOverride.trim()) || note.content,
-  };
-
-  const signed = await nostr.signEvent(unsigned);
+  });
   if (!signed || !signed.id || !signed.sig) throw new Error('SIGN_FAILED');
 
   const accepted = await publishToRelays(signed);
   if (accepted === 0) throw new Error('PUBLISH_FAILED');
+  return { event: signed, accepted };
+}
+
+// Share a cache as a kind-1 note (the "Share to Nostr" modal). `contentOverride`
+// lets the visitor edit the note before posting. Returns the relay accept count.
+export async function shareToNostr(cache: ParsedCache, contentOverride?: string): Promise<number> {
+  const note = buildShareNote(cache);
+  const { accepted } = await signAndPublish({
+    kind: 1,
+    tags: note.tags,
+    content: (contentOverride && contentOverride.trim()) || note.content,
+  });
   return accepted;
+}
+
+// Post a note to a cache's find log as a NIP-22 comment (kind 1111) rooted at
+// the cache's addressable event - so it shows up alongside the other finds
+// (loadFindLog queries kind 1111 by the uppercase `A` root tag). Throws `EMPTY`
+// for blank text, else the signer/publish errors above. Returns the signed
+// event so the caller can optimistically render it.
+export async function postFindLog(cache: ParsedCache, text: string): Promise<SignedEvent> {
+  const content = (text || '').trim();
+  if (!content) throw new Error('EMPTY');
+  const kindStr = String(GC_CACHE_KIND);
+  const { event } = await signAndPublish({
+    kind: GC_COMMENT_KIND,
+    content,
+    tags: [
+      ['A', cache.coord],
+      ['K', kindStr],
+      ['P', cache.hiderPubkey],
+      ['a', cache.coord],
+      ['k', kindStr],
+      ['p', cache.hiderPubkey],
+    ],
+  });
+  return event;
+}
+
+// -----------------------------------------------------------------------
+// Zap the hider (NIP-57 Lightning zap)
+// -----------------------------------------------------------------------
+// The hider's resolved Lightning pay endpoint, or null if they have no
+// lud16/lud06 in their profile. Ensures the profile is fetched first.
+export async function hiderLnAddress(pubkey: string): Promise<string | null> {
+  await fetchProfiles([pubkey]);
+  const prof = profileCache.get(pubkey);
+  if (!prof) return null;
+  if (prof.lud16) return prof.lud16;
+  if (prof.lud06) return prof.lud06;
+  return null;
+}
+
+// Resolve a lud16 Lightning address or lud06 LNURL to its LNURL-pay URL.
+function lnurlPayUrl(addr: string): string | null {
+  if (addr.includes('@')) {
+    const [name, domain] = addr.split('@');
+    if (!name || !domain) return null;
+    return `https://${domain}/.well-known/lnurlp/${name}`;
+  }
+  // lud06: a bech32 `lnurl…` string wrapping the https URL.
+  const dec = bech32Decode(addr);
+  if (!dec || dec.hrp !== 'lnurl') return null;
+  const bytes = convertBits(dec.data, 5, 8, false);
+  if (!bytes) return null;
+  const url = new TextDecoder().decode(new Uint8Array(bytes));
+  return sanitizeUrl(url) || null;
+}
+
+// The outcome of a zap attempt: either it was paid in-browser via WebLN, or we
+// return the bolt11 invoice for the visitor to pay with any wallet.
+export type ZapResult = { paid: true } | { paid: false; invoice: string };
+
+// Zap the hider `amountSats` via NIP-57 / LNURL-pay. Resolves their Lightning
+// address, attaches a signed zap request when the endpoint and a NIP-07 signer
+// allow it (so the zap shows on Nostr), fetches the invoice, and pays it with
+// WebLN when available - otherwise hands the invoice back for a wallet. Throws
+// `NO_ADDRESS`, `LNURL_FAILED`, `AMOUNT_RANGE`, or `NO_INVOICE`.
+export async function zapHider(cache: ParsedCache, amountSats: number): Promise<ZapResult> {
+  const addr = await hiderLnAddress(cache.hiderPubkey);
+  if (!addr) throw new Error('NO_ADDRESS');
+  const payUrl = lnurlPayUrl(addr);
+  if (!payUrl) throw new Error('NO_ADDRESS');
+
+  const meta = await fetch(payUrl)
+    .then((r) => r.json())
+    .catch(() => null);
+  if (!meta || meta.status === 'ERROR' || !meta.callback) throw new Error('LNURL_FAILED');
+
+  const amountMsat = Math.round(amountSats) * 1000;
+  if (amountMsat < (meta.minSendable ?? 0) || amountMsat > (meta.maxSendable ?? Infinity)) {
+    throw new Error('AMOUNT_RANGE');
+  }
+
+  let callback = `${meta.callback}${meta.callback.includes('?') ? '&' : '?'}amount=${amountMsat}`;
+
+  // NIP-57: when the endpoint accepts a zap request and the visitor has a
+  // signer, attach a signed kind-9734 so the paid zap is attributed on Nostr.
+  const nostr = (window as any).nostr;
+  if (meta.allowsNostr && meta.nostrPubkey && nostr?.signEvent) {
+    try {
+      const zapReq = await nostr.signEvent({
+        kind: 9734,
+        created_at: Math.floor(Date.now() / 1000),
+        content: `Funding "${cache.name}" on Lightning Piggy ⚡`,
+        tags: [
+          ['relays', ...GC_RELAYS],
+          ['amount', String(amountMsat)],
+          ['p', cache.hiderPubkey],
+          ['a', cache.coord],
+        ],
+      });
+      callback += `&nostr=${encodeURIComponent(JSON.stringify(zapReq))}`;
+    } catch {
+      // Signer refused - fall back to a plain (non-attributed) LNURL-pay.
+    }
+  }
+
+  const invoiceRes = await fetch(callback)
+    .then((r) => r.json())
+    .catch(() => null);
+  const bolt11 = invoiceRes?.pr;
+  if (!bolt11) throw new Error('NO_INVOICE');
+
+  const webln = (window as any).webln;
+  if (webln) {
+    try {
+      await webln.enable();
+      await webln.sendPayment(bolt11);
+      return { paid: true };
+    } catch {
+      // WebLN present but payment failed/cancelled - hand back the invoice.
+    }
+  }
+  return { paid: false, invoice: bolt11 };
 }
 
 // -----------------------------------------------------------------------
@@ -1212,6 +1398,20 @@ export function detailSidebarHtml(cache: ParsedCache): string {
   const note = buildShareNote(cache);
   const shareGlyph = svgIcon(ICON_SHARE, '#fff', 15);
 
+  // Support (zap) section - only for Piglets; revealed by the page once the
+  // hider is confirmed to have a Lightning address.
+  const support = cache.isLpPiggy
+    ? `<div class="pg-support-section" hidden style="margin-top:14px;padding-top:14px;border-top:1px solid #e5e7eb;">
+         <div style="font-size:13px;font-weight:700;color:#111827;display:flex;align-items:center;gap:6px;">${ZAP_SVG} Support this treasure</div>
+         <p style="margin-top:5px;font-size:12px;color:#6b7280;line-height:1.5;">
+           Zap the hider to help fund the prize for future finders.
+         </p>
+         <button type="button" class="pg-zap-btn" style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:700;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
+           ${ZAP_SVG} Zap the hider
+         </button>
+       </div>`
+    : '';
+
   return `
     <div class="pg-side-card">
       <div style="font-size:14px;font-weight:700;color:#111827;">Treasure details</div>
@@ -1221,6 +1421,11 @@ export function detailSidebarHtml(cache: ParsedCache): string {
       <a href="${directions}" target="_blank" rel="noopener noreferrer" style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px 14px;font-size:13px;font-weight:600;color:#111827;background:#f3f4f6;border-radius:10px;text-decoration:none;">
         ${svgIcon(ICON_NAV, '#111827', 15)} Get directions
       </a>
+    </div>
+
+    <div class="pg-side-card" style="margin-top:16px;">
+      ${hiderRowHtml(cache)}
+      ${support}
     </div>
 
     <div class="pg-side-card" style="margin-top:16px;">
@@ -1244,38 +1449,146 @@ export function detailSidebarHtml(cache: ParsedCache): string {
       <button type="button" class="pg-share-native" hidden style="margin-top:8px;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:600;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;">
         ${svgIcon(ICON_SHARE, '#111827', 15)} Share…
       </button>
+    </div>
+  `;
+}
 
-      <div class="pg-share-compose" hidden style="margin-top:12px;">
-        <textarea class="pg-share-text" rows="7" aria-label="Note to post" style="width:100%;box-sizing:border-box;font-family:inherit;font-size:12px;line-height:1.5;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;resize:vertical;">${escapeHtml(
-          note.content,
-        )}</textarea>
-        <button type="button" class="pg-share-post" style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:600;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
+// The "Share to Nostr" composer, rendered once as a modal <dialog> on the
+// detail page (opened from the sidebar's "Share to Nostr" button). Kept out of
+// the sidebar so it overlays the page rather than expanding it. The textarea is
+// filled with the note body when opened.
+export function shareDialogHtml(): string {
+  const shareGlyph = svgIcon(ICON_SHARE, '#fff', 15);
+  return `
+    <div style="font-family:Inter,system-ui,sans-serif;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:#111827;">
+          ${svgIcon(ICON_SHARE, BRAND_PINK, 18)} Share to Nostr
+        </div>
+        <button type="button" class="pg-share-close" aria-label="Close" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;border-radius:8px;background:#f3f4f6;color:#6b7280;cursor:pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p style="margin-top:6px;font-size:12.5px;color:#6b7280;line-height:1.5;">
+        Post a note to your Nostr feed so it shows up on Primal, Damus and other clients. Signs with your browser extension (Alby / nos2x).
+      </p>
+      <textarea class="pg-share-text" rows="7" aria-label="Note to post" style="margin-top:10px;width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;line-height:1.5;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;resize:vertical;"></textarea>
+      <div class="pg-share-status" role="status" style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;min-height:16px;"></div>
+      <div style="margin-top:12px;display:flex;gap:8px;">
+        <button type="button" class="pg-share-modal-copy" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px;font-size:13px;font-weight:600;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;">
+          ${svgIcon(ICON_COPY, '#111827', 15)} <span class="pg-share-modal-copy-label">Copy link</span>
+        </button>
+        <button type="button" class="pg-share-post" style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:10px 14px;font-size:13px;font-weight:600;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
           ${shareGlyph} Post to Nostr
         </button>
-        <div class="pg-share-status" role="status" style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;"></div>
       </div>
     </div>
   `;
 }
 
-// The full-page treasure view: a two-column layout (map + card on the left,
-// a "Treasure details"/"Share" sidebar on the right) with the find log spanning
-// the full width below - matching treasures.to. Collapses to a single column on
-// narrow screens via the page's CSS. Rendered client side for a given naddr.
+// The "Log a find" composer, rendered once as a modal <dialog>. Posts a NIP-22
+// comment to the cache's find log. Prompts to connect a signer when needed.
+export function findLogDialogHtml(): string {
+  return `
+    <div style="font-family:Inter,system-ui,sans-serif;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:#111827;">
+          ${svgIcon(ICON_PENCIL, BRAND_PINK, 18)} Log a find
+        </div>
+        <button type="button" class="pg-log-close" aria-label="Close" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;border-radius:8px;background:#f3f4f6;color:#6b7280;cursor:pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p style="margin-top:6px;font-size:12.5px;color:#6b7280;line-height:1.5;">
+        Add a note to this treasure's find log. It's posted to Nostr and signed with your browser extension (Alby / nos2x).
+      </p>
+      <textarea class="pg-log-text" rows="4" placeholder="Found it! Great spot…" aria-label="Your find note" style="margin-top:10px;width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;line-height:1.5;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:10px 12px;resize:vertical;"></textarea>
+      <div class="pg-log-status" role="status" style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;min-height:16px;"></div>
+      <button type="button" class="pg-log-post" style="margin-top:6px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:600;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
+        ${svgIcon(ICON_PENCIL, '#fff', 15)} Post to find log
+      </button>
+    </div>
+  `;
+}
+
+// The "Zap the hider" modal <dialog>: amount presets + custom, a send button,
+// and an invoice fallback area (shown when there's no WebLN wallet to pay
+// in-browser). `cache` is only used for the descriptive copy.
+export function zapDialogHtml(cache: ParsedCache): string {
+  const presets = [21, 100, 500, 2100];
+  const chips = presets
+    .map(
+      (a, i) =>
+        `<button type="button" class="pg-zap-amount" data-sats="${a}" aria-pressed="${
+          i === 0 ? 'true' : 'false'
+        }" style="flex:1;padding:9px 4px;font-size:13px;font-weight:700;border-radius:10px;border:1px solid ${
+          i === 0 ? BRAND_PINK : '#e5e7eb'
+        };background:${i === 0 ? '#fce7f3' : '#fff'};color:#111827;cursor:pointer;">${a}</button>`,
+    )
+    .join('');
+  return `
+    <div style="font-family:Inter,system-ui,sans-serif;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:#111827;">
+          ${ZAP_SVG} Zap the hider
+        </div>
+        <button type="button" class="pg-zap-close" aria-label="Close" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;border-radius:8px;background:#f3f4f6;color:#6b7280;cursor:pointer;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <p style="margin-top:6px;font-size:12.5px;color:#6b7280;line-height:1.5;">
+        Send sats to the hider of "${escapeHtml(
+          cache.name,
+        )}" to help fund the prize. Pays with your WebLN wallet, or shows an invoice for any Lightning wallet.
+      </p>
+      <div class="pg-zap-amounts" style="display:flex;gap:8px;margin-top:12px;">${chips}</div>
+      <input class="pg-zap-custom" type="number" min="1" inputmode="numeric" placeholder="Custom amount (sats)" style="margin-top:8px;width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px;" />
+      <button type="button" class="pg-zap-send" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:11px 14px;font-size:14px;font-weight:700;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
+        ${ZAP_SVG} <span class="pg-zap-send-label">Zap 21 sats</span>
+      </button>
+      <div class="pg-zap-status" role="status" style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;min-height:16px;"></div>
+      <div class="pg-zap-invoice" hidden style="margin-top:8px;">
+        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Lightning invoice</div>
+        <textarea class="pg-zap-invoice-text" rows="3" readonly style="margin-top:4px;width:100%;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;resize:none;"></textarea>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+          <button type="button" class="pg-zap-invoice-copy" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:12px;font-weight:600;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;">
+            ${svgIcon(ICON_COPY, '#111827', 14)} <span class="pg-zap-invoice-copy-label">Copy invoice</span>
+          </button>
+          <a class="pg-zap-invoice-open" href="#" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:12px;font-weight:600;color:#fff;background:${BRAND_PINK};border-radius:10px;text-decoration:none;">
+            ${ZAP_SVG} Open in wallet
+          </a>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// The full-page treasure view: a two-column layout matching treasures.to - the
+// map, cache card and find log on the left, a "Treasure details"/"Share"
+// sidebar on the right. Collapses to a single column on narrow screens via the
+// page's CSS. Rendered client side for a given naddr.
 export function buildDetailHtml(cache: ParsedCache): string {
   return `
     <div class="pg-detail-grid" style="font-family:Inter,system-ui,sans-serif;">
-      <div class="pg-detail-main" style="min-width:0;">
-        ${heroBlock(cache, DETAIL_HERO_H)}
-        ${cacheBodyHtml(cache, { includeMeters: false })}
+      <div class="pg-detail-left">
+        <div class="pg-detail-main" style="min-width:0;">
+          ${heroBlock(cache, DETAIL_HERO_H)}
+          ${cacheBodyHtml(cache, { includeMeters: false, includeHider: false })}
+          ${claimNoteHtml(cache)}
+        </div>
+        <div class="pg-detail-findlog">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;">
+            <div style="font-size:15px;font-weight:700;color:#111827;">Find log</div>
+            <button type="button" class="pg-findlog-add" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;font-size:12px;font-weight:600;color:#fff;background:${BRAND_PINK};border:none;border-radius:9999px;cursor:pointer;">
+              ${svgIcon(ICON_PENCIL, '#fff', 13)} Log a find
+            </button>
+          </div>
+          <div class="pg-findlog-body" style="font-size:12px;color:#6b7280;">Loading finds…</div>
+        </div>
       </div>
       <aside class="pg-detail-side">
         ${detailSidebarHtml(cache)}
       </aside>
-      <div class="pg-detail-findlog">
-        <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:8px;">Find log</div>
-        <div class="pg-findlog-body" style="font-size:12px;color:#6b7280;">Loading finds…</div>
-      </div>
     </div>
   `;
 }

@@ -8,10 +8,52 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 >
   <!--
     This page is served for any /treasure/<naddr> URL via a Netlify SPA rewrite
-    (netlify.toml). The naddr in the path identifies one NIP-GC cache; the page
-    resolves it from Nostr client-side, so there is no per-cache build output.
+    (netlify.toml) in production, and a matching dev-server rewrite in
+    astro.config.mjs. The naddr in the path identifies one NIP-GC cache; the
+    page resolves it from Nostr client-side, so there is no per-cache build
+    output.
   -->
-  <div class="mx-auto w-full max-w-[600px] px-4 py-6 sm:py-8">
+  <style is:global>
+    /* Two-column on desktop (map + card left, details/share sidebar right),
+       single column on mobile. The find log spans the full width below both. */
+    .pg-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    @media (min-width: 820px) {
+      .pg-detail-grid {
+        grid-template-columns: minmax(0, 1fr) 300px;
+        align-items: start;
+        column-gap: 24px;
+      }
+      .pg-detail-findlog {
+        grid-column: 1 / -1;
+      }
+    }
+    .pg-detail-main,
+    .pg-detail-findlog,
+    .pg-side-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+    }
+    .pg-detail-main,
+    .pg-detail-findlog {
+      padding: 18px;
+    }
+    @media (min-width: 640px) {
+      .pg-detail-main,
+      .pg-detail-findlog {
+        padding: 22px;
+      }
+    }
+    .pg-side-card {
+      padding: 16px;
+    }
+  </style>
+
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
     <a
       id="treasure-back"
       href="/treasure-hunt"
@@ -38,11 +80,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       </a>
     </div>
 
-    <!-- Resolved treasure card -->
-    <div
-      id="treasure-content"
-      class="hidden mt-4 rounded-2xl bg-white shadow-lg border border-gray-200 p-5 sm:p-6"
-    ></div>
+    <!-- Resolved treasure -->
+    <div id="treasure-content" class="hidden mt-4"></div>
   </div>
 
   <script>
@@ -52,12 +91,17 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       buildDetailHtml,
       wireCacheCard,
       loadFindLog,
+      buildShareNote,
+      shareToNostr,
+      type ParsedCache,
     } from '../scripts/treasure-nostr';
 
+    const CHECK_SVG =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+
     // The naddr can arrive two ways: in the path (/treasure/<naddr>, the
-    // production SPA-rewrite form the map links to) or as a ?naddr= / ?id=
-    // query param (handy in `astro dev`, which won't route arbitrary path
-    // segments). Pull the first naddr1… token we can find from either.
+    // production/dev rewrite form the map links to) or as a ?naddr= / ?id=
+    // query param. Pull the first naddr1… token we can find from either.
     function readNaddr(): string | null {
       const params = new URLSearchParams(window.location.search);
       const fromQuery = params.get('naddr') || params.get('id');
@@ -66,9 +110,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       return match ? match[0] : null;
     }
 
-    // A back link that returns to the map. When we arrived from the map
-    // (?fromMap=true) history.back() preserves its zoom/position; otherwise the
-    // static /treasure-hunt href in the markup is used.
+    // Back link returns to the map. When we arrived from the map (?fromMap=true)
+    // history.back() preserves its zoom/position; otherwise the static href is used.
     function wireBackLink(): void {
       const back = document.getElementById('treasure-back');
       const cameFromMap = new URLSearchParams(window.location.search).get('fromMap') === 'true';
@@ -81,12 +124,104 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     }
 
     function showError(msg: string): void {
-      const loading = document.getElementById('treasure-loading');
+      document.getElementById('treasure-loading')?.classList.add('hidden');
       const error = document.getElementById('treasure-error');
-      const errorMsg = document.getElementById('treasure-error-msg');
-      loading?.classList.add('hidden');
       error?.classList.remove('hidden');
+      const errorMsg = document.getElementById('treasure-error-msg');
       if (errorMsg) errorMsg.textContent = msg;
+    }
+
+    async function copyText(text: string): Promise<boolean> {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // Wire the copy buttons (coordinates / geohash / copy-link) and the Share
+    // controls (native share where available, and the Nostr composer).
+    function wireShare(root: HTMLElement, cache: ParsedCache): void {
+      const note = buildShareNote(cache);
+
+      // Generic icon copy buttons (coordinates, geohash).
+      root.querySelectorAll<HTMLButtonElement>('.pg-copy').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          if (!(await copyText(btn.dataset.copy || ''))) return;
+          const original = btn.innerHTML;
+          btn.innerHTML = CHECK_SVG;
+          window.setTimeout(() => {
+            if (btn.isConnected) btn.innerHTML = original;
+          }, 1200);
+        });
+      });
+
+      // "Copy link" button (swaps its label to confirm).
+      const copyBtn = root.querySelector('.pg-share-copy') as HTMLButtonElement | null;
+      const copyLabel = root.querySelector('.pg-share-copy-label') as HTMLElement | null;
+      copyBtn?.addEventListener('click', async () => {
+        if (!(await copyText(copyBtn.dataset.copy || note.lpUrl))) return;
+        if (copyLabel) {
+          copyLabel.textContent = 'Copied!';
+          window.setTimeout(() => {
+            if (copyLabel.isConnected) copyLabel.textContent = 'Copy link';
+          }, 1400);
+        }
+      });
+
+      // Native share sheet - only shown where the browser supports it (mobile).
+      const nativeBtn = root.querySelector('.pg-share-native') as HTMLButtonElement | null;
+      if (nativeBtn && typeof navigator.share === 'function') {
+        nativeBtn.hidden = false;
+        nativeBtn.style.display = 'flex';
+        nativeBtn.addEventListener('click', () => {
+          navigator
+            .share({ title: cache.name, text: note.content, url: note.lpUrl })
+            .catch(() => {});
+        });
+      }
+
+      // Share to Nostr: reveal the composer, then publish via a NIP-07 signer.
+      const nostrBtn = root.querySelector('.pg-share-nostr') as HTMLButtonElement | null;
+      const compose = root.querySelector('.pg-share-compose') as HTMLElement | null;
+      const textArea = root.querySelector('.pg-share-text') as HTMLTextAreaElement | null;
+      const postBtn = root.querySelector('.pg-share-post') as HTMLButtonElement | null;
+      const status = root.querySelector('.pg-share-status') as HTMLElement | null;
+
+      nostrBtn?.addEventListener('click', () => {
+        if (!compose) return;
+        const open = compose.hidden === false;
+        compose.hidden = open;
+        if (!open) textArea?.focus();
+      });
+
+      postBtn?.addEventListener('click', async () => {
+        if (!postBtn || !status) return;
+        postBtn.disabled = true;
+        status.style.color = '#6b7280';
+        status.textContent = 'Signing with your Nostr extension…';
+        try {
+          const relays = await shareToNostr(cache, textArea?.value);
+          status.style.color = '#16a34a';
+          status.textContent = `Shared! Posted to ${relays} relay${
+            relays === 1 ? '' : 's'
+          } - it'll appear on Primal, Damus, etc.`;
+        } catch (e) {
+          const code = e instanceof Error ? e.message : '';
+          status.style.color = '#b91c1c';
+          if (code === 'NO_SIGNER') {
+            status.textContent =
+              'No Nostr signer found. Install a NIP-07 extension (Alby or nos2x) to post, or use “Copy link”.';
+          } else if (code === 'PUBLISH_FAILED') {
+            status.textContent = 'Signed, but no relay accepted the note. Please try again.';
+          } else {
+            status.textContent = 'Could not share to Nostr. Please try again.';
+          }
+        } finally {
+          postBtn.disabled = false;
+        }
+      });
     }
 
     async function init(): Promise<void> {
@@ -120,24 +255,18 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         return;
       }
 
-      const loading = document.getElementById('treasure-loading');
       const content = document.getElementById('treasure-content');
       if (!content) return;
 
-      // Size the hero to the rendered card's inner width so the static map
-      // mosaic centres its pin correctly (the card is padded, hence the inset).
-      const cardWidth = content.getBoundingClientRect().width || 600;
-      const heroW = Math.max(240, Math.round(cardWidth));
-      const heroH = Math.round(Math.min(320, Math.max(200, heroW * 0.5)));
-
-      content.innerHTML = buildDetailHtml(cache, heroW, heroH);
-      loading?.classList.add('hidden');
+      content.innerHTML = buildDetailHtml(cache);
+      document.getElementById('treasure-loading')?.classList.add('hidden');
       content.classList.remove('hidden');
-
-      // Update the page title now that we know the cache name.
       document.title = `${cache.name} | Treasure | LightningPiggy`;
 
+      // wireCacheCard fills the hero map (now that it has a size), and wires the
+      // hint + photo/map toggle + hider. Then the find log and share controls.
       wireCacheCard(content, cache);
+      wireShare(content, cache);
 
       const logBody = content.querySelector('.pg-findlog-body') as HTMLElement | null;
       if (logBody) {

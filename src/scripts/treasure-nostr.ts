@@ -709,6 +709,13 @@ const ICON_PIN =
   '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>';
 const ICON_PIGGY =
   '<path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/>';
+// Lucide `copy`, `navigation`, `link` - Treasure Details + Share affordances.
+const ICON_COPY =
+  '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>';
+const ICON_CHECK = '<path d="M20 6 9 17l-5-5"/>';
+const ICON_NAV = '<polygon points="3 11 22 2 13 21 11 13 3 11"/>';
+const ICON_SHARE =
+  '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>';
 // Lucide `eye` / `eye-off` - the app's hint reveal/hide toggle glyphs.
 const ICON_EYE =
   '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>';
@@ -808,14 +815,20 @@ function meterHtml(label: string, value: number): string {
 }
 
 // Difficulty / Terrain / Size meters (only the ones the cache actually set).
-function metersHtml(cache: ParsedCache): string {
+// Laid out in a row inside the popup card; the detail-page sidebar stacks them
+// vertically (`vertical: true`) so each meter gets the full sidebar width.
+function metersHtml(cache: ParsedCache, opts: { vertical?: boolean } = {}): string {
   const meters: string[] = [];
   if (cache.difficulty != null) meters.push(meterHtml('Difficulty', cache.difficulty));
   if (cache.terrain != null) meters.push(meterHtml('Terrain', cache.terrain));
   const sizeVal = cache.size ? SIZE_RANK[cache.size.toLowerCase()] : undefined;
   if (sizeVal != null) meters.push(meterHtml('Size', sizeVal));
   if (meters.length === 0) return '';
-  return `<div style="display:flex;gap:12px;margin-top:12px;">${meters.join('')}</div>`;
+  const dir = opts.vertical ? 'column' : 'row';
+  const mt = opts.vertical ? '0' : '12px';
+  return `<div style="display:flex;flex-direction:${dir};gap:12px;margin-top:${mt};">${meters.join(
+    '',
+  )}</div>`;
 }
 
 // Web-mercator world-pixel position of a lng/lat at a given zoom.
@@ -827,22 +840,31 @@ function lngLatToWorldPx(lng: number, lat: number, z: number): { x: number; y: n
   return { x, y };
 }
 
-// A static map thumbnail centred on the cache: a 3x3 mosaic of CARTO raster
-// tiles (the same basemap the live map uses) clipped to the hero, with a
-// centre pin. No interactivity, no extra library - just <img> tiles. The
-// caller passes the hero pixel size so the pin stays centred at any width.
-function mapThumbHtml(lat: number, lng: number, w: number, h: number): string {
+// The tiles + centre pin of a static map thumbnail centred on the cache: a
+// mosaic of CARTO raster tiles (the same basemap the live map uses) sized to
+// fill a hero of `w`×`h` pixels, with a pin at its centre. No interactivity,
+// no extra library - just <img> tiles. The tile range is derived from the hero
+// size (not a fixed 3x3) so the mosaic always covers the whole hero - a wider
+// hero, or a pin near a tile edge, no longer leaves an uncovered grey strip.
+// The pixel size isn't known until the hero is laid out, so this is injected by
+// `fillHeroMap` after render rather than baked into the markup.
+function heroMapTiles(lat: number, lng: number, w: number, h: number): string {
   const z = 14;
   const n = Math.pow(2, z);
   const { x: px, y: py } = lngLatToWorldPx(lng, lat, z);
   const cx = w / 2;
   const cy = h / 2;
-  const xt = Math.floor(px / 256);
-  const yt = Math.floor(py / 256);
+
+  // World-pixel bounds of the hero, converted to the tile indices that cover
+  // it (one extra tile of slack on each edge for safety).
+  const xtMin = Math.floor((px - cx) / 256) - 1;
+  const xtMax = Math.floor((px + (w - cx)) / 256) + 1;
+  const ytMin = Math.floor((py - cy) / 256) - 1;
+  const ytMax = Math.floor((py + (h - cy)) / 256) + 1;
 
   let tiles = '';
-  for (let tx = xt - 1; tx <= xt + 1; tx++) {
-    for (let ty = yt - 1; ty <= yt + 1; ty++) {
+  for (let tx = xtMin; tx <= xtMax; tx++) {
+    for (let ty = ytMin; ty <= ytMax; ty++) {
       if (ty < 0 || ty >= n) continue;
       const wx = ((tx % n) + n) % n; // wrap longitude
       const left = cx + (tx * 256 - px);
@@ -853,16 +875,29 @@ function mapThumbHtml(lat: number, lng: number, w: number, h: number): string {
 
   const pin = `<svg width="30" height="30" viewBox="0 0 24 24" fill="${BRAND_PINK}" stroke="#fff" stroke-width="1.5" style="position:absolute;left:${cx}px;top:${cy}px;transform:translate(-50%,-100%);filter:drop-shadow(0 1px 2px rgba(0,0,0,0.4));"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3" fill="#fff"/></svg>`;
 
-  return `<div class="pg-hero-map" style="position:absolute;inset:0;overflow:hidden;background:#e5e7eb;">${tiles}${pin}</div>`;
+  return tiles + pin;
+}
+
+// Fill (or refill) a card's hero map with a tile mosaic sized to the hero's
+// actual rendered pixels. Called after the card is in the DOM (and on resize),
+// so the mosaic fits whatever width the layout gave the hero - fixing both the
+// grey strip and the two-column detail hero, which have no fixed pixel width.
+export function fillHeroMap(root: HTMLElement, cache: ParsedCache): void {
+  const mapEl = root.querySelector('.pg-hero-map') as HTMLElement | null;
+  if (!mapEl) return;
+  const w = mapEl.clientWidth;
+  const h = mapEl.clientHeight;
+  if (!w || !h) return;
+  mapEl.innerHTML = heroMapTiles(cache.lat, cache.lng, w, h);
 }
 
 // The hero: the cache photo on top of its map thumbnail, with a photo/map
 // toggle (top-right) when a photo exists. The map always renders underneath,
 // so toggling to "map" just hides the photo - and a broken photo URL reveals
-// the map for free. `w`/`h` size the hero in pixels (the map mosaic needs a
-// known size to centre the pin).
-export function heroBlock(cache: ParsedCache, w: number, h: number): string {
-  const map = mapThumbHtml(cache.lat, cache.lng, w, h);
+// the map for free. `h` sets the hero height in pixels; the width is fluid
+// (100%), and the tile mosaic is injected by `fillHeroMap` once laid out.
+export function heroBlock(cache: ParsedCache, h: number): string {
+  const map = `<div class="pg-hero-map" style="position:absolute;inset:0;overflow:hidden;background:#e5e7eb;"></div>`;
   const safeImg = cache.imageUrl ? sanitizeUrl(cache.imageUrl) : '';
 
   const photo = safeImg
@@ -891,8 +926,11 @@ export function heroBlock(cache: ParsedCache, w: number, h: number): string {
 
 // The shared middle of a cache card (everything between the hero and the
 // find-log / call-to-action): icon + name, spec pills, rating meters,
-// description, reveal-able hint, and the hider attribution row.
-export function cacheBodyHtml(cache: ParsedCache): string {
+// description, reveal-able hint, and the hider attribution row. The detail
+// page moves the rating meters into its right-hand sidebar, so it opts out
+// with `includeMeters: false`.
+export function cacheBodyHtml(cache: ParsedCache, opts: { includeMeters?: boolean } = {}): string {
+  const includeMeters = opts.includeMeters !== false;
   const iconBadge = iconBadgeHtml(cache.isLpPiggy, 24);
 
   const descBlock = cache.description
@@ -925,7 +963,7 @@ export function cacheBodyHtml(cache: ParsedCache): string {
       )}</strong>
     </div>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;">${pillsHtml(cache)}</div>
-    ${metersHtml(cache)}
+    ${includeMeters ? metersHtml(cache) : ''}
     ${descBlock}
     ${hintBlock}
     <div style="margin-top:12px;display:flex;gap:8px;align-items:flex-start;">
@@ -978,6 +1016,18 @@ export function wireCacheCard(root: HTMLElement, cache: ParsedCache): void {
   const hiderName = root.querySelector('.pg-hider-name') as HTMLElement | null;
   const hiderAvatar = root.querySelector('.pg-hider-avatar') as HTMLElement | null;
   if (hiderName) loadHider(cache.hiderPubkey, hiderName, hiderAvatar).catch(() => {});
+
+  // Fill the hero map mosaic now that the hero has a measurable size, and keep
+  // it covering the hero as the viewport (and thus the hero width) changes.
+  fillHeroMap(root, cache);
+  const onResize = () => {
+    if (!root.isConnected) {
+      window.removeEventListener('resize', onResize);
+      return;
+    }
+    fillHeroMap(root, cache);
+  };
+  window.addEventListener('resize', onResize);
 }
 
 // -----------------------------------------------------------------------
@@ -996,7 +1046,7 @@ export function buildPopupHtml(cache: ParsedCache): string {
   const naddr = cacheNaddr(cache);
   return `
     <div style="width:${CARD_W}px;max-width:100%;font-family:Inter,system-ui,sans-serif;">
-      ${heroBlock(cache, CARD_W, HERO_H)}
+      ${heroBlock(cache, HERO_H)}
       ${cacheBodyHtml(cache)}
       <a href="/treasure/${naddr}?fromMap=true" style="margin-top:14px;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px 16px;font-size:14px;font-weight:600;color:#fff;background:${BRAND_PINK};border-radius:9999px;text-decoration:none;">
         View treasure
@@ -1007,19 +1057,223 @@ export function buildPopupHtml(cache: ParsedCache): string {
 }
 
 // -----------------------------------------------------------------------
+// Sharing (copy link + share to Nostr)
+// -----------------------------------------------------------------------
+// The canonical, shareable origin. Deep links always point at the live site
+// (not localhost / a deploy preview) so a shared link works for everyone.
+const SITE = 'https://lightningpiggy.com';
+
+export interface ShareNote {
+  content: string;
+  tags: string[][];
+  lpUrl: string;
+  njumpUrl: string;
+}
+
+// Build the shareable links + the kind-1 note body/tags for a cache. The note
+// links to the treasure on lightningpiggy.com (per project preference) and, as
+// an `r` tag, njump - so Nostr clients that can't resolve the LP URL still have
+// a portable pointer. `a` tags the addressable cache event; `t` tags surface it
+// under the hunt hashtags.
+export function buildShareNote(cache: ParsedCache): ShareNote {
+  const naddr = cacheNaddr(cache);
+  const lpUrl = `${SITE}/treasure/${naddr}`;
+  const njumpUrl = `https://njump.me/${naddr}`;
+  const prize =
+    cache.isLpPiggy && cache.payoutSats != null
+      ? ` — claim ⚡ ${cache.payoutSats.toLocaleString()} sats`
+      : '';
+  const content =
+    `🐷 Treasure hunt: "${cache.name}" is hidden on the Lightning Piggy map${prize}.\n\n` +
+    `Find it, scan it, keep the sats:\n${lpUrl}\n\n#treasurehunt #lightningpiggy #nostr`;
+
+  const tags: string[][] = [
+    ['a', cache.coord],
+    ['r', lpUrl],
+    ['r', njumpUrl],
+    ['t', 'treasurehunt'],
+    ['t', 'lightningpiggy'],
+  ];
+  const safeImg = cache.imageUrl ? sanitizeUrl(cache.imageUrl) : '';
+  if (safeImg) tags.push(['image', safeImg]);
+
+  return { content, tags, lpUrl, njumpUrl };
+}
+
+// Publish a signed event to every relay, resolving with the number that
+// accepted it (an `OK … true`). Never rejects - callers decide what a zero
+// count means. Each relay is capped by a short timeout.
+function publishToRelays(event: { id: string }): Promise<number> {
+  return new Promise((resolve) => {
+    let accepted = 0;
+    let settled = 0;
+    const total = GC_RELAYS.length;
+    const finish = () => {
+      if (settled >= total) resolve(accepted);
+    };
+    for (const url of GC_RELAYS) {
+      let ws: WebSocket;
+      try {
+        ws = new WebSocket(url);
+      } catch {
+        settled++;
+        finish();
+        continue;
+      }
+      const timer = window.setTimeout(() => {
+        try {
+          ws.close();
+        } catch {}
+        settled++;
+        finish();
+      }, 5000);
+      ws.onopen = () => ws.send(JSON.stringify(['EVENT', event]));
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data);
+          if (msg[0] === 'OK' && msg[1] === event.id) {
+            if (msg[2]) accepted++;
+            clearTimeout(timer);
+            try {
+              ws.close();
+            } catch {}
+            settled++;
+            finish();
+          }
+        } catch {
+          // ignore parse errors
+        }
+      };
+      ws.onerror = () => {
+        clearTimeout(timer);
+        settled++;
+        finish();
+      };
+    }
+  });
+}
+
+// Sign a kind-1 share note with the visitor's NIP-07 signer (Alby, nos2x, …)
+// and publish it to the relays so it lands on Primal/Damus/etc. Throws
+// `NO_SIGNER` when no extension is present (the UI then points the user at
+// copy/native share), or `PUBLISH_FAILED` when no relay accepted the note.
+// `contentOverride` lets the visitor edit the note before posting.
+export async function shareToNostr(cache: ParsedCache, contentOverride?: string): Promise<number> {
+  const nostr = (window as any).nostr;
+  if (!nostr || typeof nostr.signEvent !== 'function') throw new Error('NO_SIGNER');
+
+  const note = buildShareNote(cache);
+  const unsigned = {
+    kind: 1,
+    created_at: Math.floor(Date.now() / 1000),
+    tags: note.tags,
+    content: (contentOverride && contentOverride.trim()) || note.content,
+  };
+
+  const signed = await nostr.signEvent(unsigned);
+  if (!signed || !signed.id || !signed.sig) throw new Error('SIGN_FAILED');
+
+  const accepted = await publishToRelays(signed);
+  if (accepted === 0) throw new Error('PUBLISH_FAILED');
+  return accepted;
+}
+
+// -----------------------------------------------------------------------
 // Full detail page
 // -----------------------------------------------------------------------
-// The full-page treasure card: the same hero + body as the popup, followed by
-// the find log inline (rather than a "View treasure" button). Rendered client
-// side into the detail page for a given naddr. `heroW`/`heroH` size the hero
-// for the current viewport.
-export function buildDetailHtml(cache: ParsedCache, heroW: number, heroH: number): string {
+const DETAIL_HERO_H = 300;
+
+// A labelled, monospace value row with a copy button (Coordinates, Geohash).
+function detailRowHtml(label: string, value: string): string {
+  return `<div style="margin-top:14px;">
+    <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">${label}</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:3px;">
+      <span style="flex:1;min-width:0;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(
+        value,
+      )}</span>
+      <button type="button" class="pg-copy" data-copy="${escapeHtml(
+        value,
+      )}" aria-label="Copy ${label}" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:none;border-radius:7px;background:#f3f4f6;color:#6b7280;cursor:pointer;">${svgIcon(
+    ICON_COPY,
+    '#6b7280',
+    13,
+  )}</button>
+    </div>
+  </div>`;
+}
+
+// The right-hand sidebar: a "Treasure details" card (rating meters,
+// coordinates, geohash, directions) and a "Share" card (share to Nostr, copy
+// link, native share) mirroring treasures.to's layout.
+export function detailSidebarHtml(cache: ParsedCache): string {
+  const meters = metersHtml(cache, { vertical: true });
+  const coords = `${cache.lat.toFixed(6)}, ${cache.lng.toFixed(6)}`;
+  const directions = `https://www.google.com/maps/dir/?api=1&destination=${cache.lat},${cache.lng}`;
+  const note = buildShareNote(cache);
+  const shareGlyph = svgIcon(ICON_SHARE, '#fff', 15);
+
   return `
-    <div style="font-family:Inter,system-ui,sans-serif;">
-      ${heroBlock(cache, heroW, heroH)}
-      ${cacheBodyHtml(cache)}
-      <div style="margin:18px 0 0;padding-top:16px;border-top:1px solid #e5e7eb;">
-        <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:6px;">Find log</div>
+    <div class="pg-side-card">
+      <div style="font-size:14px;font-weight:700;color:#111827;">Treasure details</div>
+      ${meters ? `<div style="margin-top:12px;">${meters}</div>` : ''}
+      ${detailRowHtml('Coordinates', coords)}
+      ${detailRowHtml('Geohash', cache.geohash)}
+      <a href="${directions}" target="_blank" rel="noopener noreferrer" style="margin-top:16px;display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:9px 14px;font-size:13px;font-weight:600;color:#111827;background:#f3f4f6;border-radius:10px;text-decoration:none;">
+        ${svgIcon(ICON_NAV, '#111827', 15)} Get directions
+      </a>
+    </div>
+
+    <div class="pg-side-card" style="margin-top:16px;">
+      <div style="font-size:14px;font-weight:700;color:#111827;display:flex;align-items:center;gap:6px;">${svgIcon(
+        ICON_SHARE,
+        '#111827',
+        15,
+      )} Share this treasure</div>
+      <button type="button" class="pg-share-nostr" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:600;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
+        ${shareGlyph} Share to Nostr
+      </button>
+      <button type="button" class="pg-share-copy" data-copy="${escapeHtml(
+        note.lpUrl,
+      )}" style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:600;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;">
+        ${svgIcon(
+          ICON_COPY,
+          '#111827',
+          15,
+        )} <span class="pg-share-copy-label">Copy link</span>
+      </button>
+      <button type="button" class="pg-share-native" hidden style="margin-top:8px;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:600;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;">
+        ${svgIcon(ICON_SHARE, '#111827', 15)} Share…
+      </button>
+
+      <div class="pg-share-compose" hidden style="margin-top:12px;">
+        <textarea class="pg-share-text" rows="7" aria-label="Note to post" style="width:100%;box-sizing:border-box;font-family:inherit;font-size:12px;line-height:1.5;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;resize:vertical;">${escapeHtml(
+          note.content,
+        )}</textarea>
+        <button type="button" class="pg-share-post" style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:600;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
+          ${shareGlyph} Post to Nostr
+        </button>
+        <div class="pg-share-status" role="status" style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;"></div>
+      </div>
+    </div>
+  `;
+}
+
+// The full-page treasure view: a two-column layout (map + card on the left,
+// a "Treasure details"/"Share" sidebar on the right) with the find log spanning
+// the full width below - matching treasures.to. Collapses to a single column on
+// narrow screens via the page's CSS. Rendered client side for a given naddr.
+export function buildDetailHtml(cache: ParsedCache): string {
+  return `
+    <div class="pg-detail-grid" style="font-family:Inter,system-ui,sans-serif;">
+      <div class="pg-detail-main" style="min-width:0;">
+        ${heroBlock(cache, DETAIL_HERO_H)}
+        ${cacheBodyHtml(cache, { includeMeters: false })}
+      </div>
+      <aside class="pg-detail-side">
+        ${detailSidebarHtml(cache)}
+      </aside>
+      <div class="pg-detail-findlog">
+        <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:8px;">Find log</div>
         <div class="pg-findlog-body" style="font-size:12px;color:#6b7280;">Loading finds…</div>
       </div>
     </div>

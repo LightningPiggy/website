@@ -94,6 +94,50 @@ export const GC_RELAYS = [
   'wss://relay.dreamith.to',
 ];
 
+// The visitor's own relays, read from their NIP-07 signer (Alby, nos2x, …) via
+// the optional getRelays() method and merged with GC_RELAYS - so we also read
+// from, and publish to, the relays they actually use. Best-effort and silent:
+// signers that don't expose getRelays just fall back to GC_RELAYS, and we never
+// prompt. Cached for the page; resetUserRelays() re-reads (e.g. after signing).
+let userRelays: { read: string[]; write: string[] } | undefined;
+
+async function ensureUserRelays(): Promise<{ read: string[]; write: string[] }> {
+  if (userRelays !== undefined) return userRelays;
+  const result = { read: [] as string[], write: [] as string[] };
+  const nostr = (window as any).nostr;
+  try {
+    if (nostr && typeof nostr.getRelays === 'function') {
+      const map = (await nostr.getRelays()) as Record<string, { read?: boolean; write?: boolean }>;
+      for (const [url, policy] of Object.entries(map || {})) {
+        if (!/^wss?:\/\//i.test(url)) continue;
+        if (!policy || policy.read !== false) result.read.push(url);
+        if (!policy || policy.write !== false) result.write.push(url);
+      }
+    }
+  } catch {
+    // getRelays unsupported or denied - stick with GC_RELAYS.
+  }
+  userRelays = result;
+  return userRelays;
+}
+
+// Re-read the visitor's relays on the next read/write (e.g. once they connect a
+// signer, so a subsequent share/find-log also reaches their write relays).
+export function resetUserRelays(): void {
+  userRelays = undefined;
+}
+
+// GC_RELAYS plus a few of the visitor's own relays (capped so we don't open too
+// many sockets): `readRelays` for REQ subscriptions, `writeRelays` for EVENT.
+async function readRelays(): Promise<string[]> {
+  const u = await ensureUserRelays();
+  return [...new Set([...GC_RELAYS, ...u.read.slice(0, 5)])];
+}
+async function writeRelays(): Promise<string[]> {
+  const u = await ensureUserRelays();
+  return [...new Set([...GC_RELAYS, ...u.write.slice(0, 5)])];
+}
+
 // The parameterised-replaceable kind that carries NIP-GC caches (and their
 // found-logs). A cache's Nostr "coordinate" (a-tag address) is therefore
 // `37516:<hiderPubkey>:<d>`.
@@ -255,10 +299,11 @@ function reqFromRelay(
   });
 }
 
-// Fan the same filter set across every relay, then dedupe by event id (the
-// same event echoes back from multiple relays).
+// Fan the same filter set across every relay (GC_RELAYS + the visitor's own),
+// then dedupe by event id (the same event echoes back from multiple relays).
 export async function fetchEvents(filters: Record<string, unknown>[]): Promise<NostrEvent[]> {
-  const results = await Promise.all(GC_RELAYS.map((r) => reqFromRelay(r, filters)));
+  const relays = await readRelays();
+  const results = await Promise.all(relays.map((r) => reqFromRelay(r, filters)));
   const byId = new Map<string, NostrEvent>();
   for (const ev of results.flat()) {
     if (ev?.id && !byId.has(ev.id)) byId.set(ev.id, ev);
@@ -1164,17 +1209,17 @@ interface PublishResult {
 // the caller can tell a real failure (nothing reached, or every reached relay
 // rejected) from a slow relay that simply didn't ACK before the timeout - a
 // timeout is not a failure, the event has usually still propagated.
-function publishToRelays(event: { id: string }): Promise<PublishResult> {
+function publishToRelays(event: { id: string }, relays: string[]): Promise<PublishResult> {
   return new Promise((resolve) => {
     let accepted = 0;
     let rejected = 0;
     let reached = 0;
     let settled = 0;
-    const total = GC_RELAYS.length;
+    const total = relays.length;
     const finish = () => {
       if (settled >= total) resolve({ accepted, rejected, reached });
     };
-    for (const url of GC_RELAYS) {
+    for (const url of relays) {
       let ws: WebSocket;
       let done = false;
       const settle = () => {
@@ -1258,7 +1303,11 @@ async function signAndPublish(
   });
   if (!signed || !signed.id || !signed.sig) throw new Error('SIGN_FAILED');
 
-  const { accepted, rejected, reached } = await publishToRelays(signed);
+  // The signer is connected now, so (re-)read the visitor's relays and publish
+  // to their write relays as well as GC_RELAYS - their note lands on the relays
+  // they and their followers actually use.
+  resetUserRelays();
+  const { accepted, rejected, reached } = await publishToRelays(signed, await writeRelays());
   // Success if any relay ACKed, or if we reached relays that didn't reject it
   // (a missing ACK is almost always a slow relay, not a rejection). Only a hard
   // failure - nothing reached, or every reached relay explicitly rejected -

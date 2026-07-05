@@ -9,6 +9,17 @@
 // bundled Astro <script>, never at build time.
 // ---------------------------------------------------------------------------
 
+import qrcode from 'qrcode-generator';
+
+// An inline SVG QR code for `text` (e.g. a bolt11 invoice), rendered without any
+// external request. Low error-correction to fit long invoices; auto version.
+function qrSvg(text: string): string {
+  const qr = qrcode(0, 'L');
+  qr.addData(text);
+  qr.make();
+  return qr.createSvgTag({ cellSize: 4, margin: 1, scalable: true });
+}
+
 // -----------------------------------------------------------------------
 // Pure helpers (ported verbatim from the Lightning Piggy mobile app)
 // -----------------------------------------------------------------------
@@ -1296,15 +1307,14 @@ export async function postFindLog(cache: ParsedCache, text: string): Promise<Sig
 // -----------------------------------------------------------------------
 // Zap the hider (NIP-57 Lightning zap)
 // -----------------------------------------------------------------------
-// The hider's resolved Lightning pay endpoint, or null if they have no
-// lud16/lud06 in their profile. Ensures the profile is fetched first.
-export async function hiderLnAddress(pubkey: string): Promise<string | null> {
+// A profile's resolved Lightning pay endpoint (lud16 address or lud06 LNURL),
+// or null if they have neither. Ensures the profile is fetched first. Works for
+// any pubkey (e.g. a cache's hider).
+export async function lnAddressFor(pubkey: string): Promise<string | null> {
   await fetchProfiles([pubkey]);
   const prof = profileCache.get(pubkey);
   if (!prof) return null;
-  if (prof.lud16) return prof.lud16;
-  if (prof.lud06) return prof.lud06;
-  return null;
+  return prof.lud16 || prof.lud06 || null;
 }
 
 // Resolve a lud16 Lightning address or lud06 LNURL to its LNURL-pay URL.
@@ -1323,17 +1333,22 @@ function lnurlPayUrl(addr: string): string | null {
   return sanitizeUrl(url) || null;
 }
 
-// The outcome of a zap attempt: either it was paid in-browser via WebLN, or we
-// return the bolt11 invoice for the visitor to pay with any wallet.
-export type ZapResult = { paid: true } | { paid: false; invoice: string };
+export interface ZapOpts {
+  content?: string; // zap-request note (NIP-57 kind-9734 content)
+  aTag?: string; // optional cache coordinate to attribute the zap to
+}
 
-// Zap the hider `amountSats` via NIP-57 / LNURL-pay. Resolves their Lightning
-// address, attaches a signed zap request when the endpoint and a NIP-07 signer
-// allow it (so the zap shows on Nostr), fetches the invoice, and pays it with
-// WebLN when available - otherwise hands the invoice back for a wallet. Throws
-// `NO_ADDRESS`, `LNURL_FAILED`, `AMOUNT_RANGE`, or `NO_INVOICE`.
-export async function zapHider(cache: ParsedCache, amountSats: number): Promise<ZapResult> {
-  const addr = await hiderLnAddress(cache.hiderPubkey);
+// Request a bolt11 zap invoice for `pubkey` `amountSats` via NIP-57 / LNURL-pay.
+// Resolves their Lightning address, attaches a signed zap request when the
+// endpoint and a NIP-07 signer allow it (so the zap shows on Nostr), and returns
+// the invoice - the UI then lets the visitor choose how to pay (WebLN, QR, or
+// any wallet). Throws `NO_ADDRESS`, `LNURL_FAILED`, `AMOUNT_RANGE`, `NO_INVOICE`.
+export async function zapProfile(
+  pubkey: string,
+  amountSats: number,
+  opts: ZapOpts = {},
+): Promise<string> {
+  const addr = await lnAddressFor(pubkey);
   if (!addr) throw new Error('NO_ADDRESS');
   const payUrl = lnurlPayUrl(addr);
   if (!payUrl) throw new Error('NO_ADDRESS');
@@ -1355,16 +1370,17 @@ export async function zapHider(cache: ParsedCache, amountSats: number): Promise<
   const nostr = (window as any).nostr;
   if (meta.allowsNostr && meta.nostrPubkey && nostr?.signEvent) {
     try {
+      const tags: string[][] = [
+        ['relays', ...GC_RELAYS],
+        ['amount', String(amountMsat)],
+        ['p', pubkey],
+      ];
+      if (opts.aTag) tags.push(['a', opts.aTag]);
       const zapReq = await nostr.signEvent({
         kind: 9734,
         created_at: Math.floor(Date.now() / 1000),
-        content: `Funding "${cache.name}" on Lightning Piggy ⚡`,
-        tags: [
-          ['relays', ...GC_RELAYS],
-          ['amount', String(amountMsat)],
-          ['p', cache.hiderPubkey],
-          ['a', cache.coord],
-        ],
+        content: opts.content || 'Support on Lightning Piggy ⚡',
+        tags,
       });
       callback += `&nostr=${encodeURIComponent(JSON.stringify(zapReq))}`;
     } catch {
@@ -1372,23 +1388,27 @@ export async function zapHider(cache: ParsedCache, amountSats: number): Promise<
     }
   }
 
+  // LUD-12: if the endpoint accepts comments, pass the note as `comment` too so
+  // it's attached even for a plain (non-zap) LNURL-pay, within the allowed length.
+  const commentMax = typeof meta.commentAllowed === 'number' ? meta.commentAllowed : 0;
+  if (opts.content && commentMax > 0) {
+    callback += `&comment=${encodeURIComponent(opts.content.slice(0, commentMax))}`;
+  }
+
   const invoiceRes = await fetch(callback)
     .then((r) => r.json())
     .catch(() => null);
   const bolt11 = invoiceRes?.pr;
   if (!bolt11) throw new Error('NO_INVOICE');
+  return bolt11;
+}
 
-  const webln = (window as any).webln;
-  if (webln) {
-    try {
-      await webln.enable();
-      await webln.sendPayment(bolt11);
-      return { paid: true };
-    } catch {
-      // WebLN present but payment failed/cancelled - hand back the invoice.
-    }
-  }
-  return { paid: false, invoice: bolt11 };
+// Zap a cache's hider, attributing the zap to that cache (detail-page wrapper).
+export function zapHider(cache: ParsedCache, amountSats: number): Promise<string> {
+  return zapProfile(cache.hiderPubkey, amountSats, {
+    content: `Funding "${cache.name}" on Lightning Piggy ⚡`,
+    aTag: cache.coord,
+  });
 }
 
 // -----------------------------------------------------------------------
@@ -1538,10 +1558,11 @@ export function findLogDialogHtml(): string {
   `;
 }
 
-// The "Zap the hider" modal <dialog>: amount presets + custom, a send button,
-// and an invoice fallback area (shown when there's no WebLN wallet to pay
-// in-browser). `cache` is only used for the descriptive copy.
-export function zapDialogHtml(cache: ParsedCache): string {
+// The zap modal <dialog>: amount presets + custom, a send button, and an
+// invoice fallback area (shown when there's no WebLN wallet to pay in-browser).
+// `title`/`description` let it read "Zap the hider" (detail) or "Zap <name>"
+// Wired + opened by openZapDialog.
+function zapDialogHtml(title: string, description: string): string {
   const presets = [21, 100, 500, 2100];
   const chips = presets
     .map(
@@ -1557,37 +1578,183 @@ export function zapDialogHtml(cache: ParsedCache): string {
     <div style="font-family:Inter,system-ui,sans-serif;">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
         <div style="display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;color:#111827;">
-          ${ZAP_SVG} Zap the hider
+          ${ZAP_SVG} ${escapeHtml(title)}
         </div>
         <button type="button" class="pg-zap-close" aria-label="Close" style="flex:none;display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:none;border-radius:8px;background:#f3f4f6;color:#6b7280;cursor:pointer;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
       </div>
       <p style="margin-top:6px;font-size:12.5px;color:#6b7280;line-height:1.5;">
-        Send sats to the hider of "${escapeHtml(
-          cache.name,
-        )}" to help fund the prize. Pays with your WebLN wallet, or shows an invoice for any Lightning wallet.
+        ${escapeHtml(description)}
       </p>
       <div class="pg-zap-amounts" style="display:flex;gap:8px;margin-top:12px;">${chips}</div>
       <input class="pg-zap-custom" type="number" min="1" inputmode="numeric" placeholder="Custom amount (sats)" style="margin-top:8px;width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px;" />
+      <textarea class="pg-zap-comment" rows="2" maxlength="280" placeholder="Add a comment (optional)" aria-label="Zap comment" style="margin-top:8px;width:100%;box-sizing:border-box;font-family:inherit;font-size:13px;line-height:1.5;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:9px 12px;resize:vertical;"></textarea>
       <button type="button" class="pg-zap-send" style="margin-top:12px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:11px 14px;font-size:14px;font-weight:700;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
         ${ZAP_SVG} <span class="pg-zap-send-label">Zap 21 sats</span>
       </button>
       <div class="pg-zap-status" role="status" style="margin-top:8px;font-size:12px;color:#6b7280;line-height:1.4;min-height:16px;"></div>
       <div class="pg-zap-invoice" hidden style="margin-top:8px;">
-        <div style="font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.04em;">Lightning invoice</div>
-        <textarea class="pg-zap-invoice-text" rows="3" readonly style="margin-top:4px;width:100%;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;color:#111827;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;resize:none;"></textarea>
+        <!-- Scannable QR of the bolt11 invoice for any mobile Lightning wallet -->
+        <div class="pg-zap-qr" style="display:flex;justify-content:center;padding:12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;"></div>
+        <button type="button" class="pg-zap-webln" style="margin-top:8px;display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px 14px;font-size:13px;font-weight:700;color:#fff;background:${BRAND_PINK};border:none;border-radius:10px;cursor:pointer;">
+          ${ZAP_SVG} Pay with WebLN
+        </button>
         <div style="margin-top:8px;display:flex;gap:8px;">
           <button type="button" class="pg-zap-invoice-copy" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:12px;font-weight:600;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:10px;cursor:pointer;">
             ${svgIcon(ICON_COPY, '#111827', 14)} <span class="pg-zap-invoice-copy-label">Copy invoice</span>
           </button>
-          <a class="pg-zap-invoice-open" href="#" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:12px;font-weight:600;color:#fff;background:${BRAND_PINK};border-radius:10px;text-decoration:none;">
-            ${ZAP_SVG} Open in wallet
+          <a class="pg-zap-invoice-open" href="#" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:9px 12px;font-size:12px;font-weight:600;color:#111827;background:#fff;border:1px solid #e5e7eb;border-radius:10px;text-decoration:none;">
+            ${svgIcon(ICON_NAV, '#111827', 14)} Open in wallet
           </a>
         </div>
+        <textarea class="pg-zap-invoice-text" rows="2" readonly aria-label="Lightning invoice" style="margin-top:8px;width:100%;box-sizing:border-box;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;color:#6b7280;border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;resize:none;"></textarea>
       </div>
     </div>
   `;
+}
+
+export interface ZapTarget {
+  pubkey: string;
+  title: string; // modal heading, e.g. "Zap the hider" or "Zap Alice"
+  description: string; // sub-copy under the heading
+  aTag?: string; // optional cache coordinate to attribute the zap
+  zapContent?: string; // NIP-57 zap-request note
+}
+
+// Populate a <dialog> with the zap composer for `target`, wire it (amount
+// presets, WebLN pay / invoice fallback, close), and open it. Shared by the
+// detail page to zap a cache's hider (or any Nostr profile).
+export function openZapDialog(dialog: HTMLDialogElement, target: ZapTarget): void {
+  dialog.innerHTML = zapDialogHtml(target.title, target.description);
+  const q = <T extends HTMLElement>(sel: string) => dialog.querySelector(sel) as T | null;
+  const amounts = [...dialog.querySelectorAll<HTMLButtonElement>('.pg-zap-amount')];
+  const custom = q<HTMLInputElement>('.pg-zap-custom');
+  const commentEl = q<HTMLTextAreaElement>('.pg-zap-comment');
+  const sendBtn = q<HTMLButtonElement>('.pg-zap-send');
+  const sendLabel = q<HTMLElement>('.pg-zap-send-label');
+  const status = q<HTMLElement>('.pg-zap-status');
+  const invoiceBox = q<HTMLElement>('.pg-zap-invoice');
+  const invoiceText = q<HTMLTextAreaElement>('.pg-zap-invoice-text');
+  const invoiceOpen = q<HTMLAnchorElement>('.pg-zap-invoice-open');
+  const invoiceCopy = q<HTMLButtonElement>('.pg-zap-invoice-copy');
+  const invoiceCopyLabel = q<HTMLElement>('.pg-zap-invoice-copy-label');
+  const qrBox = q<HTMLElement>('.pg-zap-qr');
+  const weblnBtn = q<HTMLButtonElement>('.pg-zap-webln');
+
+  const markPaid = () => {
+    if (!status) return;
+    status.style.color = '#16a34a';
+    status.textContent = `Zapped ${amount.toLocaleString()} sats — thanks for supporting the hunt!`;
+    if (invoiceBox) invoiceBox.hidden = true;
+  };
+
+  q<HTMLButtonElement>('.pg-zap-close')?.addEventListener('click', () => dialog.close());
+  dialog.onclick = (e) => {
+    if (e.target === dialog) dialog.close();
+  };
+
+  let amount = 21;
+  const highlight = (active: number | null) => {
+    amounts.forEach((b) => {
+      const on = active != null && Number(b.dataset.sats) === active;
+      b.style.borderColor = on ? BRAND_PINK : '#e5e7eb';
+      b.style.background = on ? '#fce7f3' : '#fff';
+    });
+  };
+  const setAmount = (sats: number, fromPreset: boolean) => {
+    amount = sats;
+    if (sendLabel) sendLabel.textContent = `Zap ${sats.toLocaleString()} sats`;
+    highlight(fromPreset ? sats : null);
+  };
+  amounts.forEach((b) =>
+    b.addEventListener('click', () => {
+      if (custom) custom.value = '';
+      setAmount(Number(b.dataset.sats), true);
+    }),
+  );
+  custom?.addEventListener('input', () => {
+    const v = parseInt(custom.value, 10);
+    if (v > 0) setAmount(v, false);
+  });
+  setAmount(21, true);
+
+  const ZAP_ERRORS: Record<string, string> = {
+    NO_ADDRESS: 'They have no Lightning address set on their profile.',
+    AMOUNT_RANGE: "That amount is outside their allowed range. Try another.",
+    LNURL_FAILED: "Couldn't reach their Lightning address. Please try again.",
+    NO_INVOICE: "The Lightning service didn't return an invoice. Please try again.",
+  };
+
+  sendBtn?.addEventListener('click', async () => {
+    if (!sendBtn || !status) return;
+    sendBtn.disabled = true;
+    status.style.color = '#6b7280';
+    status.textContent = 'Requesting a Lightning invoice…';
+    if (invoiceBox) invoiceBox.hidden = true;
+    try {
+      const invoice = await zapProfile(target.pubkey, amount, {
+        content: commentEl?.value.trim() || target.zapContent,
+        aTag: target.aTag,
+      });
+      status.style.color = '#6b7280';
+      status.textContent = 'Invoice ready — pay with WebLN, scan the QR, or use any wallet:';
+      if (invoiceText) invoiceText.value = invoice;
+      if (invoiceOpen) invoiceOpen.href = `lightning:${invoice}`;
+      if (qrBox) qrBox.innerHTML = `<div style="width:190px;max-width:100%;">${qrSvg(invoice)}</div>`;
+
+      // "Pay with WebLN" is always shown; if no wallet is present, say so and
+      // point at the QR / other options rather than doing nothing.
+      if (weblnBtn) {
+        weblnBtn.onclick = async () => {
+          const webln = (window as any).webln;
+          if (!webln || typeof webln.sendPayment !== 'function') {
+            status.style.color = '#b91c1c';
+            status.textContent =
+              'No WebLN wallet detected. Install Alby or nos2x, or scan the QR / open in your wallet.';
+            return;
+          }
+          weblnBtn.disabled = true;
+          status.style.color = '#6b7280';
+          status.textContent = 'Paying with WebLN…';
+          try {
+            await webln.enable();
+            await webln.sendPayment(invoice);
+            markPaid();
+          } catch {
+            status.style.color = '#b91c1c';
+            status.textContent = 'WebLN payment failed or was cancelled. Scan the QR or copy the invoice.';
+          } finally {
+            weblnBtn.disabled = false;
+          }
+        };
+      }
+      if (invoiceBox) invoiceBox.hidden = false;
+    } catch (e) {
+      const code = e instanceof Error ? e.message : '';
+      status.style.color = '#b91c1c';
+      status.textContent = ZAP_ERRORS[code] || 'Could not create the zap. Please try again.';
+    } finally {
+      sendBtn.disabled = false;
+    }
+  });
+
+  invoiceCopy?.addEventListener('click', async () => {
+    if (!invoiceText) return;
+    try {
+      await navigator.clipboard.writeText(invoiceText.value);
+    } catch {
+      return;
+    }
+    if (invoiceCopyLabel) {
+      invoiceCopyLabel.textContent = 'Copied!';
+      window.setTimeout(() => {
+        if (invoiceCopyLabel.isConnected) invoiceCopyLabel.textContent = 'Copy invoice';
+      }, 1300);
+    }
+  });
+
+  dialog.showModal();
 }
 
 // The full-page treasure view: a two-column layout matching treasures.to - the

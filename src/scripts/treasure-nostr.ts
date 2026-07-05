@@ -371,6 +371,133 @@ export async function fetchCache(
 }
 
 // -----------------------------------------------------------------------
+// Leaderboards (top hiders + top finders)
+// -----------------------------------------------------------------------
+export interface LeaderEntry {
+  pubkey: string;
+  name: string | null;
+  picture: string | null;
+  lnAddress: string | null; // lud16/lud06 if set - drives the zap button
+  count: number; // caches hidden (hiders) / caches found (finders)
+  piglets?: number; // hiders only: how many of their caches carry a prize
+}
+
+export interface LeaderboardSet {
+  hiders: LeaderEntry[];
+  finders: LeaderEntry[];
+}
+
+// `all` ranks by every NIP-GC cache; `piglets` ranks by Lightning-prize Piglets
+// only. The leaderboard toggles between the two (defaulting to `all`).
+export interface Leaderboards {
+  all: LeaderboardSet;
+  piglets: LeaderboardSet;
+}
+
+// Build the top-hider and top-finder leaderboards purely from public Nostr data:
+// hiders ranked by distinct caches authored (newest kind-37516 per pubkey:d),
+// finders by distinct caches found (kind-7516 found-logs, deduped by cache).
+// Both an "all caches" and a "Piglets only" ranking are returned. Profiles for
+// the ranked rows are resolved so callers can show names/avatars.
+export async function fetchLeaderboards(topN = 15): Promise<Leaderboards> {
+  const [cacheEvents, findEvents] = await Promise.all([
+    fetchEvents([{ kinds: [GC_CACHE_KIND], limit: 500 }]),
+    fetchEvents([{ kinds: [GC_FOUND_LOG_KIND], limit: 1000 }]),
+  ]);
+
+  // Dedupe caches by pubkey:d; tally per author + note which coords are Piglets.
+  const newestCache = new Map<string, NostrEvent>();
+  for (const ev of cacheEvents) {
+    if (ev.kind !== GC_CACHE_KIND) continue;
+    const d = firstTag(ev.tags || [], 'd');
+    if (!d) continue;
+    const key = ev.pubkey + ':' + d;
+    const cur = newestCache.get(key);
+    if (!cur || ev.created_at > cur.created_at) newestCache.set(key, ev);
+  }
+  const pigletCoords = new Set<string>();
+  const hiderAgg = new Map<string, { count: number; piglets: number }>();
+  for (const ev of newestCache.values()) {
+    const d = firstTag(ev.tags || [], 'd')!;
+    const isPiggy = (ev.tags || []).some(
+      (t) => t[0] === 'l' && t[1] === 'payout-lnurl-w' && t[2] === 'com.lightningpiggy.app',
+    );
+    if (isPiggy) pigletCoords.add(`${GC_CACHE_KIND}:${ev.pubkey}:${d}`);
+    const a = hiderAgg.get(ev.pubkey) || { count: 0, piglets: 0 };
+    a.count++;
+    if (isPiggy) a.piglets++;
+    hiderAgg.set(ev.pubkey, a);
+  }
+
+  // Finders: distinct caches found per author, split into all vs Piglet-only.
+  const finderAll = new Map<string, Set<string>>();
+  const finderPiglets = new Map<string, Set<string>>();
+  for (const ev of findEvents) {
+    if (ev.kind !== GC_FOUND_LOG_KIND) continue;
+    const a = firstTag(ev.tags || [], 'a');
+    if (!a || !a.startsWith(`${GC_CACHE_KIND}:`)) continue;
+    let set = finderAll.get(ev.pubkey);
+    if (!set) finderAll.set(ev.pubkey, (set = new Set<string>()));
+    set.add(a);
+    if (pigletCoords.has(a)) {
+      let ps = finderPiglets.get(ev.pubkey);
+      if (!ps) finderPiglets.set(ev.pubkey, (ps = new Set<string>()));
+      ps.add(a);
+    }
+  }
+
+  type Raw = { pubkey: string; count: number; piglets: number };
+  const hiderRaw: Raw[] = [...hiderAgg.entries()].map(([pubkey, v]) => ({
+    pubkey,
+    count: v.count,
+    piglets: v.piglets,
+  }));
+  const finderRaw: Raw[] = [...finderAll.entries()].map(([pubkey, set]) => ({
+    pubkey,
+    count: set.size,
+    piglets: finderPiglets.get(pubkey)?.size ?? 0,
+  }));
+
+  // Rank by total caches (all) or by Piglet count (piglets), keeping `piglets`
+  // as a sub-badge in the all view. In the Piglet view the primary count is the
+  // Piglet count.
+  const rankAll = (rows: Raw[]) =>
+    [...rows].sort((a, b) => b.count - a.count || b.piglets - a.piglets).slice(0, topN);
+  const rankPiglets = (rows: Raw[]) =>
+    rows
+      .filter((r) => r.piglets > 0)
+      .sort((a, b) => b.piglets - a.piglets)
+      .map((r) => ({ ...r, count: r.piglets }))
+      .slice(0, topN);
+
+  const lists = {
+    all: { hiders: rankAll(hiderRaw), finders: rankAll(finderRaw) },
+    piglets: { hiders: rankPiglets(hiderRaw), finders: rankPiglets(finderRaw) },
+  };
+
+  const everyPubkey = new Set<string>();
+  for (const set of [lists.all.hiders, lists.all.finders, lists.piglets.hiders, lists.piglets.finders])
+    for (const e of set) everyPubkey.add(e.pubkey);
+  await fetchProfiles([...everyPubkey]);
+
+  const attach = (e: Raw): LeaderEntry => {
+    const p = profileCache.get(e.pubkey);
+    return {
+      pubkey: e.pubkey,
+      count: e.count,
+      piglets: e.piglets,
+      name: p?.name ?? null,
+      picture: p?.picture ?? null,
+      lnAddress: p?.lud16 || p?.lud06 || null,
+    };
+  };
+  return {
+    all: { hiders: lists.all.hiders.map(attach), finders: lists.all.finders.map(attach) },
+    piglets: { hiders: lists.piglets.hiders.map(attach), finders: lists.piglets.finders.map(attach) },
+  };
+}
+
+// -----------------------------------------------------------------------
 // Find log (mirrors the mobile app's HuntPiggyDetailScreen)
 // -----------------------------------------------------------------------
 // A cache's "find log" is the stream of finders' notes attached to it on
@@ -545,7 +672,7 @@ function bytesToHex(bytes: number[]): string {
   return bytes.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function npubEncode(hex: string): string {
+export function npubEncode(hex: string): string {
   return bech32Encode('npub', hexToBytes(hex));
 }
 

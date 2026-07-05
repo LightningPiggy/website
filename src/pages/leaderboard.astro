@@ -1,0 +1,351 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Treasure Hunt Leaderboard"
+  description="The top hiders and finders on the Lightning Piggy treasure hunt, ranked live from Nostr."
+>
+  <style is:global>
+    .pg-lb-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 18px;
+    }
+    @media (min-width: 760px) {
+      .pg-lb-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+    .pg-lb-card {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px 18px;
+    }
+    .pg-lb-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid #f3f4f6;
+    }
+    .pg-lb-row:first-of-type {
+      border-top: none;
+    }
+    .pg-lb-rank {
+      flex: none;
+      width: 26px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #9ca3af;
+    }
+    .pg-lb-name {
+      flex: 1;
+      min-width: 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111827;
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .pg-lb-name:hover {
+      color: #ec008c;
+    }
+    .pg-lb-zap {
+      flex: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 9999px;
+      background: #fce7f3;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .pg-lb-zap:hover {
+      background: #fbcfe8;
+    }
+    .pg-lb-count {
+      flex: none;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6b7280;
+      background: #f3f4f6;
+      border-radius: 9999px;
+      padding: 3px 10px;
+      white-space: nowrap;
+    }
+    .pg-skel {
+      background: #e5e7eb;
+      border-radius: 6px;
+      animation: pg-pulse 1.4s ease-in-out infinite;
+    }
+    @keyframes pg-pulse {
+      0%,
+      100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.45;
+      }
+    }
+    .pg-lb-dialog {
+      width: 92vw;
+      max-width: 480px;
+      border: none;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    }
+    .pg-lb-dialog::backdrop {
+      background: rgba(17, 24, 39, 0.55);
+    }
+  </style>
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+    <a
+      href="/treasure-hunt"
+      class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-pink transition-colors"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 12H5M12 19l-7-7 7-7" /></svg>
+      Back to map
+    </a>
+
+    <div class="mt-4 mb-6 flex items-start justify-between gap-4 flex-wrap">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 flex items-center gap-2">
+          <span aria-hidden="true">🏆</span> Treasure Hunt Leaderboard
+        </h1>
+        <p class="mt-1 text-gray-600 text-sm">
+          The most active hiders and finders, ranked live from the Nostr network.
+        </p>
+      </div>
+
+      <!-- All / Piglets filter -->
+      <div class="inline-flex rounded-full border border-gray-200 bg-white p-1 text-sm font-semibold shadow-sm shrink-0">
+        <button
+          type="button"
+          data-mode="all"
+          class="lb-filter-btn px-3.5 py-1.5 rounded-full transition-colors bg-pink text-white"
+        >
+          All caches
+        </button>
+        <button
+          type="button"
+          data-mode="piglets"
+          class="lb-filter-btn px-3.5 py-1.5 rounded-full transition-colors text-gray-600 hover:text-gray-900 inline-flex items-center gap-1"
+        >
+          <span aria-hidden="true">⚡</span> Piglets
+        </button>
+      </div>
+    </div>
+
+    <div id="lb-content" class="pg-lb-grid">
+      <div class="pg-lb-card">
+        <div class="flex items-center gap-2 mb-1">
+          <span id="lb-hiders-icon" class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white" style="background:#7A5CFF;"></span>
+          <h2 class="text-base font-bold text-gray-900">Top hiders</h2>
+        </div>
+        <p id="lb-hiders-sub" class="text-xs text-gray-500 mb-2">By treasures hidden</p>
+        <div id="lb-hiders"></div>
+      </div>
+
+      <div class="pg-lb-card">
+        <div class="flex items-center gap-2 mb-1">
+          <span id="lb-finders-icon" class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white" style="background:#7A5CFF;"></span>
+          <h2 class="text-base font-bold text-gray-900">Top finders</h2>
+        </div>
+        <p id="lb-finders-sub" class="text-xs text-gray-500 mb-2">By treasures found</p>
+        <div id="lb-finders"></div>
+      </div>
+    </div>
+
+    <div id="lb-error" class="hidden py-16 text-center text-gray-600">
+      Couldn't load the leaderboard right now. Please try again shortly.
+    </div>
+  </div>
+
+  <!-- Shared zap modal, opened from a row's ⚡ button -->
+  <dialog id="lb-zap-dialog" class="pg-lb-dialog"></dialog>
+
+  <script>
+    import {
+      fetchLeaderboards,
+      avatarHtml,
+      shortNpub,
+      escapeHtml,
+      npubEncode,
+      openZapDialog,
+      type LeaderEntry,
+      type Leaderboards,
+    } from '../scripts/treasure-nostr';
+
+    const MEDALS = ['🥇', '🥈', '🥉'];
+    const PURPLE = '#7A5CFF';
+    const PINK = '#EC008C';
+    // Header icons: map-pin (regular geocache) for hiders in "all", piggy in
+    // "Piglets"; a search glyph for finders (distinct from the hider pin).
+    const PIN_SVG =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></svg>';
+    const PIGGY_SVG =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>';
+    const FIND_SVG =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
+    const ZAP_SVG =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="#EC008C" stroke="#EC008C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>';
+
+    type Mode = 'all' | 'piglets';
+    type Kind = 'hiders' | 'finders';
+
+    let data: Leaderboards | null = null;
+    let mode: Mode = 'all';
+    const nameByPubkey = new Map<string, string>();
+
+    function displayName(entry: LeaderEntry): string {
+      return entry.name || shortNpub(entry.pubkey);
+    }
+
+    function countLabel(entry: LeaderEntry, kind: Kind): string {
+      if (mode === 'piglets') return `${entry.count} Piglet${entry.count === 1 ? '' : 's'}`;
+      const sub = entry.piglets ? ` · ${entry.piglets} ⚡` : '';
+      return kind === 'hiders'
+        ? `${entry.count} hidden${sub}`
+        : `${entry.count} find${entry.count === 1 ? '' : 's'}${sub}`;
+    }
+
+    function rowHtml(entry: LeaderEntry, rank: number, kind: Kind): string {
+      const rankLabel = rank <= 3 ? MEDALS[rank - 1] : String(rank);
+      const name = escapeHtml(displayName(entry));
+      const npub = npubEncode(entry.pubkey);
+      const zap = entry.lnAddress
+        ? `<button type="button" class="pg-lb-zap" data-pubkey="${entry.pubkey}" aria-label="Zap ${name}" title="Zap ${name}">${ZAP_SVG}</button>`
+        : '';
+      return `
+        <div class="pg-lb-row">
+          <span class="pg-lb-rank">${rankLabel}</span>
+          ${avatarHtml(entry.picture)}
+          <a class="pg-lb-name" href="https://njump.me/${npub}" target="_blank" rel="noopener noreferrer">${name}</a>
+          ${zap}
+          <span class="pg-lb-count">${countLabel(entry, kind)}</span>
+        </div>
+      `;
+    }
+
+    function skeletonRow(): string {
+      return `
+        <div class="pg-lb-row">
+          <span class="pg-lb-rank"></span>
+          <span class="pg-skel" style="width:28px;height:28px;border-radius:9999px;flex:none;"></span>
+          <span class="pg-skel" style="flex:1;height:12px;"></span>
+          <span class="pg-skel" style="width:54px;height:18px;border-radius:9999px;flex:none;"></span>
+        </div>
+      `;
+    }
+
+    function fillSkeletons(el: HTMLElement | null, rows = 8): void {
+      if (el) el.innerHTML = Array.from({ length: rows }, skeletonRow).join('');
+    }
+
+    function fill(el: HTMLElement | null, entries: LeaderEntry[], kind: Kind): void {
+      if (!el) return;
+      el.innerHTML = entries.length
+        ? entries.map((e, i) => rowHtml(e, i + 1, kind)).join('')
+        : `<div style="padding:16px 0;font-size:13px;color:#9ca3af;">No ${
+            mode === 'piglets' ? 'Piglet ' : ''
+          }${kind === 'hiders' ? 'hiders' : 'finders'} yet — go be the first!</div>`;
+    }
+
+    function updateHeaderIcons(): void {
+      const bg = mode === 'piglets' ? PINK : PURPLE;
+      const h = document.getElementById('lb-hiders-icon');
+      const f = document.getElementById('lb-finders-icon');
+      if (h) {
+        h.style.background = bg;
+        h.innerHTML = mode === 'piglets' ? PIGGY_SVG : PIN_SVG;
+      }
+      if (f) {
+        f.style.background = bg;
+        f.innerHTML = FIND_SVG;
+      }
+    }
+
+    function render(): void {
+      updateHeaderIcons();
+      if (!data) return;
+      const set = mode === 'all' ? data.all : data.piglets;
+      fill(document.getElementById('lb-hiders'), set.hiders, 'hiders');
+      fill(document.getElementById('lb-finders'), set.finders, 'finders');
+      const label = mode === 'piglets' ? 'Piglets' : 'treasures';
+      const hSub = document.getElementById('lb-hiders-sub');
+      const fSub = document.getElementById('lb-finders-sub');
+      if (hSub) hSub.textContent = `By ${label} hidden`;
+      if (fSub) fSub.textContent = `By ${label} found`;
+    }
+
+    function wireFilter(): void {
+      document.querySelectorAll<HTMLButtonElement>('.lb-filter-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const next = btn.dataset.mode as Mode;
+          if (next === mode) return;
+          mode = next;
+          document.querySelectorAll<HTMLButtonElement>('.lb-filter-btn').forEach((b) => {
+            const active = b.dataset.mode === mode;
+            b.classList.toggle('bg-pink', active);
+            b.classList.toggle('text-white', active);
+            b.classList.toggle('text-gray-600', !active);
+          });
+          render();
+        });
+      });
+    }
+
+    function wireZap(): void {
+      const dialog = document.getElementById('lb-zap-dialog') as HTMLDialogElement | null;
+      const content = document.getElementById('lb-content');
+      if (!dialog || !content) return;
+      content.addEventListener('click', (e) => {
+        const btn = (e.target as HTMLElement).closest('.pg-lb-zap') as HTMLButtonElement | null;
+        if (!btn) return;
+        const pubkey = btn.dataset.pubkey || '';
+        const name = nameByPubkey.get(pubkey) || 'this hunter';
+        openZapDialog(dialog, {
+          pubkey,
+          title: `Zap ${name}`,
+          description: `Send sats to ${name} to support the Lightning Piggy treasure hunt. Pays with your WebLN wallet, or shows an invoice for any Lightning wallet.`,
+          zapContent: `Supporting ${name} on the Lightning Piggy treasure hunt ⚡`,
+        });
+      });
+    }
+
+    async function init(): Promise<void> {
+      wireFilter();
+      wireZap();
+      updateHeaderIcons();
+      fillSkeletons(document.getElementById('lb-hiders'));
+      fillSkeletons(document.getElementById('lb-finders'));
+      try {
+        data = await fetchLeaderboards(15);
+        for (const set of [data.all, data.piglets])
+          for (const e of [...set.hiders, ...set.finders]) nameByPubkey.set(e.pubkey, displayName(e));
+        render();
+      } catch (e) {
+        console.error('Leaderboard load failed:', e);
+        const content = document.getElementById('lb-content');
+        if (content) content.style.display = 'none';
+        document.getElementById('lb-error')?.classList.remove('hidden');
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+</BaseLayout>

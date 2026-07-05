@@ -550,13 +550,16 @@ export function shortNpub(pk: string): string {
   return pk.length > 12 ? `${pk.slice(0, 8)}…${pk.slice(-4)}` : pk;
 }
 
-// The naddr coordinate for a parsed cache: /treasure/<naddr> deep-link target.
-export function cacheNaddr(cache: ParsedCache): string {
+// The naddr coordinate for a parsed cache. Bare by default (short /treasure/<naddr>
+// deep links, which our own page resolves via GC_RELAYS anyway); pass `relays`
+// to embed relay hints so *other* Nostr clients (njump, Primal, …) can resolve
+// a shared link even if they don't already index these relays.
+export function cacheNaddr(cache: ParsedCache, relays: string[] = []): string {
   return naddrEncode({
     kind: GC_CACHE_KIND,
     pubkey: cache.hiderPubkey,
     identifier: cache.d,
-    relays: [],
+    relays,
   });
 }
 
@@ -651,8 +654,10 @@ export async function loadFindLog(coord: string, bodyEl: HTMLElement): Promise<v
     }</div>` + logs.map(renderLogRow).join('');
 }
 
-// Resolve the hider's profile and upgrade the "Hidden by …" row from its
-// npub placeholder to the hider's name + avatar once it arrives.
+// Resolve the hider's profile and fill in the "Hidden by …" row. The row starts
+// as a skeleton (see hiderRowHtml); once the kind-0 lookup settles we show the
+// profile name, or fall back to a short npub only then - so no placeholder ever
+// flashes and flips to the real name mid-load.
 async function loadHider(
   pubkey: string,
   nameEl: HTMLElement | null,
@@ -660,9 +665,12 @@ async function loadHider(
 ): Promise<void> {
   await fetchProfiles([pubkey]);
   const prof = profileCache.get(pubkey);
-  if (!prof) return;
-  if (prof.name && nameEl?.isConnected) nameEl.textContent = `Hidden by ${prof.name}`;
-  if (prof.picture && avatarEl?.isConnected) avatarEl.innerHTML = avatarHtml(prof.picture);
+  if (nameEl?.isConnected) {
+    const display = prof?.name || shortNpub(pubkey);
+    nameEl.textContent = `Hidden by ${display}`;
+    nameEl.style.color = '#111827';
+  }
+  if (prof?.picture && avatarEl?.isConnected) avatarEl.innerHTML = avatarHtml(prof.picture);
 }
 
 // -----------------------------------------------------------------------
@@ -935,13 +943,13 @@ export function heroBlock(cache: ParsedCache, h: number): string {
 // The "Hidden by …" attribution row (avatar + name + trust caveat). The name
 // starts as an npub placeholder; loadHider upgrades it to the profile once
 // resolved. Shared by the popup (inline) and the detail page (sidebar).
-export function hiderRowHtml(cache: ParsedCache): string {
+export function hiderRowHtml(_cache: ParsedCache): string {
+  // The name starts as a skeleton bar (not an npub that would flash then flip
+  // to the profile name); loadHider fills it once the kind-0 lookup settles.
   return `<div style="display:flex;gap:8px;align-items:flex-start;">
       <span class="pg-hider-avatar" style="flex:none;">${avatarHtml(null)}</span>
       <div style="min-width:0;flex:1;">
-        <div class="pg-hider-name" style="font-size:12px;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Hidden by ${escapeHtml(
-          shortNpub(cache.hiderPubkey),
-        )}</div>
+        <div class="pg-hider-name" style="font-size:12px;font-weight:600;color:#111827;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><span class="pg-hider-skel" style="display:inline-block;width:96px;max-width:100%;height:11px;border-radius:6px;background:#e5e7eb;vertical-align:middle;"></span></div>
         <div style="font-size:11px;color:#9ca3af;font-style:italic;line-height:1.4;">Verify you trust them before going to the location.</div>
       </div>
     </div>`;
@@ -1109,9 +1117,11 @@ export interface ShareNote {
 // a portable pointer. `a` tags the addressable cache event; `t` tags surface it
 // under the hunt hashtags.
 export function buildShareNote(cache: ParsedCache): ShareNote {
-  const naddr = cacheNaddr(cache);
-  const lpUrl = `${SITE}/treasure/${naddr}`;
-  const njumpUrl = `https://njump.me/${naddr}`;
+  // A bare naddr keeps our own /treasure/<naddr> link short (our page resolves
+  // it via GC_RELAYS). The njump link, however, is opened by other clients, so
+  // it carries relay hints (a couple is plenty) so they can resolve the cache.
+  const lpUrl = `${SITE}/treasure/${cacheNaddr(cache)}`;
+  const njumpUrl = `https://njump.me/${cacheNaddr(cache, GC_RELAYS.slice(0, 2))}`;
   const prize =
     cache.isLpPiggy && cache.payoutSats != null
       ? ` — claim ⚡ ${cache.payoutSats.toLocaleString()} sats`
@@ -1133,19 +1143,38 @@ export function buildShareNote(cache: ParsedCache): ShareNote {
   return { content, tags, lpUrl, njumpUrl };
 }
 
-// Publish a signed event to every relay, resolving with the number that
-// accepted it (an `OK … true`). Never rejects - callers decide what a zero
-// count means. Each relay is capped by a short timeout.
-function publishToRelays(event: { id: string }): Promise<number> {
+interface PublishResult {
+  accepted: number; // relays that sent `OK … true`
+  rejected: number; // relays that sent `OK … false` (explicit rejection)
+  reached: number; // relays we opened a socket to and sent the EVENT
+}
+
+// Publish a signed event to every relay. Never rejects; resolves with counts so
+// the caller can tell a real failure (nothing reached, or every reached relay
+// rejected) from a slow relay that simply didn't ACK before the timeout - a
+// timeout is not a failure, the event has usually still propagated.
+function publishToRelays(event: { id: string }): Promise<PublishResult> {
   return new Promise((resolve) => {
     let accepted = 0;
+    let rejected = 0;
+    let reached = 0;
     let settled = 0;
     const total = GC_RELAYS.length;
     const finish = () => {
-      if (settled >= total) resolve(accepted);
+      if (settled >= total) resolve({ accepted, rejected, reached });
     };
     for (const url of GC_RELAYS) {
       let ws: WebSocket;
+      let done = false;
+      const settle = () => {
+        if (done) return;
+        done = true;
+        try {
+          ws.close();
+        } catch {}
+        settled++;
+        finish();
+      };
       try {
         ws = new WebSocket(url);
       } catch {
@@ -1153,25 +1182,19 @@ function publishToRelays(event: { id: string }): Promise<number> {
         finish();
         continue;
       }
-      const timer = window.setTimeout(() => {
-        try {
-          ws.close();
-        } catch {}
-        settled++;
-        finish();
-      }, 5000);
-      ws.onopen = () => ws.send(JSON.stringify(['EVENT', event]));
+      const timer = window.setTimeout(settle, 5000);
+      ws.onopen = () => {
+        reached++;
+        ws.send(JSON.stringify(['EVENT', event]));
+      };
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data);
           if (msg[0] === 'OK' && msg[1] === event.id) {
             if (msg[2]) accepted++;
+            else rejected++;
             clearTimeout(timer);
-            try {
-              ws.close();
-            } catch {}
-            settled++;
-            finish();
+            settle();
           }
         } catch {
           // ignore parse errors
@@ -1179,8 +1202,7 @@ function publishToRelays(event: { id: string }): Promise<number> {
       };
       ws.onerror = () => {
         clearTimeout(timer);
-        settled++;
-        finish();
+        settle();
       };
     }
   });
@@ -1225,9 +1247,14 @@ async function signAndPublish(
   });
   if (!signed || !signed.id || !signed.sig) throw new Error('SIGN_FAILED');
 
-  const accepted = await publishToRelays(signed);
-  if (accepted === 0) throw new Error('PUBLISH_FAILED');
-  return { event: signed, accepted };
+  const { accepted, rejected, reached } = await publishToRelays(signed);
+  // Success if any relay ACKed, or if we reached relays that didn't reject it
+  // (a missing ACK is almost always a slow relay, not a rejection). Only a hard
+  // failure - nothing reached, or every reached relay explicitly rejected -
+  // throws. Report the best-effort count so the UI can say "posted to N".
+  if (accepted > 0) return { event: signed, accepted };
+  if (reached > rejected) return { event: signed, accepted: reached - rejected };
+  throw new Error('PUBLISH_FAILED');
 }
 
 // Share a cache as a kind-1 note (the "Share to Nostr" modal). `contentOverride`

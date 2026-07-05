@@ -121,9 +121,68 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       zapDialogHtml,
       zapHider,
       hiderLnAddress,
+      cacheNaddr,
+      sanitizeUrl,
       BRAND_PINK,
       type ParsedCache,
     } from '../scripts/treasure-nostr';
+
+    const SITE = 'https://lightningpiggy.com';
+
+    // Collapse whitespace and hard-cap to `max` chars (guarding max <= 0), for
+    // social-preview descriptions.
+    function truncate(text: string, max: number): string {
+      if (max <= 0) return '';
+      const t = (text || '').replace(/\s+/g, ' ').trim();
+      return t.length <= max ? t : `${t.slice(0, max - 1).trimEnd()}…`;
+    }
+
+    // Set or create a <meta> tag by its property/name selector.
+    function setMeta(selector: string, content: string): void {
+      let el = document.head.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) {
+        const m = selector.match(/\[(property|name)="([^"]+)"\]/);
+        if (!m) return;
+        el = document.createElement('meta');
+        el.setAttribute(m[1], m[2]);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    }
+
+    // Give the resolved treasure its own title + Open Graph / Twitter preview so
+    // a shared lightningpiggy.com/treasure/<naddr> link renders the cache name,
+    // description and photo. (This runs client-side; crawlers that don't execute
+    // JS will still see the page's default tags - a Netlify prerender/edge
+    // function would be needed to cover those.)
+    function setSocialMeta(cache: ParsedCache): void {
+      const url = `${SITE}/treasure/${cacheNaddr(cache)}`;
+      const title = `${cache.name} — Lightning Piggy Treasure Hunt`;
+      const prize =
+        cache.isLpPiggy && cache.payoutSats != null
+          ? ` · ⚡ ${cache.payoutSats.toLocaleString()} sats prize`
+          : '';
+      const desc = truncate(
+        (cache.description || 'A hidden Lightning Piggy treasure on the Nostr geocaching map.') +
+          prize,
+        200,
+      );
+      const image = cache.imageUrl ? sanitizeUrl(cache.imageUrl) : '';
+
+      document.title = `${cache.name} | Treasure | LightningPiggy`;
+      setMeta('meta[property="og:title"]', title);
+      setMeta('meta[name="twitter:title"]', title);
+      setMeta('meta[property="og:description"]', desc);
+      setMeta('meta[name="twitter:description"]', desc);
+      setMeta('meta[name="description"]', desc);
+      setMeta('meta[property="og:url"]', url);
+      if (image) {
+        setMeta('meta[property="og:image"]', image);
+        setMeta('meta[name="twitter:image"]', image);
+      }
+      const canonical = document.head.querySelector('link[rel="canonical"]');
+      if (canonical) canonical.setAttribute('href', url);
+    }
 
     const CHECK_SVG =
       '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
@@ -506,7 +565,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       content.innerHTML = buildDetailHtml(cache);
       document.getElementById('treasure-loading')?.classList.add('hidden');
       content.classList.remove('hidden');
-      document.title = `${cache.name} | Treasure | LightningPiggy`;
+      setSocialMeta(cache);
 
       // wireCacheCard fills the hero map (now that it has a size), and wires the
       // hint + photo/map toggle + hider. Then the find log and share controls.

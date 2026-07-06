@@ -119,7 +119,14 @@ const fallbackImages = fs.existsSync(wildDir)
             }
           } catch {}
         };
-        ws.onerror = () => { clearTimeout(timer); resolve([]); };
+        ws.onerror = () => {
+          // Keep any events already received before the socket errored (e.g. it
+          // dropped before EOSE) rather than discarding them and needlessly
+          // falling back to the static images; and close the half-open socket.
+          clearTimeout(timer);
+          try { ws.close(); } catch {}
+          resolve(events);
+        };
       });
     }
 

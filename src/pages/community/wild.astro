@@ -3,49 +3,41 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Curated static images kept as a graceful fallback: shown only if the Nostr
+// fetch yields nothing (relay hiccup, or the profile has no image posts yet).
 const wildDir = path.join(process.cwd(), 'public/images/wild');
-const images = fs.readdirSync(wildDir)
-  .filter((f: string) => /\.(jpe?g|png|webp|gif)$/i.test(f))
-  .sort()
-  .reverse()
-  .map((f: string) => `/images/wild/${f}`);
+const fallbackImages = fs.existsSync(wildDir)
+  ? fs
+      .readdirSync(wildDir)
+      .filter((f: string) => /\.(jpe?g|png|webp|gif)$/i.test(f))
+      .sort()
+      .reverse()
+      .map((f: string) => `/images/wild/${f}`)
+  : [];
 ---
 
-<BaseLayout title="In the Wild" description="Lightning Piggy builds and sightings from around the world">
+<BaseLayout
+  title="In the Wild"
+  description="Lightning Piggy builds and sightings from around the world - pulled live from Nostr."
+>
   <section class="py-8 md:py-12">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="mb-8">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">In the Wild</h1>
         <p class="text-lg text-gray-600">
-          The Vogue of piggy banks: Showcase your creations here to help inspire other builders.
-          Whether your Lightning Piggy is 3D printed or handmade, every unique build adds to the
-          creativity of the community.
+          Piglets, builds and sightings from around the world — pulled live from the
+          <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-medium">Lightning Piggy Nostr profile</a>.
+          Every image the project posts — including from conferences and meetups — shows up here automatically.
         </p>
       </header>
 
-      <!-- Gallery Grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {images.map((src, i) => (
-          <div class="gallery-item">
-            <input type="checkbox" id={`lightbox-${i}`} class="lightbox-toggle hidden" />
-            <label for={`lightbox-${i}`} class="cursor-pointer block">
-              <img
-                src={src}
-                alt={`LightningPiggy in the wild ${i + 1}`}
-                class="w-full aspect-square object-cover object-center rounded-lg hover:opacity-90 transition-opacity"
-                loading="lazy"
-              />
-            </label>
-            <!-- Lightbox overlay -->
-            <label for={`lightbox-${i}`} class="lightbox-overlay">
-              <img
-                src={src}
-                alt={`LightningPiggy in the wild ${i + 1}`}
-                class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
-              />
-            </label>
-          </div>
-        ))}
+      <!-- Gallery grid (masonry via CSS columns), filled client-side -->
+      <div id="wild-grid" class="[column-count:2] sm:[column-count:3] lg:[column-count:4] gap-3"></div>
+
+      <!-- Empty state -->
+      <div id="wild-empty" class="hidden py-20 text-center">
+        <svg class="w-14 h-14 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+        <p class="text-gray-500">No sightings yet — go post one!</p>
       </div>
 
       <!-- CTA -->
@@ -53,29 +45,203 @@ const images = fs.readdirSync(wildDir)
         <hr class="mb-12 border-gray-200" />
         <h2 class="text-2xl font-bold text-gray-900 mb-4">Share Your Piggy</h2>
         <p class="text-gray-600">
-          Built a Lightning Piggy? We'd love to see it! Share on social media with
-          <strong>#LightningPiggy</strong> or email us at
+          Built or spotted a Lightning Piggy? Post it on <strong>Nostr</strong> and tag
+          <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" target="_blank" rel="noopener noreferrer" class="text-pink underline">@LightningPiggy</a>
+          — or use <strong>#LightningPiggy</strong> — and email us at
           <a href="mailto:oink@lightningpiggy.com" class="text-pink underline">oink@lightningpiggy.com</a>.
-          Bonus zaps if you include a scannable payment QR in the image.
+          Bonus zaps if your image includes a scannable payment QR.
         </p>
       </div>
     </div>
   </section>
+
+  <!-- Lightbox overlay -->
+  <div
+    id="wild-lightbox"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/85 cursor-pointer p-4"
+  >
+    <img id="wild-lightbox-img" src="" alt="" class="max-w-[92vw] max-h-[92vh] object-contain rounded-lg shadow-2xl" />
+  </div>
+
+  <!-- Curated fallback images, used only if Nostr returns nothing -->
+  <script type="application/json" id="wild-fallback" set:html={JSON.stringify(fallbackImages)}></script>
+
+  <style>
+    @keyframes wild-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .wild-skel { background: #e5e7eb; border-radius: 10px; animation: wild-pulse 1.4s ease-in-out infinite; }
+  </style>
+
+  <script>
+    // Lightning Piggy Nostr identity (npub1y2qca…) as hex, and the relays we read.
+    const LP_PUBKEY = '22818ec33d8078e64964b561c839b74433f2371552d7f5bd6ab0af325a79f429';
+    const RELAYS = [
+      'wss://relay.damus.io',
+      'wss://nos.lol',
+      'wss://relay.primal.net',
+      'wss://relay.nostr.band',
+    ];
+    const IMG_RE = /https?:\/\/[^\s"'<>]+\.(?:jpe?g|png|gif|webp|avif)(?:\?[^\s"'<>]*)?/gi;
+
+    interface NostrEvent {
+      id: string;
+      pubkey: string;
+      content: string;
+      created_at: number;
+      kind: number;
+      tags: string[][];
+    }
+
+    // Open one short-lived REQ per relay and collect the events (until EOSE/timeout).
+    function reqRelay(url: string, filter: Record<string, unknown>, timeoutMs = 7000): Promise<NostrEvent[]> {
+      return new Promise((resolve) => {
+        const events: NostrEvent[] = [];
+        let ws: WebSocket;
+        try {
+          ws = new WebSocket(url);
+        } catch {
+          resolve([]);
+          return;
+        }
+        const sub = 'w' + Math.random().toString(36).slice(2, 10);
+        const timer = window.setTimeout(() => {
+          try { ws.close(); } catch {}
+          resolve(events);
+        }, timeoutMs);
+        ws.onopen = () => ws.send(JSON.stringify(['REQ', sub, filter]));
+        ws.onmessage = (e) => {
+          try {
+            const m = JSON.parse(e.data);
+            if (m[0] === 'EVENT' && m[1] === sub && m[2]) events.push(m[2]);
+            if (m[0] === 'EOSE' && m[1] === sub) {
+              clearTimeout(timer);
+              try { ws.close(); } catch {}
+              resolve(events);
+            }
+          } catch {}
+        };
+        ws.onerror = () => {
+          // Keep any events already received before the socket errored (e.g. it
+          // dropped before EOSE) rather than discarding them and needlessly
+          // falling back to the static images; and close the half-open socket.
+          clearTimeout(timer);
+          try { ws.close(); } catch {}
+          resolve(events);
+        };
+      });
+    }
+
+    // Every image URL in a note: from its content and from image/imeta/url/r tags.
+    function imagesOf(ev: NostrEvent): string[] {
+      const urls: string[] = [];
+      const scan = (s: string) => {
+        const found = s.match(IMG_RE);
+        if (found) for (const u of found) urls.push(u.replace(/[)\].,;]+$/, ''));
+      };
+      scan(ev.content || '');
+      for (const t of ev.tags || []) {
+        if (['image', 'imeta', 'url', 'r'].includes(t[0])) scan(t.join(' '));
+      }
+      return urls;
+    }
+
+    function escapeAttr(s: string): string {
+      return s.replace(/"/g, '&quot;');
+    }
+
+    // A gallery tile. A broken image removes its own tile (no broken-image icons).
+    function tileHtml(url: string): string {
+      const safe = escapeAttr(url);
+      return `<button type="button" class="wild-tile" data-full="${safe}" style="display:block;width:100%;margin-bottom:12px;border:none;padding:0;background:none;cursor:zoom-in;break-inside:avoid;">
+        <img src="${safe}" alt="Lightning Piggy in the wild" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.wild-tile').remove()" style="width:100%;display:block;border-radius:10px;" />
+      </button>`;
+    }
+
+    function skeletons(n: number): string {
+      const heights = [180, 240, 150, 210, 190, 260, 160, 200];
+      return Array.from({ length: n }, (_, i) =>
+        `<div class="wild-skel" style="width:100%;height:${heights[i % heights.length]}px;margin-bottom:12px;break-inside:avoid;"></div>`,
+      ).join('');
+    }
+
+    function render(grid: HTMLElement, urls: string[]): void {
+      grid.innerHTML = urls.map(tileHtml).join('');
+    }
+
+    function wireLightbox(grid: HTMLElement): void {
+      const box = document.getElementById('wild-lightbox');
+      const img = document.getElementById('wild-lightbox-img') as HTMLImageElement | null;
+      if (!box || !img) return;
+      const close = () => {
+        box.classList.add('hidden');
+        box.classList.remove('flex');
+        img.src = '';
+      };
+      grid.addEventListener('click', (e) => {
+        const tile = (e.target as HTMLElement).closest('.wild-tile') as HTMLElement | null;
+        if (!tile) return;
+        img.src = tile.dataset.full || '';
+        box.classList.remove('hidden');
+        box.classList.add('flex');
+      });
+      box.addEventListener('click', close);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !box.classList.contains('hidden')) close();
+      });
+    }
+
+    async function init(): Promise<void> {
+      const grid = document.getElementById('wild-grid');
+      const empty = document.getElementById('wild-empty');
+      if (!grid) return;
+
+      wireLightbox(grid);
+      grid.innerHTML = skeletons(12);
+
+      let urls: string[] = [];
+      try {
+        const results = await Promise.all(
+          RELAYS.map((r) => reqRelay(r, { authors: [LP_PUBKEY], kinds: [1], limit: 200 })),
+        );
+        // Dedupe events by id, newest first, then collect distinct image URLs.
+        const byId = new Map<string, NostrEvent>();
+        for (const ev of results.flat()) {
+          if (ev?.id && ev.pubkey === LP_PUBKEY && ev.kind === 1 && !byId.has(ev.id)) byId.set(ev.id, ev);
+        }
+        const notes = [...byId.values()].sort((a, b) => b.created_at - a.created_at);
+        const seen = new Set<string>();
+        for (const ev of notes) {
+          for (const u of imagesOf(ev)) {
+            if (!seen.has(u)) {
+              seen.add(u);
+              urls.push(u);
+            }
+          }
+        }
+      } catch {
+        urls = [];
+      }
+
+      // Fall back to the curated static images if Nostr yielded nothing.
+      if (urls.length === 0) {
+        try {
+          urls = JSON.parse(document.getElementById('wild-fallback')?.textContent || '[]');
+        } catch {
+          urls = [];
+        }
+      }
+
+      if (urls.length === 0) {
+        grid.innerHTML = '';
+        empty?.classList.remove('hidden');
+        return;
+      }
+      render(grid, urls);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
 </BaseLayout>
-
-<style>
-  .lightbox-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 50;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.85);
-    cursor: pointer;
-  }
-
-  .lightbox-toggle:checked ~ .lightbox-overlay {
-    display: flex;
-  }
-</style>

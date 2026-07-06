@@ -71,15 +71,25 @@ export function decodeGeohash(gh: string): { lat: number; lng: number } {
 // Sanitisation helpers (mirrors NostrProducts.astro)
 // -----------------------------------------------------------------------
 export function escapeHtml(str: string): string {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  // Escape the five HTML-significant chars. The quotes matter because this
+  // output is also interpolated into quoted attribute values (title=, alt=,
+  // aria-label=, data-*); the old textContent→innerHTML trick left " and '
+  // unescaped, allowing attribute breakout from relay-supplied text.
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 export function sanitizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return url;
+    // Return the normalized href, not the raw input: new URL() percent-encodes
+    // quotes/spaces, so interpolating this into src="…"/href="…" can't break
+    // out of the attribute. Returning the raw string kept a literal " intact.
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.href;
   } catch {}
   return '';
 }
@@ -1408,6 +1418,13 @@ export async function zapProfile(
   if (!meta || meta.status === 'ERROR' || !meta.callback) throw new Error('LNURL_FAILED');
 
   const amountMsat = Math.round(amountSats) * 1000;
+  // Reject non-finite / absurd amounts up front. Without this, a huge input
+  // stringifies to scientific notation (amount=1e+22) in the callback and the
+  // 9734 amount tag — and if the endpoint omits maxSendable the range check
+  // below (defaulting to Infinity) wouldn't catch it either.
+  if (!Number.isSafeInteger(amountMsat) || amountMsat <= 0) {
+    throw new Error('AMOUNT_RANGE');
+  }
   if (amountMsat < (meta.minSendable ?? 0) || amountMsat > (meta.maxSendable ?? Infinity)) {
     throw new Error('AMOUNT_RANGE');
   }
@@ -1691,10 +1708,14 @@ export function openZapDialog(dialog: HTMLDialogElement, target: ZapTarget): voi
   const qrBox = q<HTMLElement>('.pg-zap-qr');
   const weblnBtn = q<HTMLButtonElement>('.pg-zap-webln');
 
+  // The amount the currently-shown invoice was actually generated for. Reported
+  // in the receipt so it can't drift from what was paid if the user re-picks an
+  // amount chip after the invoice is on screen (the on-screen invoice is stale).
+  let invoicedAmount = 0;
   const markPaid = () => {
     if (!status) return;
     status.style.color = '#16a34a';
-    status.textContent = `Zapped ${amount.toLocaleString()} sats — thanks for supporting the hunt!`;
+    status.textContent = `Zapped ${invoicedAmount.toLocaleString()} sats — thanks for supporting the hunt!`;
     if (invoiceBox) invoiceBox.hidden = true;
   };
 
@@ -1723,8 +1744,10 @@ export function openZapDialog(dialog: HTMLDialogElement, target: ZapTarget): voi
     }),
   );
   custom?.addEventListener('input', () => {
-    const v = parseInt(custom.value, 10);
-    if (v > 0) setAmount(v, false);
+    // Number() (not parseInt) so exponential/decimal input isn't silently
+    // truncated to a wrong value (parseInt('1e21')===1, parseInt('21.9')===21).
+    const v = Math.floor(Number(custom.value));
+    if (Number.isFinite(v) && v > 0) setAmount(v, false);
   });
   setAmount(21, true);
 
@@ -1746,6 +1769,7 @@ export function openZapDialog(dialog: HTMLDialogElement, target: ZapTarget): voi
         content: commentEl?.value.trim() || target.zapContent,
         aTag: target.aTag,
       });
+      invoicedAmount = amount; // lock in what this invoice is actually for
       status.style.color = '#6b7280';
       status.textContent = 'Invoice ready — pay with WebLN, scan the QR, or use any wallet:';
       if (invoiceText) invoiceText.value = invoice;

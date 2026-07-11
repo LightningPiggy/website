@@ -64,6 +64,54 @@ const DEVICE_SCREENSHOT_FILE = path.join(os.homedir(), '.lightningpiggy', 'devic
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
+// --- Local-only access control ---------------------------------------------
+// The tool has no login, so we defend the two ways a remote page could still
+// reach a loopback server:
+//   1. DNS-rebinding — blocked by a Host-header allowlist (a rebinding attack
+//      arrives with the attacker's hostname in Host, not localhost).
+//   2. CSRF — blocked by requiring a custom header on /api. A cross-origin page
+//      cannot set X-LP-Admin-Token without a CORS preflight we never approve,
+//      and it cannot read the token (it's injected into the same-origin HTML).
+const ADMIN_TOKEN =
+  (process.env.LP_ADMIN_SYNC_TOKEN && process.env.LP_ADMIN_SYNC_TOKEN.length >= 16)
+    ? process.env.LP_ADMIN_SYNC_TOKEN
+    : crypto.randomBytes(24).toString('hex');
+const ALLOWED_HOSTS = new Set(['localhost:3000', '127.0.0.1:3000', '[::1]:3000']);
+function hostAllowed(req) {
+  return ALLOWED_HOSTS.has((req.headers.host || '').toLowerCase());
+}
+
+app.use((req, res, next) => {
+  if (!hostAllowed(req)) return res.status(403).type('text').send('Forbidden host');
+  next();
+});
+
+// Token gate on the API. /api/admin/ping stays open as a liveness probe (no
+// data) so the .app launcher's readiness check keeps working.
+app.use('/api', (req, res, next) => {
+  if (req.path === '/admin/ping') return next();
+  if (req.get('x-lp-admin-token') !== ADMIN_TOKEN) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+});
+
+// Serve the UI shell with the token injected so the same-origin app can read it.
+function sendIndex(res) {
+  try {
+    const file = path.join(__dirname, 'public', 'index.html');
+    const html = fs.readFileSync(file, 'utf8').replace(
+      '</head>',
+      `  <meta name="lp-admin-token" content="${ADMIN_TOKEN}">\n</head>`,
+    );
+    res.type('html').send(html);
+  } catch (e) {
+    res.status(500).type('text').send('Failed to load admin UI');
+  }
+}
+app.get('/', (req, res) => sendIndex(res));
+app.get('/index.html', (req, res) => sendIndex(res));
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/branding', express.static(path.join(ROOT, 'public', 'images', 'branding')));
 app.use('/images/testimonials', express.static(path.join(ROOT, 'public', 'images', 'testimonials')));
@@ -2180,6 +2228,17 @@ const server = app.listen(PORT, '127.0.0.1', () => {
 
 server.on('upgrade', (req, socket, head) => {
   const { pathname, searchParams } = new URL(req.url, 'http://localhost');
+  // Same access control as the HTTP API: allowlisted Host + valid token.
+  // Browsers can't set custom headers on a WebSocket, so the token comes in as
+  // a query param (the connection is loopback-only, so it isn't exposed).
+  if (!ALLOWED_HOSTS.has((req.headers.host || '').toLowerCase())) {
+    socket.destroy();
+    return;
+  }
+  if (searchParams.get('token') !== ADMIN_TOKEN) {
+    socket.destroy();
+    return;
+  }
   if (pathname !== '/api/device/serial') {
     socket.destroy();
     return;

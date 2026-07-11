@@ -1,3 +1,17 @@
+// --- Admin token: injected into the page <head> by the server. Attached to
+// every /api request so the server's CSRF/token gate accepts them. ---
+const LP_ADMIN_TOKEN = document.querySelector('meta[name="lp-admin-token"]')?.content || '';
+const _lpFetch = window.fetch.bind(window);
+window.fetch = (input, init = {}) => {
+  const url = typeof input === 'string' ? input : (input && input.url) || '';
+  if (url.startsWith('/api')) {
+    const headers = new Headers(init.headers || {});
+    headers.set('X-LP-Admin-Token', LP_ADMIN_TOKEN);
+    init = { ...init, headers };
+  }
+  return _lpFetch(input, init);
+};
+
 // --- Tab Switching ---
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -2360,7 +2374,7 @@ function smConnect() {
   const device = smDevice.value.trim();
   const baud = parseInt(smBaud.value, 10) || 115200;
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const url = `${proto}://${location.host}/api/device/serial?device=${encodeURIComponent(device)}&baud=${baud}`;
+  const url = `${proto}://${location.host}/api/device/serial?device=${encodeURIComponent(device)}&baud=${baud}&token=${encodeURIComponent(LP_ADMIN_TOKEN)}`;
   smSetStatus('Connecting…');
   try {
     smSocket = new WebSocket(url);

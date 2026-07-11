@@ -516,9 +516,27 @@ app.post('/api/news/publish', upload.single('heroImage'), async (req, res) => {
       return res.status(400).json({ error: 'Title, slug, and content are required' });
     }
 
-    const isEdit = !!(originalSlug && originalSlug.trim());
+    // Slugs are used as directory names, so constrain them to a safe charset and
+    // reject any path-traversal attempt (e.g. "../../etc") before touching disk.
+    const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+    const trimmedOriginal = originalSlug && originalSlug.trim();
+    if (!SLUG_RE.test(slug)) {
+      return res.status(400).json({ error: 'Invalid slug: use lowercase letters, numbers and hyphens only' });
+    }
+    if (trimmedOriginal && !SLUG_RE.test(trimmedOriginal)) {
+      return res.status(400).json({ error: 'Invalid original slug' });
+    }
+
+    const isEdit = !!trimmedOriginal;
     const postDir = path.join(NEWS_DIR, slug);
-    const originalDir = isEdit ? path.join(NEWS_DIR, originalSlug.trim()) : null;
+    const originalDir = isEdit ? path.join(NEWS_DIR, trimmedOriginal) : null;
+
+    // Defense in depth: confirm the resolved paths stay inside NEWS_DIR.
+    for (const dir of [postDir, originalDir]) {
+      if (dir && !path.resolve(dir).startsWith(path.resolve(NEWS_DIR) + path.sep)) {
+        return res.status(400).json({ error: 'Resolved path escapes the news directory' });
+      }
+    }
 
     // In edit mode, read the existing frontmatter so we can preserve the hero
     // image and tags when the form doesn't supply new ones.
@@ -1839,11 +1857,13 @@ app.post('/api/vendors/submissions/:id/dismiss', async (req, res) => {
 
 // --- Resend CLI Endpoints ---
 
-import { execSync } from 'child_process';
+import { execFileSync } from 'child_process';
 
+// args is an array of argv tokens (no shell), so user-supplied values like the
+// test-email recipient can't inject shell commands.
 function resendCmd(args) {
   try {
-    const result = execSync(`resend ${args} --json`, { encoding: 'utf8', timeout: 15000 });
+    const result = execFileSync('resend', [...args, '--json'], { encoding: 'utf8', timeout: 15000 });
     return JSON.parse(result);
   } catch (err) {
     const stderr = err.stderr || '';
@@ -1854,8 +1874,8 @@ function resendCmd(args) {
 
 app.get('/api/resend/status', (req, res) => {
   try {
-    const whoami = resendCmd('whoami');
-    const doctor = resendCmd('doctor');
+    const whoami = resendCmd(['whoami']);
+    const doctor = resendCmd(['doctor']);
     res.json({ authenticated: true, whoami, doctor });
   } catch (err) {
     res.json({ authenticated: false, error: err.message });
@@ -1864,7 +1884,7 @@ app.get('/api/resend/status', (req, res) => {
 
 app.get('/api/resend/domains', (req, res) => {
   try {
-    const domains = resendCmd('domains list');
+    const domains = resendCmd(['domains', 'list']);
     res.json(domains);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1877,7 +1897,9 @@ app.get('/api/resend/contacts', (req, res) => {
     let cursor = null;
     let hasMore = true;
     while (hasMore) {
-      const args = cursor ? `contacts list --limit 100 --after ${cursor}` : 'contacts list --limit 100';
+      const args = cursor
+        ? ['contacts', 'list', '--limit', '100', '--after', cursor]
+        : ['contacts', 'list', '--limit', '100'];
       const result = resendCmd(args);
       const batch = Array.isArray(result) ? result : (result.data || []);
       allContacts = allContacts.concat(batch);
@@ -1896,8 +1918,16 @@ app.post('/api/resend/send-test', (req, res) => {
   try {
     const { to, subject, html } = req.body;
     if (!to || !subject) return res.status(400).json({ error: 'Missing to or subject' });
+    if (!/^[^\s@"]+@[^\s@"]+\.[^\s@"]+$/.test(String(to)))
+      return res.status(400).json({ error: 'Invalid recipient email' });
     const from = 'newsletter@mail.lightningpiggy.com';
-    const result = resendCmd(`emails send --from "${from}" --to "${to}" --subject "${subject.replace(/"/g, '\\"')}" --html "${(html || '<p>Test email from Lightning Piggy Admin</p>').replace(/"/g, '\\"')}"`);
+    const result = resendCmd([
+      'emails', 'send',
+      '--from', from,
+      '--to', String(to),
+      '--subject', String(subject),
+      '--html', html || '<p>Test email from Lightning Piggy Admin</p>',
+    ]);
     res.json({ success: true, result });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1906,7 +1936,7 @@ app.post('/api/resend/send-test', (req, res) => {
 
 app.get('/api/resend/webhooks', (req, res) => {
   try {
-    const webhooks = resendCmd('webhooks list');
+    const webhooks = resendCmd(['webhooks', 'list']);
     res.json(webhooks);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -2129,7 +2159,9 @@ app.get('/api/device/screenshot.png', (req, res) => {
 const PORT = 3000;
 const wss = new WebSocketServer({ noServer: true });
 
-const server = app.listen(PORT, () => {
+// Bind to loopback only: this admin tool has no auth, so it must never be
+// reachable from the LAN. 127.0.0.1 keeps it to this machine.
+const server = app.listen(PORT, '127.0.0.1', () => {
   console.log(`\n  🐽 LightningPiggy Admin`);
   console.log(`  ➜  http://localhost:${PORT}\n`);
   console.log(`  Project root: ${ROOT}`);

@@ -125,16 +125,42 @@ function expandPath(p) {
   return path.resolve(p);
 }
 
+// Write JSON via a temp file + atomic rename, so a crash or full disk mid-write
+// can't truncate/corrupt the source-of-truth data file (which the site build
+// consumes). rename() within the same directory is atomic on the same volume.
+function writeJsonAtomic(file, data) {
+  const tmp = `${file}.tmp-${process.pid}-${crypto.randomBytes(4).toString('hex')}`;
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+  try {
+    fs.renameSync(tmp, file);
+  } catch (e) {
+    try { fs.unlinkSync(tmp); } catch {}
+    throw e;
+  }
+}
+
 // Native macOS folder picker via osascript
 app.post('/api/fs/pick-folder', async (req, res) => {
   try {
     if (process.platform !== 'darwin') {
       return res.status(400).json({ error: 'Native folder picker only supported on macOS' });
     }
-    const defaultPath = req.body?.defaultPath ? `default location POSIX file "${req.body.defaultPath.replace(/^~/, os.homedir())}"` : '';
-    const script = `tell application "System Events" to activate
-POSIX path of (choose folder with prompt "Select save folder for captures" ${defaultPath})`;
-    const { stdout } = await execFileAsync('osascript', ['-e', script]);
+    // Pass the default path as an argv item rather than interpolating it into
+    // the script body, so a value containing a quote can't break out of the
+    // AppleScript string and run `do shell script`. Also reject control chars.
+    const rawDefault = req.body?.defaultPath ? String(req.body.defaultPath).replace(/^~/, os.homedir()) : '';
+    if (rawDefault && /[\r\n"\\]/.test(rawDefault)) {
+      return res.status(400).json({ error: 'Invalid defaultPath' });
+    }
+    const script = `on run argv
+  tell application "System Events" to activate
+  if (count of argv) > 0 and (item 1 of argv) is not "" then
+    return POSIX path of (choose folder with prompt "Select save folder for captures" default location POSIX file (item 1 of argv))
+  else
+    return POSIX path of (choose folder with prompt "Select save folder for captures")
+  end if
+end run`;
+    const { stdout } = await execFileAsync('osascript', ['-e', script, rawDefault]);
     let folder = stdout.trim().replace(/\/$/, '');
     const home = os.homedir();
     const display = folder === home ? '~' : folder.startsWith(home + '/') ? '~' + folder.slice(home.length) : folder;
@@ -380,13 +406,19 @@ app.get('/api/fs/ls', (req, res) => {
   try {
     const reqPath = (req.query.path || '~').toString();
     const abs = expandPath(reqPath);
+    const home = os.homedir();
+    // Confine the browser to the home directory; this is only used to pick a
+    // capture-save folder, and expandPath would otherwise resolve to anywhere.
+    if (abs !== home && !abs.startsWith(home + path.sep)) {
+      return res.status(400).json({ error: 'Path must be inside the home directory' });
+    }
     const entries = fs.readdirSync(abs, { withFileTypes: true })
       .filter(e => e.isDirectory() && !e.name.startsWith('.'))
       .map(e => e.name)
       .sort((a, b) => a.localeCompare(b));
-    const home = os.homedir();
     const display = abs === home ? '~' : abs.startsWith(home + '/') ? '~' + abs.slice(home.length) : abs;
-    const parent = path.dirname(abs);
+    // Don't offer a parent link above home.
+    const parent = abs === home ? abs : path.dirname(abs);
     const parentDisplay = parent === home ? '~' : parent.startsWith(home + '/') ? '~' + parent.slice(home.length) : parent;
     res.json({
       path: abs,
@@ -765,7 +797,7 @@ function loadCredits() {
     if (!fs.existsSync(CREDITS_FILE)) {
       const dir = path.dirname(CREDITS_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(CREDITS_FILE, JSON.stringify({ credits: [], schema_version: 1 }, null, 2));
+      writeJsonAtomic(CREDITS_FILE, { credits: [], schema_version: 1 });
     }
     return JSON.parse(fs.readFileSync(CREDITS_FILE, 'utf-8'));
   } catch (err) {
@@ -776,7 +808,7 @@ function loadCredits() {
 function saveCredits(data) {
   const dir = path.dirname(CREDITS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(CREDITS_FILE, JSON.stringify(data, null, 2));
+  writeJsonAtomic(CREDITS_FILE, data);
   // Auto-sync the website export after every change so src/data/credits.json
   // stays current without a manual "Sync to Website" step. (git push still
   // publishes.) A sync failure must not break the save.
@@ -1020,7 +1052,7 @@ function syncCreditsToWebsite() {
     if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
 
     // Write to website data file
-    fs.writeFileSync(CREDITS_EXPORT_FILE, JSON.stringify(grouped, null, 2));
+    writeJsonAtomic(CREDITS_EXPORT_FILE, grouped);
 
     return {
       coreTeam: grouped.coreTeam.length,
@@ -1051,7 +1083,7 @@ function loadPartners() {
     if (!fs.existsSync(PARTNERS_FILE)) {
       const dir = path.dirname(PARTNERS_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(PARTNERS_FILE, JSON.stringify({ partners: [], schema_version: 1 }, null, 2));
+      writeJsonAtomic(PARTNERS_FILE, { partners: [], schema_version: 1 });
     }
     return JSON.parse(fs.readFileSync(PARTNERS_FILE, 'utf-8'));
   } catch (err) {
@@ -1062,7 +1094,7 @@ function loadPartners() {
 function savePartners(data) {
   const dir = path.dirname(PARTNERS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(PARTNERS_FILE, JSON.stringify(data, null, 2));
+  writeJsonAtomic(PARTNERS_FILE, data);
 }
 
 // Get all partners
@@ -1226,7 +1258,7 @@ app.post('/api/partners/sync', (req, res) => {
     if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
 
     // Write to website data file
-    fs.writeFileSync(PARTNERS_EXPORT_FILE, JSON.stringify(grouped, null, 2));
+    writeJsonAtomic(PARTNERS_EXPORT_FILE, grouped);
 
     res.json({
       success: true,
@@ -1283,7 +1315,7 @@ function loadNostrJson() {
     if (!fs.existsSync(NOSTR_JSON_FILE)) {
       const dir = path.dirname(NOSTR_JSON_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(NOSTR_JSON_FILE, JSON.stringify({ names: {}, relays: {} }, null, 2));
+      writeJsonAtomic(NOSTR_JSON_FILE, { names: {}, relays: {} });
     }
     return JSON.parse(fs.readFileSync(NOSTR_JSON_FILE, 'utf-8'));
   } catch (err) {
@@ -1294,7 +1326,7 @@ function loadNostrJson() {
 function saveNostrJson(data) {
   const dir = path.dirname(NOSTR_JSON_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(NOSTR_JSON_FILE, JSON.stringify(data, null, 2));
+  writeJsonAtomic(NOSTR_JSON_FILE, data);
 }
 
 // Get all NIP-05 entries
@@ -1423,7 +1455,7 @@ function loadTestimonials() {
     if (!fs.existsSync(TESTIMONIALS_FILE)) {
       const dir = path.dirname(TESTIMONIALS_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(TESTIMONIALS_FILE, JSON.stringify({ testimonials: [], schema_version: 1 }, null, 2));
+      writeJsonAtomic(TESTIMONIALS_FILE, { testimonials: [], schema_version: 1 });
     }
     return JSON.parse(fs.readFileSync(TESTIMONIALS_FILE, 'utf-8'));
   } catch (err) {
@@ -1434,7 +1466,7 @@ function loadTestimonials() {
 function saveTestimonials(data) {
   const dir = path.dirname(TESTIMONIALS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(TESTIMONIALS_FILE, JSON.stringify(data, null, 2));
+  writeJsonAtomic(TESTIMONIALS_FILE, data);
   // Auto-sync the website export after every change (git push publishes).
   try {
     syncTestimonialsToWebsite();
@@ -1586,7 +1618,7 @@ function syncTestimonialsToWebsite() {
     }));
   const exportDir = path.dirname(TESTIMONIALS_EXPORT_FILE);
   if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
-  fs.writeFileSync(TESTIMONIALS_EXPORT_FILE, JSON.stringify({ testimonials: websiteTestimonials }, null, 2));
+  writeJsonAtomic(TESTIMONIALS_EXPORT_FILE, { testimonials: websiteTestimonials });
   return websiteTestimonials.length;
 }
 
@@ -1606,7 +1638,7 @@ function loadVendors() {
     if (!fs.existsSync(VENDORS_FILE)) {
       const dir = path.dirname(VENDORS_FILE);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(VENDORS_FILE, JSON.stringify({ vendors: [], schema_version: 1 }, null, 2));
+      writeJsonAtomic(VENDORS_FILE, { vendors: [], schema_version: 1 });
     }
     return JSON.parse(fs.readFileSync(VENDORS_FILE, 'utf-8'));
   } catch (err) {
@@ -1617,7 +1649,7 @@ function loadVendors() {
 function saveVendors(data) {
   const dir = path.dirname(VENDORS_FILE);
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(VENDORS_FILE, JSON.stringify(data, null, 2));
+  writeJsonAtomic(VENDORS_FILE, data);
   // Auto-sync the website export after every change (git push publishes).
   try {
     syncVendorsToWebsite();
@@ -1785,7 +1817,7 @@ function syncVendorsToWebsite() {
     });
   const exportDir = path.dirname(VENDORS_EXPORT_FILE);
   if (!fs.existsSync(exportDir)) fs.mkdirSync(exportDir, { recursive: true });
-  fs.writeFileSync(VENDORS_EXPORT_FILE, JSON.stringify({ vendors: websiteVendors }, null, 2));
+  writeJsonAtomic(VENDORS_EXPORT_FILE, { vendors: websiteVendors });
   return websiteVendors.length;
 }
 

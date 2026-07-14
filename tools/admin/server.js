@@ -10,6 +10,7 @@ import WebSocket, { WebSocketServer } from 'ws';
 import { SerialPort } from 'serialport';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { writeJsonAtomic, loadStore, saveStore, crudRouter } from './lib/store.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -125,19 +126,6 @@ function expandPath(p) {
   return path.resolve(p);
 }
 
-// Write JSON via a temp file + atomic rename, so a crash or full disk mid-write
-// can't truncate/corrupt the source-of-truth data file (which the site build
-// consumes). rename() within the same directory is atomic on the same volume.
-function writeJsonAtomic(file, data) {
-  const tmp = `${file}.tmp-${process.pid}-${crypto.randomBytes(4).toString('hex')}`;
-  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
-  try {
-    fs.renameSync(tmp, file);
-  } catch (e) {
-    try { fs.unlinkSync(tmp); } catch {}
-    throw e;
-  }
-}
 
 // Native macOS folder picker via osascript
 app.post('/api/fs/pick-folder', async (req, res) => {
@@ -793,22 +781,11 @@ function fetchNostrProfile(hex) {
 // --- Credits Endpoints ---
 
 function loadCredits() {
-  try {
-    if (!fs.existsSync(CREDITS_FILE)) {
-      const dir = path.dirname(CREDITS_FILE);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      writeJsonAtomic(CREDITS_FILE, { credits: [], schema_version: 1 });
-    }
-    return JSON.parse(fs.readFileSync(CREDITS_FILE, 'utf-8'));
-  } catch (err) {
-    return { credits: [], schema_version: 1 };
-  }
+  return loadStore(CREDITS_FILE, 'credits');
 }
 
 function saveCredits(data) {
-  const dir = path.dirname(CREDITS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  writeJsonAtomic(CREDITS_FILE, data);
+  saveStore(CREDITS_FILE, data);
   // Auto-sync the website export after every change so src/data/credits.json
   // stays current without a manual "Sync to Website" step. (git push still
   // publishes.) A sync failure must not break the save.
@@ -819,13 +796,6 @@ function saveCredits(data) {
   }
 }
 
-// Get all credits
-app.get('/api/credits', (req, res) => {
-  const data = loadCredits();
-  res.json(data.credits);
-});
-
-// Add a new credit
 // A credit can belong to several website sections. Accept the new
 // `websiteSections` array, but fall back to the legacy single `websiteSection`
 // (+ `isBitcoinKid` flag) so older clients/data keep working.
@@ -837,122 +807,59 @@ function normaliseSections(body) {
   return out;
 }
 
-app.post('/api/credits', (req, res) => {
-  try {
-    const data = loadCredits();
-    const credit = {
-      id: crypto.randomUUID(),
-      name: req.body.name || '',
-      email: req.body.email || '',
-      role: req.body.role || '',
-      lightningAddress: req.body.lightningAddress || '',
-      nostrNpub: req.body.nostrNpub || '',
-      nostrHex: req.body.nostrHex || '',
-      nostrProfilePic: req.body.nostrProfilePic || '',
-      xProfileUrl: req.body.xProfileUrl || '',
-      xProfilePic: req.body.xProfilePic || '',
-      websiteUrl: req.body.websiteUrl || '',
-      githubUrl: req.body.githubUrl || '',
-      description: req.body.description || '',
-      logoUrl: req.body.logoUrl || '',
-      notes: req.body.notes || '',
-      showOnWebsite: req.body.showOnWebsite ?? false,
-      websiteSections: normaliseSections(req.body),
-      dateAdded: req.body.dateAdded || new Date().toISOString().split('T')[0],
+// GET / POST / PUT reorder / PUT :id / DELETE :id — the logo + sync routes for
+// credits are registered separately below.
+app.use('/api/credits', crudRouter({
+  load: loadCredits,
+  save: saveCredits,
+  key: 'credits',
+  singular: 'credit',
+  build: (b) => ({
+    name: b.name || '',
+    email: b.email || '',
+    role: b.role || '',
+    lightningAddress: b.lightningAddress || '',
+    nostrNpub: b.nostrNpub || '',
+    nostrHex: b.nostrHex || '',
+    nostrProfilePic: b.nostrProfilePic || '',
+    xProfileUrl: b.xProfileUrl || '',
+    xProfilePic: b.xProfilePic || '',
+    websiteUrl: b.websiteUrl || '',
+    githubUrl: b.githubUrl || '',
+    description: b.description || '',
+    logoUrl: b.logoUrl || '',
+    notes: b.notes || '',
+    showOnWebsite: b.showOnWebsite ?? false,
+    websiteSections: normaliseSections(b),
+    dateAdded: b.dateAdded || new Date().toISOString().split('T')[0],
+  }),
+  merge: (existing, b) => {
+    const updated = {
+      ...existing,
+      name: b.name ?? existing.name,
+      email: b.email ?? existing.email,
+      role: b.role ?? existing.role,
+      lightningAddress: b.lightningAddress ?? existing.lightningAddress,
+      nostrNpub: b.nostrNpub ?? existing.nostrNpub,
+      nostrHex: b.nostrHex ?? existing.nostrHex,
+      nostrProfilePic: b.nostrProfilePic ?? existing.nostrProfilePic,
+      xProfileUrl: b.xProfileUrl ?? existing.xProfileUrl,
+      xProfilePic: b.xProfilePic ?? existing.xProfilePic,
+      websiteUrl: b.websiteUrl ?? existing.websiteUrl ?? '',
+      githubUrl: b.githubUrl ?? existing.githubUrl ?? '',
+      description: b.description ?? existing.description ?? '',
+      logoUrl: b.logoUrl ?? existing.logoUrl ?? '',
+      notes: b.notes ?? existing.notes,
+      showOnWebsite: b.showOnWebsite ?? existing.showOnWebsite ?? false,
+      websiteSections: Array.isArray(b.websiteSections)
+        ? b.websiteSections.filter(Boolean)
+        : (existing.websiteSections || normaliseSections(existing)),
     };
-    data.credits.push(credit);
-    saveCredits(data);
-    res.json({ success: true, credit });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Reorder credits (must be before :id route)
-app.put('/api/credits/reorder', (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) {
-      return res.status(400).json({ error: 'ids must be an array' });
-    }
-
-    const data = loadCredits();
-
-    // Build a map of id -> credit for quick lookup
-    const creditMap = new Map(data.credits.map(c => [c.id, c]));
-
-    // Rebuild the credits array in the new order
-    const reordered = ids.map(id => creditMap.get(id)).filter(Boolean);
-
-    // Append any credits not included in the ids list (shouldn't happen, but safe)
-    const reorderedIds = new Set(ids);
-    for (const c of data.credits) {
-      if (!reorderedIds.has(c.id)) {
-        reordered.push(c);
-      }
-    }
-
-    data.credits = reordered;
-    saveCredits(data);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update a credit
-app.put('/api/credits/:id', (req, res) => {
-  try {
-    const data = loadCredits();
-    const index = data.credits.findIndex(c => c.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Credit not found' });
-    }
-    data.credits[index] = {
-      ...data.credits[index],
-      name: req.body.name ?? data.credits[index].name,
-      email: req.body.email ?? data.credits[index].email,
-      role: req.body.role ?? data.credits[index].role,
-      lightningAddress: req.body.lightningAddress ?? data.credits[index].lightningAddress,
-      nostrNpub: req.body.nostrNpub ?? data.credits[index].nostrNpub,
-      nostrHex: req.body.nostrHex ?? data.credits[index].nostrHex,
-      nostrProfilePic: req.body.nostrProfilePic ?? data.credits[index].nostrProfilePic,
-      xProfileUrl: req.body.xProfileUrl ?? data.credits[index].xProfileUrl,
-      xProfilePic: req.body.xProfilePic ?? data.credits[index].xProfilePic,
-      websiteUrl: req.body.websiteUrl ?? data.credits[index].websiteUrl ?? '',
-      githubUrl: req.body.githubUrl ?? data.credits[index].githubUrl ?? '',
-      description: req.body.description ?? data.credits[index].description ?? '',
-      logoUrl: req.body.logoUrl ?? data.credits[index].logoUrl ?? '',
-      notes: req.body.notes ?? data.credits[index].notes,
-      showOnWebsite: req.body.showOnWebsite ?? data.credits[index].showOnWebsite ?? false,
-      websiteSections: Array.isArray(req.body.websiteSections)
-        ? req.body.websiteSections.filter(Boolean)
-        : (data.credits[index].websiteSections || normaliseSections(data.credits[index])),
-    };
-    delete data.credits[index].websiteSection;
-    delete data.credits[index].isBitcoinKid;
-    saveCredits(data);
-    res.json({ success: true, credit: data.credits[index] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete a credit
-app.delete('/api/credits/:id', (req, res) => {
-  try {
-    const data = loadCredits();
-    const index = data.credits.findIndex(c => c.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Credit not found' });
-    }
-    const deleted = data.credits.splice(index, 1)[0];
-    saveCredits(data);
-    res.json({ success: true, deleted });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    delete updated.websiteSection;
+    delete updated.isBitcoinKid;
+    return updated;
+  },
+}));
 
 // Upload a logo for a credit (200x200 PNG, same pipeline as partners/vendors)
 app.post('/api/credits/logo', upload.single('logo'), async (req, res) => {
@@ -1079,133 +986,51 @@ app.post('/api/credits/sync', (req, res) => {
 // --- Partners Endpoints ---
 
 function loadPartners() {
-  try {
-    if (!fs.existsSync(PARTNERS_FILE)) {
-      const dir = path.dirname(PARTNERS_FILE);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      writeJsonAtomic(PARTNERS_FILE, { partners: [], schema_version: 1 });
-    }
-    return JSON.parse(fs.readFileSync(PARTNERS_FILE, 'utf-8'));
-  } catch (err) {
-    return { partners: [], schema_version: 1 };
-  }
+  return loadStore(PARTNERS_FILE, 'partners');
 }
 
+// Partners intentionally have no auto-sync; the website export is written only
+// via the explicit POST /api/partners/sync route.
 function savePartners(data) {
-  const dir = path.dirname(PARTNERS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  writeJsonAtomic(PARTNERS_FILE, data);
+  saveStore(PARTNERS_FILE, data);
 }
 
-// Get all partners
-app.get('/api/partners', (req, res) => {
-  const data = loadPartners();
-  res.json(data.partners);
-});
-
-// Add a new partner
-app.post('/api/partners', (req, res) => {
-  try {
-    const data = loadPartners();
-    const partner = {
-      id: crypto.randomUUID(),
-      name: req.body.name || '',
-      description: req.body.description || '',
-      websiteUrl: req.body.websiteUrl || '',
-      logoUrl: req.body.logoUrl || '',
-      nostrNpub: req.body.nostrNpub || '',
-      nostrProfilePic: req.body.nostrProfilePic || '',
-      xProfileUrl: req.body.xProfileUrl || '',
-      xProfilePic: req.body.xProfilePic || '',
-      githubUrl: req.body.githubUrl || '',
-      section: req.body.section || '',
-      showOnWebsite: req.body.showOnWebsite ?? false,
-      dateAdded: req.body.dateAdded || new Date().toISOString().split('T')[0],
-    };
-    data.partners.push(partner);
-    savePartners(data);
-    res.json({ success: true, partner });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Reorder partners (must be before :id route)
-app.put('/api/partners/reorder', (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) {
-      return res.status(400).json({ error: 'ids must be an array' });
-    }
-
-    const data = loadPartners();
-
-    // Build a map of id -> partner for quick lookup
-    const partnerMap = new Map(data.partners.map(p => [p.id, p]));
-
-    // Rebuild the partners array in the new order
-    const reordered = ids.map(id => partnerMap.get(id)).filter(Boolean);
-
-    // Append any partners not included in the ids list (shouldn't happen, but safe)
-    const reorderedIds = new Set(ids);
-    for (const p of data.partners) {
-      if (!reorderedIds.has(p.id)) {
-        reordered.push(p);
-      }
-    }
-
-    data.partners = reordered;
-    savePartners(data);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update a partner
-app.put('/api/partners/:id', (req, res) => {
-  try {
-    const data = loadPartners();
-    const index = data.partners.findIndex(p => p.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Partner not found' });
-    }
-    data.partners[index] = {
-      ...data.partners[index],
-      name: req.body.name ?? data.partners[index].name,
-      description: req.body.description ?? data.partners[index].description,
-      websiteUrl: req.body.websiteUrl ?? data.partners[index].websiteUrl,
-      logoUrl: req.body.logoUrl ?? data.partners[index].logoUrl,
-      nostrNpub: req.body.nostrNpub ?? data.partners[index].nostrNpub,
-      nostrProfilePic: req.body.nostrProfilePic ?? data.partners[index].nostrProfilePic,
-      xProfileUrl: req.body.xProfileUrl ?? data.partners[index].xProfileUrl,
-      xProfilePic: req.body.xProfilePic ?? data.partners[index].xProfilePic,
-      githubUrl: req.body.githubUrl ?? data.partners[index].githubUrl ?? '',
-      section: req.body.section ?? data.partners[index].section,
-      showOnWebsite: req.body.showOnWebsite ?? data.partners[index].showOnWebsite,
-    };
-    savePartners(data);
-    res.json({ success: true, partner: data.partners[index] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete a partner
-app.delete('/api/partners/:id', (req, res) => {
-  try {
-    const data = loadPartners();
-    const index = data.partners.findIndex(p => p.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Partner not found' });
-    }
-    const deleted = data.partners.splice(index, 1)[0];
-    savePartners(data);
-    res.json({ success: true, deleted });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// GET / POST / PUT reorder / PUT :id / DELETE :id — the sync + logo routes for
+// partners are registered separately below.
+app.use('/api/partners', crudRouter({
+  load: loadPartners,
+  save: savePartners,
+  key: 'partners',
+  singular: 'partner',
+  build: (b) => ({
+    name: b.name || '',
+    description: b.description || '',
+    websiteUrl: b.websiteUrl || '',
+    logoUrl: b.logoUrl || '',
+    nostrNpub: b.nostrNpub || '',
+    nostrProfilePic: b.nostrProfilePic || '',
+    xProfileUrl: b.xProfileUrl || '',
+    xProfilePic: b.xProfilePic || '',
+    githubUrl: b.githubUrl || '',
+    section: b.section || '',
+    showOnWebsite: b.showOnWebsite ?? false,
+    dateAdded: b.dateAdded || new Date().toISOString().split('T')[0],
+  }),
+  merge: (existing, b) => ({
+    ...existing,
+    name: b.name ?? existing.name,
+    description: b.description ?? existing.description,
+    websiteUrl: b.websiteUrl ?? existing.websiteUrl,
+    logoUrl: b.logoUrl ?? existing.logoUrl,
+    nostrNpub: b.nostrNpub ?? existing.nostrNpub,
+    nostrProfilePic: b.nostrProfilePic ?? existing.nostrProfilePic,
+    xProfileUrl: b.xProfileUrl ?? existing.xProfileUrl,
+    xProfilePic: b.xProfilePic ?? existing.xProfilePic,
+    githubUrl: b.githubUrl ?? existing.githubUrl ?? '',
+    section: b.section ?? existing.section,
+    showOnWebsite: b.showOnWebsite ?? existing.showOnWebsite,
+  }),
+}));
 
 // Sync partners to website
 app.post('/api/partners/sync', (req, res) => {
@@ -1451,22 +1276,11 @@ app.delete('/api/nip05/:name', (req, res) => {
 // --- Testimonials Endpoints ---
 
 function loadTestimonials() {
-  try {
-    if (!fs.existsSync(TESTIMONIALS_FILE)) {
-      const dir = path.dirname(TESTIMONIALS_FILE);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      writeJsonAtomic(TESTIMONIALS_FILE, { testimonials: [], schema_version: 1 });
-    }
-    return JSON.parse(fs.readFileSync(TESTIMONIALS_FILE, 'utf-8'));
-  } catch (err) {
-    return { testimonials: [], schema_version: 1 };
-  }
+  return loadStore(TESTIMONIALS_FILE, 'testimonials');
 }
 
 function saveTestimonials(data) {
-  const dir = path.dirname(TESTIMONIALS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  writeJsonAtomic(TESTIMONIALS_FILE, data);
+  saveStore(TESTIMONIALS_FILE, data);
   // Auto-sync the website export after every change (git push publishes).
   try {
     syncTestimonialsToWebsite();
@@ -1475,97 +1289,34 @@ function saveTestimonials(data) {
   }
 }
 
-// Get all testimonials
-app.get('/api/testimonials', (req, res) => {
-  const data = loadTestimonials();
-  res.json(data.testimonials);
-});
-
-// Add a new testimonial
-app.post('/api/testimonials', (req, res) => {
-  try {
-    const data = loadTestimonials();
-    const testimonial = {
-      id: crypto.randomUUID(),
-      name: req.body.name || '',
-      nostrNpub: req.body.nostrNpub || '',
-      profilePic: req.body.profilePic || '',
-      quote: req.body.quote || '',
-      sourcePlatform: req.body.sourcePlatform || 'other',
-      sourceUrl: req.body.sourceUrl || '',
-      showOnWebsite: req.body.showOnWebsite ?? true,
-      dateAdded: req.body.dateAdded || new Date().toISOString().split('T')[0],
-    };
-    data.testimonials.push(testimonial);
-    saveTestimonials(data);
-    res.json({ success: true, testimonial });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Reorder testimonials (must be before :id route)
-app.put('/api/testimonials/reorder', (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) {
-      return res.status(400).json({ error: 'ids must be an array' });
-    }
-    const data = loadTestimonials();
-    const testimonialMap = new Map(data.testimonials.map(t => [t.id, t]));
-    const reordered = ids.map(id => testimonialMap.get(id)).filter(Boolean);
-    const reorderedIds = new Set(ids);
-    for (const t of data.testimonials) {
-      if (!reorderedIds.has(t.id)) reordered.push(t);
-    }
-    data.testimonials = reordered;
-    saveTestimonials(data);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update a testimonial
-app.put('/api/testimonials/:id', (req, res) => {
-  try {
-    const data = loadTestimonials();
-    const index = data.testimonials.findIndex(t => t.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Testimonial not found' });
-    }
-    data.testimonials[index] = {
-      ...data.testimonials[index],
-      name: req.body.name ?? data.testimonials[index].name,
-      nostrNpub: req.body.nostrNpub ?? data.testimonials[index].nostrNpub,
-      profilePic: req.body.profilePic ?? data.testimonials[index].profilePic,
-      quote: req.body.quote ?? data.testimonials[index].quote,
-      sourcePlatform: req.body.sourcePlatform ?? data.testimonials[index].sourcePlatform,
-      sourceUrl: req.body.sourceUrl ?? data.testimonials[index].sourceUrl,
-      showOnWebsite: req.body.showOnWebsite ?? data.testimonials[index].showOnWebsite,
-    };
-    saveTestimonials(data);
-    res.json({ success: true, testimonial: data.testimonials[index] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete a testimonial
-app.delete('/api/testimonials/:id', (req, res) => {
-  try {
-    const data = loadTestimonials();
-    const index = data.testimonials.findIndex(t => t.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Testimonial not found' });
-    }
-    const deleted = data.testimonials.splice(index, 1)[0];
-    saveTestimonials(data);
-    res.json({ success: true, deleted });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// GET / POST / PUT reorder / PUT :id / DELETE :id — the upload-profile + sync
+// routes for testimonials are registered separately below.
+app.use('/api/testimonials', crudRouter({
+  load: loadTestimonials,
+  save: saveTestimonials,
+  key: 'testimonials',
+  singular: 'testimonial',
+  build: (b) => ({
+    name: b.name || '',
+    nostrNpub: b.nostrNpub || '',
+    profilePic: b.profilePic || '',
+    quote: b.quote || '',
+    sourcePlatform: b.sourcePlatform || 'other',
+    sourceUrl: b.sourceUrl || '',
+    showOnWebsite: b.showOnWebsite ?? true,
+    dateAdded: b.dateAdded || new Date().toISOString().split('T')[0],
+  }),
+  merge: (existing, b) => ({
+    ...existing,
+    name: b.name ?? existing.name,
+    nostrNpub: b.nostrNpub ?? existing.nostrNpub,
+    profilePic: b.profilePic ?? existing.profilePic,
+    quote: b.quote ?? existing.quote,
+    sourcePlatform: b.sourcePlatform ?? existing.sourcePlatform,
+    sourceUrl: b.sourceUrl ?? existing.sourceUrl,
+    showOnWebsite: b.showOnWebsite ?? existing.showOnWebsite,
+  }),
+}));
 
 // Upload testimonial profile picture
 const TESTIMONIALS_IMAGES_DIR = path.join(ROOT, 'public', 'images', 'testimonials');
@@ -1634,22 +1385,11 @@ app.post('/api/testimonials/sync', (req, res) => {
 // --- Vendors Endpoints ---
 
 function loadVendors() {
-  try {
-    if (!fs.existsSync(VENDORS_FILE)) {
-      const dir = path.dirname(VENDORS_FILE);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      writeJsonAtomic(VENDORS_FILE, { vendors: [], schema_version: 1 });
-    }
-    return JSON.parse(fs.readFileSync(VENDORS_FILE, 'utf-8'));
-  } catch (err) {
-    return { vendors: [], schema_version: 1 };
-  }
+  return loadStore(VENDORS_FILE, 'vendors');
 }
 
 function saveVendors(data) {
-  const dir = path.dirname(VENDORS_FILE);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  writeJsonAtomic(VENDORS_FILE, data);
+  saveStore(VENDORS_FILE, data);
   // Auto-sync the website export after every change (git push publishes).
   try {
     syncVendorsToWebsite();
@@ -1658,109 +1398,46 @@ function saveVendors(data) {
   }
 }
 
-// Get all vendors
-app.get('/api/vendors', (req, res) => {
-  const data = loadVendors();
-  res.json(data.vendors);
-});
-
-// Add a new vendor
-app.post('/api/vendors', (req, res) => {
-  try {
-    const data = loadVendors();
-    const vendor = {
-      id: crypto.randomUUID(),
-      name: req.body.name || '',
-      country: req.body.country || '',
-      shippingRegions: req.body.shippingRegions || [],
-      shopType: req.body.shopType || 'online',
-      description: req.body.description || '',
-      websiteUrl: req.body.websiteUrl || '',
-      nostrNpub: req.body.nostrNpub || '',
-      nostrProfilePic: req.body.nostrProfilePic || '',
-      xProfileUrl: req.body.xProfileUrl || '',
-      xProfilePic: req.body.xProfilePic || '',
-      logoUrl: req.body.logoUrl || '',
-      showOnWebsite: req.body.showOnWebsite ?? true,
-      featured: req.body.featured ?? false,
-      dateAdded: req.body.dateAdded || new Date().toISOString().split('T')[0],
-    };
-    data.vendors.push(vendor);
-    saveVendors(data);
-    res.json({ success: true, vendor });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Reorder vendors (must be before :id route)
-app.put('/api/vendors/reorder', (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) {
-      return res.status(400).json({ error: 'ids must be an array' });
-    }
-    const data = loadVendors();
-    const vendorMap = new Map(data.vendors.map(v => [v.id, v]));
-    const reordered = ids.map(id => vendorMap.get(id)).filter(Boolean);
-    const reorderedIds = new Set(ids);
-    for (const v of data.vendors) {
-      if (!reorderedIds.has(v.id)) reordered.push(v);
-    }
-    data.vendors = reordered;
-    saveVendors(data);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Update a vendor
-app.put('/api/vendors/:id', (req, res) => {
-  try {
-    const data = loadVendors();
-    const index = data.vendors.findIndex(v => v.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Vendor not found' });
-    }
-    data.vendors[index] = {
-      ...data.vendors[index],
-      name: req.body.name ?? data.vendors[index].name,
-      country: req.body.country ?? data.vendors[index].country,
-      shippingRegions: req.body.shippingRegions ?? data.vendors[index].shippingRegions,
-      shopType: req.body.shopType ?? data.vendors[index].shopType,
-      description: req.body.description ?? data.vendors[index].description,
-      websiteUrl: req.body.websiteUrl ?? data.vendors[index].websiteUrl,
-      nostrNpub: req.body.nostrNpub ?? data.vendors[index].nostrNpub,
-      nostrProfilePic: req.body.nostrProfilePic ?? data.vendors[index].nostrProfilePic,
-      xProfileUrl: req.body.xProfileUrl ?? data.vendors[index].xProfileUrl,
-      xProfilePic: req.body.xProfilePic ?? data.vendors[index].xProfilePic,
-      logoUrl: req.body.logoUrl ?? data.vendors[index].logoUrl,
-      showOnWebsite: req.body.showOnWebsite ?? data.vendors[index].showOnWebsite,
-      featured: req.body.featured ?? data.vendors[index].featured ?? false,
-    };
-    saveVendors(data);
-    res.json({ success: true, vendor: data.vendors[index] });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Delete a vendor
-app.delete('/api/vendors/:id', (req, res) => {
-  try {
-    const data = loadVendors();
-    const index = data.vendors.findIndex(v => v.id === req.params.id);
-    if (index === -1) {
-      return res.status(404).json({ error: 'Vendor not found' });
-    }
-    const deleted = data.vendors.splice(index, 1)[0];
-    saveVendors(data);
-    res.json({ success: true, deleted });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// GET / POST / PUT reorder / PUT :id / DELETE :id — the logo, sync and
+// submissions routes for vendors are registered separately below.
+app.use('/api/vendors', crudRouter({
+  load: loadVendors,
+  save: saveVendors,
+  key: 'vendors',
+  singular: 'vendor',
+  build: (b) => ({
+    name: b.name || '',
+    country: b.country || '',
+    shippingRegions: b.shippingRegions || [],
+    shopType: b.shopType || 'online',
+    description: b.description || '',
+    websiteUrl: b.websiteUrl || '',
+    nostrNpub: b.nostrNpub || '',
+    nostrProfilePic: b.nostrProfilePic || '',
+    xProfileUrl: b.xProfileUrl || '',
+    xProfilePic: b.xProfilePic || '',
+    logoUrl: b.logoUrl || '',
+    showOnWebsite: b.showOnWebsite ?? true,
+    featured: b.featured ?? false,
+    dateAdded: b.dateAdded || new Date().toISOString().split('T')[0],
+  }),
+  merge: (existing, b) => ({
+    ...existing,
+    name: b.name ?? existing.name,
+    country: b.country ?? existing.country,
+    shippingRegions: b.shippingRegions ?? existing.shippingRegions,
+    shopType: b.shopType ?? existing.shopType,
+    description: b.description ?? existing.description,
+    websiteUrl: b.websiteUrl ?? existing.websiteUrl,
+    nostrNpub: b.nostrNpub ?? existing.nostrNpub,
+    nostrProfilePic: b.nostrProfilePic ?? existing.nostrProfilePic,
+    xProfileUrl: b.xProfileUrl ?? existing.xProfileUrl,
+    xProfilePic: b.xProfilePic ?? existing.xProfilePic,
+    logoUrl: b.logoUrl ?? existing.logoUrl,
+    showOnWebsite: b.showOnWebsite ?? existing.showOnWebsite,
+    featured: b.featured ?? existing.featured ?? false,
+  }),
+}));
 
 // Upload vendor logo
 app.post('/api/vendors/logo', upload.single('logo'), async (req, res) => {

@@ -1057,8 +1057,14 @@ function lngLatToWorldPx(lng: number, lat: number, z: number): { x: number; y: n
 // hero, or a pin near a tile edge, no longer leaves an uncovered grey strip.
 // The pixel size isn't known until the hero is laid out, so this is injected by
 // `fillHeroMap` after render rather than baked into the markup.
-function heroMapTiles(lat: number, lng: number, w: number, h: number): string {
-  const z = 14;
+//
+// `HERO_MAP_ZOOM` is the default level; the +/- controls (detail page) step the
+// zoom within [MIN, MAX] and re-render the mosaic at the new level.
+const HERO_MAP_ZOOM = 14;
+const HERO_MAP_ZOOM_MIN = 10;
+const HERO_MAP_ZOOM_MAX = 18;
+
+function heroMapTiles(lat: number, lng: number, w: number, h: number, z = HERO_MAP_ZOOM): string {
   const n = Math.pow(2, z);
   const { x: px, y: py } = lngLatToWorldPx(lng, lat, z);
   const cx = w / 2;
@@ -1097,7 +1103,8 @@ export function fillHeroMap(root: HTMLElement, cache: ParsedCache): void {
   const w = mapEl.clientWidth;
   const h = mapEl.clientHeight;
   if (!w || !h) return;
-  mapEl.innerHTML = heroMapTiles(cache.lat, cache.lng, w, h);
+  const z = Number(mapEl.dataset.zoom) || HERO_MAP_ZOOM;
+  mapEl.innerHTML = heroMapTiles(cache.lat, cache.lng, w, h, z);
 }
 
 // The hero: the cache photo on top of its map thumbnail, with a photo/map
@@ -1105,8 +1112,12 @@ export function fillHeroMap(root: HTMLElement, cache: ParsedCache): void {
 // so toggling to "map" just hides the photo - and a broken photo URL reveals
 // the map for free. `h` sets the hero height in pixels; the width is fluid
 // (100%), and the tile mosaic is injected by `fillHeroMap` once laid out.
-export function heroBlock(cache: ParsedCache, h: number): string {
-  const map = `<div class="pg-hero-map" style="position:absolute;inset:0;overflow:hidden;background:#e5e7eb;"></div>`;
+export function heroBlock(
+  cache: ParsedCache,
+  h: number,
+  opts: { zoomControls?: boolean } = {},
+): string {
+  const map = `<div class="pg-hero-map" data-zoom="${HERO_MAP_ZOOM}" style="position:absolute;inset:0;overflow:hidden;background:#e5e7eb;"></div>`;
   const safeImg = cache.imageUrl ? sanitizeUrl(cache.imageUrl) : '';
 
   const photo = safeImg
@@ -1130,7 +1141,19 @@ export function heroBlock(cache: ParsedCache, h: number): string {
        </div>`
     : '';
 
-  return `<div style="position:relative;width:100%;height:${h}px;border-radius:10px;overflow:hidden;margin-bottom:12px;">${map}${photo}${toggle}</div>`;
+  // Optional +/- zoom controls (bottom-left), stacked map-app style. They act
+  // on the map layer, so they start hidden when a photo is shown on top (the
+  // photo/map toggle reveals them); with no photo, the map is always visible.
+  const zoom = opts.zoomControls
+    ? `<div class="pg-hero-zoom" style="position:absolute;bottom:8px;left:8px;z-index:2;display:${
+        safeImg ? 'none' : 'flex'
+      };flex-direction:column;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.35);">
+         <button type="button" class="pg-hero-zoom-in" aria-label="Zoom in" style="width:32px;height:32px;padding:0;border:none;border-bottom:1px solid rgba(0,0,0,0.12);background:#fff;color:#374151;font-size:20px;line-height:1;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">+</button>
+         <button type="button" class="pg-hero-zoom-out" aria-label="Zoom out" style="width:32px;height:32px;padding:0;border:none;background:#fff;color:#374151;font-size:22px;line-height:1;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;">&minus;</button>
+       </div>`
+    : '';
+
+  return `<div style="position:relative;width:100%;height:${h}px;border-radius:10px;overflow:hidden;margin-bottom:12px;">${map}${photo}${toggle}${zoom}</div>`;
 }
 
 // The "Hidden by …" attribution row (avatar + name + trust caveat). The name
@@ -1232,18 +1255,46 @@ export function wireCacheCard(root: HTMLElement, cache: ParsedCache): void {
   }
 
   // Photo/map hero toggle: hide or show the photo layer (the map thumbnail
-  // always sits underneath), and shade the active button pink.
+  // always sits underneath), and shade the active button pink. The +/- zoom
+  // controls (when present) only make sense over the map, so they track the view.
   const photoEl = root.querySelector('.pg-hero-photo') as HTMLElement | null;
   const photoBtn = root.querySelector('.pg-hero-photo-btn') as HTMLElement | null;
   const mapBtn = root.querySelector('.pg-hero-map-btn') as HTMLElement | null;
+  const zoomCtl = root.querySelector('.pg-hero-zoom') as HTMLElement | null;
   if (photoEl && photoBtn && mapBtn) {
     const setHeroView = (view: 'photo' | 'map') => {
       photoEl.style.display = view === 'photo' ? 'block' : 'none';
       photoBtn.style.background = view === 'photo' ? BRAND_PINK : 'transparent';
       mapBtn.style.background = view === 'map' ? BRAND_PINK : 'transparent';
+      if (zoomCtl) zoomCtl.style.display = view === 'map' ? 'flex' : 'none';
     };
     photoBtn.addEventListener('click', () => setHeroView('photo'));
     mapBtn.addEventListener('click', () => setHeroView('map'));
+  }
+
+  // +/- zoom controls on the hero map (detail page): step the static-map zoom
+  // within its range and re-render the tile mosaic. Buttons dim at the limits.
+  const mapEl = root.querySelector('.pg-hero-map') as HTMLElement | null;
+  const zoomInBtn = root.querySelector('.pg-hero-zoom-in') as HTMLButtonElement | null;
+  const zoomOutBtn = root.querySelector('.pg-hero-zoom-out') as HTMLButtonElement | null;
+  if (mapEl && zoomInBtn && zoomOutBtn) {
+    const syncLimits = (z: number) => {
+      zoomInBtn.style.opacity = z >= HERO_MAP_ZOOM_MAX ? '0.4' : '1';
+      zoomOutBtn.style.opacity = z <= HERO_MAP_ZOOM_MIN ? '0.4' : '1';
+      zoomInBtn.style.cursor = z >= HERO_MAP_ZOOM_MAX ? 'default' : 'pointer';
+      zoomOutBtn.style.cursor = z <= HERO_MAP_ZOOM_MIN ? 'default' : 'pointer';
+    };
+    const stepZoom = (delta: number) => {
+      const cur = Number(mapEl.dataset.zoom) || HERO_MAP_ZOOM;
+      const next = Math.min(HERO_MAP_ZOOM_MAX, Math.max(HERO_MAP_ZOOM_MIN, cur + delta));
+      if (next === cur) return;
+      mapEl.dataset.zoom = String(next);
+      fillHeroMap(root, cache);
+      syncLimits(next);
+    };
+    zoomInBtn.addEventListener('click', () => stepZoom(1));
+    zoomOutBtn.addEventListener('click', () => stepZoom(-1));
+    syncLimits(Number(mapEl.dataset.zoom) || HERO_MAP_ZOOM);
   }
 
   // Resolve the "Hidden by …" attribution from its npub placeholder.
@@ -1966,7 +2017,7 @@ export function buildDetailHtml(cache: ParsedCache): string {
     <div class="pg-detail-grid" style="font-family:Inter,system-ui,sans-serif;">
       <div class="pg-detail-left">
         <div class="pg-detail-main" style="min-width:0;">
-          ${heroBlock(cache, DETAIL_HERO_H)}
+          ${heroBlock(cache, DETAIL_HERO_H, { zoomControls: true })}
           ${cacheBodyHtml(cache, { includeMeters: false, includeHider: false })}
           ${claimNoteHtml(cache)}
         </div>

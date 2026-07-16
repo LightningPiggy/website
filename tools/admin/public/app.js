@@ -691,6 +691,7 @@ function renderCreditCard(c, index, sectionArr) {
           ${c.websiteUrl ? `<a href="${c.websiteUrl}" target="_blank" title="Website" class="social-icon">${ICONS.web}</a>` : ''}
         </div>
         <div class="credit-section-tags">
+          ${c.kind === 'organisation' ? '<span class="credit-section-tag kind-org">Organisation</span>' : ''}
           ${(c.websiteSections && c.websiteSections.length)
             ? c.websiteSections.map(s => `<span class="credit-section-tag">${escapeHtmlAdmin(s)}</span>`).join('')
             : '<span class="credit-section-tag none">Not assigned</span>'}
@@ -774,6 +775,11 @@ function openModal(credit = null) {
   const sections = credit?.websiteSections || [];
   document.querySelectorAll('#credit-sections input[type=checkbox]').forEach(cb => {
     cb.checked = sections.includes(cb.value);
+  });
+  // Person/organisation type — mastered in the RTBD database, mirrored here
+  const kind = credit?.kind === 'organisation' ? 'organisation' : 'person';
+  document.querySelectorAll('#credit-kind input[type=radio]').forEach(rb => {
+    rb.checked = rb.value === kind;
   });
   creditModal.hidden = false;
 }
@@ -873,6 +879,7 @@ creditForm.addEventListener('submit', async e => {
     notes: document.getElementById('credit-notes').value,
     showOnWebsite: document.getElementById('credit-show-on-website').checked,
     websiteSections,
+    kind: document.querySelector('#credit-kind input[type=radio]:checked')?.value || 'person',
   };
 
   try {

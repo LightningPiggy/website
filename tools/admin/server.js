@@ -831,6 +831,9 @@ app.use('/api/credits', crudRouter({
     notes: b.notes || '',
     showOnWebsite: b.showOnWebsite ?? false,
     websiteSections: normaliseSections(b),
+    // person | organisation — the people/org split. Master classification
+    // lives in the RTBD database; this mirrors it for entries managed here.
+    kind: b.kind === 'organisation' ? 'organisation' : b.kind === 'person' ? 'person' : '',
     dateAdded: b.dateAdded || new Date().toISOString().split('T')[0],
   }),
   merge: (existing, b) => {
@@ -854,6 +857,7 @@ app.use('/api/credits', crudRouter({
       websiteSections: Array.isArray(b.websiteSections)
         ? b.websiteSections.filter(Boolean)
         : (existing.websiteSections || normaliseSections(existing)),
+      kind: b.kind ?? existing.kind,
     };
     delete updated.websiteSection;
     delete updated.isBitcoinKid;
@@ -897,6 +901,28 @@ function syncCreditsToWebsite() {
     const secs = (c) => Array.isArray(c.websiteSections) ? c.websiteSections : normaliseSections(c);
     const has = (c, section) => secs(c).includes(section);
     const websiteCredits = data.credits.filter(c => c.showOnWebsite && secs(c).length);
+
+    // People/organisation split: `contributors` and `communitySupporters` are
+    // mixed sections, so each entry carries an additive `kind` field. The RTBD
+    // master database owns the classification — when an admin record has no
+    // explicit kind, preserve whatever the current export file says (RTBD's
+    // last word) instead of stripping it on regeneration.
+    const prevKinds = new Map();
+    try {
+      const prev = JSON.parse(fs.readFileSync(CREDITS_EXPORT_FILE, 'utf-8'));
+      for (const sec of ['contributors', 'communitySupporters']) {
+        for (const e of prev[sec] || []) {
+          if (e && e.name && e.kind) prevKinds.set(`${sec}:${e.name.trim().toLowerCase()}`, e.kind);
+        }
+      }
+    } catch { /* no previous export — kinds come from records only */ }
+
+    const withKind = (c, section, obj) => {
+      const kind = (c.kind === 'person' || c.kind === 'organisation')
+        ? c.kind
+        : prevKinds.get(`${section}:${(c.name || '').trim().toLowerCase()}`);
+      return kind ? { ...obj, kind } : obj;
+    };
 
     // Helper to build a credits-page object (Core Team / Contributors / Bitcoin Kids).
     const buildCreditObj = (c, includeContribution = true, includeNote = false) => {
@@ -942,12 +968,16 @@ function syncCreditsToWebsite() {
         .map(c => buildCreditObj(c, true, false)),
       contributors: websiteCredits
         .filter(c => (has(c, 'Contributor') || has(c, 'Special Thanks')) && !has(c, 'Bitcoin Kids'))
-        .map(c => buildCreditObj(c, has(c, 'Contributor'), !has(c, 'Contributor') && has(c, 'Special Thanks'))),
+        // Always emit `contribution` (the site renders contribution||note, and
+        // the RTBD master exports `contribution`) so the two writers converge.
+        .map(c => withKind(c, 'contributors', buildCreditObj(c, true, false))),
       specialThanks: [], // merged into contributors; kept for backwards compatibility
       bitcoinKids: websiteCredits
         .filter(c => has(c, 'Bitcoin Kids'))
         .map(c => buildCreditObj(c, true, false)),
-      communitySupporters: landingGroup('Community Supporters'),
+      communitySupporters: websiteCredits
+        .filter(c => has(c, 'Community Supporters'))
+        .map(c => withKind(c, 'communitySupporters', buildPartnerLikeObj(c))),
       educationPartners: landingGroup('Education Partners'),
       technologyPartners: landingGroup('Enabling Technologies'),
       appearances: landingGroup('Appearances'),

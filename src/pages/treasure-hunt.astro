@@ -146,6 +146,25 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       >
         <span aria-hidden="true">🏆</span> View the leaderboard
       </a>
+
+      <!-- "Spend your sats" layer toggle: overlays Bitcoin-accepting merchants
+           from BTC Map so finders can see where to spend their loot. Off by
+           default (opt-in) - the ~29k-merchant dataset is only fetched on first
+           enable. -->
+      <button
+        id="btcmap-toggle"
+        type="button"
+        aria-pressed="false"
+        class="w-full inline-flex items-center justify-between gap-2 rounded-full bg-white shadow-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
+      >
+        <span class="inline-flex items-center gap-2">
+          <span aria-hidden="true" class="inline-flex h-5 w-5 items-center justify-center rounded-full text-white text-[11px] font-bold" style="background:#F7931A;">₿</span>
+          <span id="btcmap-toggle-label">Spend your sats</span>
+        </span>
+        <span id="btcmap-switch" class="relative inline-block h-5 w-9 shrink-0 rounded-full bg-gray-300 transition-colors" aria-hidden="true">
+          <span id="btcmap-knob" class="absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform"></span>
+        </span>
+      </button>
     </div>
 
     <!-- Legend + count -->
@@ -170,6 +189,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#FFC107" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
         </span>
         <span>Lightning prize</span>
+      </div>
+      <!-- Shown only while the BTC Map "spend your sats" layer is active -->
+      <div id="btcmap-legend-row" class="hidden items-center gap-2">
+        <span class="inline-flex h-4 w-4 items-center justify-center rounded-full text-white text-[9px] font-bold" style="background:#F7931A;">₿</span>
+        <span>Accepts Bitcoin (BTC Map)</span>
       </div>
       <div id="piglets-count" class="pt-1 border-t border-gray-100 text-gray-500"></div>
     </div>
@@ -213,6 +237,230 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       el.appendChild(inner);
       el.setAttribute('aria-label', cache.isLpPiggy ? 'Piglet' : 'NIP-GC cache');
       return el;
+    }
+
+    // -----------------------------------------------------------------------
+    // BTC Map "spend your sats" layer (opt-in, off by default)
+    // -----------------------------------------------------------------------
+    // Where can finders spend their loot? An overlay of Bitcoin-accepting
+    // merchants from BTC Map (btcmap.org), shown as a clustered layer with a
+    // per-category glyph on each merchant. The ~29k-place dataset is fetched
+    // only when the layer is first switched on, then cached for the session.
+    const BTCMAP_URL = 'https://api.btcmap.org/v4/places?fields=id,lat,lon,icon,name';
+    const BTC_ORANGE = '#F7931A';
+    const BTC_DEFAULT_ID = 'btc-default';
+
+    // BTC Map tags each place with a Material-symbol icon name; map the common
+    // ones to an emoji glyph. Anything unmapped falls back to a bitcoin badge.
+    const BTC_GLYPHS: Record<string, string> = {
+      storefront: '🏪', local_atm: '🏧', restaurant: '🍽️', local_gas_station: '⛽',
+      local_cafe: '☕', lunch_dining: '🍔', local_grocery_store: '🛒', content_cut: '💈',
+      hotel: '🏨', business: '🏢', medical_services: '🏥', spa: '💆', computer: '💻',
+      car_repair: '🔧', local_mall: '🛍️', local_bar: '🍸', currency_exchange: '💱',
+      local_pizza: '🍕', sports_bar: '🍺', bakery_dining: '🥐', local_florist: '💐',
+      diamond: '💎', directions_car: '🚗', icecream: '🍦', balance: '⚖️', liquor: '🍷',
+      build: '🛠️', dentistry: '🦷', fitness_center: '🏋️', local_pharmacy: '💊',
+      school: '🎓', pets: '🐾', checkroom: '👕', group: '👥', hardware: '🔩',
+    };
+
+    function escAttr(s: string): string {
+      return String(s).replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string),
+      );
+    }
+
+    // Draw a glyph onto a small canvas and register it with the map (once). The
+    // default badge is an orange disc with a white ₿; category glyphs sit on a
+    // white disc with an orange ring so they read against the basemap.
+    function addGlyphImage(map: any, id: string, emoji: string, isDefault = false): void {
+      if (map.hasImage(id)) return;
+      const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+      const size = 44;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size * dpr;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.scale(dpr, dpr);
+      const r = size / 2;
+      ctx.beginPath();
+      ctx.arc(r, r, r - 3, 0, Math.PI * 2);
+      ctx.fillStyle = isDefault ? BTC_ORANGE : '#ffffff';
+      ctx.shadowColor = 'rgba(0,0,0,0.3)';
+      ctx.shadowBlur = 3;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = BTC_ORANGE;
+      ctx.stroke();
+      if (isDefault) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.round(size * 0.5)}px system-ui, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('₿', r, r + 1);
+      } else {
+        ctx.font = `${Math.round(size * 0.48)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",system-ui,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(emoji, r, r + 1);
+      }
+      const img = ctx.getImageData(0, 0, size * dpr, size * dpr);
+      map.addImage(id, { width: size * dpr, height: size * dpr, data: img.data }, { pixelRatio: dpr });
+    }
+
+    function registerBtcGlyphs(map: any): void {
+      addGlyphImage(map, BTC_DEFAULT_ID, '', true);
+      for (const [name, emoji] of Object.entries(BTC_GLYPHS)) addGlyphImage(map, name, emoji);
+    }
+
+    interface BtcState { map: any; fetched: boolean; loading: boolean; visible: boolean; count: number; }
+
+    // Fetch the dataset, register glyphs, and add the clustered source + layers.
+    // Runs once (guarded by state.fetched); subsequent toggles just flip layer
+    // visibility.
+    async function loadBtcMap(state: BtcState): Promise<void> {
+      const map = state.map;
+      const maplibregl = (window as any).maplibregl;
+      // The style must be loaded before addSource/addImage; on a normal load
+      // this is long done by the time anyone clicks, but guard just in case.
+      if (!map.isStyleLoaded()) {
+        await new Promise<void>((res) => map.once('load', () => res()));
+      }
+
+      const res = await fetch(BTCMAP_URL, { headers: { Accept: 'application/json' } });
+      if (!res.ok) throw new Error(`BTC Map HTTP ${res.status}`);
+      const places: Array<{ id: number; lat: number; lon: number; icon?: string; name?: string }> =
+        await res.json();
+
+      registerBtcGlyphs(map);
+
+      const features = [];
+      for (const p of places) {
+        if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
+        features.push({
+          type: 'Feature' as const,
+          geometry: { type: 'Point' as const, coordinates: [p.lon, p.lat] },
+          properties: {
+            id: p.id,
+            name: p.name || '',
+            img: p.icon && BTC_GLYPHS[p.icon] ? p.icon : BTC_DEFAULT_ID,
+          },
+        });
+      }
+      state.count = features.length;
+
+      // A single (non-clustered) source. At ~29k points, clustering a large
+      // inline GeoJSON hits a MapLibre tiling race where the source never
+      // populates; a plain symbol layer with collision (icon-allow-overlap
+      // off) renders the whole set and naturally thins the glyphs at low zoom,
+      // revealing more as you zoom in - which suits "browse where to spend".
+      map.addSource('btcmap', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features },
+        attribution:
+          'Merchants © <a href="https://btcmap.org" target="_blank" rel="noopener">BTC Map</a>, © OpenStreetMap contributors',
+      });
+
+      map.addLayer({
+        id: 'btc-merchants',
+        type: 'symbol',
+        source: 'btcmap',
+        layout: {
+          'icon-image': ['get', 'img'],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 3, 0.34, 9, 0.46, 14, 0.6, 17, 0.74],
+          'icon-allow-overlap': false,
+          'icon-padding': 2,
+          // Denser categories (ATMs, shops) yield to sit-down/spend spots when
+          // glyphs collide, so the thinned low-zoom view favours the fun ones.
+          'symbol-sort-key': [
+            'match',
+            ['get', 'img'],
+            ['restaurant', 'local_cafe', 'local_bar', 'lunch_dining', 'local_pizza', 'sports_bar', 'liquor'], 0,
+            ['storefront', 'local_grocery_store', 'local_atm'], 3,
+            1,
+          ],
+        },
+      });
+
+      // Merchants open a small popup with a BTC Map deep link. Registered once,
+      // here, since the layer is only added once.
+      map.on('click', 'btc-merchants', (e: any) => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const name = f.properties.name || 'Bitcoin merchant';
+        const id = f.properties.id;
+        const html = `<div style="font-family:Inter,system-ui,sans-serif;min-width:170px;">
+            <div style="font-weight:700;font-size:14px;color:#111827;margin-bottom:2px;">${escAttr(name)}</div>
+            <div style="font-size:12px;color:#6b7280;margin-bottom:8px;">Accepts Bitcoin ⚡</div>
+            <a href="https://btcmap.org/merchant/${encodeURIComponent(id)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:${BTC_ORANGE};text-decoration:none;">View on BTC Map ↗</a>
+          </div>`;
+        new maplibregl.Popup({ offset: 14, maxWidth: '260px' })
+          .setLngLat(f.geometry.coordinates)
+          .setHTML(html)
+          .addTo(map);
+      });
+      map.on('mouseenter', 'btc-merchants', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'btc-merchants', () => { map.getCanvas().style.cursor = ''; });
+    }
+
+    // Wire the top-left toggle: lazy-load on first enable, then flip visibility.
+    function wireBtcMap(map: any): void {
+      const btn = document.getElementById('btcmap-toggle');
+      const sw = document.getElementById('btcmap-switch');
+      const knob = document.getElementById('btcmap-knob');
+      const label = document.getElementById('btcmap-toggle-label');
+      const legendRow = document.getElementById('btcmap-legend-row');
+      if (!btn) return;
+      const state: BtcState = { map, fetched: false, loading: false, visible: false, count: 0 };
+
+      const paint = () => {
+        const on = state.visible;
+        btn.setAttribute('aria-pressed', String(on));
+        if (sw) sw.style.background = on ? BTC_ORANGE : '#d1d5db';
+        if (knob) knob.style.transform = on ? 'translateX(16px)' : 'translateX(0)';
+        if (label) {
+          label.textContent = state.loading
+            ? 'Loading spots…'
+            : on
+              ? `Spend spots · ${state.count.toLocaleString()}`
+              : 'Spend your sats';
+        }
+        if (legendRow) {
+          legendRow.classList.toggle('hidden', !on);
+          legendRow.classList.toggle('flex', on);
+        }
+      };
+
+      const setVisibility = (vis: 'visible' | 'none') => {
+        if (map.getLayer('btc-merchants')) map.setLayoutProperty('btc-merchants', 'visibility', vis);
+      };
+
+      btn.addEventListener('click', async () => {
+        if (state.loading) return;
+        if (state.visible) {
+          state.visible = false;
+          setVisibility('none');
+          paint();
+          return;
+        }
+        if (!state.fetched) {
+          state.loading = true;
+          paint();
+          try {
+            await loadBtcMap(state);
+            state.fetched = true;
+          } catch (e) {
+            console.error('BTC Map layer failed to load:', e);
+            state.loading = false;
+            paint();
+            return;
+          }
+          state.loading = false;
+        }
+        state.visible = true;
+        setVisibility('visible');
+        paint();
+      });
     }
 
     // -----------------------------------------------------------------------
@@ -344,6 +592,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         showAccuracyCircle: true,
       });
       map.addControl(geolocate, 'top-right');
+
+      // Wire the opt-in "spend your sats" BTC Map overlay (off by default).
+      wireBtcMap(map);
 
       let caches: ParsedCache[] = [];
       try {

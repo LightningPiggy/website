@@ -411,41 +411,80 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       }
       state.count = features.length;
 
-      // A single (non-clustered) source. At ~29k points, clustering a large
-      // inline GeoJSON hits a MapLibre tiling race where the source never
-      // populates; a plain symbol layer with collision (icon-allow-overlap
-      // off) renders the whole set and naturally thins the glyphs at low zoom,
-      // revealing more as you zoom in - which suits "browse where to spend".
+      // Clustered source so the ~29k merchants group into counts at low zoom
+      // and break apart into individual glyphs as you zoom in. Two things make
+      // the clustered tiles populate reliably: the data is passed INLINE at
+      // creation (adding empty + `setData` later leaves the tiles empty until a
+      // pan), and we wait for the basemap to settle first.
+      await new Promise<void>((res) => (map.areTilesLoaded() ? res() : map.once('idle', () => res())));
       map.addSource('btcmap', {
         type: 'geojson',
         data: { type: 'FeatureCollection', features },
+        cluster: true,
+        clusterRadius: 50,
+        clusterMaxZoom: 12,
         attribution:
           'Merchants © <a href="https://btcmap.org" target="_blank" rel="noopener">BTC Map</a>, © OpenStreetMap contributors',
       });
 
+      // Cluster bubble: an orange disc sized by how many merchants it groups,
+      // with a white count. Matches the spend-spot pin colour.
+      map.addLayer({
+        id: 'btc-clusters',
+        type: 'circle',
+        source: 'btcmap',
+        filter: ['has', 'point_count'],
+        paint: {
+          'circle-color': BTC_ORANGE,
+          'circle-opacity': 0.95,
+          'circle-radius': ['step', ['get', 'point_count'], 14, 25, 18, 100, 22, 1000, 28],
+          'circle-stroke-width': 2,
+          'circle-stroke-color': '#ffffff',
+        },
+      });
+      map.addLayer({
+        id: 'btc-cluster-count',
+        type: 'symbol',
+        source: 'btcmap',
+        filter: ['has', 'point_count'],
+        layout: {
+          'text-field': ['get', 'point_count_abbreviated'],
+          'text-font': ['Noto Sans Bold'],
+          'text-size': ['step', ['get', 'point_count'], 11, 100, 12, 1000, 13],
+          'text-allow-overlap': true,
+        },
+        paint: { 'text-color': '#ffffff' },
+      });
+      // Individual merchants (only present above clusterMaxZoom): the Lucide
+      // category glyph on its orange disc.
       map.addLayer({
         id: 'btc-merchants',
         type: 'symbol',
         source: 'btcmap',
+        filter: ['!', ['has', 'point_count']],
         layout: {
           'icon-image': ['get', 'img'],
-          'icon-size': ['interpolate', ['linear'], ['zoom'], 3, 0.34, 9, 0.46, 14, 0.6, 17, 0.74],
+          'icon-size': ['interpolate', ['linear'], ['zoom'], 10, 0.46, 14, 0.6, 17, 0.74],
           'icon-allow-overlap': false,
           'icon-padding': 2,
-          // Denser categories (ATMs, shops) yield to sit-down/spend spots when
-          // glyphs collide, so the thinned low-zoom view favours the fun ones.
-          'symbol-sort-key': [
-            'match',
-            ['get', 'img'],
-            ['btc-utensils-crossed', 'btc-coffee', 'btc-beer', 'btc-pizza', 'btc-wine', 'btc-croissant', 'btc-ice-cream-cone'], 0,
-            ['btc-store', 'btc-shopping-cart', 'btc-banknote'], 3,
-            1,
-          ],
         },
       });
 
+      // Click a cluster to zoom to where it breaks apart.
+      map.on('click', 'btc-clusters', (e: any) => {
+        const f = map.queryRenderedFeatures(e.point, { layers: ['btc-clusters'] })[0];
+        if (!f) return;
+        map
+          .getSource('btcmap')
+          .getClusterExpansionZoom(f.properties.cluster_id)
+          .then((zoom: number) => map.easeTo({ center: f.geometry.coordinates, zoom: Math.min(zoom, 16) }))
+          .catch(() => {});
+      });
+      map.on('mouseenter', 'btc-clusters', () => { map.getCanvas().style.cursor = 'pointer'; });
+      map.on('mouseleave', 'btc-clusters', () => { map.getCanvas().style.cursor = ''; });
+
       // Merchants open a small popup with a BTC Map deep link. Registered once,
-      // here, since the layer is only added once.
+      // here, since the layers are only added once.
       map.on('click', 'btc-merchants', (e: any) => {
         const f = e.features?.[0];
         if (!f) return;
@@ -494,7 +533,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       };
 
       const setVisibility = (vis: 'visible' | 'none') => {
-        if (map.getLayer('btc-merchants')) map.setLayoutProperty('btc-merchants', 'visibility', vis);
+        for (const id of ['btc-clusters', 'btc-cluster-count', 'btc-merchants']) {
+          if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', vis);
+        }
       };
 
       btn.addEventListener('click', async () => {
@@ -590,6 +631,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       const style = {
         version: 8 as const,
+        // Glyph endpoint for symbol-layer text - only the BTC Map cluster
+        // counts use it, and only once that opt-in layer is enabled, so a
+        // normal map load fetches nothing from here. MapLibre's own font
+        // server (valid PBFs, open CORS, no key).
+        glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
         sources: {
           carto: {
             type: 'raster' as const,

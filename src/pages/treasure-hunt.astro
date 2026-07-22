@@ -389,16 +389,31 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         await new Promise<void>((res) => map.once('load', () => res()));
       }
 
-      const res = await fetch(BTCMAP_URL, { headers: { Accept: 'application/json' } });
-      if (!res.ok) throw new Error(`BTC Map HTTP ${res.status}`);
-      const places: Array<{ id: number; lat: number; lon: number; icon?: string; name?: string }> =
-        await res.json();
+      // Time-box the request so a hanging btcmap.org can't leave the toggle
+      // stuck on "Loading spots…" with no way to retry.
+      const ctrl = new AbortController();
+      const timeout = setTimeout(() => ctrl.abort(), 15000);
+      let places: Array<{ id: number; lat: number; lon: number; icon?: string; name?: string }>;
+      try {
+        const res = await fetch(BTCMAP_URL, {
+          headers: { Accept: 'application/json' },
+          signal: ctrl.signal,
+        });
+        if (!res.ok) throw new Error(`BTC Map HTTP ${res.status}`);
+        places = await res.json();
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!Array.isArray(places)) throw new Error('BTC Map: unexpected response shape');
 
       await registerBtcGlyphs(map);
 
       const features = [];
       for (const p of places) {
-        if (typeof p.lat !== 'number' || typeof p.lon !== 'number') continue;
+        // Reject NaN / ±Infinity / out-of-range coords (anyone can add a
+        // merchant to btcmap.org) so markers and cluster geometry stay sane.
+        if (!Number.isFinite(p.lat) || !Number.isFinite(p.lon)) continue;
+        if (Math.abs(p.lat) > 90 || Math.abs(p.lon) > 180) continue;
         features.push({
           type: 'Feature' as const,
           geometry: { type: 'Point' as const, coordinates: [p.lon, p.lat] },

@@ -1279,10 +1279,18 @@ export function wireCacheCard(root: HTMLElement, cache: ParsedCache): void {
   const zoomOutBtn = root.querySelector('.pg-hero-zoom-out') as HTMLButtonElement | null;
   if (mapEl && zoomInBtn && zoomOutBtn) {
     const syncLimits = (z: number) => {
-      zoomInBtn.style.opacity = z >= HERO_MAP_ZOOM_MAX ? '0.4' : '1';
-      zoomOutBtn.style.opacity = z <= HERO_MAP_ZOOM_MIN ? '0.4' : '1';
-      zoomInBtn.style.cursor = z >= HERO_MAP_ZOOM_MAX ? 'default' : 'pointer';
-      zoomOutBtn.style.cursor = z <= HERO_MAP_ZOOM_MIN ? 'default' : 'pointer';
+      const atMax = z >= HERO_MAP_ZOOM_MAX;
+      const atMin = z <= HERO_MAP_ZOOM_MIN;
+      zoomInBtn.style.opacity = atMax ? '0.4' : '1';
+      zoomOutBtn.style.opacity = atMin ? '0.4' : '1';
+      zoomInBtn.style.cursor = atMax ? 'default' : 'pointer';
+      zoomOutBtn.style.cursor = atMin ? 'default' : 'pointer';
+      // Convey the limit to assistive tech and make activation a true no-op,
+      // not just a visual dim.
+      zoomInBtn.disabled = atMax;
+      zoomOutBtn.disabled = atMin;
+      zoomInBtn.setAttribute('aria-disabled', String(atMax));
+      zoomOutBtn.setAttribute('aria-disabled', String(atMin));
     };
     const stepZoom = (delta: number) => {
       const cur = Number(mapEl.dataset.zoom) || HERO_MAP_ZOOM;

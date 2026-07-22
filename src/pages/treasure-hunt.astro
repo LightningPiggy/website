@@ -950,8 +950,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
             el = makeClusterChip(f.properties.point_count, hasPiglet);
             el.addEventListener('click', (e) => {
               e.stopPropagation();
-              const zoom = Math.min(cluster.getClusterExpansionZoom(f.properties.cluster_id), 16);
-              map.easeTo({ center: [lng, lat], zoom });
+              // Cap at the map's max zoom, NOT the cluster maxZoom (16): a
+              // cluster only splits at a zoom ABOVE supercluster's maxZoom, so
+              // capping at 16 would land on a zoom where the chip stays whole.
+              const expansion = cluster.getClusterExpansionZoom(f.properties.cluster_id);
+              map.easeTo({ center: [lng, lat], zoom: Math.min(expansion, map.getMaxZoom()) });
             });
           } else {
             const cache = caches[f.properties.i];

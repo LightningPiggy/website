@@ -1,0 +1,4 @@
+{
+  "//": "The root package.json sets \"type\": \"module\" for the Astro site, which makes Node treat every .js file in the repo as an ES module. These functions are CommonJS (exports.handler), so without this override they fail at load with 'module is not defined in ES module scope' and every endpoint returns 502. Scoping type=commonjs to this directory keeps the site ESM while letting the functions stay CJS.",
+  "type": "commonjs"
+}

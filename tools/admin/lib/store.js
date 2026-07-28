@@ -51,9 +51,17 @@ export function saveStore(file, data) {
 //   singular          — response label + 404 message ("credit", "vendor", …).
 //   build(body)       — returns a new item (WITHOUT id; the router adds a UUID).
 //   merge(existing, body) — returns the updated item for PUT /:id.
-export function crudRouter({ load, save, key, singular, build, merge }) {
+//   afterWrite(item) — optional; called after a successful create/update, for
+//                      side effects that must not run on the store's own
+//                      internal writes (e.g. avatar localisation).
+export function crudRouter({ load, save, key, singular, build, merge, afterWrite }) {
   const r = express.Router();
   const Singular = singular.charAt(0).toUpperCase() + singular.slice(1);
+  const notify = (item) => {
+    if (afterWrite) {
+      try { afterWrite(item); } catch { /* side effect must never fail the write */ }
+    }
+  };
 
   r.get('/', (req, res) => res.json(load()[key]));
 
@@ -63,6 +71,7 @@ export function crudRouter({ load, save, key, singular, build, merge }) {
       const item = { id: crypto.randomUUID(), ...build(req.body) };
       data[key].push(item);
       save(data);
+      notify(item);
       res.json({ success: true, [singular]: item });
     } catch (err) {
       res.status(500).json({ error: err.message });
@@ -94,6 +103,7 @@ export function crudRouter({ load, save, key, singular, build, merge }) {
       if (i === -1) return res.status(404).json({ error: `${Singular} not found` });
       data[key][i] = merge(data[key][i], req.body);
       save(data);
+      notify(data[key][i]);
       res.json({ success: true, [singular]: data[key][i] });
     } catch (err) {
       res.status(500).json({ error: err.message });

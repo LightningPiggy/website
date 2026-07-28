@@ -11,6 +11,7 @@ import { SerialPort } from 'serialport';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { writeJsonAtomic, loadStore, saveStore, crudRouter } from './lib/store.js';
+import { createAvatarLocaliser } from './lib/avatars.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -51,6 +52,7 @@ const PARTNERS_FILE = path.join(os.homedir(), '.lightningpiggy', 'partners.json'
 const PARTNERS_EXPORT_FILE = path.join(ROOT, 'src', 'data', 'partners.json');
 const NOSTR_JSON_FILE = path.join(ROOT, 'public', '.well-known', 'nostr.json');
 const LOGOS_DIR = path.join(ROOT, 'public', 'images', 'logos');
+const PROFILE_PICS_DIR = path.join(ROOT, 'public', 'images', 'profiles');
 const TESTIMONIALS_FILE = path.join(os.homedir(), '.lightningpiggy', 'testimonials.json');
 const TESTIMONIALS_EXPORT_FILE = path.join(ROOT, 'src', 'data', 'testimonials.json');
 const VENDORS_FILE = path.join(os.homedir(), '.lightningpiggy', 'vendors.json');
@@ -117,6 +119,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/branding', express.static(path.join(ROOT, 'public', 'images', 'branding')));
 app.use('/images/testimonials', express.static(path.join(ROOT, 'public', 'images', 'testimonials')));
 app.use('/images/logos', express.static(path.join(ROOT, 'public', 'images', 'logos')));
+app.use('/images/profiles', express.static(PROFILE_PICS_DIR));
 app.use(express.json());
 
 // --- Filesystem browsing (for save-folder picker) ---
@@ -796,6 +799,30 @@ function saveCredits(data) {
   }
 }
 
+// Remote avatars are pulled down to public/images/profiles/ so the site never
+// depends on a rate-limited third party at render time. Note `save` here is the
+// plain saveCredits: the backlog writes through it, so hooking the localiser
+// into saveCredits itself would recurse.
+const avatars = createAvatarLocaliser({
+  profileDir: PROFILE_PICS_DIR,
+  fields: ['logoUrl', 'nostrProfilePic', 'xProfilePic'],
+  load: loadCredits,
+  save: saveCredits,
+});
+avatars.startSweep();
+
+// Manual trigger — the sweep is automatic, but this makes it testable/on-demand
+// and is what drains the backlog after a bulk RTBD import.
+app.post('/api/credits/localize-avatars', async (req, res) => {
+  try {
+    const limit = Math.min(Number(req.body?.limit) || 8, 100);
+    const result = await avatars.localizeAvatarBacklog({ limit });
+    res.json({ success: true, ...result });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // A credit can belong to several website sections. Accept the new
 // `websiteSections` array, but fall back to the legacy single `websiteSection`
 // (+ `isBitcoinKid` flag) so older clients/data keep working.
@@ -814,6 +841,9 @@ app.use('/api/credits', crudRouter({
   save: saveCredits,
   key: 'credits',
   singular: 'credit',
+  // Pull any remote avatar (e.g. the unavatar URL derived from an X handle)
+  // down to /images/profiles/. Runs after the response — never blocks the save.
+  afterWrite: (credit) => avatars.localizeCreditAvatarsSoon(credit.id),
   build: (b) => ({
     name: b.name || '',
     email: b.email || '',

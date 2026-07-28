@@ -50,6 +50,11 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#EC008C" />
     <meta name="apple-mobile-web-app-title" content="Lightning Piggy" />
+    <!-- Standards-track name first; Chromium warns that the `apple-` prefixed one
+         is deprecated. iOS Safari only honours the `apple-` variant, so keep both:
+         one satisfies Chromium, the other keeps "Add to Home Screen" standalone
+         mode working on iPhone. -->
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -940,8 +940,41 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           const top = (f: any) => Number(!!f.properties.cluster || !!f.properties.isLpPiggy);
           return top(a) - top(x);
         });
+
+        // Fan out caches hidden at (near-)identical coordinates. Above the
+        // cluster maxZoom supercluster stops grouping, so colocated caches come
+        // back as separate features at the SAME point and render perfectly
+        // stacked — only the top one is clickable, which used to make a Piglet
+        // sitting on another cache unreachable. Spread them around a small
+        // screen-space circle so each can be tapped; the popup still reports
+        // each cache's true coordinates.
+        const spread = new Map<any, [number, number]>();
+        const byCoord = new Map<string, any[]>();
         for (const f of points) {
+          if (f.properties.cluster) continue;
           const [lng, lat] = f.geometry.coordinates as [number, number];
+          const key = `${lng.toFixed(5)},${lat.toFixed(5)}`; // ~1m
+          const group = byCoord.get(key);
+          if (group) group.push(f);
+          else byCoord.set(key, [f]);
+        }
+        for (const group of byCoord.values()) {
+          if (group.length < 2) continue;
+          const [lng, lat] = group[0].geometry.coordinates as [number, number];
+          const origin = map.project([lng, lat]);
+          const radius = 18 + group.length * 3;
+          group.forEach((f: any, idx: number) => {
+            const angle = (2 * Math.PI * idx) / group.length - Math.PI / 2;
+            const p = map.unproject([
+              origin.x + radius * Math.cos(angle),
+              origin.y + radius * Math.sin(angle),
+            ]);
+            spread.set(f, [p.lng, p.lat]);
+          });
+        }
+
+        for (const f of points) {
+          const [lng, lat] = (spread.get(f) || f.geometry.coordinates) as [number, number];
           let el: HTMLElement;
           if (f.properties.cluster) {
             const hasPiglet = cluster

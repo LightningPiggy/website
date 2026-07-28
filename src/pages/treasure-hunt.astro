@@ -231,6 +231,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     crossorigin="anonymous"></script>
 
   <script>
+    import Supercluster from 'supercluster';
     import {
       fetchCaches,
       buildPopupHtml,
@@ -240,6 +241,9 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       zapBadgeHtml,
       type ParsedCache,
     } from '../scripts/treasure-nostr';
+
+    // Lightning Piggy brand pink (Piglet / cache-cluster chips).
+    const BRAND_PINK = '#EC008C';
 
     // -----------------------------------------------------------------------
     // Markers
@@ -260,6 +264,22 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       inner.innerHTML = iconBadgeHtml(cache.isLpPiggy, 32) + (hasPrize(cache) ? zapBadgeHtml() : '');
       el.appendChild(inner);
       el.setAttribute('aria-label', cache.isLpPiggy ? 'Piglet' : 'NIP-GC cache');
+      return el;
+    }
+
+    // A cluster "count chip": nearby caches that haven't separated yet, shown as
+    // a pink circle with the group size. Grows a little with the count. Tapping
+    // it (wired by the caller) flies to the zoom where the group splits.
+    function makeClusterChip(count: number, hasPiglet: boolean): HTMLElement {
+      const el = document.createElement('div');
+      el.style.cursor = 'pointer';
+      el.style.zIndex = '3';
+      const d = count >= 100 ? 40 : count >= 10 ? 36 : 32;
+      const chip = document.createElement('div');
+      chip.style.cssText = `width:${d}px;height:${d}px;border-radius:9999px;background:${BRAND_PINK};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:#fff;font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:${count >= 100 ? 13 : 14}px;`;
+      chip.textContent = count >= 1000 ? `${Math.round(count / 100) / 10}k` : String(count);
+      el.appendChild(chip);
+      el.setAttribute('aria-label', `${count} geocaches${hasPiglet ? ' including Piglets' : ''} — zoom in`);
       return el;
     }
 
@@ -894,28 +914,100 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         openPopup = popup;
       };
 
-      const addMarkers = () => {
-        // Add vanilla NIP-GC caches first, Piglets last, so our Piglets render
-        // on top when they share (or nearly share) a location. The per-marker
-        // z-index backs this up for exact overlaps.
-        const ordered = [...caches].sort(
-          (a, b) => Number(a.isLpPiggy) - Number(b.isLpPiggy),
-        );
-        for (const cache of ordered) {
-          const el = makeMarkerElement(cache);
-          el.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showCachePopup(cache);
+      // Cluster nearby caches into pink count chips (supercluster, matching the
+      // app) so a dense area doesn't render as an unreadable pile of pins; the
+      // chips split into individual caches as you zoom in. Re-rendered on every
+      // move so the grouping tracks the viewport + zoom.
+      const cluster = new Supercluster({ radius: 48, maxZoom: 16 });
+      cluster.load(
+        caches.map((c, i) => ({
+          type: 'Feature' as const,
+          properties: { i, isLpPiggy: c.isLpPiggy },
+          geometry: { type: 'Point' as const, coordinates: [c.lng, c.lat] },
+        })),
+      );
+
+      let markers: any[] = [];
+      const renderCaches = () => {
+        for (const m of markers) m.remove();
+        markers = [];
+        const b = map.getBounds();
+        const bbox: [number, number, number, number] = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
+        const z = Math.round(map.getZoom());
+        // Draw vanilla NIP-GC caches first, then Piglets + chips, so those land
+        // on top when they overlap.
+        const points = cluster.getClusters(bbox, z).sort((a: any, x: any) => {
+          const top = (f: any) => Number(!!f.properties.cluster || !!f.properties.isLpPiggy);
+          return top(a) - top(x);
+        });
+
+        // Fan out caches hidden at (near-)identical coordinates. Above the
+        // cluster maxZoom supercluster stops grouping, so colocated caches come
+        // back as separate features at the SAME point and render perfectly
+        // stacked — only the top one is clickable, which used to make a Piglet
+        // sitting on another cache unreachable. Spread them around a small
+        // screen-space circle so each can be tapped; the popup still reports
+        // each cache's true coordinates.
+        const spread = new Map<any, [number, number]>();
+        const byCoord = new Map<string, any[]>();
+        for (const f of points) {
+          if (f.properties.cluster) continue;
+          const [lng, lat] = f.geometry.coordinates as [number, number];
+          const key = `${lng.toFixed(5)},${lat.toFixed(5)}`; // ~1m
+          const group = byCoord.get(key);
+          if (group) group.push(f);
+          else byCoord.set(key, [f]);
+        }
+        for (const group of byCoord.values()) {
+          if (group.length < 2) continue;
+          const [lng, lat] = group[0].geometry.coordinates as [number, number];
+          const origin = map.project([lng, lat]);
+          const radius = 18 + group.length * 3;
+          group.forEach((f: any, idx: number) => {
+            const angle = (2 * Math.PI * idx) / group.length - Math.PI / 2;
+            const p = map.unproject([
+              origin.x + radius * Math.cos(angle),
+              origin.y + radius * Math.sin(angle),
+            ]);
+            spread.set(f, [p.lng, p.lat]);
           });
-          new maplibregl.Marker({ element: el })
-            .setLngLat([cache.lng, cache.lat])
-            .addTo(map);
-          bounds.extend([cache.lng, cache.lat]);
         }
 
+        for (const f of points) {
+          const [lng, lat] = (spread.get(f) || f.geometry.coordinates) as [number, number];
+          let el: HTMLElement;
+          if (f.properties.cluster) {
+            const hasPiglet = cluster
+              .getLeaves(f.properties.cluster_id, Infinity)
+              .some((l: any) => l.properties.isLpPiggy);
+            el = makeClusterChip(f.properties.point_count, hasPiglet);
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              // Cap at the map's max zoom, NOT the cluster maxZoom (16): a
+              // cluster only splits at a zoom ABOVE supercluster's maxZoom, so
+              // capping at 16 would land on a zoom where the chip stays whole.
+              const expansion = cluster.getClusterExpansionZoom(f.properties.cluster_id);
+              map.easeTo({ center: [lng, lat], zoom: Math.min(expansion, map.getMaxZoom()) });
+            });
+          } else {
+            const cache = caches[f.properties.i];
+            el = makeMarkerElement(cache);
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              showCachePopup(cache);
+            });
+          }
+          markers.push(new maplibregl.Marker({ element: el }).setLngLat([lng, lat]).addTo(map));
+        }
+      };
+
+      const addMarkers = () => {
+        for (const c of caches) bounds.extend([c.lng, c.lat]);
         if (!bounds.isEmpty()) {
           map.fitBounds(bounds, { padding: 60, maxZoom: 12, duration: 0 });
         }
+        renderCaches();
+        map.on('moveend', renderCaches);
       };
 
       // HTML markers are DOM overlays positioned from the map transform, which

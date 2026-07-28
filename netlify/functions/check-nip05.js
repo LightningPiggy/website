@@ -66,7 +66,9 @@ exports.handler = async function (event) {
     return { statusCode: 405, headers: corsHeaders(event), body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  var handle = (event.queryStringParameters.handle || '').trim().toLowerCase();
+  // Netlify passes null (not {}) when the request has no query string, so
+  // reading .handle off it directly throws and surfaces as an opaque 500.
+  var handle = ((event.queryStringParameters || {}).handle || '').trim().toLowerCase();
 
   // Validate format
   if (!handle || !HANDLE_REGEX.test(handle)) {

@@ -10,6 +10,20 @@ const STORE_ID = process.env.BTCPAY_STORE_ID;
 
 var ALLOWED_ORIGIN = 'https://lightningpiggy.com';
 
+// Accept only the exact shape validate-profile emits for a Nostr avatar:
+// the Primal media-cache endpoint wrapping an https image URL. Anything else
+// (a different host, a non-https `u`, a missing `u`) is rejected.
+function isResolvedNostrAvatar(raw) {
+  try {
+    var u = new URL(raw);
+    if (u.origin !== 'https://primal.b-cdn.net' || u.pathname !== '/media-cache') return false;
+    var inner = u.searchParams.get('u');
+    return !!inner && new URL(inner).protocol === 'https:';
+  } catch (e) {
+    return false;
+  }
+}
+
 function corsHeaders(event) {
   var origin = (event.headers || {}).origin || '';
   var allowed = (origin === ALLOWED_ORIGIN || origin.endsWith('.netlify.app')) ? origin : ALLOWED_ORIGIN;
@@ -63,12 +77,28 @@ exports.handler = async function (event) {
     if (body.metadata.xHandle && typeof body.metadata.xHandle === 'string') {
       invoicePayload.metadata.xHandle = body.metadata.xHandle.trim().slice(0, 100);
     }
-    // Pass through validated avatar URL (only from trusted CDN sources)
-    if (body.metadata.avatarUrl && typeof body.metadata.avatarUrl === 'string') {
-      const url = body.metadata.avatarUrl.trim();
-      if (url.startsWith('https://primal.b-cdn.net/') || url.startsWith('https://unavatar.io/')) {
-        invoicePayload.metadata.avatarUrl = url.slice(0, 500);
-      }
+    // Avatar URL. A bare prefix check is not enough: the Primal media-cache
+    // endpoint proxies whatever is in its `u=` parameter, so
+    // `https://primal.b-cdn.net/media-cache?...&u=<anything>` passes a
+    // startsWith() test while serving an arbitrary attacker-supplied image —
+    // which btcpay-webhook then commits to the public supporters wall.
+    //
+    // So don't take the client's string on trust:
+    //   • X handles produce a fully deterministic URL, so rebuild it here and
+    //     ignore whatever was sent.
+    //   • The Nostr path can only be resolved against relays (validate-profile
+    //     does that), so accept it solely in the exact shape that function
+    //     emits, with an https target.
+    const avatarFromX = invoicePayload.metadata.xHandle
+      ? 'https://unavatar.io/twitter/' +
+        encodeURIComponent(invoicePayload.metadata.xHandle.replace(/^@/, ''))
+      : null;
+
+    if (avatarFromX) {
+      invoicePayload.metadata.avatarUrl = avatarFromX;
+    } else if (body.metadata.avatarUrl && typeof body.metadata.avatarUrl === 'string') {
+      const raw = body.metadata.avatarUrl.trim().slice(0, 500);
+      if (isResolvedNostrAvatar(raw)) invoicePayload.metadata.avatarUrl = raw;
     }
   }
 

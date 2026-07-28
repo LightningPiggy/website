@@ -20,7 +20,16 @@ function corsHeaders(event) {
 var NOTIFICATION_EMAIL = 'oink@lightningpiggy.com';
 var FROM_EMAIL = 'Lightning Piggy <newsletter@mail.lightningpiggy.com>';
 
-var EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Excludes HTML metacharacters as well as whitespace/@: the address is echoed
+// into the owner-notification email, and the old pattern happily accepted
+// something like `a<img src=x onerror=...>b@evil.com`.
+var EMAIL_REGEX = /^[^\s@<>"'&]+@[^\s@<>"'&]+\.[^\s@<>"'&]+$/;
+
+// Defence in depth — the regex above is the gate, this makes the interpolation
+// safe regardless. Matches the helper used in the btcpay webhooks.
+function escapeHtml(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
 // Fetch with exponential backoff on 429 rate limits
 // Retries up to 3 times with delays of 600ms, 1200ms, 2400ms
@@ -196,7 +205,7 @@ async function sendOwnerNotification(apiKey, subscriberEmail) {
     '      <tr><td style="padding:0 40px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td style="border-bottom:1px solid #f0f0f0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>',
     '      <tr><td style="padding:24px 40px 40px 40px;font-size:16px;line-height:26px;color:#525252;">',
     '        <p style="margin:0 0 8px 0;font-size:14px;color:#9ca3af;">Email address:</p>',
-    '        <p style="margin:0;font-size:18px;font-weight:600;color:#EC008C;">' + subscriberEmail + '</p>',
+    '        <p style="margin:0;font-size:18px;font-weight:600;color:#EC008C;">' + escapeHtml(subscriberEmail) + '</p>',
     '      </td></tr>',
     '    </table>',
     '  </td></tr>',

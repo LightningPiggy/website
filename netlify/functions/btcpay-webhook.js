@@ -90,7 +90,7 @@ async function sendEmailNotification(amount, currency, metadata) {
 }
 
 // Add supporter avatar (+ optional profile link) to supporters.json via GitHub API
-async function addSupporter(avatarUrl, profileUrl) {
+async function addSupporter(avatarUrl, profileUrl, invoiceId) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) {
     console.error('GITHUB_TOKEN not set, skipping supporter commit');
@@ -116,9 +116,19 @@ async function addSupporter(avatarUrl, profileUrl) {
     const currentContent = Buffer.from(fileData.content, 'base64').toString('utf8');
     const supporters = JSON.parse(currentContent);
 
+    // BTCPay re-delivers a webhook until it gets a 2xx, so the same
+    // InvoiceSettled can arrive several times. Stamp the invoice id on the
+    // entry and use the file itself as the idempotency record, otherwise a
+    // retry adds the same donor to the public wall again.
+    if (invoiceId && supporters.some((s) => s && s.invoiceId === invoiceId)) {
+      console.log('Supporter already recorded for invoice', invoiceId, '- skipping');
+      return true;
+    }
+
     // Append new supporter
     const entry = { avatarUrl: avatarUrl, addedAt: new Date().toISOString() };
     if (profileUrl) entry.profileUrl = profileUrl;
+    if (invoiceId) entry.invoiceId = invoiceId;
     supporters.push(entry);
 
     // Commit updated file
@@ -141,13 +151,13 @@ async function addSupporter(avatarUrl, profileUrl) {
 
   // Try once, retry on 409 conflict (concurrent commits)
   try {
-    await attemptCommit();
+    if (await attemptCommit()) return; // already recorded — nothing to log
     console.log('Supporter added to supporters.json');
   } catch (err) {
     if (err.message && err.message.includes('409')) {
       console.log('Conflict detected, retrying...');
       try {
-        await attemptCommit();
+        if (await attemptCommit()) return;
         console.log('Supporter added on retry');
       } catch (retryErr) {
         console.error('Failed to add supporter on retry:', retryErr);
@@ -241,7 +251,7 @@ exports.handler = async function (event) {
       } else if (metadata.xHandle) {
         profileUrl = 'https://x.com/' + encodeURIComponent(metadata.xHandle.replace(/^@/, ''));
       }
-      await addSupporter(url, profileUrl);
+      await addSupporter(url, profileUrl, invoiceId);
     } else {
       console.warn('Ignoring untrusted avatar URL:', url);
     }

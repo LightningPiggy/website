@@ -51,7 +51,8 @@ export default async (req) => {
   try {
     store = getStore(STORE_NAME);
   } catch (err) {
-    return json(502, { error: 'Blob store unavailable: ' + (err && err.message) });
+    console.error('Blob store unavailable:', err && err.message);
+    return json(502, { error: 'Blob store unavailable' });
   }
 
   if (req.method === 'GET') {
@@ -66,7 +67,8 @@ export default async (req) => {
       submissions.sort((a, b) => (b.submittedAt || '').localeCompare(a.submittedAt || ''));
       return json(200, { submissions });
     } catch (err) {
-      return json(502, { error: 'Failed to list submissions: ' + (err && err.message) });
+      console.error('Failed to list submissions:', err && err.message);
+      return json(502, { error: 'Failed to list submissions' });
     }
   }
 
@@ -98,7 +100,8 @@ export default async (req) => {
       await store.setJSON(id, existing);
       return json(200, { success: true, id, action: 'imported' });
     } catch (err) {
-      return json(502, { error: 'Update failed: ' + (err && err.message) });
+      console.error('Update failed:', err && err.message);
+      return json(502, { error: 'Update failed' });
     }
   }
 

@@ -64,15 +64,39 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       <h2 class="text-lg font-bold text-gray-900">Interactive map unavailable</h2>
       <p class="mt-2 max-w-md text-sm text-gray-600 leading-relaxed">
         This map needs <span class="font-semibold">WebGL</span>, which your browser couldn't start.
-        Turn on hardware acceleration (or enable WebGL) in your browser settings and reload —
-        or open the <span class="font-semibold">Lightning Piggy</span> app to explore Piglets near you.
+        It's usually fixable in a minute:
       </p>
-      <a
-        href="/app/"
-        class="mt-4 inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
-      >
-        Get the Lightning Piggy app
-      </a>
+
+      <!-- Recovery steps, filled in per-browser by `wireWebglFallback()`. Kept
+           empty in the markup so we never show Edge instructions to a Safari
+           visitor; the script writes the list that matches their browser. -->
+      <ol
+        id="piglets-webgl-steps"
+        class="mt-3 max-w-md list-decimal space-y-1 pl-5 text-left text-sm text-gray-600 leading-relaxed"
+      ></ol>
+
+      <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+        <button
+          id="piglets-webgl-retry"
+          type="button"
+          class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
+        >
+          Try again
+        </button>
+        <!-- Revealed by the script only for browsers that have an internal
+             diagnostics page worth copying. -->
+        <button
+          id="piglets-webgl-copy"
+          type="button"
+          class="hidden items-center justify-center px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+        ></button>
+        <a
+          href="/app/"
+          class="inline-flex items-center justify-center px-4 py-2 text-sm font-semibold text-gray-700 bg-white border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
+        >
+          Get the Lightning Piggy app
+        </a>
+      </div>
     </div>
 
     <!-- Empty state -->
@@ -237,6 +261,110 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       tick();
     }
 
+    // -----------------------------------------------------------------------
+    // WebGL fallback guidance
+    // -----------------------------------------------------------------------
+    // A page cannot switch WebGL on: hardware acceleration lives in the browser
+    // itself, deliberately out of reach of web content. Chromium won't even let
+    // a page LINK to `edge://` / `chrome://` URLs (web-initiated navigation to
+    // internal schemes is blocked and fails silently), so the best we can do is
+    // spell out the steps and offer to copy the diagnostics URL for pasting.
+    //
+    // The steps are ordered by what actually goes wrong in the wild. "Override
+    // software rendering list" comes first because forcing GPU use on a driver
+    // Chromium has blocklisted is worse than leaving it alone: instead of
+    // quietly falling back to software WebGL, the browser reports WebGL as
+    // flatly unavailable.
+    type WebglHelp = { diagnosticsUrl: string | null; steps: string[] };
+
+    function webglHelpForBrowser(): WebglHelp {
+      const ua = navigator.userAgent;
+      const isEdge = /Edg\//.test(ua);
+      const isChromium = /Chrome\//.test(ua) && !isEdge;
+      const isFirefox = /Firefox\//.test(ua);
+
+      if (isEdge || isChromium) {
+        const scheme = isEdge ? 'edge' : 'chrome';
+        const settings = isEdge ? 'Settings → System and performance' : 'Settings → System';
+        return {
+          diagnosticsUrl: `${scheme}://gpu`,
+          steps: [
+            `Open ${scheme}://gpu and look at the WebGL row — that tells you whether the browser can see your graphics card at all.`,
+            `In ${scheme}://flags, set "Override software rendering list" to Disabled. Forcing it on an unsupported driver stops WebGL falling back to software.`,
+            `In ${settings}, check that graphics acceleration is switched on.`,
+            'Quit the browser completely — every window, not just this tab — then reopen it. Flag changes only apply to a fresh start.',
+            'If your graphics driver was updated recently, restart your computer so the new driver is actually loaded.',
+          ],
+        };
+      }
+
+      if (isFirefox) {
+        return {
+          diagnosticsUrl: 'about:support',
+          steps: [
+            'Open about:support and check "WebGL 2 Driver Renderer" under Graphics.',
+            'In Settings → General → Performance, tick "Use recommended performance settings".',
+            'Restart Firefox, then reload this page.',
+            'If your graphics driver was updated recently, restart your computer.',
+          ],
+        };
+      }
+
+      return {
+        diagnosticsUrl: null,
+        steps: [
+          'Switch on hardware acceleration (or WebGL) in your browser settings.',
+          'Quit the browser completely and reopen it, then reload this page.',
+          'If your graphics driver was updated recently, restart your computer.',
+        ],
+      };
+    }
+
+    // Populate the fallback panel. Called only when the panel is actually
+    // revealed, so visitors with a working map never pay for any of this.
+    // `showMapFallback` has two callers (the up-front feature check and the
+    // async GL error handler), so guard against double-wiring the buttons.
+    let webglFallbackWired = false;
+    function wireWebglFallback(): void {
+      if (webglFallbackWired) return;
+      webglFallbackWired = true;
+      const list = document.getElementById('piglets-webgl-steps');
+      const copyBtn = document.getElementById('piglets-webgl-copy');
+      const retryBtn = document.getElementById('piglets-webgl-retry');
+      const help = webglHelpForBrowser();
+
+      if (list && !list.childElementCount) {
+        for (const step of help.steps) {
+          const li = document.createElement('li');
+          li.textContent = step;
+          list.appendChild(li);
+        }
+      }
+
+      retryBtn?.addEventListener('click', () => location.reload());
+
+      const url = help.diagnosticsUrl;
+      if (copyBtn && url) {
+        const label = `Copy ${url}`;
+        copyBtn.textContent = label;
+        copyBtn.classList.remove('hidden');
+        copyBtn.classList.add('inline-flex');
+        copyBtn.addEventListener('click', async () => {
+          // Clipboard access can be denied (permissions, insecure context), so
+          // fall back to telling them what to type rather than failing silently.
+          try {
+            await navigator.clipboard.writeText(url);
+            copyBtn.textContent = 'Copied — paste it in the address bar';
+          } catch {
+            copyBtn.textContent = `Type ${url} in the address bar`;
+          }
+          setTimeout(() => {
+            copyBtn.textContent = label;
+          }, 4000);
+        });
+      }
+    }
+
     async function initPigletsMap(): Promise<void> {
       const maplibregl = (window as any).maplibregl;
       const mapEl = document.getElementById('piglets-map');
@@ -251,6 +379,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       // Swap the infinite "Loading…" spinner for the friendly WebGL fallback.
       const showMapFallback = (): void => {
         loadingEl?.classList.add('hidden');
+        wireWebglFallback();
         fallbackEl?.classList.remove('hidden');
         fallbackEl?.classList.add('flex');
       };

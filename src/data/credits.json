@@ -13,7 +13,7 @@
     {
       "name": "Jake",
       "url": "https://njump.me/npub1a8us7vr738n7cvdxh0gdtnt5qzrk4qe3qklhmsrs45llq2k48agqjkrvn3",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fi.postimg.cc%2Fd01BSf4G%2Fbill-laser-eyes.jpg",
+      "avatar": "https://i.postimg.cc/d01BSf4G/bill-laser-eyes.jpg",
       "isBitcoinKid": false,
       "nostrUrl": "https://njump.me/npub1a8us7vr738n7cvdxh0gdtnt5qzrk4qe3qklhmsrs45llq2k48agqjkrvn3",
       "xUrl": "https://x.com/Jake21m",
@@ -23,7 +23,7 @@
     {
       "name": "Richard",
       "url": "https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel",
-      "avatar": "https://primal.b-cdn.net/media-cache?s=m&a=1&u=https%3A%2F%2Fblossom.primal.net%2Fed9e059fd831ad8ed440a7413c2c5a4fd98244fa17f8ec6c9f0dedf7e04db06f.jpg",
+      "avatar": "https://blossom.primal.net/ed9e059fd831ad8ed440a7413c2c5a4fd98244fa17f8ec6c9f0dedf7e04db06f.jpg",
       "isBitcoinKid": false,
       "nostrUrl": "https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel",
       "xUrl": "",
@@ -60,7 +60,8 @@
       "nostrUrl": "https://njump.me/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": "Creator of the stunning Lightning Piggy logo."
+      "contribution": "Creator of the stunning Lightning Piggy logo.",
+      "kind": "person"
     },
     {
       "name": "Marina",
@@ -70,7 +71,8 @@
       "nostrUrl": "",
       "xUrl": "https://twitter.com/LadyM_BTC",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Jurjen de Vries",
@@ -80,7 +82,8 @@
       "nostrUrl": "",
       "xUrl": "https://twitter.com/jurjendevries",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "₿arekev",
@@ -90,7 +93,8 @@
       "nostrUrl": "https://njump.me/npub1s3wrhlcdjjmtp7n4m0y36dnqyljfzsr4xah36gelx6d870un5jvsnqtfhs",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "DJ Valerie",
@@ -100,7 +104,8 @@
       "nostrUrl": "https://njump.me/npub184cwc849sejs5pr566zcg4pqn53zzk85q70gmwqx7qt77h3suansvet30s",
       "xUrl": "https://twitter.com/djvalerieblove",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "GA₿RI丰L",
@@ -110,17 +115,19 @@
       "nostrUrl": "",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Janine",
-      "url": "https://twitter.com/JanineGriesser",
-      "avatar": "https://unavatar.io/twitter/JanineGriesser",
+      "url": "https://njump.me/npub1wtxpvcp3mswcvj0kkhd5v2mpegetpmn6r9dpf54tpcvyrg7fsmts60n69l",
+      "avatar": "https://pbs.twimg.com/profile_images/1416332413295370246/dV9ecA-6_400x400.jpg",
       "isBitcoinKid": false,
-      "nostrUrl": "",
+      "nostrUrl": "https://njump.me/npub1wtxpvcp3mswcvj0kkhd5v2mpegetpmn6r9dpf54tpcvyrg7fsmts60n69l",
       "xUrl": "https://twitter.com/JanineGriesser",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "TheKingRol",
@@ -130,7 +137,8 @@
       "nostrUrl": "",
       "xUrl": "https://twitter.com/TheKingRol",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "lonerookie",
@@ -140,7 +148,8 @@
       "nostrUrl": "",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Orange Surf btc",
@@ -150,7 +159,8 @@
       "nostrUrl": "https://njump.me/npub18h0w55nsp839ezxnggf00jd2xc6yl0ht62mf5p8wwllu8s80wdcs83ws8m",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Piertrt",
@@ -160,7 +170,8 @@
       "nostrUrl": "",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Yvette",
@@ -170,7 +181,8 @@
       "nostrUrl": "",
       "xUrl": "https://twitter.com/arbadacarbaYK",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Zobroj",
@@ -180,7 +192,8 @@
       "nostrUrl": "https://njump.me/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Valentina Picozzi",
@@ -190,7 +203,8 @@
       "nostrUrl": "",
       "xUrl": "https://twitter.com/satoshigallery",
       "githubUrl": "",
-      "contribution": "Shared early ideas for how Lightning Piggy could look."
+      "contribution": "Shared early ideas for how Lightning Piggy could look.",
+      "kind": "person"
     },
     {
       "name": "Adopting Bitcoin",
@@ -200,7 +214,8 @@
       "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
       "xUrl": "https://x.com/AdoptingBTC",
       "githubUrl": "",
-      "contribution": "With us every step of the way."
+      "contribution": "With us every step of the way.",
+      "kind": "organisation"
     },
     {
       "name": "Learning Bitcoin 2024",
@@ -210,7 +225,8 @@
       "nostrUrl": "https://njump.me/npub1ku3r3n4hau650a5cjudhtja2pdfsr7yxjzda9lx2py4knr3ld69s7j4wnw",
       "xUrl": "https://www.learningbitcoin.ca/",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "organisation"
     },
     {
       "name": "Satoshi Summer Camp & BSTEM",
@@ -220,7 +236,8 @@
       "nostrUrl": "",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "organisation"
     },
     {
       "name": "Bitcoin Atlantis",
@@ -228,9 +245,10 @@
       "avatar": "https://cdn.nostr.build/i/056965d642f2c648c43b4b18cee2af0c028305d25b8556e2c4d562dde06aba0c.jpg",
       "isBitcoinKid": false,
       "nostrUrl": "https://njump.me/npub1h493d0qgwhu95s82zd9sxrt3ckn3ttgvaf04z02neckadxw5fkvqte4cwz",
-      "xUrl": "https://bitcoinatlantis.com",
+      "xUrl": "https://x.com/bitcoinatlantis",
       "githubUrl": "",
-      "contribution": "Embracing project and providing the perfect family-friendly environment for learning and building."
+      "contribution": "Embracing project and providing the perfect family-friendly environment for learning and building.",
+      "kind": "organisation"
     },
     {
       "name": "Sveva Berto",
@@ -240,7 +258,8 @@
       "nostrUrl": "",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Ben de Waal",
@@ -250,7 +269,8 @@
       "nostrUrl": "",
       "xUrl": "https://twitter.com/Ben_deWaal",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Geyser.fund",
@@ -260,7 +280,8 @@
       "nostrUrl": "https://njump.me/npub1kmwdmhuxvafg05dyap3qmy42jpwztrv9p0uvey3a8803ahlwtmnsnhxqk9",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "organisation"
     },
     {
       "name": "Bolt.fun",
@@ -270,7 +291,8 @@
       "nostrUrl": "https://njump.me/npub1funq0ywh32faz0sf7xt97japu8uk687tsysj8gndj4ehe825sq4s70gs0p",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": "For providing the impetus to get building."
+      "contribution": "For providing the impetus to get building.",
+      "kind": "person"
     },
     {
       "name": "Esther",
@@ -280,7 +302,8 @@
       "nostrUrl": "https://njump.me/npub150exgyavnu2ktrldvm99ywxgvph7lrc538jwlch2gjhk34nl04zq3xcapx",
       "xUrl": "",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "Vitus Zeller",
@@ -290,7 +313,8 @@
       "nostrUrl": "https://njump.me/npub1vunp55fsh6ytdk2ah54f2z3fms4p5gl5x9d4uslxljlgd35ethjsya6grv",
       "xUrl": "https://x.com/Vitus_Ze",
       "githubUrl": "",
-      "contribution": ""
+      "contribution": "",
+      "kind": "person"
     },
     {
       "name": "CryptoCloaks",
@@ -300,7 +324,30 @@
       "nostrUrl": "https://njump.me/npub1lrjgpa9m2dl6esdah5pq7m005ymwh4glq4aet76q2zlz2f83esfsa2zvrj",
       "xUrl": "https://x.com/CryptoCloaks",
       "githubUrl": "",
-      "note": "Home mining and the best bitcoin tools and equipment."
+      "contribution": "Home mining and the best bitcoin tools and equipment.",
+      "kind": "person"
+    },
+    {
+      "name": "Şelale Malkaçoğlu",
+      "url": "https://www.bitcoin4youth.com",
+      "avatar": "",
+      "isBitcoinKid": false,
+      "nostrUrl": "",
+      "xUrl": "",
+      "githubUrl": "",
+      "contribution": "",
+      "kind": "person"
+    },
+    {
+      "name": "BitPopArt",
+      "url": "https://www.bitpopart.com/",
+      "avatar": "",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1gwa27rpgum8mr9d30msg8cv7kwj2lhav2nvmdwh3wqnsa5vnudxqlta2sz",
+      "xUrl": "https://x.com/bitcoinpopart",
+      "githubUrl": "",
+      "contribution": "",
+      "kind": "organisation"
     }
   ],
   "specialThanks": [],
@@ -344,7 +391,8 @@
       "logo": "https://image.nostr.build/52e478cdc314bd97560aace6e9026af876b9ab4db76c0a22aa0a136c4d0d467b.jpg",
       "nostrUrl": "https://njump.me/npub150exgyavnu2ktrldvm99ywxgvph7lrc538jwlch2gjhk34nl04zq3xcapx",
       "xUrl": "",
-      "githubUrl": ""
+      "githubUrl": "",
+      "kind": "person"
     },
     {
       "name": "Bitcoin Runners",
@@ -353,7 +401,8 @@
       "logo": "https://blossom.primal.net/f789c385dafbb6bdb7c3b81336d5b8c6c0cf5693bccedb6c5350af0ad282daae.png",
       "nostrUrl": "https://njump.me/npub1ylwh3snzv3hw9k3lum0kxx5h7v04xd76uqccnney8fmpqehluevqge7jxa",
       "xUrl": "https://x.com/bitcoinrunners",
-      "githubUrl": ""
+      "githubUrl": "",
+      "kind": "organisation"
     },
     {
       "name": "ENOGTYVE",
@@ -362,7 +411,8 @@
       "logo": "https://blossom.primal.net/8c34d6405dea937b6c575f234ece3da8e1af974a3ffd728bc70fd01108cbe049.png",
       "nostrUrl": "https://njump.me/npub1h5gc62mhzak97z9y9mznc9jcwv0re8nx9eqt35ta9d4kyvjqt9csnzjx0m",
       "xUrl": "",
-      "githubUrl": ""
+      "githubUrl": "",
+      "kind": "organisation"
     },
     {
       "name": "CryptoCloaks",
@@ -371,7 +421,8 @@
       "logo": "https://blossom.primal.net/0b37365a5dc124610c8187b31b39a9a97cdea6e181276af2d23983c8498a4884.png",
       "nostrUrl": "https://njump.me/npub1lrjgpa9m2dl6esdah5pq7m005ymwh4glq4aet76q2zlz2f83esfsa2zvrj",
       "xUrl": "https://x.com/CryptoCloaks",
-      "githubUrl": ""
+      "githubUrl": "",
+      "kind": "organisation"
     }
   ],
   "educationPartners": [
@@ -527,9 +578,9 @@
       "name": "Bitcoin Atlantis",
       "description": "",
       "url": "https://bitcoinatlantis.com/",
-      "logo": "https://cdn.satlantis.io/1etgqcj9gc6yaxttuwu9eqgs3ynt2dzaudvwnrssrn2zdt2useaasfj8n6e-1743759746074-FREE%20icon%20en%20taman%CC%83o%20mediano.jpeg",
-      "nostrUrl": "https://njump.me/npub1etgqcj9gc6yaxttuwu9eqgs3ynt2dzaudvwnrssrn2zdt2useaasfj8n6e",
-      "xUrl": "https://x.com/FREEMadeiraOrg",
+      "logo": "https://cdn.nostr.build/i/056965d642f2c648c43b4b18cee2af0c028305d25b8556e2c4d562dde06aba0c.jpg",
+      "nostrUrl": "https://njump.me/npub1h493d0qgwhu95s82zd9sxrt3ckn3ttgvaf04z02neckadxw5fkvqte4cwz",
+      "xUrl": "https://x.com/bitcoinatlantis",
       "githubUrl": ""
     },
     {

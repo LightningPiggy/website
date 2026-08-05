@@ -2,6 +2,11 @@
 import Button from '../ui/Button.astro';
 import fs from 'node:fs';
 import path from 'node:path';
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (path: string) => localizePath(path, lang);
 
 const showcaseDir = path.join(process.cwd(), 'public', 'images', 'showcase');
 const showcaseImages = fs.readdirSync(showcaseDir)
@@ -15,23 +20,22 @@ const showcaseImages = fs.readdirSync(showcaseDir)
       <!-- Content -->
       <div class="text-center md:text-left">
         <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
-          Bitcoin savings for the
-          <span class="text-pink">next generation</span>
+          {t('home.hero.titleA')} {t('home.hero.titleB')}
+          <span class="text-pink">{t('home.hero.titleC')}</span>
         </h1>
         <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-lg">
-          An open source electronic piggy bank that accepts Bitcoin over Lightning.
-          Teach your kids sound money with sats.
+          {t('home.hero.subtitle')}
         </p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
-          <Button href="/build" variant="primary" size="lg">
-            Build Your Own
+          <Button href={L('/build')} variant="primary" size="lg">
+            {t('common.buildYourOwn')}
           </Button>
-          <Button href="/market" variant="outline" size="lg">
-            Buy Ready-Made
+          <Button href={L('/market')} variant="outline" size="lg">
+            {t('common.buyReadyMade')}
           </Button>
         </div>
         <p class="mt-6 text-sm text-gray-500">
-          Free & open source. No subscriptions. Connect your own wallet.
+          {t('home.hero.note')}
         </p>
       </div>
 

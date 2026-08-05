@@ -2,6 +2,8 @@
 import '../styles/global.css';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
+import { LOCALES } from '../i18n/config';
+import { getAlternates, getLangFromUrl } from '../i18n/utils';
 
 interface Props {
   title: string;
@@ -31,6 +33,8 @@ const {
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const lang = getLangFromUrl(Astro.url);
+const alternates = getAlternates(Astro.url, Astro.site);
 const absoluteImage = image.startsWith('http') ? image : new URL(image, Astro.site).href;
 const isDefaultImage = image === DEFAULT_OG_IMAGE;
 const ogImageAlt = imageAlt || (isDefaultImage ? DEFAULT_OG_ALT : title);
@@ -39,7 +43,7 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang} dir={LOCALES[lang].dir}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -80,7 +84,7 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <meta property="og:url" content={canonicalUrl} />
     <meta property="og:type" content={pageType} />
     <meta property="og:site_name" content="LightningPiggy" />
-    <meta property="og:locale" content="en_GB" />
+    <meta property="og:locale" content={LOCALES[lang].ogLocale} />
 
     {pageType === 'article' && pubDate && (
       <meta property="article:published_time" content={pubDate.toISOString()} />
@@ -106,6 +110,11 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
 
     <!-- Canonical -->
     <link rel="canonical" href={canonicalUrl} />
+
+    <!-- Tell search engines about the other language versions of this page -->
+    {alternates.map((a) => (
+      <link rel="alternate" hreflang={a.hreflang} href={a.href} />
+    ))}
 
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json" set:html={JSON.stringify({

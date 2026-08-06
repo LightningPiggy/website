@@ -1,4 +1,10 @@
 ---
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (p: string) => localizePath(p, lang);
+
 import SectionHeading from '../ui/SectionHeading.astro';
 
 const svg = (d: string) => `<svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${d}" /></svg>`;
@@ -6,20 +12,20 @@ const svg = (d: string) => `<svg class="w-10 h-10" fill="none" stroke="currentCo
 const steps = [
   {
     number: '1',
-    title: 'Get the hardware',
-    description: 'Source the parts yourself or buy a ready-made kit. Uses affordable, widely available components.',
+    title: t('how.step1.title'),
+    description: t('how.step1.desc'),
     icon: svg('M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z'),
   },
   {
     number: '2',
-    title: 'Flash the firmware',
-    description: 'Use our browser-based installer to flash the software. No coding required - just plug-in and click.',
+    title: t('how.step2.title'),
+    description: t('how.step2.desc'),
     icon: svg('M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4'),
   },
   {
     number: '3',
-    title: 'Connect & save',
-    description: 'Connect to wifi and link your Lightning wallet and instantly start receiving sats. Watch the balance grow on the display!',
+    title: t('how.step3.title'),
+    description: t('how.step3.desc'),
     icon: svg('M13 10V3L4 14h7v7l9-11h-7z'),
   },
 ];
@@ -28,8 +34,8 @@ const steps = [
 <section class="py-14 bg-white">
   <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
     <SectionHeading
-      title="How it works"
-      subtitle="Get your Lightning Piggy running in three simple steps."
+      title={t('how.title')}
+      subtitle={t('how.subtitle')}
     />
 
     <div class="mt-16 grid md:grid-cols-3 gap-8">

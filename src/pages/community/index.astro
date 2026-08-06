@@ -1,4 +1,10 @@
 ---
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (p: string) => localizePath(p, lang);
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/ui/Button.astro';
 
@@ -42,11 +48,11 @@ const socialLinks = [
 ];
 ---
 
-<BaseLayout title="Community" description="Join the Lightning Piggy community of builders, educators, and families">
+<BaseLayout title={t('comm.title')} description={t('comm.desc')}>
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="text-center mb-16">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Community</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t('comm.title')}</h1>
         <p class="text-lg text-gray-600 max-w-2xl mx-auto">
           Lightning Piggy is powered by a global community of bitcoiners, makers, and educators.
         </p>
@@ -76,13 +82,13 @@ const socialLinks = [
 
       <!-- Lightning Message Board -->
       <div id="message-board" class="mt-16 max-w-2xl mx-auto">
-        <h2 class="text-xl font-bold text-gray-900 text-center mb-6">Community Message Board</h2>
+        <h2 class="text-xl font-bold text-gray-900 text-center mb-6">{t('comm.board')}</h2>
         <script type="module" src="https://esm.sh/@getalby/lightning-messageboard@latest"></script>
         <lightning-messageboard nwc-url="nostr+walletconnect://abfe015917c86e65a3bf524fb264a27e8be7fbf7211bcccaa51c8405806da148?relay=wss://relay.getalby.com/v1&secret=3bd34c505ef18794c9c62ac1d6b82cb8973016d8d7950fffd6b96bfc7d244d2e"></lightning-messageboard>
       </div>
 
       <div class="mt-16 bg-gradient-to-br from-gray-900 to-gray-800 rounded-3xl p-8 md:p-12 text-white">
-        <h2 class="text-2xl font-bold mb-2 text-center">Connect with us</h2>
+        <h2 class="text-2xl font-bold mb-2 text-center">{t('comm.connect')}</h2>
         <p class="text-gray-300 text-center mb-8">
           Join the conversation and stay up to date with the latest from Lightning Piggy.
         </p>
@@ -102,7 +108,7 @@ const socialLinks = [
       </div>
 
       <div class="mt-16 text-center">
-        <h2 class="text-xl font-bold text-gray-900 mb-4">Want to contribute?</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-4">{t('comm.contribute')}</h2>
         <p class="text-gray-600 mb-6 max-w-lg mx-auto">
           Lightning Piggy is 100% open source. Whether you code, design, write, or just have ideas - we'd love your help.
         </p>
@@ -113,7 +119,7 @@ const socialLinks = [
 
       <!-- Support the project -->
       <div class="mt-16 text-center p-8 bg-gray-50 rounded-3xl">
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Support the project</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">{t('comm.support')}</h2>
         <p class="text-gray-600 mb-6 max-w-lg mx-auto">
           Lightning Piggy is funded entirely by the community. Every sat helps us reach more kids.
         </p>

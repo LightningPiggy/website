@@ -1,4 +1,10 @@
 ---
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (p: string) => localizePath(p, lang);
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const sections = [
@@ -63,14 +69,14 @@ const sections = [
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 ---
 
-<BaseLayout title="Bitcoin Kids" description="Educational projects for children of all ages focused on Bitcoin, economics, and freedom technology.">
+<BaseLayout title={t('ck.title')} description="Educational projects for children of all ages focused on Bitcoin, economics, and freedom technology.">
   <div class="w-full max-h-80 overflow-hidden flex justify-center bg-gray-100">
     <img src="/images/community/bitcoinkids-hero.jpeg" alt="Bitcoin Kids" class="h-80 object-contain" />
   </div>
   <section class="py-10 md:py-16">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="mb-14">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Bitcoin Kids</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t('ck.title')}</h1>
         <p class="text-lg text-gray-600 leading-relaxed">
           A collection of fantastic educational projects for children of all ages designed to supercharge their skills in science, technology, engineering, maths, and money.
         </p>

@@ -1,10 +1,16 @@
 ---
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (p: string) => localizePath(p, lang);
+
 import ContentLayout from '../../layouts/ContentLayout.astro';
 ---
 
 <ContentLayout
-  title="Serial Monitor"
-  description="Real-time serial console for debugging your Lightning Piggy device"
+  title={t('serial.title')}
+  description={t('serial.desc')}
 >
   <div class="not-prose">
     <!-- Browser support banner -->

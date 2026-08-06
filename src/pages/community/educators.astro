@@ -1,4 +1,10 @@
 ---
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (p: string) => localizePath(p, lang);
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const activities = [
@@ -74,11 +80,11 @@ const difficultyColor = (d: string) => {
 };
 ---
 
-<BaseLayout title="For Educators" description="Resources for teachers and workshop leaders to bring Lightning Piggy into the classroom">
+<BaseLayout title={t('edu.title')} description="Resources for teachers and workshop leaders to bring Lightning Piggy into the classroom">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="mb-12">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">For Educators</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t('edu.title')}</h1>
         <p class="text-lg text-gray-600 max-w-2xl">
           Lightning Piggy combines STEMM learning with financial literacy. Everything you need to plan and run a session is below.
         </p>
@@ -181,7 +187,7 @@ const difficultyColor = (d: string) => {
       </div>
 
       <div class="mt-16 p-6 bg-gray-50 rounded-2xl text-center">
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Get in Touch</h2>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">{t('edu.contact')}</h2>
         <p class="text-gray-600 mb-4">
           Planning a workshop or educational event? We're here to help with resources, bulk orders, or collaboration opportunities.
         </p>

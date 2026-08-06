@@ -1,4 +1,10 @@
 ---
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (p: string) => localizePath(p, lang);
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -17,13 +23,13 @@ const fallbackImages = fs.existsSync(wildDir)
 ---
 
 <BaseLayout
-  title="In the Wild"
+  title={t('wild.title')}
   description="Lightning Piggy builds and sightings from around the world - pulled live from Nostr."
 >
   <section class="py-8 md:py-12">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">In the Wild</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t('wild.title')}</h1>
         <p class="text-lg text-gray-600">
           Piglets, builds and sightings from around the world — pulled live from the
           <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-medium">Lightning Piggy Nostr profile</a>.
@@ -43,7 +49,7 @@ const fallbackImages = fs.existsSync(wildDir)
       <!-- CTA -->
       <div class="mt-16 max-w-3xl text-center mx-auto">
         <hr class="mb-12 border-gray-200" />
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">Share Your Piggy</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">{t('wild.share')}</h2>
         <p class="text-gray-600">
           Built or spotted a Lightning Piggy? Post it on <strong>Nostr</strong> and tag
           <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" target="_blank" rel="noopener noreferrer" class="text-pink underline">@LightningPiggy</a>

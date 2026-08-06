@@ -1,10 +1,4 @@
 ---
-import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
-
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
-const L = (p: string) => localizePath(p, lang);
-
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/ui/Button.astro';
 
@@ -30,7 +24,7 @@ const helpResources = [
 ];
 ---
 
-<BaseLayout title={t('build.pageTitle')} description="Build your own Lightning Piggy - choose between the E-paper or LCD edition">
+<BaseLayout title="Build" description="Build your own Lightning Piggy - choose between the E-paper or LCD edition">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center">
@@ -41,7 +35,7 @@ const helpResources = [
           Choose the version that's right for you. Both are fully open source with step-by-step guides.
         </p>
         <details class="max-w-2xl mx-auto text-left mb-2">
-          <summary class="cursor-pointer text-sm font-medium text-pink hover:text-pink/80 transition-colors">{t('build.chooseIntro')}</summary>
+          <summary class="cursor-pointer text-sm font-medium text-pink hover:text-pink/80 transition-colors">Learn more about the different options</summary>
           <div class="mt-4 space-y-4">
             <p class="text-gray-600">
               LightningPiggy began with a simple idea and a C++ codebase running on LILYGO hardware via the Arduino development environment. After months of iteration, we shipped something we were proud of - but one thing nagged at us. The code wasn't as accessible as we wanted. If we were serious about helping kids develop real STEMM skills by tinkering with their own piggy banks, we needed a codebase they could actually read, understand, and make their own.
@@ -148,7 +142,7 @@ const helpResources = [
 
       <!-- Cases section -->
       <div class="mt-16 text-center">
-        <h2 class="text-2xl font-bold text-gray-900 mb-4">{t('build.needCase')}</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-4">Need a case?</h2>
         <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
           Browse community-designed enclosures or create your own. 3D printable, laser-cut, or DIY options available.
         </p>
@@ -159,8 +153,8 @@ const helpResources = [
 
       <!-- Guides section -->
       <div id="guides" class="mt-16 scroll-mt-20">
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">{t('build.guides')}</h2>
-        <p class="text-gray-600 mb-6">{t('build.guidesIntro')}</p>
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Guides</h2>
+        <p class="text-gray-600 mb-6">Step-by-step guides to help you set up your Lightning Piggy.</p>
         <div class="grid gap-6">
           <a
             href="/build/lnbits"
@@ -272,11 +266,11 @@ const helpResources = [
         </div>
 
         <div class="mt-8 text-center p-8 bg-gray-50 rounded-2xl">
-          <h3 class="text-xl font-bold text-gray-900 mb-2">{t('build.questions')}</h3>
-          <p class="text-gray-600 mb-6">{t('build.joinCommunity')}</p>
+          <h3 class="text-xl font-bold text-gray-900 mb-2">Still have questions?</h3>
+          <p class="text-gray-600 mb-6">Join our community for help and support.</p>
           <div class="flex flex-wrap justify-center gap-4">
-            <Button href="https://t.me/LightningPiggy" variant="primary">{t('build.joinTelegram')}</Button>
-            <Button href="https://github.com/LightningPiggy" variant="outline">{t('build.viewGithub')}</Button>
+            <Button href="https://t.me/LightningPiggy" variant="primary">Join Telegram</Button>
+            <Button href="https://github.com/LightningPiggy" variant="outline">View GitHub</Button>
           </div>
         </div>
       </div>

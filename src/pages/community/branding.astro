@@ -1,18 +1,12 @@
 ---
-import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
-
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
-const L = (p: string) => localizePath(p, lang);
-
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout title={t('brand.title')} description="Official naming conventions, logos, and colours for the LightningPiggy project">
+<BaseLayout title="Branding & Style Guide" description="Official naming conventions, logos, and colours for the LightningPiggy project">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="text-center mb-16">
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">{t('brand.title')}</h1>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Branding & Style Guide</h1>
         <p class="text-lg text-gray-600 max-w-2xl mx-auto">
           Official naming conventions, logos, and colours for the LightningPiggy open-source project.
         </p>
@@ -20,7 +14,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       <!-- Naming -->
       <div class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">{t('brand.naming')}</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Naming</h2>
 
         <div class="grid md:grid-cols-2 gap-6 mb-8">
           <!-- Technical usage -->
@@ -103,7 +97,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         <!-- Capitalisation & Consistency -->
         <div class="grid md:grid-cols-2 gap-6">
           <div class="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-3">{t('brand.caps')}</h3>
+            <h3 class="text-lg font-bold text-gray-900 mb-3">Capitalisation</h3>
             <p class="text-sm text-gray-600 mb-3">Always capitalise both words:</p>
             <div class="space-y-2">
               <div class="flex items-center gap-3">
@@ -130,7 +124,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
           </div>
 
           <div class="bg-white rounded-2xl border border-gray-200 p-6">
-            <h3 class="text-lg font-bold text-gray-900 mb-3">{t('brand.consistency')}</h3>
+            <h3 class="text-lg font-bold text-gray-900 mb-3">Consistency</h3>
             <ul class="text-sm text-gray-600 space-y-3">
               <li class="flex items-start gap-2">
                 <span class="text-pink mt-0.5">&#8226;</span>
@@ -159,7 +153,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
       <!-- Logo -->
       <div class="mb-12">
-        <h2 class="text-2xl font-bold text-gray-900 mb-6">{t('brand.logo')}</h2>
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Logo</h2>
         <div class="grid md:grid-cols-2 gap-6">
           <div class="bg-white rounded-2xl border border-gray-200 p-8 flex flex-col items-center">
             <img

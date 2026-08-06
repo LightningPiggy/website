@@ -1,69 +1,51 @@
 ---
-import { getLangFromUrl, useTranslations, localizePath, stripLocale } from '../../i18n/utils';
-import { LOCALES, LOCALE_CODES } from '../../i18n/config';
-
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
-const L = (path: string) => localizePath(path, lang);
-
-// Labels come from the dictionary; hrefs are localised so /build becomes
-// /de/build for a German visitor.
 const navItems = [
-  { label: t('nav.about'), href: L('/about') },
+  { label: 'About', href: '/about' },
   {
-    label: t('nav.build'),
-    href: L('/build'),
+    label: 'Build',
+    href: '/build',
     children: [
-      { label: t('nav.build.classic'), href: L('/build/classic') },
-      { label: t('nav.build.p1'), href: L('/build/p1') },
-      { label: t('nav.build.cases'), href: L('/build/cases') },
-      { label: t('nav.build.guides'), href: L('/build') + '#guides' },
-      { label: t('nav.build.tools'), href: L('/build') + '#tools' },
-      { label: t('nav.build.help'), href: L('/build') + '#help' },
+      { label: 'Classic (Arduino)', href: '/build/classic' },
+      { label: 'p1 (MicroPythonOS)', href: '/build/p1' },
+      { label: 'Cases', href: '/build/cases' },
+      { label: 'Guides', href: '/build#guides' },
+      { label: 'Tools', href: '/build#tools' },
+      { label: 'Help', href: '/build#help' },
     ]
   },
   {
-    label: t('nav.market'),
-    href: L('/market'),
+    label: 'Market',
+    href: '/market',
     children: [
-      { label: t('nav.market.shop'), href: L('/market') + '#products' },
-      { label: t('nav.market.handles'), href: L('/market') + '#nostr-handles' },
-      { label: t('nav.market.vendors'), href: L('/market') + '#vendors' },
+      { label: 'Shop', href: '/market#products' },
+      { label: 'Nostr Handles', href: '/market#nostr-handles' },
+      { label: 'Vendors', href: '/market#vendors' },
     ]
   },
   {
-    label: t('nav.community'),
-    href: L('/community'),
+    label: 'Community',
+    href: '/community',
     children: [
-      { label: t('nav.community.wild'), href: L('/community/wild') },
-      { label: t('nav.community.educators'), href: L('/community/educators') },
-      { label: t('nav.community.kids'), href: L('/community/bitcoinkids') },
-      { label: t('nav.community.zap'), href: L('/community/zapmypiggy') },
-      { label: t('nav.community.credits'), href: L('/community/credits') },
-      { label: t('nav.community.board'), href: L('/community') + '#message-board' },
+      { label: 'In the Wild', href: '/community/wild' },
+      { label: 'Educators', href: '/community/educators' },
+      { label: 'Bitcoin Kids', href: '/community/bitcoinkids' },
+      { label: 'ZapMyPiggy', href: '/community/zapmypiggy' },
+      { label: 'Credits', href: '/community/credits' },
+      { label: 'Message Board', href: '/community#message-board' },
     ]
   },
-  { label: t('nav.app'), href: L('/app') },
-  { label: t('nav.treasure'), href: L('/treasure-hunt') },
+  { label: 'Family App', href: '/app' },
+  { label: 'Treasure Hunt', href: '/treasure-hunt' },
   {
-    label: t('nav.news'),
-    href: L('/news'),
+    label: 'News',
+    href: '/news',
     children: [
-      { label: t('nav.news.inthenews'), href: L('/news') + '#in-the-news' },
-      { label: t('nav.news.updates'), href: L('/news') + '#software-updates' },
+      { label: 'In the News', href: '/news#in-the-news' },
+      { label: 'Software Updates', href: '/news#software-updates' },
     ]
   },
-  { key: 'donate', label: t('nav.donate'), href: L('/donate') },
+  { label: 'Donate', href: '/donate' },
 ];
-
-// Language picker: same page, other locale.
-const canonicalPath = stripLocale(Astro.url.pathname);
-const languageLinks = LOCALE_CODES.map((code) => ({
-  code,
-  label: LOCALES[code].label,
-  href: localizePath(canonicalPath, code),
-  current: code === lang,
-}));
 
 const currentPath = Astro.url.pathname;
 ---
@@ -72,7 +54,7 @@ const currentPath = Astro.url.pathname;
   <nav class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-center justify-between h-16">
       <!-- Logo -->
-      <a href={L('/')} class="flex items-center">
+      <a href="/" class="flex items-center">
         <img src="/images/branding/lightningpiggy-logo.svg" alt="LightningPiggy" class="h-10 w-auto" />
       </a>
 
@@ -82,15 +64,15 @@ const currentPath = Astro.url.pathname;
           <div class="relative group">
             <a
               href={item.href}
-              class={`px-3 py-2 text-sm font-medium rounded-lg transition-colors whitespace-nowrap ${
+              class={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
                 currentPath.startsWith(item.href) && item.href !== '/'
                   ? 'text-pink bg-pink-light/30'
-                  : item.key === 'donate'
+                  : item.label === 'Donate'
                     ? 'text-pink hover:text-pink hover:bg-pink-light/30'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
               }`}
             >
-              {item.key === 'donate' && (
+              {item.label === 'Donate' && (
                 <svg class="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
               )}
               {item.label}
@@ -118,45 +100,12 @@ const currentPath = Astro.url.pathname;
         ))}
       </div>
 
-      <!-- Language picker. Plain links (no JS) so it works everywhere and each
-           locale is independently crawlable; opens on hover and on keyboard
-           focus so it isn't mouse-only. -->
-      <div class="relative group hidden lg:block">
-        <button
-          type="button"
-          aria-label={t('common.language')}
-          aria-haspopup="true"
-          class="flex items-center gap-1.5 px-2 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
-        >
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M21 12a9 9 0 11-18 0 9 9 0 0118 0zM3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18M12 3a15 15 0 000 18" />
-          </svg>
-          <span class="uppercase">{lang}</span>
-        </button>
-        <div
-          class="absolute right-0 top-full w-40 rounded-xl bg-white shadow-lg border border-gray-100 py-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all"
-        >
-          {languageLinks.map((l) => (
-            <a
-              href={l.href}
-              hreflang={l.code}
-              lang={l.code}
-              aria-current={l.current ? 'true' : undefined}
-              class={`block px-4 py-2 text-sm hover:bg-gray-50 ${l.current ? 'text-pink font-semibold' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              {l.label}
-            </a>
-          ))}
-        </div>
-      </div>
-
       <!-- CTA Button -->
       <a
-        href={L('/build')}
+        href="/build"
         class="hidden lg:inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
       >
-        {t('common.buildYourOwn')}
+        Build Your Own
       </a>
 
       <!-- Mobile Menu Button -->
@@ -182,12 +131,12 @@ const currentPath = Astro.url.pathname;
             class={`block px-3 py-2 text-base font-medium rounded-lg ${
               currentPath.startsWith(item.href) && item.href !== '/'
                 ? 'text-pink bg-pink-light/30'
-                : item.key === 'donate'
+                : item.label === 'Donate'
                   ? 'text-pink hover:text-pink hover:bg-pink-light/30'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
             }`}
           >
-            {item.key === 'donate' && (
+            {item.label === 'Donate' && (
               <svg class="inline-block w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
             )}
             {item.label}
@@ -207,36 +156,11 @@ const currentPath = Astro.url.pathname;
         </div>
       ))}
       <a
-        href={L('/build')}
+        href="/build"
         class="block w-full text-center px-4 py-3 text-base font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors mt-4"
       >
-        {t('common.buildYourOwn')}
+        Build Your Own
       </a>
-
-      <!-- Language picker (mobile): a plain row of links, no dropdown to trap
-           focus inside the already-scrolling menu. -->
-      <div class="mt-4 pt-4 border-t border-gray-100">
-        <p class="px-3 mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
-          {t('common.language')}
-        </p>
-        <div class="flex flex-wrap gap-2 px-3">
-          {languageLinks.map((l) => (
-            <a
-              href={l.href}
-              hreflang={l.code}
-              lang={l.code}
-              aria-current={l.current ? 'true' : undefined}
-              class={`px-3 py-1.5 text-sm rounded-full border transition-colors ${
-                l.current
-                  ? 'border-pink text-pink font-semibold bg-pink-light/30'
-                  : 'border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-            >
-              {l.label}
-            </a>
-          ))}
-        </div>
-      </div>
     </div>
   </div>
 </header>

@@ -1,9 +1,0 @@
----
-// Localised route — see src/pages/[lang]/index.astro for how this works.
-import Page from '../../community/credits.astro';
-import { PREFIXED_LOCALES } from '../../../i18n/config';
-export function getStaticPaths() {
-  return PREFIXED_LOCALES.map((lang) => ({ params: { lang } }));
-}
----
-<Page />

@@ -1,10 +1,4 @@
 ---
-import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
-
-const lang = getLangFromUrl(Astro.url);
-const t = useTranslations(lang);
-const L = (p: string) => localizePath(p, lang);
-
 import ContentLayout from '../../layouts/ContentLayout.astro';
 import piggyConfigLogin from '../../content/guides/troubleshooting/piggy-config-login.jpg';
 import t5Buttons from '../../content/guides/troubleshooting/T5-2.13-Buttons.jpeg';
@@ -246,8 +240,8 @@ const sections = [
 ---
 
 <ContentLayout
-  title={t('trouble.title')}
-  description={t('trouble.desc')}
+  title="Troubleshooting"
+  description="Common issues and solutions for Lightning Piggy"
 >
   <div class="not-prose text-sm text-gray-500 mb-6 space-y-1 [&>p]:m-0">
     <p><span class="inline-block bg-gray-200 text-gray-700 text-xs px-2 py-0.5 rounded-full font-medium align-middle">Classic</span> refers to the original e-paper Lightning Piggy running C++ firmware.</p>

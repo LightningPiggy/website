@@ -1,4 +1,10 @@
 ---
+import { getLangFromUrl, useTranslations, localizePath } from '../../i18n/utils';
+
+const lang = getLangFromUrl(Astro.url);
+const t = useTranslations(lang);
+const L = (p: string) => localizePath(p, lang);
+
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import Button from '../../components/ui/Button.astro';
 import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
@@ -11,9 +17,9 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <div class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20 flex flex-col md:flex-row items-center gap-10">
         <div class="flex-1 text-center md:text-left">
-          <h1 class="text-4xl md:text-5xl font-bold mb-6">About Lightning Piggy</h1>
+          <h1 class="text-4xl md:text-5xl font-bold mb-6">{t('about.title')}</h1>
           <p class="text-xl text-gray-300 leading-relaxed">
-            An open source electronic piggy bank that accepts Bitcoin over the Lightning Network and displays savings in satoshis.
+            {t('about.lede')}
           </p>
         </div>
         <div class="flex-shrink-0">
@@ -29,12 +35,12 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- Why we exist -->
     <section class="py-10 md:py-16 bg-white">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Why we exist</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{t('about.why.h')}</h2>
         <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
-          <p>The majority of the world's 2.4 billion children are growing up on a fiat standard. Even in the US, the issuer of the global reserve currency, the dollar has lost the vast majority of its purchasing power against Bitcoin in the last ten years. Kids' fiat money savings become worthless by the time they reach adulthood.</p>
+          <p>{t('about.why.p1')}</p>
           <BtcPurchasingPower />
-          <p>From an early age, we're programmed to think in fiat terms. Depending on our cultural upbringing, in many parts of the world our first encounter with money is when the "tooth fairy" visits, followed by being gifted a piggy bank that gets filled with coins for doing good deeds. This money is rapidly losing its purchasing power, and is therefore useless at storing value.</p>
-          <p>Lightning Piggy was created to change that. By saving in satoshis from an early age, children grow up understanding sound money. This is a golden opportunity to give the children of the world a head start in life, and to onboard the next generation of bitcoiners and builders.</p>
+          <p>{t('about.why.p2')}</p>
+          <p>{t('about.why.p3')}</p>
         </div>
       </div>
     </section>
@@ -42,11 +48,11 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- What it does -->
     <section class="py-10 md:py-16 bg-gray-50">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">What Lightning Piggy does</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{t('about.does.h')}</h2>
         <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
-          <p>Lightning Piggy is an electronic piggy bank for children that accepts Bitcoin sent over the Lightning Network. It displays an onscreen QR code for receiving payments, shows the satoshi balance, recent transactions, and messages. Balances refresh automatically when new payments arrive.</p>
-          <p>The device is simple and low cost, with no subscription fees. It supports flexible wallet backends: you can choose a full self-custodial LNbits setup or connect to a Nostr Wallet Connect (NWC) compatible wallet. It runs on low power and can even be battery or solar powered.</p>
-          <p>Setup is straightforward with a browser-based installer. No app downloads, no accounts to create. Just connect to WiFi, enter your wallet details, and you're ready to stack sats.</p>
+          <p>{t('about.does.p1')}</p>
+          <p>{t('about.does.p2')}</p>
+          <p>{t('about.does.p3')}</p>
         </div>
       </div>
     </section>
@@ -54,24 +60,24 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- How kids earn and save -->
     <section class="py-10 md:py-16 bg-white">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">How kids earn and save</h2>
-        <p class="text-lg text-gray-600 leading-relaxed mb-8">Lightning Piggy creates practical opportunities for children to earn and save Bitcoin:</p>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{t('about.earn.h')}</h2>
+        <p class="text-lg text-gray-600 leading-relaxed mb-8">{t('about.earn.lede')}</p>
         <div class="grid sm:grid-cols-2 gap-6">
           <div class="p-6 bg-gray-50 rounded-2xl">
-            <h3 class="font-bold text-gray-900 mb-2">Receive Bitcoin instantly</h3>
-            <p class="text-gray-600">Share the onscreen QR code with family and friends.</p>
+            <h3 class="font-bold text-gray-900 mb-2">{t('about.earn.qr.h')}</h3>
+            <p class="text-gray-600">{t('about.earn.qr.p')}</p>
           </div>
           <div class="p-6 bg-gray-50 rounded-2xl">
-            <h3 class="font-bold text-gray-900 mb-2">Printable QR codes</h3>
-            <p class="text-gray-600">For chores, rewards, homework goals, achievements, and visual reminders around the house.</p>
+            <h3 class="font-bold text-gray-900 mb-2">{t('about.earn.print.h')}</h3>
+            <p class="text-gray-600">{t('about.earn.print.p')}</p>
           </div>
           <div class="p-6 bg-gray-50 rounded-2xl">
-            <h3 class="font-bold text-gray-900 mb-2">Recurring pocket money</h3>
-            <p class="text-gray-600">Payments in sats, set up by parents.</p>
+            <h3 class="font-bold text-gray-900 mb-2">{t('about.earn.pocket.h')}</h3>
+            <p class="text-gray-600">{t('about.earn.pocket.p')}</p>
           </div>
           <div class="p-6 bg-gray-50 rounded-2xl">
-            <h3 class="font-bold text-gray-900 mb-2">Auto-swap savings</h3>
-            <p class="text-gray-600">Thresholds from Lightning to on-chain for long-term hodling.</p>
+            <h3 class="font-bold text-gray-900 mb-2">{t('about.earn.swap.h')}</h3>
+            <p class="text-gray-600">{t('about.earn.swap.p')}</p>
           </div>
         </div>
       </div>
@@ -80,10 +86,10 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- Learning by building -->
     <section class="py-10 md:py-16 bg-gray-50">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Learning by building</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{t('about.learn.h')}</h2>
         <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
-          <p>Beyond saving, Lightning Piggy is a hands-on STEMM (Science, Technology, Engineering, Mathematics, and Money) learning platform. The project uses a beginner-friendly open source codebase, with a MicroPython based OS and app introduced in Lightning Piggy MPOS. Kids and makers can explore the code, modify it, and learn real programming skills.</p>
-          <p>The hardware side is equally accessible. Builders can make their own enclosure using card, cardboard, LEGO, repurposed objects, or 3D print and laser cut a custom housing. There are self-build options for those who want the full maker experience, or you can buy a ready-made device from the market.</p>
+          <p>{t('about.learn.p1')}</p>
+          <p>{t('about.learn.p2')}</p>
         </div>
       </div>
     </section>
@@ -92,19 +98,19 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <section class="py-10 md:py-16 bg-white">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-3xl font-bold text-gray-900 mb-4">Our mission</h2>
-          <p class="text-2xl text-pink font-bold">Make sats the savings standard for every child.</p>
-          <p class="text-lg text-gray-600 leading-relaxed mt-6 max-w-2xl mx-auto">Our vision is enabling every child to save for their future on a Bitcoin standard in a fun, friendly, and educational way. Lightning Piggy is bringing the adoption of Bitcoin to young people in a real and meaningful way. Later in life, Bitcoin will be the obvious first choice of money &mdash; anything else will simply not make sense.</p>
+          <h2 class="text-3xl font-bold text-gray-900 mb-4">{t('about.mission.h')}</h2>
+          <p class="text-2xl text-pink font-bold">{t('about.mission.lede')}</p>
+          <p class="text-lg text-gray-600 leading-relaxed mt-6 max-w-2xl mx-auto">{t('about.mission.p')}</p>
         </div>
 
         <div class="grid sm:grid-cols-2 gap-8">
           <div class="p-8 border border-gray-200 rounded-2xl">
-            <h3 class="text-xl font-bold text-gray-900 mb-3">Bitcoin only</h3>
-            <p class="text-gray-600">We believe in sound money. No distractions.</p>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">{t('about.mission.btc.h')}</h3>
+            <p class="text-gray-600">{t('about.mission.btc.p')}</p>
           </div>
           <div class="p-8 border border-gray-200 rounded-2xl">
-            <h3 class="text-xl font-bold text-gray-900 mb-3">Open source everything</h3>
-            <p class="text-gray-600">Hardware, software, and education. Inspect it, modify it, make it yours.</p>
+            <h3 class="text-xl font-bold text-gray-900 mb-3">{t('about.mission.os.h')}</h3>
+            <p class="text-gray-600">{t('about.mission.os.p')}</p>
           </div>
         </div>
       </div>
@@ -113,8 +119,8 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- Road ahead -->
     <section class="py-10 md:py-16 bg-gray-50">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">The road ahead</h2>
-        <p class="text-lg text-gray-600 leading-relaxed mb-8">Lightning Piggy is an active and evolving project. Here's what we're working towards:</p>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{t('about.road.h')}</h2>
+        <p class="text-lg text-gray-600 leading-relaxed mb-8">{t('about.road.lede')}</p>
         <ul class="space-y-4 text-lg text-gray-600">
           <li class="flex items-start gap-3">
             <span class="text-pink font-bold mt-1">&rarr;</span>
@@ -147,9 +153,9 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- Community -->
     <section class="py-10 md:py-16 bg-white">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">Community powered</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{t('about.comm.h')}</h2>
         <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
-          <p>Lightning Piggy is supported by a thriving global community of bitcoiners, makers, educators, and families. It is built with love by bitcoiners, for young newcoiners. Everything is free and open source as standard.</p>
+          <p>{t('about.comm.p')}</p>
           <p>Want to get involved? Join us on <a href="https://t.me/LightningPiggy" class="text-pink hover:underline font-semibold">Telegram</a>, contribute on <a href="https://github.com/LightningPiggy" class="text-pink hover:underline font-semibold">GitHub</a>, or check out the <a href="/community" class="text-pink hover:underline font-semibold">community page</a>.</p>
         </div>
       </div>
@@ -158,10 +164,10 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- The Lightning Piggy project -->
     <section class="py-10 md:py-16 bg-gray-50">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-8">The Lightning Piggy project</h2>
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">{t('about.project.h')}</h2>
         <div class="space-y-6 text-lg text-gray-600 leading-relaxed">
-          <p>Lightning Piggy is developed and maintained by a small team of bitcoiners committed to open-source education and sound money for the next generation.</p>
-          <p>The project is community-driven: contributors steward its development, and we work to keep Lightning Piggy free, open source, and accessible to families worldwide.</p>
+          <p>{t('about.project.p1')}</p>
+          <p>{t('about.project.p2')}</p>
           <p>Meet the team on the <a href="/community/credits" class="text-pink hover:underline font-semibold">credits page</a>, or get involved by joining the <a href="/community" class="text-pink hover:underline font-semibold">community</a>.</p>
         </div>
       </div>
@@ -170,9 +176,9 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- Origin Story teaser -->
     <section class="py-10 md:py-16 bg-gradient-to-b from-gray-900 to-gray-800 text-white">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <p class="text-pink text-sm font-semibold uppercase tracking-widest mb-4">Once upon a time...</p>
-        <h2 class="text-3xl md:text-4xl font-bold mb-4">The Origin Story</h2>
-        <p class="text-gray-400 text-lg italic mb-8">How Lightning Piggy found freedom down the rabbit hole.</p>
+        <p class="text-pink text-sm font-semibold uppercase tracking-widest mb-4">{t('about.origin.once')}</p>
+        <h2 class="text-3xl md:text-4xl font-bold mb-4">{t('about.origin.h')}</h2>
+        <p class="text-gray-400 text-lg italic mb-8">{t('about.origin.p')}</p>
         <a
           href="/about/origin-story"
           class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-white hover:text-gray-900 transition-colors"
@@ -185,8 +191,8 @@ import BtcPurchasingPower from '../../components/ui/BtcPurchasingPower.astro';
     <!-- CTA -->
     <section class="py-10 md:py-16 bg-gray-50">
       <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Ready to get started?</h2>
-        <p class="text-gray-600 mb-8 text-lg">Build your own Lightning Piggy or buy one ready-made.</p>
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-900 mb-4">{t('about.cta.h')}</h2>
+        <p class="text-gray-600 mb-8 text-lg">{t('about.cta.p')}</p>
         <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <Button href="/build" variant="primary">
             Build Your Own

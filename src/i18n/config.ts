@@ -35,6 +35,7 @@ export function isLocale(value: string): value is Locale {
 // commit that adds its src/pages/[lang]/ route.
 export const LOCALIZED_ROUTES = new Set<string>([
   '/',
+  '/about',
   '/build',
   '/market',
 ]);

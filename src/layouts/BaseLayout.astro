@@ -145,6 +145,11 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
         return text.toLowerCase().trim()
           .replace(/[^a-z0-9\s-]/g, '')
           .replace(/[\s_]+/g, '-')
+          // Collapse runs of hyphens. A heading like "p1 - ZapBox!" has a
+          // literal hyphen between two spaces, and without this each of those
+          // becomes its own hyphen - giving #p1---zapbox instead of the
+          // #p1-zapbox anyone would actually type or link to.
+          .replace(/-{2,}/g, '-')
           .replace(/^-+|-+$/g, '');
       }
 
@@ -171,7 +176,12 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
       function scrollToHash() {
         if (location.hash.length <= 1) return;
         const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-        if (target) target.scrollIntoView();
+        // Jump straight there rather than animating: the page sets
+        // scroll-behavior:smooth for in-page links, but an animated scroll
+        // fired during load competes with images settling the layout and can
+        // land short or be cancelled outright. On arrival you want to be at
+        // the heading, not watch it scroll past.
+        if (target) target.scrollIntoView({ behavior: 'instant', block: 'start' });
       }
 
       addHeadingAnchors();

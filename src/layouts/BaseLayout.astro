@@ -178,14 +178,23 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
         return document.getElementById(decodeURIComponent(location.hash.slice(1)));
       }
 
+      // Where the target should sit once scrolled to: its own position, less
+      // whatever scroll-margin-top it carries to clear the sticky header.
+      function hashScrollTop(target) {
+        const offset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+        return Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
+      }
+
       function scrollToHash() {
         const target = hashTarget();
-        // Jump straight there rather than animating: the page sets
-        // scroll-behavior:smooth for in-page links, but an animated scroll
-        // fired during load competes with content settling the layout and can
-        // land short or be cancelled outright. On arrival you want to be at
-        // the heading, not watch it scroll past.
-        if (target) target.scrollIntoView({ behavior: 'instant', block: 'start' });
+        if (!target) return;
+        // Compute the position and scroll to it rather than calling
+        // scrollIntoView: it makes the offset explicit (and testable), and
+        // avoids relying on scrollIntoView honouring scroll-margin. Jump
+        // rather than animate - the page sets scroll-behavior:smooth for
+        // in-page links, but an animated scroll fired during load competes
+        // with content settling the layout and can land short or be cancelled.
+        window.scrollTo({ top: hashScrollTop(target), behavior: 'instant' });
       }
 
       // Some pages finish rendering well after load: the market grids, for
@@ -212,7 +221,7 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
           if (target) {
             const offset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
             if (Math.abs(target.getBoundingClientRect().top - offset) > 2) {
-              target.scrollIntoView({ behavior: 'instant', block: 'start' });
+              window.scrollTo({ top: hashScrollTop(target), behavior: 'instant' });
             }
           }
           expected = Math.round(window.scrollY);

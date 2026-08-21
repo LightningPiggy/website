@@ -204,34 +204,63 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
       // ~600px short. Re-assert the target while things settle, but stop the
       // moment the visitor takes over, so we never yank the page from under
       // them.
-      function keepHashInView() {
+      function keepHashInView(waitForSettle) {
         if (!hashTarget()) return;
-        const deadline = Date.now() + 4000;
         let cancelled = false;
-        let expected = Math.round(window.scrollY);
         const cancel = () => { cancelled = true; };
+        // These go on now, which is *after* the tap or click that produced a
+        // hash change has already fired - so the visitor's own navigation
+        // gesture doesn't instantly cancel the hold it just asked for.
         ['wheel', 'touchstart', 'keydown'].forEach((evt) =>
           window.addEventListener(evt, cancel, { passive: true, once: true }));
 
-        (function tick() {
-          if (cancelled || Date.now() > deadline) return;
-          // A scroll position we didn't set means the visitor moved: back off.
-          if (Math.abs(Math.round(window.scrollY) - expected) > 2) return;
-          const target = hashTarget();
-          if (target) {
-            const offset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
-            if (Math.abs(target.getBoundingClientRect().top - offset) > 2) {
-              window.scrollTo({ top: hashScrollTop(target), behavior: 'instant' });
+        function watch() {
+          const deadline = Date.now() + 4000;
+          let expected = Math.round(window.scrollY);
+          (function tick() {
+            if (cancelled || Date.now() > deadline) return;
+            // A scroll position we didn't set means the visitor moved: back off.
+            if (Math.abs(Math.round(window.scrollY) - expected) > 2) return;
+            const target = hashTarget();
+            if (target) {
+              const offset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+              if (Math.abs(target.getBoundingClientRect().top - offset) > 2) {
+                window.scrollTo({ top: hashScrollTop(target), behavior: 'instant' });
+              }
             }
-          }
-          expected = Math.round(window.scrollY);
-          setTimeout(tick, 250);
+            expected = Math.round(window.scrollY);
+            setTimeout(tick, 250);
+          })();
+        }
+
+        if (!waitForSettle) { watch(); return; }
+
+        // An in-page anchor scrolls smoothly (the page sets
+        // scroll-behavior:smooth), so wait for that animation to stop before
+        // watching - mid-animation every frame looks like the visitor moving
+        // the page and would cancel the hold immediately.
+        const settleBy = Date.now() + 2000;
+        let last = Math.round(window.scrollY);
+        let stillFor = 0;
+        (function settle() {
+          if (cancelled) return;
+          const now = Math.round(window.scrollY);
+          stillFor = now === last ? stillFor + 1 : 0;
+          last = now;
+          if (stillFor >= 3 || Date.now() > settleBy) { watch(); return; }
+          setTimeout(settle, 50);
         })();
       }
 
       addHeadingAnchors();
       scrollToHash();
       window.addEventListener('load', function () { scrollToHash(); keepHashInView(); });
+      // In-page anchors - the nav dropdowns and the mobile menu - change the
+      // hash without reloading, so the load handler above never sees them.
+      // Let the browser run its own smooth scroll, then confirm it actually
+      // landed: on pages whose content renders late (the market grids) the
+      // target can shift out from under it after the scroll finishes.
+      window.addEventListener('hashchange', function () { keepHashInView(true); });
     </script>
   </body>
 </html>

@@ -172,4 +172,14 @@ const currentPath = Astro.url.pathname;
   menuButton?.addEventListener('click', () => {
     mobileMenu?.classList.toggle('hidden');
   });
+
+  // Close the menu when a link inside it is followed. Navigating to another
+  // page reloads and resets it anyway, but an in-page anchor (#guides,
+  // #products, ...) is a same-document jump with no reload - without this the
+  // menu stays open, covering the very section it just scrolled to.
+  mobileMenu?.addEventListener('click', (e) => {
+    if (e.target instanceof Element && e.target.closest('a')) {
+      mobileMenu.classList.add('hidden');
+    }
+  });
 </script>

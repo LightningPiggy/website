@@ -61,7 +61,7 @@ const description =
 
     <h3>2 · Print your own set</h3>
     <p>Sets aren't sold anywhere yet, but you don't need one to be: every pip is 3D-printable. Download the ready-sliced project file and print all 1,024 two-sided tablets yourself:</p>
-    <p><a href="/files/piggy-pips-2048-words.3mf" download class="text-pink hover:underline"><strong>Download piggy-pips-2048-words.3mf</strong></a> <span class="mono">(35&nbsp;MB, 4 build plates, 1,024 tablets)</span></p>
+    <p><a href="/files/piggy-pips-2048-words.3mf" download><strong>Download piggy-pips-2048-words.3mf</strong></a> <span class="mono">(35&nbsp;MB, 4 build plates, 1,024 tablets)</span></p>
     <ul>
       <li><strong>Material: PLA.</strong> It's stiff, cheap, easy to print, and these small flat parts won't warp. A matte finish makes the lettering easier to read.</li>
       <li><strong>Nozzle: 0.4&nbsp;mm.</strong> The 3&ndash;4 letter strings are small; a wider nozzle will smudge them. Don't scale the model, the lettering is sized for this nozzle.</li>
@@ -314,7 +314,7 @@ const description =
       <div class="wrap narrow">
         <p style="text-align:center;color:var(--gray-mid);font-size:.9rem">
           Piggy Pips is built on the <strong>Entropia</strong> concept by the
-          <a href="https://seedsigner.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">SeedSigner</a> project.
+          <a href="https://seedsigner.com" target="_blank" rel="noopener noreferrer">SeedSigner</a> project.
         </p>
       </div>
     </section>
@@ -419,6 +419,8 @@ table{border-collapse:separate;border-spacing:0;margin:18px 0;border:1px solid v
 /* in-page subnav under the sticky site header (h-16 = 64px) */
 .pips .subnav{position:sticky;top:64px;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--gray-100);z-index:40}
 .pips .subnav .wrap{display:flex;gap:2px;overflow-x:auto;padding:8px 24px}
+.pips section a{color:var(--pink);font-weight:600;text-decoration:none}
+.pips section a:hover{text-decoration:underline}
 .pips .subnav a{font-weight:500;font-size:.875rem;color:var(--gray);text-decoration:none;padding:8px 12px;border-radius:8px;white-space:nowrap}
 .pips .subnav a:hover{color:var(--ink);background:var(--gray-100)}
 #main-content .pips section{scroll-margin-top:8.5rem}

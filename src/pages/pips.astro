@@ -1,10 +1,9 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { BIP39_WORDS } from '../data/bip39-wordlist';
 
 const title = 'Piggy Pips';
 const description =
-  'Facilitator & user manual for Piggy Pips — a physical BIP-39 lottery for teaching Bitcoin key generation to kids. Draw a pip, learn the maths, run a workshop.';
+  'Facilitator & user manual for Piggy Pips: a physical BIP-39 lottery for teaching Bitcoin key generation to kids. Draw a pip, learn the maths, run a workshop.';
 ---
 
 <BaseLayout title={title} description={description}>
@@ -15,32 +14,10 @@ const description =
   <h1>Piggy <span class="accent">Pips</span></h1>
   <p class="sub">A physical BIP-39 lottery for teaching Bitcoin key generation</p>
   <span class="tag">Facilitator &amp; User Manual</span>
-
-  <div class="bowlbox">
-    <div class="stage">
-      <div class="bowl" id="bowl" role="button" tabindex="0" aria-label="Draw a pip from the bowl">
-        <div class="tap disp" id="tapLabel">tap the bowl to draw a pip!</div>
-      </div>
-      <div class="pad" aria-hidden="true"></div>
-      <div class="pipfly" id="pipFly" role="button" tabindex="0" aria-label="Flip the pip to see the other face">
-        <div class="pipcard"><div class="pipinner" id="pipInner">
-          <div class="face front"><span class="str" id="frontStr">····</span><span class="facetag" id="frontTag"></span></div>
-          <div class="face back"><span class="str" id="backStr">····</span><span class="facetag" id="backTag"></span></div>
-        </div></div>
-      </div>
-      <div class="fliphint" id="flipHint">tap the pip to peek at the other face</div>
-    </div>
-    <div class="drawinfo">
-      <div class="bits" id="bitsLine"></div>
-      <div class="word" id="wordLine"></div>
-      <div class="backline" id="backLine"></div>
-    </div>
-    <p class="toy"><strong>This is a toy.</strong> Real seeds are never made on a website, a phone, or in company — see the safety rules below.</p>
-  </div>
   <div class="wave"><svg viewBox="0 0 1440 100" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M0 50L60 45.7C120 41 240 33 360 35.2C480 37 600 50 720 55.8C840 62 960 60 1080 53.3C1200 47 1320 37 1380 31.7L1440 27V100H1380C1320 100 1200 100 1080 100C960 100 840 100 720 100C600 100 480 100 360 100C240 100 120 100 60 100H0V50Z" fill="white"/></svg></div>
 </div>
 
-    <div class="subnav" aria-label="On this page">
+    <nav class="subnav" aria-label="On this page">
   <div class="wrap">
     <a href="#safety">Safety</a>
     <a href="#manual">Manual</a>
@@ -50,19 +27,19 @@ const description =
     <a href="#facts4">Huge!</a>
     <a href="#checklist">Checklist</a>
   </div>
-</div>
+</nav>
 
     <section id="safety">
   <div class="wrap">
-    <h2>Read this first — <span class="accent">get the room right</span></h2>
+    <h2>Read this first: <span class="accent">get the room right</span></h2>
     <p>Before anyone opens a set of Piggy Pips, these rules come before everything else in this manual.</p>
     <div class="rules">
-      <div class="rule"><div class="ico">📡</div><h3>No radios near a real seed</h3><p>A seed is never entered into, calculated on, or photographed by any device with WiFi, Bluetooth, or a mobile signal — including the Lightning Piggy itself. The Piggy watches a wallet; it never touches a key. Real seeds only ever meet an airgapped signing device.</p></div>
-      <div class="rule"><div class="ico">📵</div><h3>No cameras, no phones, no screens</h3><p>Phones off and away — not face-down. A livestream, a video call, or a photo of the drawn pips is a leaked seed.</p></div>
-      <div class="rule"><div class="ico">👥</div><h3>Company means demo</h3><p>Every seed made with anyone else in the room is a demo seed — it holds nothing and never will. Real seeds are made alone.</p></div>
-      <div class="rule"><div class="ico">✏️</div><h3>Pencil and paper only</h3><p>Never type drawn words into a computer, phone, or website — not even an offline tool — unless the device is genuinely airgapped and will be wiped.</p></div>
-      <div class="rule"><div class="ico">🎓</div><h3>This is a teaching tool</h3><p>Piggy Pips exists to show children and newcomers how key generation works. Treat every session as practice.</p></div>
-      <div class="rule"><div class="ico">🤔</div><h3>Decide before you start</h3><p>If the room can't meet these conditions, it's a demo. That's completely fine — most sessions are — but decide it consciously, not after.</p></div>
+      <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18.364 5.636a9 9 0 0 1 0 12.728M15.536 8.464a5 5 0 0 1 0 7.072M8.464 15.536a5 5 0 0 1 0-7.072M5.636 18.364a9 9 0 0 1 0-12.728"/><path d="M3 3l18 18"/></svg></div><h3>No radios near a real seed</h3><p>A seed is never entered into, calculated on, or photographed by any device with WiFi, Bluetooth, or a mobile signal, including the Lightning Piggy itself. The Piggy watches a wallet; it never touches a key. Real seeds only ever meet an airgapped signing device.</p></div>
+      <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 18h.01M8 21h8a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2z"/><path d="M3 3l18 18"/></svg></div><h3>No cameras, no phones, no screens</h3><p>Phones off and away, not face-down. A livestream, a video call, or a photo of the drawn pips is a leaked seed.</p></div>
+      <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 20h5v-2a3 3 0 0 0-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 0 1 5.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 0 1 9.288 0M15 7a3 3 0 1 1-6 0 3 3 0 0 1 6 0zm6 3a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 10a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/></svg></div><h3>Company means demo</h3><p>Every seed made with anyone else in the room is a demo seed. It holds nothing and never will. Real seeds are made alone.</p></div>
+      <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></div><h3>Pencil and paper only</h3><p>Never type drawn words into a computer, phone, or website, not even an offline tool, unless the device is genuinely airgapped and will be wiped.</p></div>
+      <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 14l9-5-9-5-9 5 9 5z"/><path d="M12 14l6.16-3.422a12.083 12.083 0 0 1 .665 6.479A11.952 11.952 0 0 0 12 20.055a11.952 11.952 0 0 0-6.824-2.998 12.078 12.078 0 0 1 .665-6.479L12 14z"/></svg></div><h3>This is a teaching tool</h3><p>Piggy Pips exists to show children and newcomers how key generation works. Treat every session as practice.</p></div>
+      <div class="rule"><div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093v1m0 3h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></div><h3>Decide before you start</h3><p>If the room can't meet these conditions, it's a demo. That's completely fine (most sessions are), but decide it consciously, not after.</p></div>
     </div>
   </div>
 </section>
@@ -80,94 +57,107 @@ const description =
       <tr><td>Which face lands up (1 of 2)</td><td class="mono">1</td></tr>
       <tr><td><strong>Total per draw</strong></td><td class="mono"><strong>11</strong></td></tr>
     </table>
-    <p>A BIP-39 word encodes exactly 11 bits — so one draw equals one word, with nothing left over and no bias. <strong>The core teaching point:</strong> the jar isn't a gimmick that approximates a random number generator. It <em>is</em> one — and one whose fairness a child can verify just by looking at it, unlike a chip you can't inspect.</p>
+    <p>A BIP-39 word encodes exactly 11 bits, so one draw equals one word, with nothing left over and no bias. <strong>The core teaching point:</strong> the jar isn't a gimmick that approximates a random number generator. It <em>is</em> one, and one whose fairness a child can verify just by looking at it, unlike a chip you can't inspect.</p>
 
-    <h3>2 · Before first use: verify the set</h3>
-    <p><strong>Do this once, for every set, before any seed is generated from it.</strong> A printing error that duplicates a word, drops one, or misprints a letter silently weakens every seed drawn afterwards — and nothing about the draw will look wrong.</p>
+    <h3>2 · Print your own set</h3>
+    <p>Sets aren't sold anywhere yet, but you don't need one to be: every pip is 3D-printable. Download the ready-sliced project file and print all 1,024 two-sided tablets yourself:</p>
+    <p><a href="/files/piggy-pips-2048-words.3mf" download class="text-pink hover:underline"><strong>Download piggy-pips-2048-words.3mf</strong></a> <span class="mono">(35&nbsp;MB, 4 build plates, 1,024 tablets)</span></p>
+    <ul>
+      <li><strong>Material: PLA.</strong> It's stiff, cheap, easy to print, and these small flat parts won't warp. A matte finish makes the lettering easier to read.</li>
+      <li><strong>Nozzle: 0.4&nbsp;mm.</strong> The 3&ndash;4 letter strings are small; a wider nozzle will smudge them. Don't scale the model, the lettering is sized for this nozzle.</li>
+      <li><strong>The file is pre-configured:</strong> 0.16&nbsp;mm layers, 2 walls, 15% infill, no supports needed.</li>
+      <li><strong>Two colours, no multi-material printer required.</strong> Each 3&nbsp;mm tablet is a light body with a thin dark core, and the engraved lettering cuts into that core so the letters read dark on both faces. The colour swaps sit at fixed heights (0.68&nbsp;mm and 2.6&nbsp;mm), so an AMS or dual extruder handles it automatically, and a single-extruder printer manages fine with a filament-change pause at those two layers. Any two contrasting colours work.</li>
+      <li><strong>Print all four plates.</strong> A partial set is unusable for real generation: with tablets missing, some words can never be drawn. Keep the plates together until the whole set is done.</li>
+    </ul>
+    <p>Once printed, run the verification in the next section before the set generates anything.</p>
+
+    <h3>3 · Before first use: verify the set</h3>
+    <p><strong>Do this once, for every set, before any seed is generated from it.</strong> A printing error that duplicates a word, drops one, or misprints a letter silently weakens every seed drawn afterwards, and nothing about the draw will look wrong.</p>
     <ol>
       <li>Lay the tablets out in alphabetised order.</li>
       <li>Open the official wordlist: <a class="mono" href="https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt" target="_blank" rel="noopener noreferrer">github.com/bitcoin/bips/blob/master/bip-0039/english.txt</a></li>
       <li>Check all 2,048 strings are present and none appears twice.</li>
       <li>Confirm every string is legible on both faces.</li>
     </ol>
-    <p>If a set fails, retire it as a display or demo-only jar and mark it clearly. Don't repair it by hand-printing the missing tablet. At a workshop, the verification <em>is</em> part of the lesson — not an inconvenience before it.</p>
+    <p>If a set fails, retire it as a display or demo-only jar and mark it clearly. Don't repair it by hand-printing the missing tablet. At a workshop, the verification <em>is</em> part of the lesson, not an inconvenience before it.</p>
 
-    <h3>3 · Generating a seed</h3>
-    <p><strong>You'll need:</strong> a verified full set · an opaque bowl deep enough that the contents can't be seen · a signing device with a calculate-final-word function · pencil and paper.</p>
+    <h3>4 · Generating a seed</h3>
+    <p><strong>You'll need:</strong> a verified full set · an opaque bowl deep enough that the contents can't be seen · a signing device such as a <a href="https://seedsigner.com" target="_blank" rel="noopener noreferrer">SeedSigner</a>, with a calculate-final-word function · pencil and paper.</p>
     <ol>
       <li>Confirm all 1,024 tablets are in the bowl. Shake thoroughly.</li>
       <li>Draw without looking. <strong>Let the toss decide the face.</strong></li>
-      <li>Write down the word, set the drawn tablet aside.</li>
+      <li>Write down the word, then return the pip to the bowl and shake again.</li>
       <li>Repeat until you have <strong>11 words</strong> (12-word seed) or <strong>23 words</strong> (24-word seed).</li>
       <li>Enter them into the signing device and let it calculate the final word.</li>
-      <li>Return all tablets and shake before next use.</li>
     </ol>
-    <p><strong>The single most important rule: never choose which face to read.</strong> If you pick the side you prefer, you've thrown away one of the eleven bits and replaced it with your own preference — which isn't random. Let gravity decide, every time. This matters most with children, because they'll try to pick the funny word. Frame it as the rule of the game: <em>you don't get to choose — that's the whole point.</em></p>
+    <p><strong>The single most important rule: never choose which face to read.</strong> If you pick the side you prefer, you've thrown away one of the eleven bits and replaced it with your own preference, which isn't random. Let gravity decide, every time. This matters most with children, because they'll try to pick the funny word. Frame it as the rule of the game: <em>you don't get to choose. That's the whole point.</em></p>
 
-    <h3>4 · About the final word</h3>
-    <p>You draw 11 words, not 12 — the twelfth is calculated, because part of it is a checksum built from the first eleven. The honest detail: in a 12-word seed the final word carries 7 entropy bits plus the checksum, and when calculated from 11 drawn words those 7 bits typically default to zero — so the seed holds <span class="mono">121</span> bits rather than the nominal <span class="mono">128</span> (24-word: <span class="mono">253</span> vs <span class="mono">256</span>). Is that a problem? No — 121 bits is far beyond any brute force that will ever exist. But state it honestly rather than claiming 128; overstating security is a bad habit to teach. If your device can supply the remaining bits by coin flip, use it. Drawing without replacement costs less than a tenth of a bit — harmless.</p>
+    <h3>5 · About the final word</h3>
+    <p>You draw 11 words, not 12: the twelfth is calculated, because part of it is a checksum built from the first eleven. The honest detail: in a 12-word seed the final word carries 7 entropy bits plus the checksum, and when calculated from 11 drawn words those 7 bits typically default to zero, so the seed holds <span class="mono">121</span> bits rather than the nominal <span class="mono">128</span> (24-word: <span class="mono">253</span> vs <span class="mono">256</span>). Is that a problem? No: 121 bits is far beyond any brute force that will ever exist. But state it honestly rather than claiming 128; overstating security is a bad habit to teach. If your device can supply the remaining bits by coin flip, use it. Returning each pip before the next draw keeps every draw a clean, independent 11 bits, and repeating a word is fine; repeats are legitimate in a seed.</p>
+    <p>This step is not optional, and it is the one place a device is unavoidable. The checksum is the leading bits of a SHA-256 hash taken over the whole entropy at once, so it can't be looked up word by word or worked out with pencil and paper: only 128 of the 2,048 words are a valid twelfth word for any given eleven (8 of 2,048 for a twenty-fourth). An airgapped signer is the tool for it, and the safety rules above still hold: no radios, nothing that has been online.</p>
+    <p><strong>The seed this produces is real and it works, which is exactly why it must never hold savings.</strong> A functional seed is the point of the exercise: children see a working key come out of a bowl of tablets. But it was made in company, in a room with other people watching, so it was never private and can never be made private afterwards. Fund nothing with it, ever.</p>
 
-    <h3>5 · Workshop rules</h3>
-    <p><strong>Every seed generated in a room with other people is a demo seed. Always.</strong> Say this before the first draw, not after. Children will want to keep their words — and that instinct is correct and worth praising; it's exactly the right feeling about a real seed. Redirect it: <em>"this one is for practice so we can all see how it works. When you make a real one, you'll do it alone, and nobody else will ever see it. That's the difference."</em></p>
+    <h3>6 · Workshop rules</h3>
+    <p><strong>Every seed generated in a room with other people is a demo seed. Always.</strong> Say this before the first draw, not after. Children will want to keep their words, and that instinct is correct and worth praising; it's exactly the right feeling about a real seed. Redirect it: <em>"this one is for practice so we can all see how it works. When you make a real one, you'll do it alone, and nobody else will ever see it. That's the difference."</em></p>
     <ul>
       <li>One shared jar scales better than per-child kits. Give every child at least one draw.</li>
       <li>Count the tablets back in.</li>
-      <li>Hand a child the printed BIP-39 list and let them check a drawn word themselves — a small act of verification, the same instinct as running your own node.</li>
+      <li>Hand a child the printed BIP-39 list and let them check a drawn word themselves: a small act of verification, the same instinct as running your own node.</li>
     </ul>
 
-    <h3>6 · What never to do</h3>
+    <h3>7 · What never to do</h3>
     <ul>
       <li><strong>Never store entropy.</strong> Don't keep a jar in a used arrangement, photograph drawn tablets, or preserve draw order. Write the words, return every tablet.</li>
       <li><strong>Never generate a real seed on camera</strong>, on a livestream, or in a room with a phone recording.</li>
-      <li><strong>Never reuse a demo seed</strong> for real funds — no matter how small.</li>
-      <li><strong>Never let anyone choose their own words</strong> — that's the same failure as a brain wallet.</li>
+      <li><strong>Never reuse a demo seed</strong> for real funds, no matter how small.</li>
+      <li><strong>Never let anyone choose their own words</strong>. That's the same failure as a brain wallet.</li>
       <li><strong>Never top up a set</strong> from a second incomplete set.</li>
       <li><strong>Never type drawn words into a connected device.</strong></li>
     </ul>
 
-    <h3>7 · Care and storage</h3>
-    <p>Store the jar somewhere its presence is unremarkable. The tablets reveal nothing about any seed drawn from them — but to someone who recognises it, a jar is a sign that seeds are generated in this house. Keep the set complete; re-verify all 2,048 after any event where tablets may have gone missing, and at least once a year for a set in regular use.</p>
+    <h3>8 · Care and storage</h3>
+    <p>Store the jar somewhere its presence is unremarkable. The tablets reveal nothing about any seed drawn from them, but to someone who recognises it, a jar is a sign that seeds are generated in this house. Keep the set complete; re-verify all 2,048 after any event where tablets may have gone missing, and at least once a year for a set in regular use.</p>
 
-    <h3>8 · Attribution</h3>
-    <p>Piggy Pips is built on the <strong>Entropia</strong> seed-tablet concept created by the <strong>SeedSigner</strong> project. For every Piggy Pips set we sell, we forward a share of the proceeds back to SeedSigner as a thank-you for the open-source work this is built on.</p>
+    <h3>9 · Attribution</h3>
+    <p>Piggy Pips is built on the <strong>Entropia</strong> seed-tablet concept created by the <strong>SeedSigner</strong> project, with our thanks for the open-source work this is built on.</p>
   </div>
 </section>
 
 <!-- ================= FUN FACTS 1 ================= -->
 <section id="facts1">
   <div class="wrap">
-    <h2>Fun facts — the <span class="accent">amazing maths</span> hiding in your pips</h2>
+    <h2>Fun facts: the <span class="accent">amazing maths</span> hiding in your pips</h2>
     <p><em>For curious kids (and grown-ups who forgot how wild this all is).</em></p>
 
     <div class="fact">
       <h3>You're choosing from a number as big as the atoms in the universe</h3>
-      <p>When you draw your pips, you're picking one secret out of a number with <strong>77 zeros</strong>. That's about how many atoms there are in the whole observable universe. Picking your seed is like picking one exact atom out of everything that exists — and you made it with a bowl of little tablets!</p>
-      <div class="universe" id="universe"><div class="seeddot"></div><div class="seedlabel disp">your seed</div></div>
+      <p>With 24 words, your seed is one pick out of a number with <strong>76 zeros</strong>, about how many atoms there are in the whole observable universe. Picking your seed is like picking one exact atom out of everything that exists. Even the 12-word version is a number with 36 zeros, billions of times more than every grain of sand on Earth, and you made it with a bowl of little tablets!</p>
+      <div class="universe" id="universe" aria-hidden="true"><div class="seeddot"></div><div class="seedlabel">your seed</div></div>
     </div>
 
     <div class="fact">
-      <h3>Nobody has ever guessed someone else's seed. Ever.</h3>
-      <p>Not once, in the whole history of Bitcoin. If every person on Earth had a super-fast computer and they all guessed non-stop since the dinosaurs, they <em>still</em> wouldn't have found a single real one. Your secret is safe not because it's hidden — but because it's <strong>huge</strong>.</p>
+      <h3>Nobody has ever guessed a seed made with real randomness</h3>
+      <p>Not once, in the whole history of Bitcoin. If every person on Earth had a super-fast computer and they all guessed non-stop since the dinosaurs, they <em>still</em> wouldn't have found a single real one. The only seeds ever cracked were made by computers using broken randomness, never one drawn from real, physical chance. Your secret is safe not because it's hidden, but because it's <strong>huge</strong>.</p>
     </div>
 
     <div class="fact">
       <h3>Every pip you drop is eleven coin flips at once</h3>
-      <p>A coin doesn't have a favourite side — that's exactly why you never pick the face you like best. <strong>You have favourites; gravity doesn't.</strong> Letting the pip land on its own is what keeps your seed truly random.</p>
+      <p>A coin doesn't have a favourite side. That's exactly why you never pick the face you like best. <strong>You have favourites; gravity doesn't.</strong> Letting the pip land on its own is what keeps your seed truly random.</p>
     </div>
 
     <div class="fact">
       <h3>Why 3 or 4 letters is enough</h3>
-      <p>Every word in the Bitcoin wordlist can be recognised by just its first four letters — no two words share them. A tiny label is all you need to name one of 2,048 words. Clever, right?</p>
+      <p>Every word in the Bitcoin wordlist can be recognised by just its first four letters; no two words share them. A tiny label is all you need to name one of 2,048 words. Clever, right?</p>
     </div>
 
     <div class="fact">
       <h3>The last word checks its own homework</h3>
-      <p>You draw 11 words and the wallet works out the 12th by itself — a maths trick called a <em>checksum</em>, built from the other words. Write one down wrong, and the wallet says <em>"hang on, that doesn't add up."</em> A secret spell-checker for your seed.</p>
+      <p>You draw 11 words and the wallet works out the 12th by itself: a maths trick called a <em>checksum</em>, built from the other words. Write one down wrong, and the wallet says <em>"hang on, that doesn't add up."</em> A secret spell-checker for your seed.</p>
     </div>
 
     <div class="fact">
       <h3>Randomness is a superpower</h3>
-      <p>In Bitcoin, the thing that keeps your money yours isn't a wall or a lock — it's a number nobody can guess. Learning to make real randomness by hand means you never have to trust a computer to do it for you. That's what <strong>"be your own bank"</strong> really means.</p>
+      <p>In Bitcoin, the thing that keeps your money yours isn't a wall or a lock. It's a number nobody can guess. Learning to make real randomness by hand means you never have to trust a computer to do it for you. That's what <strong>"be your own bank"</strong> really means.</p>
     </div>
   </div>
 </section>
@@ -178,19 +168,19 @@ const description =
     <h2>Bitcoin's <span class="accent">magic numbers</span></h2>
 
     <div class="fact">
-      <h3>21 million — and not one more</h3>
-      <p>There will only ever be 21 million bitcoin. Nobody — no king, no bank, no president — can make more. Grown-ups can always print more money, and when there's more of something, each one is worth a little less. Bitcoin can't do that. <strong>Scarcity is the whole point.</strong></p>
-      <div class="aside">Grown-ups: some numbers have a longer memory than others. Ask what happened to gold in 1933 — order number 6102.</div>
+      <h3>21 million, and not one more</h3>
+      <p>There will only ever be 21 million bitcoin. Nobody can make more: not a king, not a bank, not a president. Grown-ups can always print more money, and when there's more of something, each one is worth a little less. Bitcoin can't do that. <strong>Scarcity is the whole point.</strong></p>
+      <div class="aside">Grown-ups: some numbers have a longer memory than others. Ask what happened to gold in 1933, order number 6102.</div>
     </div>
 
     <div class="fact">
       <h3>100 million tiny pieces in every coin</h3>
-      <p>"But if there are only 21 million, how does everyone get some?" Each bitcoin splits into 100 million pieces called <strong>sats</strong>. You don't need a whole coin — just like you can have 50 cents instead of a whole dollar.</p>
+      <p>"But if there are only 21 million, how does everyone get some?" Each bitcoin splits into 100 million pieces called <strong>sats</strong>. You don't need a whole coin, just like you can have 50 cents instead of a whole dollar.</p>
     </div>
 
     <div class="fact">
       <h3>Every 10 minutes, a new block</h3>
-      <p>All over the world at the same time, about every ten minutes — Bitcoin's heartbeat. It never stops. Day, night, holidays included.</p>
+      <p>All over the world at the same time, about every ten minutes: Bitcoin's heartbeat. It never stops. Day, night, holidays included.</p>
       <div class="ekg" aria-hidden="true">
         <svg viewBox="0 0 800 120" preserveAspectRatio="none">
           <polyline points="0,60 120,60 132,30 144,95 156,18 168,60 280,60 292,30 304,95 316,18 328,60 440,60 452,30 464,95 476,18 488,60 600,60 612,30 624,95 636,18 648,60 800,60"/>
@@ -200,12 +190,12 @@ const description =
 
     <div class="fact">
       <h3>Every 2,016 blocks, Bitcoin checks itself</h3>
-      <p>More miners? Blocks come too fast. Fewer? Too slow. So every 2,016 blocks — about two weeks — Bitcoin adjusts how hard the puzzle is, steering back to one block every 10 minutes. Why 2,016? Because <span class="mono">6 × 24 × 14 = 2,016</span>. A thermostat with no one's hand on the dial.</p>
+      <p>More miners? Blocks come too fast. Fewer? Too slow. So every 2,016 blocks (about two weeks), Bitcoin adjusts how hard the puzzle is, steering back to one block every 10 minutes. Why 2,016? Because <span class="mono">6 × 24 × 14 = 2,016</span>. A thermostat with no one's hand on the dial.</p>
     </div>
 
     <div class="fact">
       <h3>Every 4 years, the reward halves</h3>
-      <p>Miners earn new bitcoin with every block — but every 210,000 blocks that reward is cut in half: 50, then 25, then 12.5… Add all the ever-smaller rewards together and they close in on 21 million <em>but never pass it</em>. Like walking half the remaining distance to a wall each step: closer and closer, never a crash.</p>
+      <p>Miners earn new bitcoin with every block, but every 210,000 blocks that reward is cut in half: 50, then 25, then 12.5… Add all the ever-smaller rewards together and they close in on 21 million <em>but never pass it</em>. Like walking half the remaining distance to a wall each step: closer and closer, never a crash.</p>
     </div>
   </div>
 </section>
@@ -214,7 +204,7 @@ const description =
 <section id="facts3">
   <div class="wrap">
     <h2>The incredible <span class="accent">shrinking treasure</span></h2>
-    <p>Bitcoin is handed out in four-year eras — and each era gives out <strong>exactly half</strong> as much as the one before. Watch the treasure shrink:</p>
+    <p>Bitcoin is handed out in four-year eras, and each era gives out <strong>exactly half</strong> as much as the one before. Watch the treasure shrink:</p>
 
     <div class="fact">
       <div class="stairs" id="stairs">
@@ -231,19 +221,19 @@ const description =
 
     <div class="fact">
       <h3>Every era digs up exactly half of the treasure still buried</h3>
-      <p>Check it: before era 5, about <span class="mono">1,312,500</span> coins were unmined — and era 5 mines exactly <span class="mono">656,250</span>. Half. It's true in every era, forever: whatever's left in the ground, the current era takes exactly half.</p>
+      <p>Check it: before era 5, about <span class="mono">1,312,500</span> coins were unmined, and era 5 mines exactly <span class="mono">656,250</span>. Half. It's true in every era, forever: whatever's left in the ground, the current era takes exactly half.</p>
     </div>
 
     <div class="fact">
       <h3>Why exactly 21 million? The secret sum</h3>
-      <p>Pick any single block slot and stack its reward across all the eras: <span class="mono">50 + 25 + 12.5 + 6.25 + …</span> That tower of halves adds up to exactly <strong>100</strong>. And there are 210,000 blocks per era. So: <span class="mono"><strong>100 × 210,000 = 21,000,000</strong></span>. The famous number wasn't chosen by a committee — it's just two tidy numbers multiplied together.</p>
+      <p>Pick any single block slot and stack its reward across all the eras: <span class="mono">50 + 25 + 12.5 + 6.25 + …</span> That tower of halves adds up to exactly <strong>100</strong>. And there are 210,000 blocks per era. So: <span class="mono"><strong>100 × 210,000 = 21,000,000</strong></span>. The famous number wasn't chosen by a committee; it's just two tidy numbers multiplied together.</p>
     </div>
 
     <div class="fact">
-      <h3>The computer does the halving with scissors ✂️</h3>
-      <p>Inside the code, the reward is counted in sats: 50 bitcoin is <span class="mono">5,000,000,000</span> sats — which in binary is <strong>33 digits</strong>. Each halving simply snips off the last digit. Try it:</p>
+      <h3>The computer does the halving with scissors</h3>
+      <p>Inside the code, the reward is counted in sats: 50 bitcoin is <span class="mono">5,000,000,000</span> sats, which in binary is <strong>33 digits</strong>. Each halving simply snips off the last digit. Try it:</p>
       <div class="binrow" id="binrow"></div>
-      <div class="snipwrap"><button class="snipbtn" id="snip">✂️ Snip! (halve the reward)</button></div>
+      <div class="snipwrap"><button class="snipbtn" id="snip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.121 14.121L19 19m-7-7l7-7m-7 7l-2.879 2.879M12 12L9.121 9.121m0 5.758a3 3 0 1 0-4.243 4.243 3 3 0 0 0 4.243-4.243zm0-5.758a3 3 0 1 0-4.243-4.243 3 3 0 0 0 4.243 4.243z"/></svg><span>Snip! (halve the reward)</span></button></div>
       <div class="snipstate mono" id="snipstate"></div>
     </div>
   </div>
@@ -255,38 +245,38 @@ const description =
     <h2>Numbers <span class="accent">too big to think about</span> (almost)</h2>
 
     <div class="fact">
-      <h3>Shuffle a deck of cards — you just made history 🃏</h3>
-      <p>A pack of 52 cards can be arranged in a number with <strong>68 digits</strong>. Every time you shuffle a deck properly, the order you're holding has almost certainly never existed before, anywhere, ever. You've been holding impossible-to-guess numbers your whole life. Your pips work exactly the same way — just with words instead of cards.</p>
+      <h3>Shuffle a deck of cards: you just made history</h3>
+      <p>A pack of 52 cards can be arranged in a number with <strong>68 digits</strong>. Every time you shuffle a deck properly, the order you're holding has almost certainly never existed before, anywhere, ever. You've been holding impossible-to-guess numbers your whole life. Your pips work exactly the same way, just with words instead of cards.</p>
     </div>
 
     <div class="fact">
       <h3>You can make a real Bitcoin key with a coin</h3>
-      <p>No computer needed: flip a coin 256 times, write down the flips, and that string <em>is</em> a valid private key. The pips just make it faster and more fun — 256 flips is a lot of flipping.</p>
+      <p>No computer needed: flip a coin 256 times, write down the flips, and that string <em>is</em> a valid private key. The pips just make it faster and more fun; 256 flips is a lot of flipping.</p>
     </div>
 
     <div class="fact">
-      <h3>No computer can ever count that high — it's physics, not effort</h3>
-      <p>Even a <em>perfect</em> computer, wasting no energy at all, powered by the entire Sun and running until the Sun burns out, could not even <strong>count</strong> from zero to the number of possible keys. Not guess them — just count. Your seed isn't protected by a clever lock. It's protected by the size of the universe's own rules.</p>
+      <h3>No computer can ever count that high: it's physics, not effort</h3>
+      <p>Even a <em>perfect</em> computer, wasting no energy at all, powered by the entire Sun and running until the Sun burns out, could not even <strong>count</strong> from zero to the number of possible keys. Not guess them, just count. Your seed isn't protected by a clever lock. It's protected by the size of the universe's own rules.</p>
     </div>
 
     <div class="fact">
       <h3>Change one letter, everything changes</h3>
-      <p>Bitcoin uses a fingerprint function called SHA-256. Feed it <span class="mono">piggy</span> and you get one fingerprint. Feed it <span class="mono">Piggy</span> — one capital letter — and the fingerprint is completely, unrecognisably different. There is no "close". You're either exactly right, or you know nothing.</p>
+      <p>Bitcoin uses a fingerprint function called SHA-256. Feed it <span class="mono">piggy</span> and you get one fingerprint. Feed it <span class="mono">Piggy</span>, with just one capital letter changed, and the fingerprint is completely, unrecognisably different. There is no "close". You're either exactly right, or you know nothing.</p>
     </div>
 
     <div class="fact">
-      <h3>The rice on the chessboard — the halving in reverse 🍚</h3>
-      <p>An old story: one grain of rice on the first square, two on the second, four on the third — doubling each time. By square 64 the king owes <strong>18 billion billion grains</strong>, more rice than exists on Earth. Doubling runs away to infinity. Bitcoin plays that game <em>backwards</em>: by halving instead of doubling, the total stays tame and lands on exactly 21 million. Same magic, opposite direction.</p>
+      <h3>The rice on the chessboard: the halving in reverse</h3>
+      <p>An old story: one grain of rice on the first square, two on the second, four on the third, doubling each time. By square 64 the king owes <strong>18 billion billion grains</strong>, more rice than exists on Earth. Doubling runs away to infinity. Bitcoin plays that game <em>backwards</em>: by halving instead of doubling, the total stays tame and lands on exactly 21 million. Same magic, opposite direction.</p>
     </div>
 
     <div class="fact">
       <h3>The world's biggest guessing game is already running</h3>
-      <p>All the miners on Earth together make around <strong>a thousand billion billion guesses every second</strong> — more per second than there are grains of sand on every beach and desert on the planet. At that speed, guessing your seed would still take longer than the universe has left.</p>
+      <p>All the miners on Earth together make around <strong>a thousand billion billion guesses every second</strong>, more per second than there are grains of sand on every beach and desert on the planet. At that speed, guessing your seed would still take longer than the universe has left.</p>
     </div>
 
     <div class="fact">
       <h3>A lost coin makes everyone else's rarer</h3>
-      <p>Lose a seed, and those bitcoin can never move again — frozen forever, visible to everyone, touchable by no one. Millions of coins are already lost this way. The twist: every lost coin quietly makes all the remaining coins a little more scarce. In Bitcoin, even losing adds to the maths.</p>
+      <p>Lose a seed, and those bitcoin can never move again: frozen forever, visible to everyone, touchable by no one. Millions of coins are already lost this way. The twist: every lost coin quietly makes all the remaining coins a little more scarce. In Bitcoin, even losing adds to the maths.</p>
     </div>
   </div>
 </section>
@@ -297,10 +287,10 @@ const description =
     <h2>Facilitator checklist</h2>
     <div class="check">
       <h3>Before the session</h3>
-      <label><input type="checkbox"> Set verified against the official BIP-39 wordlist — all 2,048 strings present</label>
+      <label><input type="checkbox"> Set verified against the official BIP-39 wordlist, all 2,048 strings present</label>
       <label><input type="checkbox"> All 1,024 tablets counted into the bowl</label>
-      <label><input type="checkbox"> Signing device charged, final-word flow checked</label>
-      <label><input type="checkbox"> Pencil and paper ready — phones away</label>
+      <label><input type="checkbox"> Power supply for the signing device packed (a SeedSigner has no internal battery) and final-word flow checked</label>
+      <label><input type="checkbox"> Pencil and paper ready, phones away</label>
       <label><input type="checkbox"> Demo-seed rule stated out loud before the first draw</label>
     </div>
     <div class="check">
@@ -308,12 +298,13 @@ const description =
       <label><input type="checkbox"> Bowl stirred between draws</label>
       <label><input type="checkbox"> No one choosing which face to read</label>
       <label><input type="checkbox"> Words recorded in draw order</label>
+      <label><input type="checkbox"> Pip returned to the bowl after the word is recorded</label>
     </div>
     <div class="check">
       <h3>After</h3>
       <label><input type="checkbox"> All tablets returned and counted</label>
       <label><input type="checkbox"> Written words collected and destroyed</label>
-      <label><input type="checkbox"> Demo seed confirmed to hold no funds — and abandoned</label>
+      <label><input type="checkbox"> Demo seed confirmed to hold no funds, then destroyed so it can't be used</label>
     </div>
   </div>
 </section>
@@ -323,7 +314,6 @@ const description =
         <p style="text-align:center;color:var(--gray-mid);font-size:.9rem">
           Piggy Pips is built on the <strong>Entropia</strong> concept by the
           <a href="https://seedsigner.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">SeedSigner</a> project.
-          A share of every set sold goes back to SeedSigner.
         </p>
       </div>
     </section>
@@ -357,41 +347,6 @@ const description =
 .pips .hero .tag{display:inline-block;background:var(--yellow);color:var(--ink);font-weight:600;padding:8px 22px;border-radius:999px;margin-top:20px;font-size:.9rem;position:relative}
 .pips .wave{position:absolute;bottom:-1px;left:0;right:0;pointer-events:none}
 .pips .wave svg{display:block;width:100%}
-.pips /* bowl + stage */
-.bowlbox{margin:36px auto 0;max-width:520px;position:relative}
-.pips .stage{position:relative;height:360px}
-.pips .bowl{position:absolute;left:50%;transform:translateX(-50%);top:0;width:min(300px,76vw);height:140px;background:radial-gradient(ellipse at 50% -30%,#ff5cb8 0%,var(--pink) 55%,#a30061 100%);border-radius:0 0 160px 160px;box-shadow:0 18px 38px rgba(236,0,140,.28),inset 0 -14px 26px rgba(0,0,0,.18);cursor:pointer;transition:transform .15s;z-index:2}
-.pips .bowl:active{transform:translateX(-50%) scale(.97)}
-.pips .bowl::before{content:"";position:absolute;top:-13px;left:-3%;width:106%;height:30px;background:#a30061;border-radius:50%;box-shadow:inset 0 6px 10px rgba(255,255,255,.28)}
-.pips .bowl .tap{position:absolute;left:0;right:0;top:52px;color:#fff;font-weight:600;font-size:1rem;text-shadow:0 2px 6px rgba(0,0,0,.25);pointer-events:none}
-.pips .pad{position:absolute;left:50%;transform:translateX(-50%);top:296px;width:240px;height:30px;background:radial-gradient(ellipse at center,rgba(23,23,23,.16),transparent 70%);border-radius:50%}
-.pips /* flying pip */
-.pipfly{position:absolute;left:50%;margin-left:-88px;top:40px;width:176px;height:96px;opacity:0;pointer-events:none;z-index:3}
-.pips .pipfly.pop{animation:fly .9s cubic-bezier(.3,1.1,.5,1) forwards;pointer-events:auto}
-@keyframes fly{
-  0%{top:40px;opacity:0;transform:scale(.2) rotate(-24deg)}
-  18%{opacity:1}
-  45%{top:-78px;opacity:1;transform:scale(1.06) rotate(7deg)}
-  100%{top:212px;opacity:1;transform:scale(1) rotate(0)}
-}
-.pips .pipcard{width:100%;height:100%;perspective:700px;cursor:pointer}
-.pips .pipinner{position:relative;width:100%;height:100%;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
-.pips .pipfly.flipped .pipinner{transform:rotateY(180deg)}
-.pips .face{position:absolute;inset:0;border-radius:999px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;backface-visibility:hidden;-webkit-backface-visibility:hidden;color:#fff;box-shadow:0 14px 26px rgba(236,0,140,.3)}
-.pips .face::before{content:"";position:absolute;top:8%;left:11%;right:11%;height:40%;background:linear-gradient(rgba(255,255,255,.42),rgba(255,255,255,0));border-radius:999px;pointer-events:none}
-.pips .face .str{font-weight:800;font-size:2rem;letter-spacing:.12em;text-shadow:0 2px 3px rgba(0,0,0,.3)}
-.pips .face .facetag{font-family:var(--mono);font-size:.62rem;letter-spacing:.26em;opacity:.92}
-.pips .face.front{background:linear-gradient(165deg,#ff5cb8 0%,var(--pink) 55%,#b00068 100%)}
-.pips .face.back{background:linear-gradient(165deg,#d4489e 0%,#a30061 55%,#6d0040 100%);transform:rotateY(180deg)}
-.pips .fliphint{position:absolute;left:50%;transform:translateX(-50%);top:318px;background:#fff;color:var(--pink);font-weight:600;font-size:.8rem;padding:6px 14px;border-radius:999px;box-shadow:0 4px 14px rgba(23,23,23,.12);border:1px solid var(--gray-100);opacity:0;transition:opacity .3s;pointer-events:none}
-.pips .fliphint.show{opacity:1}
-.pips .drawinfo{margin-top:10px;min-height:92px;position:relative}
-.pips .drawinfo .bits{font-family:var(--mono);color:var(--pink);font-size:.85rem}
-.pips .drawinfo .word{font-weight:700;font-size:1.2rem;color:var(--ink)}
-.pips .drawinfo .backline{font-size:.93rem;color:var(--gray);min-height:24px;margin-top:2px}
-.pips .drawinfo .backline strong{color:var(--pink)}
-.pips .toy{margin-top:12px;font-size:.85rem;color:var(--gray-mid);position:relative}
-.pips .toy strong{color:var(--pink)}
 .pips /* SECTIONS */
 section{padding:64px 0}
 .pips section:nth-of-type(even){background:var(--gray-50)}
@@ -407,7 +362,8 @@ section{padding:64px 0}
 .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin:24px 0}
 .pips .rule{background:#fff;border-radius:16px;padding:24px;border:1px solid var(--gray-100);box-shadow:0 1px 2px rgba(0,0,0,.04);transition:box-shadow .2s}
 .pips .rule:hover{box-shadow:0 4px 14px rgba(0,0,0,.08)}
-.pips .rule .ico{width:48px;height:48px;background:rgba(240,188,215,.5);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.5rem}
+.pips .rule .ico{width:48px;height:48px;background:rgba(240,188,215,.5);border-radius:12px;display:flex;align-items:center;justify-content:center;color:var(--pink)}
+.pips .rule .ico svg{width:24px;height:24px}
 .pips .rule h3{margin:14px 0 6px;font-size:1.02rem}
 .pips .rule p{font-size:.92rem;margin:0}
 .pips /* table */
@@ -434,7 +390,7 @@ table{border-collapse:separate;border-spacing:0;margin:18px 0;border:1px solid v
 .pips .ekg svg{width:100%;height:auto;display:block}
 .pips .ekg polyline{fill:none;stroke:var(--pink);stroke-width:4;stroke-linejoin:round;stroke-linecap:round;stroke-dasharray:1600;stroke-dashoffset:1600;animation:draw 3.4s linear forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
-@media (prefers-reduced-motion:reduce){.pips .ekg polyline{animation:none;stroke-dashoffset:0}.pips .pipfly.pop{animation:none;top:212px;opacity:1;transform:none}.pips .pipinner{transition:none}.pips .bar{transition:none!important}}
+@media (prefers-reduced-motion:reduce){.pips .ekg polyline{animation:none;stroke-dashoffset:0}.pips .bar{transition:none!important}}
 .pips /* staircase */
 .stairs{display:flex;align-items:flex-end;gap:10px;height:240px;margin-top:20px}
 .pips .stairs .col{flex:1;text-align:center;font-size:.8rem;color:var(--gray-mid)}
@@ -447,7 +403,8 @@ table{border-collapse:separate;border-spacing:0;margin:18px 0;border:1px solid v
 .pips .bit{width:30px;height:42px;background:var(--gray-100);border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;color:var(--ink);font-size:1rem;transition:transform .4s,opacity .4s}
 .pips .bit.gone{transform:translateY(46px) rotate(28deg);opacity:0}
 .pips .snipwrap{text-align:center}
-.pips .snipbtn{display:inline-flex;align-items:center;justify-content:center;margin:8px auto 0;background:var(--pink);color:#fff;border:none;font-family:inherit;font-weight:600;font-size:.95rem;padding:12px 28px;border-radius:999px;cursor:pointer;transition:background .2s;box-shadow:0 2px 8px rgba(236,0,140,.25)}
+.pips .snipbtn svg{width:18px;height:18px}
+.pips .snipbtn{display:inline-flex;align-items:center;gap:8px;display:inline-flex;align-items:center;justify-content:center;margin:8px auto 0;background:var(--pink);color:#fff;border:none;font-family:inherit;font-weight:600;font-size:.95rem;padding:12px 28px;border-radius:999px;cursor:pointer;transition:background .2s;box-shadow:0 2px 8px rgba(236,0,140,.25)}
 .pips .snipbtn:hover{background:var(--ink)}
 .pips .snipstate{text-align:center;font-family:var(--mono);font-size:.85rem;color:var(--gray);margin-top:10px;min-height:24px}
 .pips /* checklist */
@@ -468,61 +425,7 @@ table{border-collapse:separate;border-spacing:0;margin:18px 0;border:1px solid v
 
 </style>
 
-<script is:inline define:vars={{ WORDS: BIP39_WORDS }}>
-// ---------- bowl draw ----------
-const bowl = document.getElementById('bowl');
-const pipFly = document.getElementById('pipFly');
-const pipInner = document.getElementById('pipInner');
-const frontStr = document.getElementById('frontStr');
-const backStr = document.getElementById('backStr');
-const frontTag = document.getElementById('frontTag');
-const backTag = document.getElementById('backTag');
-const flipHint = document.getElementById('flipHint');
-const bitsLine = document.getElementById('bitsLine');
-const wordLine = document.getElementById('wordLine');
-const backLine = document.getElementById('backLine');
-const tapLabel = document.getElementById('tapLabel');
-let drawing = false, drawn = false, backWord = '', backIdx = 0;
-
-function draw(){
-  if(drawing) return; drawing = true;
-  const buf = new Uint16Array(1);
-  crypto.getRandomValues(buf);
-  const idx = buf[0] % 2048;               // 11 bits
-  const tablet = (idx >> 1) + 1;           // 10 bits
-  const face = idx & 1;                    // 1 bit — the face gravity chose
-  const other = idx ^ 1;                   // same tablet, other face
-  const word = WORDS[idx];
-  backWord = WORDS[other]; backIdx = other;
-
-  frontStr.textContent = word.slice(0,4).toUpperCase();
-  backStr.textContent  = backWord.slice(0,4).toUpperCase();
-  frontTag.textContent = 'FACE ' + (face ? 'B' : 'A') + ' · UP';
-  backTag.textContent  = 'FACE ' + (face ? 'A' : 'B') + ' · DOWN';
-
-  pipFly.classList.remove('flipped');
-  flipHint.classList.remove('show');
-  backLine.innerHTML = '';
-  pipFly.classList.remove('pop'); void pipFly.offsetWidth; pipFly.classList.add('pop');
-
-  bitsLine.textContent = `tablet ${tablet} of 1,024 (10 bits) · face ${face ? 'B':'A'} up (1 bit) = 11 bits`;
-  wordLine.textContent = `→ word ${idx+1} of 2,048: “${word}”`;
-  tapLabel.textContent = 'tap again for another!';
-
-  setTimeout(()=>{ drawing=false; drawn=true; flipHint.classList.add('show'); }, 950);
-}
-function flip(){
-  if(!drawn) return;
-  pipFly.classList.toggle('flipped');
-  if(pipFly.classList.contains('flipped')){
-    backLine.innerHTML = `underneath: word ${backIdx+1}, “${backWord}” — <strong>but gravity picked the top one.</strong> Peeking is fine; choosing is cheating!`;
-  }
-}
-bowl.addEventListener('click', draw);
-bowl.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();draw();} });
-pipFly.addEventListener('click', flip);
-pipFly.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();} });
-
+<script is:inline>
 // ---------- universe stars ----------
 const uni = document.getElementById('universe');
 for(let i=0;i<140;i++){
@@ -557,7 +460,7 @@ function renderBits(){
   const btc=Number(val)/1e8;
   snipstate.textContent = bits.length
     ? `era ${snips+1}: reward = ${val.toLocaleString('en')} sats (${btc.toLocaleString('en',{maximumFractionDigits:8})} BTC)`
-    : `after 33 snips: 0 sats — the treasure hunt is over (~year 2140)`;
+    : `after 33 snips: 0 sats: the treasure hunt is over (~year 2140)`;
 }
 document.getElementById('snip').addEventListener('click',()=>{
   if(!bits.length) return;

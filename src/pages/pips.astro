@@ -60,7 +60,19 @@ const description =
     <p>A BIP-39 word encodes exactly 11 bits, so one draw equals one word, with nothing left over and no bias. <strong>The core teaching point:</strong> the jar isn't a gimmick that approximates a random number generator. It <em>is</em> one, and one whose fairness a child can verify just by looking at it, unlike a chip you can't inspect.</p>
 
     <h3>2 · Print your own set</h3>
-    <p>Sets aren't sold anywhere yet, but you don't need one to be: every pip is 3D-printable. Download the ready-sliced project file and print all 1,024 two-sided tablets yourself:</p>
+    <p>Sets aren't sold anywhere yet, but a set is easy to make. There are two ways, depending on the tools you have.</p>
+
+    <h4>Option 1: paper and scissors</h4>
+    <p>No 3D printer needed. Print the wordlist on ordinary paper, cut it into slips, and the bowl works exactly the same way:</p>
+    <p><a href="/files/piggy-pips-2048-words.pdf" download><strong>Download the printable wordlist (PDF)</strong></a> <span class="mono">(8 pages, all 2,048 words in a cutting grid)</span></p>
+    <ul>
+      <li><strong>Cut along the grid lines</strong> into 2,048 slips. Keep them the same size: identical look and feel is what keeps the draw fair. A paper guillotine makes far lighter work of it than scissors.</li>
+      <li><strong>Fold each slip once</strong>, word inside. Unlike a tablet, a flat slip shows its word, so the fold is what lets you draw without looking. Thicker paper stops the ink showing through.</li>
+      <li><strong>Each slip is a straight 1-of-2,048 pick</strong>: the same 11 bits per draw as a tablet, with no face to toss. Unfold, write the word down, refold, and return it to the bowl.</li>
+    </ul>
+
+    <h4>Option 2: 3D print the tablets</h4>
+    <p>Download the ready-sliced project file and print all 1,024 two-sided tablets yourself:</p>
     <p><a href="/files/piggy-pips-2048-words.3mf" download><strong>Download piggy-pips-2048-words.3mf</strong></a> <span class="mono">(35&nbsp;MB, 4 build plates, 1,024 tablets)</span></p>
     <ul>
       <li><strong>Material: PLA.</strong> It's stiff, cheap, easy to print, and these small flat parts won't warp. A matte finish makes the lettering easier to read.</li>
@@ -69,7 +81,7 @@ const description =
       <li><strong>Two colours, no multi-material printer required.</strong> Each 3&nbsp;mm tablet is a light body with a thin dark core, and the engraved lettering cuts into that core so the letters read dark on both faces. The colour swaps sit at fixed heights (0.68&nbsp;mm and 2.6&nbsp;mm), so an AMS or dual extruder handles it automatically, and a single-extruder printer manages fine with a filament-change pause at those two layers. Any two contrasting colours work.</li>
       <li><strong>Print all four plates.</strong> A partial set is unusable for real generation: with tablets missing, some words can never be drawn. Keep the plates together until the whole set is done.</li>
     </ul>
-    <p>Once printed, run the verification in the next section before the set generates anything.</p>
+    <p>Whichever way you make it, run the verification in the next section before the set generates anything.</p>
     <p>Piggy Pips is built on the <strong>Entropia</strong> concept by the <a href="https://seedsigner.com" target="_blank" rel="noopener noreferrer">SeedSigner</a> project.</p>
 
     <h3>3 · Before first use: verify the set</h3>
@@ -416,6 +428,7 @@ table{border-collapse:separate;border-spacing:0;margin:18px 0;border:1px solid v
 /* page-scoped base (site global.css handles body/html) */
 .pips{font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--ink);line-height:1.65;font-size:1.02rem}
 .pips h1,.pips h2,.pips h3{font-weight:700;line-height:1.2}
+.pips h4{font-size:1rem;font-weight:700;color:var(--ink);margin:22px 0 6px;line-height:1.2}
 /* in-page subnav under the sticky site header (h-16 = 64px) */
 .pips .subnav{position:sticky;top:64px;background:rgba(255,255,255,.95);backdrop-filter:blur(6px);border-bottom:1px solid var(--gray-100);z-index:40}
 .pips .subnav .wrap{display:flex;gap:2px;overflow-x:auto;padding:8px 24px}

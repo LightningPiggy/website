@@ -22,7 +22,7 @@ const description =
         <div class="tap disp" id="tapLabel">tap the bowl to draw a pip!</div>
       </div>
       <div class="pad" aria-hidden="true"></div>
-      <div class="pipfly" id="pipFly" role="button" tabindex="-1" aria-label="Flip the pip to see the other face">
+      <div class="pipfly" id="pipFly" role="button" tabindex="0" aria-label="Flip the pip to see the other face">
         <div class="pipcard"><div class="pipinner" id="pipInner">
           <div class="face front"><span class="str" id="frontStr">····</span><span class="facetag" id="frontTag"></span></div>
           <div class="face back"><span class="str" id="backStr">····</span><span class="facetag" id="backTag"></span></div>
@@ -86,7 +86,7 @@ const description =
     <p><strong>Do this once, for every set, before any seed is generated from it.</strong> A printing error that duplicates a word, drops one, or misprints a letter silently weakens every seed drawn afterwards — and nothing about the draw will look wrong.</p>
     <ol>
       <li>Lay the tablets out in alphabetised order.</li>
-      <li>Open the official wordlist: <a class="mono" href="https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt">github.com/bitcoin/bips/blob/master/bip-0039/english.txt</a></li>
+      <li>Open the official wordlist: <a class="mono" href="https://github.com/bitcoin/bips/blob/master/bip-0039/english.txt" target="_blank" rel="noopener noreferrer">github.com/bitcoin/bips/blob/master/bip-0039/english.txt</a></li>
       <li>Check all 2,048 strings are present and none appears twice.</li>
       <li>Confirm every string is legible on both faces.</li>
     </ol>
@@ -140,8 +140,8 @@ const description =
     <p><em>For curious kids (and grown-ups who forgot how wild this all is).</em></p>
 
     <div class="fact">
-      <h3>You're choosing from a bigger number than the universe has atoms</h3>
-      <p>When you draw your pips, you're picking one secret out of a number with <strong>77 zeros</strong>. The whole observable universe only has about that many atoms. Your seed is rarer than picking one exact atom out of everything that exists — and you made it with a bowl of little tablets!</p>
+      <h3>You're choosing from a number as big as the atoms in the universe</h3>
+      <p>When you draw your pips, you're picking one secret out of a number with <strong>77 zeros</strong>. That's about how many atoms there are in the whole observable universe. Picking your seed is like picking one exact atom out of everything that exists — and you made it with a bowl of little tablets!</p>
       <div class="universe" id="universe"><div class="seeddot"></div><div class="seedlabel disp">your seed</div></div>
     </div>
 
@@ -226,7 +226,7 @@ const description =
         <div class="col"><span class="v">328k</span><div class="bar" data-h="7"></div>Era 6</div>
         <div class="col"><span class="v">…</span><div class="bar" data-h="4"></div>→ 2140</div>
       </div>
-      <p class="figcap">In the first four years, half of all bitcoin ever was mined. Our whole current era adds barely half of one percent.</p>
+      <p class="figcap">In the first four years, half of all bitcoin ever was mined. Our whole current era adds just over three percent.</p>
     </div>
 
     <div class="fact">
@@ -322,7 +322,7 @@ const description =
       <div class="wrap narrow">
         <p style="text-align:center;color:var(--gray-mid);font-size:.9rem">
           Piggy Pips is built on the <strong>Entropia</strong> concept by the
-          <a href="https://seedsigner.com" class="text-pink hover:underline">SeedSigner</a> project.
+          <a href="https://seedsigner.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">SeedSigner</a> project.
           A share of every set sold goes back to SeedSigner.
         </p>
       </div>
@@ -463,7 +463,7 @@ table{border-collapse:separate;border-spacing:0;margin:18px 0;border:1px solid v
 .pips .subnav .wrap{display:flex;gap:2px;overflow-x:auto;padding:8px 24px}
 .pips .subnav a{font-weight:500;font-size:.875rem;color:var(--gray);text-decoration:none;padding:8px 12px;border-radius:8px;white-space:nowrap}
 .pips .subnav a:hover{color:var(--ink);background:var(--gray-100)}
-.pips section{scroll-margin-top:8.5rem}
+#main-content .pips section{scroll-margin-top:8.5rem}
 .pips .attribution-note{padding:32px 0}
 
 </style>
@@ -521,6 +521,7 @@ function flip(){
 bowl.addEventListener('click', draw);
 bowl.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();draw();} });
 pipFly.addEventListener('click', flip);
+pipFly.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){e.preventDefault();flip();} });
 
 // ---------- universe stars ----------
 const uni = document.getElementById('universe');

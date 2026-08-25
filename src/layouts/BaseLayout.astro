@@ -145,6 +145,11 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
         return text.toLowerCase().trim()
           .replace(/[^a-z0-9\s-]/g, '')
           .replace(/[\s_]+/g, '-')
+          // Collapse runs of hyphens. A heading like "p1 - ZapBox!" has a
+          // literal hyphen between two spaces, and without this each of those
+          // becomes its own hyphen - giving #p1---zapbox instead of the
+          // #p1-zapbox anyone would actually type or link to.
+          .replace(/-{2,}/g, '-')
           .replace(/^-+|-+$/g, '');
       }
 
@@ -168,15 +173,94 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
       // Ids are assigned at runtime, after the browser's own initial hash-scroll
       // attempt. Re-run the scroll now and again on full load, once images have
       // settled the layout (a scroll fired mid-load can otherwise land short).
+      function hashTarget() {
+        if (location.hash.length <= 1) return null;
+        return document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      }
+
+      // Where the target should sit once scrolled to: its own position, less
+      // whatever scroll-margin-top it carries to clear the sticky header.
+      function hashScrollTop(target) {
+        const offset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+        return Math.max(0, target.getBoundingClientRect().top + window.scrollY - offset);
+      }
+
       function scrollToHash() {
-        if (location.hash.length <= 1) return;
-        const target = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-        if (target) target.scrollIntoView();
+        const target = hashTarget();
+        if (!target) return;
+        // Compute the position and scroll to it rather than calling
+        // scrollIntoView: it makes the offset explicit (and testable), and
+        // avoids relying on scrollIntoView honouring scroll-margin. Jump
+        // rather than animate - the page sets scroll-behavior:smooth for
+        // in-page links, but an animated scroll fired during load competes
+        // with content settling the layout and can land short or be cancelled.
+        window.scrollTo({ top: hashScrollTop(target), behavior: 'instant' });
+      }
+
+      // Some pages finish rendering well after load: the market grids, for
+      // instance, refetch from Nostr relays and replace their contents, which
+      // changes the page height underneath us. A hash scroll that already ran
+      // is then pointing at the wrong offset - /market/#vendors was landing
+      // ~600px short. Re-assert the target while things settle, but stop the
+      // moment the visitor takes over, so we never yank the page from under
+      // them.
+      function keepHashInView(waitForSettle) {
+        if (!hashTarget()) return;
+        let cancelled = false;
+        const cancel = () => { cancelled = true; };
+        // These go on now, which is *after* the tap or click that produced a
+        // hash change has already fired - so the visitor's own navigation
+        // gesture doesn't instantly cancel the hold it just asked for.
+        ['wheel', 'touchstart', 'keydown'].forEach((evt) =>
+          window.addEventListener(evt, cancel, { passive: true, once: true }));
+
+        function watch() {
+          const deadline = Date.now() + 4000;
+          let expected = Math.round(window.scrollY);
+          (function tick() {
+            if (cancelled || Date.now() > deadline) return;
+            // A scroll position we didn't set means the visitor moved: back off.
+            if (Math.abs(Math.round(window.scrollY) - expected) > 2) return;
+            const target = hashTarget();
+            if (target) {
+              const offset = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+              if (Math.abs(target.getBoundingClientRect().top - offset) > 2) {
+                window.scrollTo({ top: hashScrollTop(target), behavior: 'instant' });
+              }
+            }
+            expected = Math.round(window.scrollY);
+            setTimeout(tick, 250);
+          })();
+        }
+
+        if (!waitForSettle) { watch(); return; }
+
+        // An in-page anchor scrolls smoothly (the page sets
+        // scroll-behavior:smooth), so wait for that animation to stop before
+        // watching - mid-animation every frame looks like the visitor moving
+        // the page and would cancel the hold immediately.
+        const settleBy = Date.now() + 2000;
+        let last = Math.round(window.scrollY);
+        let stillFor = 0;
+        (function settle() {
+          if (cancelled) return;
+          const now = Math.round(window.scrollY);
+          stillFor = now === last ? stillFor + 1 : 0;
+          last = now;
+          if (stillFor >= 3 || Date.now() > settleBy) { watch(); return; }
+          setTimeout(settle, 50);
+        })();
       }
 
       addHeadingAnchors();
       scrollToHash();
-      window.addEventListener('load', scrollToHash);
+      window.addEventListener('load', function () { scrollToHash(); keepHashInView(); });
+      // In-page anchors - the nav dropdowns and the mobile menu - change the
+      // hash without reloading, so the load handler above never sees them.
+      // Let the browser run its own smooth scroll, then confirm it actually
+      // landed: on pages whose content renders late (the market grids) the
+      // target can shift out from under it after the scroll finishes.
+      window.addEventListener('hashchange', function () { keepHashInView(true); });
     </script>
   </body>
 </html>

@@ -239,6 +239,86 @@ const helpResources = [
         </div>
       </div>
 
+      <!-- Under the Hood section -->
+      <div id="under-the-hood" class="mt-16 scroll-mt-20">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Under the Hood</h2>
+        <p class="text-gray-600 mb-6">How a Lightning Piggy actually works, and where to read the code.</p>
+
+        <div class="space-y-4 text-lg text-gray-600 leading-relaxed mb-8">
+          <p>
+            A Lightning Piggy is a small WiFi-connected device that watches a Lightning wallet and shows
+            what is in it. The piggy itself doesn't hold your bitcoin - the wallet does. You point it at a
+            wallet you control, either over
+            <a href="https://nwc.dev/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-semibold">Nostr Wallet Connect</a>
+            or an
+            <a href="https://lnbits.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-semibold">LNbits</a>
+            instance, and the device displays its balance and incoming payments. Sats arrive over the
+            Lightning Network through a Lightning Address or a scannable QR code, so friends and family can
+            zap the piggy without ever handling the device.
+          </p>
+          <p>
+            There are two firmware families, one per hardware generation.
+            <a href="/build/classic" class="text-pink hover:underline font-semibold">Classic</a>
+            is written in C on the Arduino toolchain for LILYGO T5 boards, driving a low-power e-paper
+            display that keeps showing the balance even between refreshes.
+            <a href="/build/p1" class="text-pink hover:underline font-semibold">p1</a>
+            is a Python app running on
+            <a href="https://micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-semibold">MicroPythonOS</a>,
+            on a WaveShare ESP32-S3 board with a colour touchscreen and an onboard camera for scanning
+            setup codes. Both are fully open source.
+          </p>
+        </div>
+
+        <div class="grid gap-6">
+          <a
+            href="https://deepwiki.com/LightningPiggy/lightning-piggy"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+          >
+            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                Classic firmware architecture
+              </h3>
+              <p class="text-gray-600 mt-1">Walk through the Arduino/C codebase behind Lightning Piggy Classic - how it talks to your wallet, drives the e-paper display and manages power.</p>
+            </div>
+            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+          <a
+            href="https://deepwiki.com/LightningPiggy/LightningPiggyApp"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
+          >
+            <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
+            </div>
+            <div class="flex-1">
+              <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
+                p1 app architecture
+              </h3>
+              <p class="text-gray-600 mt-1">Explore the MicroPythonOS app powering Lightning Piggy p1 - its screens, wallet connection and how it runs alongside other apps on the OS.</p>
+            </div>
+            <svg class="w-6 h-6 text-gray-400 group-hover:text-pink transition-colors flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+            </svg>
+          </a>
+        </div>
+
+        <p class="mt-4 text-sm text-gray-500">
+          These architecture walkthroughs are generated from our repositories by
+          <a href="https://deepwiki.com/" target="_blank" rel="noopener noreferrer" class="hover:underline font-medium">DeepWiki</a>,
+          an independent service. They're a handy way in, but the
+          <a href="https://github.com/LightningPiggy" target="_blank" rel="noopener noreferrer" class="hover:underline font-medium">source code on GitHub</a>
+          is always the final word.
+        </p>
+      </div>
+
       <!-- Help section -->
       <div id="help" class="mt-16 scroll-mt-20">
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Help</h2>

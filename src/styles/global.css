@@ -101,8 +101,13 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0.75rem;
 }
 
-/* Offset anchored section headings so they land below the sticky header
-   instead of being hidden underneath it when arriving via /page/#heading. */
+/* Offset anchor targets so they land below the sticky header instead of being
+   hidden underneath it when arriving via /page/#some-id.
+   Covers any element carrying an id, not just headings: the nav's dropdown
+   links point at hand-authored section ids (/build#guides, /market#products,
+   /news#in-the-news, ...) which sit on a div or section, and those were
+   landing squarely behind the header. */
+#main-content [id],
 #main-content :is(h1, h2, h3, h4) {
   scroll-margin-top: 5.5rem;
 }

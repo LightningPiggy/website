@@ -65,10 +65,10 @@
     },
     {
       "name": "Marina",
-      "url": "https://twitter.com/LadyM_BTC",
+      "url": "https://njump.me/npub1xm98jvgm3z0s7natxt4cf8fq6p70m0zwq5vnry3xc79z0363wghq02vjq9",
       "avatar": "/images/profiles/marina-136c39c9.jpg",
       "isBitcoinKid": false,
-      "nostrUrl": "",
+      "nostrUrl": "https://njump.me/npub1xm98jvgm3z0s7natxt4cf8fq6p70m0zwq5vnry3xc79z0363wghq02vjq9",
       "xUrl": "https://twitter.com/LadyM_BTC",
       "githubUrl": "",
       "contribution": "",
@@ -76,10 +76,10 @@
     },
     {
       "name": "Jurjen de Vries",
-      "url": "https://twitter.com/jurjendevries",
+      "url": "https://njump.me/npub1l77twp5l02jadkcjn6eeulv2j7y5vmf9tf3hhtq7h7rp0vzhgpzqz0swft",
       "avatar": "/images/profiles/jurjen-de-vries-f076ca6f.jpg",
       "isBitcoinKid": false,
-      "nostrUrl": "",
+      "nostrUrl": "https://njump.me/npub1l77twp5l02jadkcjn6eeulv2j7y5vmf9tf3hhtq7h7rp0vzhgpzqz0swft",
       "xUrl": "https://twitter.com/jurjendevries",
       "githubUrl": "",
       "contribution": "",
@@ -185,17 +185,6 @@
       "kind": "person"
     },
     {
-      "name": "Zobroj",
-      "url": "https://njump.me/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a",
-      "avatar": "",
-      "isBitcoinKid": false,
-      "nostrUrl": "https://njump.me/npub1dlhf5h6mgzs3lc7n3e8zenrzaj4kukm05ujwf0gzdgkvy5g6s52stupj4a",
-      "xUrl": "",
-      "githubUrl": "",
-      "contribution": "",
-      "kind": "person"
-    },
-    {
       "name": "Valentina Picozzi",
       "url": "https://www.satoshigallery.com/",
       "avatar": "/images/profiles/valentina-picozzi-ce033b0a.jpg",
@@ -208,7 +197,7 @@
     },
     {
       "name": "Adopting Bitcoin",
-      "url": "https://www.adoptingbitcoin.org",
+      "url": "https://adoptingbitcoin.org/",
       "avatar": "/images/profiles/adopting-bitcoin-bf1e679c.jpg",
       "isBitcoinKid": false,
       "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
@@ -218,12 +207,12 @@
       "kind": "organisation"
     },
     {
-      "name": "Learning Bitcoin 2024",
+      "name": "Learning Bitcoin",
       "url": "https://www.learningbitcoin.ca/",
-      "avatar": "/images/profiles/learning-bitcoin-2024-091d89c3.jpg",
+      "avatar": "/images/profiles/learning-bitcoin-091d89c3.jpg",
       "isBitcoinKid": false,
       "nostrUrl": "https://njump.me/npub1ku3r3n4hau650a5cjudhtja2pdfsr7yxjzda9lx2py4knr3ld69s7j4wnw",
-      "xUrl": "https://www.learningbitcoin.ca/",
+      "xUrl": "https://x.com/learningbtcfdn",
       "githubUrl": "",
       "contribution": "",
       "kind": "organisation"

@@ -279,12 +279,27 @@ let imgCounter = 0;
         </p>
       </header>
 
+      <div class="flex flex-wrap gap-2 mb-8" role="group" aria-label="Filter cases by device">
+        <button type="button" data-filter="all" aria-pressed="true"
+          class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-900 text-white transition-colors">
+          All cases
+        </button>
+        <button type="button" data-filter="Classic 2.13 inch" aria-pressed="false"
+          class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          Classic 2.13 inch
+        </button>
+        <button type="button" data-filter="MPOS 2 inch" aria-pressed="false"
+          class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          MPOS 2 inch
+        </button>
+      </div>
+
       <div class="space-y-10">
         {cases.map((c) => {
           const startIdx = imgCounter;
           imgCounter += c.images.length;
           return (
-            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-tag={c.tag}>
               {/* Image gallery */}
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
                 {c.images.map((src, i) => {
@@ -410,6 +425,28 @@ let imgCounter = 0;
       </div>
     </div>
   </section>
+<script>
+  const filterButtons = document.querySelectorAll('.case-filter');
+  const caseCards = document.querySelectorAll('[data-tag]');
+  const ACTIVE = ['bg-gray-900', 'text-white'];
+  const INACTIVE = ['bg-gray-100', 'text-gray-600', 'hover:bg-gray-200'];
+
+  filterButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const filter = btn.dataset.filter;
+      filterButtons.forEach((b) => {
+        const on = b === btn;
+        b.setAttribute('aria-pressed', String(on));
+        b.classList.remove(...(on ? INACTIVE : ACTIVE));
+        b.classList.add(...(on ? ACTIVE : INACTIVE));
+      });
+      caseCards.forEach((card) => {
+        card.classList.toggle('hidden', filter !== 'all' && card.dataset.tag !== filter);
+      });
+    });
+  });
+</script>
+
 </BaseLayout>
 
 <style>

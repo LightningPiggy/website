@@ -293,7 +293,7 @@ let imgCounter = 0;
           class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
           Classic 2.13 inch
         </button>
-        <button type="button" data-filter="MPOS 2 inch" aria-pressed="false"
+        <button type="button" data-filter="MPOS 2 inch" aria-pressed="false" data-active="bg-yellow text-gray-900"
           class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
           MPOS 2 inch
         </button>
@@ -433,8 +433,10 @@ let imgCounter = 0;
 <script>
   const filterButtons = document.querySelectorAll('.case-filter');
   const caseCards = document.querySelectorAll('[data-tag]');
-  const ACTIVE = ['bg-gray-900', 'text-white'];
   const INACTIVE = ['bg-gray-100', 'text-gray-600', 'hover:bg-gray-200'];
+  // Each button's active look: the dark default, or its own colours - the
+  // MPOS button goes yellow to match its tag pill.
+  const activeFor = (b) => (b.dataset.active || 'bg-gray-900 text-white').split(' ');
 
   filterButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -442,8 +444,8 @@ let imgCounter = 0;
       filterButtons.forEach((b) => {
         const on = b === btn;
         b.setAttribute('aria-pressed', String(on));
-        b.classList.remove(...(on ? INACTIVE : ACTIVE));
-        b.classList.add(...(on ? ACTIVE : INACTIVE));
+        b.classList.remove(...(on ? INACTIVE : activeFor(b)));
+        b.classList.add(...(on ? activeFor(b) : INACTIVE));
       });
       caseCards.forEach((card) => {
         card.classList.toggle('hidden', filter !== 'all' && card.dataset.tag !== filter);

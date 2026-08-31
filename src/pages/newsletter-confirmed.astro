@@ -1,0 +1,46 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Subscription Confirmed"
+  description="Your Freedom Farm News subscription is confirmed."
+>
+  <section class="py-16 md:py-24">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div id="state-ok">
+        <img src="/images/mascot.png" alt="" class="w-20 h-20 mx-auto mb-6 rounded-2xl" />
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">You're in — welcome to the herd! ⚡️</h1>
+        <p class="text-lg text-gray-600 mb-8">
+          Your subscription to Freedom Farm News is confirmed. You'll be the first to hear about
+          new features, build guides, and project updates — no hogwash, just oinks.
+        </p>
+        <a href="/build" class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-gray-900 transition-colors">Build Your Own</a>
+      </div>
+      <div id="state-expired" class="hidden">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">That link has expired</h1>
+        <p class="text-lg text-gray-600 mb-8">
+          Confirmation links last 48 hours. No harm done — just subscribe again and we'll send a fresh one.
+        </p>
+        <a href="/#newsletter" class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-gray-900 transition-colors">Subscribe again</a>
+      </div>
+      <div id="state-error" class="hidden">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Something went wrong</h1>
+        <p class="text-lg text-gray-600 mb-8">
+          We couldn't confirm your subscription just now. Please try the link again in a minute,
+          or subscribe once more from the homepage.
+        </p>
+        <a href="/" class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-gray-900 transition-colors">Back to the homepage</a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // The confirm function redirects here with ?status=ok|expired|error.
+    const status = new URLSearchParams(location.search).get('status');
+    if (status === 'expired' || status === 'error') {
+      document.getElementById('state-ok')?.classList.add('hidden');
+      document.getElementById('state-' + status)?.classList.remove('hidden');
+    }
+  </script>
+</BaseLayout>

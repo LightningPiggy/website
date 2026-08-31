@@ -105,7 +105,7 @@ const isDark = variant === 'dark';
         const data = await res.json();
 
         if (res.ok) {
-          message.textContent = "You're subscribed! Welcome to the herd.";
+          message.textContent = "Almost there! Check your inbox and click the confirmation link.";
           message.classList.remove('hidden', errorClass);
           message.classList.add(successClass);
           emailInput.value = '';

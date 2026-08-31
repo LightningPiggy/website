@@ -1,11 +1,25 @@
-// Netlify serverless function: adds an email to the Resend newsletter audience,
-// sends a welcome email to the subscriber, and notifies the site owner.
+// Netlify serverless function: first half of the double opt-in newsletter
+// signup. Validates the address (honeypot, fill-time, rate limit, dot-trick),
+// then emails a signed confirmation link. Nothing is added to the audience
+// here - newsletter-confirm does that when the link is clicked, so bots that
+// never open the mailbox never enter the list.
 //
 // Environment variables required in Netlify:
-//   RESEND_API_KEY     — API key from resend.com (shared with webhook functions)
-//   RESEND_AUDIENCE_ID — audience ID from the Resend dashboard
+//   RESEND_API_KEY            — API key from resend.com (shared with webhook functions)
+//   NEWSLETTER_CONFIRM_SECRET — HMAC secret shared with newsletter-confirm
+
+var crypto = require('crypto');
 
 var ALLOWED_ORIGIN = 'https://lightningpiggy.com';
+
+// Signed confirmation token: base64url(email).timestamp.hmac - verified by
+// newsletter-confirm, which enforces a 48h expiry.
+function makeToken(email, secret) {
+  var e = Buffer.from(email, 'utf8').toString('base64url');
+  var payload = e + '.' + Date.now();
+  var sig = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  return payload + '.' + sig;
+}
 
 function corsHeaders(event) {
   var origin = (event.headers || {}).origin || '';
@@ -103,141 +117,6 @@ function rateLimitHit(ip, maxPerMinute, maxPerHour) {
   return false;
 }
 
-// Send welcome email to new subscriber
-async function sendWelcomeEmail(apiKey, subscriberEmail) {
-  var html = [
-    '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
-    '<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f5f5f5;"><tr><td align="center" style="padding:24px 16px;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" width="560" style="max-width:560px;width:100%;">',
-    '  <tr><td align="center" style="padding:0 0 24px 0;">',
-    '    <a href="https://lightningpiggy.com" style="text-decoration:none;"><img src="https://lightningpiggy.com/images/email/lightningpiggy-logo.png" alt="Lightning Piggy" width="200" style="display:block;width:200px;max-width:200px;height:auto;"></a>',
-    '  </td></tr>',
-    '  <tr><td>',
-    '    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#ffffff;border-radius:16px;overflow:hidden;">',
-    '      <tr><td style="background-color:#EC008C;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>',
-    '      <tr><td style="padding:40px 40px 24px 40px;">',
-    '        <h1 style="margin:0;font-size:28px;font-weight:700;line-height:34px;color:#111827;">Welcome to the Freedom Farm News! ⚡️🐽</h1>',
-    '      </td></tr>',
-    '      <tr><td style="padding:0 40px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td style="border-bottom:1px solid #f0f0f0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>',
-    '      <tr><td style="padding:24px 40px 32px 40px;font-size:16px;line-height:26px;color:#525252;">',
-    '        <p style="margin:0 0 16px 0;">Thanks for subscribing to Freedom Farm News.</p>',
-    '        <p style="margin:0 0 16px 0;">You\'ll be the first to hear about new features, build guides, and project updates — no hogwash, just oinks.</p>',
-    '        <p style="margin:0;">Ready to get started?</p>',
-    '      </td></tr>',
-    '      <tr><td style="padding:0 40px 40px 40px;" align="center">',
-    '        <table role="presentation" cellpadding="0" cellspacing="0"><tr>',
-    '          <td style="background-color:#EC008C;border-radius:50px;">',
-    '            <a href="https://lightningpiggy.com/build" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:50px;">Build Your Own</a>',
-    '          </td>',
-    '        </tr></table>',
-    '      </td></tr>',
-    '    </table>',
-    '  </td></tr>',
-    '  <tr><td style="height:24px;font-size:0;line-height:0;">&nbsp;</td></tr>',
-    '  <tr><td>',
-    '    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#111827;border-radius:16px;overflow:hidden;">',
-    '      <tr><td style="padding:32px 40px;">',
-    '        <table role="presentation" cellpadding="0" cellspacing="0" width="100%">',
-    '          <tr><td align="center" style="padding-bottom:16px;"><img src="https://lightningpiggy.com/images/mascot.png" alt="Lightning Piggy" width="40" height="40" style="display:block;width:40px;height:40px;border-radius:8px;"></td></tr>',
-    '          <tr><td align="center" style="padding-bottom:20px;font-size:13px;line-height:20px;color:#9ca3af;">Bitcoin savings for the next generation.</td></tr>',
-    '        </table>',
-    '        <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:0 auto;"><tr>',
-    '          <td style="padding:0 8px;"><a href="https://primal.net/lightningpiggy"><img src="https://lightningpiggy.com/images/email/icon-nostr.png" alt="Nostr" width="24" height="24" style="display:block;width:24px;height:24px;"></a></td>',
-    '          <td style="padding:0 8px;"><a href="https://x.com/lightningpiggy"><img src="https://lightningpiggy.com/images/email/icon-x.png" alt="X" width="24" height="24" style="display:block;width:24px;height:24px;"></a></td>',
-    '          <td style="padding:0 8px;"><a href="https://t.me/LightningPiggy"><img src="https://lightningpiggy.com/images/email/icon-telegram.png" alt="Telegram" width="24" height="24" style="display:block;width:24px;height:24px;"></a></td>',
-    '          <td style="padding:0 8px;"><a href="https://github.com/LightningPiggy"><img src="https://lightningpiggy.com/images/email/icon-github.png" alt="GitHub" width="24" height="24" style="display:block;width:24px;height:24px;"></a></td>',
-    '        </tr></table>',
-    '        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:20px;">',
-    '          <tr><td style="border-bottom:1px solid #1f2937;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>',
-    '        </table>',
-    '        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;">',
-    '          <tr><td align="center" style="font-size:11px;line-height:18px;color:#4b5563;">&copy; 2026 Lightning Piggy Foundation. Open source, built with love.</td></tr>',
-    '        </table>',
-    '      </td></tr>',
-    '    </table>',
-    '  </td></tr>',
-    '</table>',
-    '</td></tr></table>',
-    '</body></html>'
-  ].join('\n');
-
-  try {
-    var res = await fetchWithRetry('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        reply_to: 'oink@lightningpiggy.com',
-        to: [subscriberEmail],
-        subject: 'Welcome to Freedom Farm News!',
-        html: html
-      })
-    });
-    if (!res.ok) {
-      var text = await res.text();
-      console.error('Welcome email error:', res.status, text);
-    }
-  } catch (err) {
-    console.error('Failed to send welcome email:', err.message);
-  }
-}
-
-// Notify site owner of new subscriber
-async function sendOwnerNotification(apiKey, subscriberEmail) {
-  var html = [
-    '<!DOCTYPE html><html><head><meta charset="utf-8"></head>',
-    '<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f5f5f5;"><tr><td align="center" style="padding:24px 16px;">',
-    '<table role="presentation" cellpadding="0" cellspacing="0" width="560" style="max-width:560px;width:100%;">',
-    '  <tr><td align="center" style="padding:0 0 24px 0;">',
-    '    <img src="https://lightningpiggy.com/images/email/lightningpiggy-logo.png" alt="Lightning Piggy" width="200" style="display:block;width:200px;max-width:200px;height:auto;">',
-    '  </td></tr>',
-    '  <tr><td>',
-    '    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#ffffff;border-radius:16px;overflow:hidden;">',
-    '      <tr><td style="background-color:#FFDB00;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>',
-    '      <tr><td style="padding:40px 40px 24px 40px;">',
-    '        <h1 style="margin:0;font-size:24px;font-weight:700;color:#111827;">New Newsletter Subscriber</h1>',
-    '      </td></tr>',
-    '      <tr><td style="padding:0 40px;"><table role="presentation" cellpadding="0" cellspacing="0" width="100%"><tr><td style="border-bottom:1px solid #f0f0f0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr></table></td></tr>',
-    '      <tr><td style="padding:24px 40px 40px 40px;font-size:16px;line-height:26px;color:#525252;">',
-    '        <p style="margin:0 0 8px 0;font-size:14px;color:#9ca3af;">Email address:</p>',
-    '        <p style="margin:0;font-size:18px;font-weight:600;color:#EC008C;">' + escapeHtml(subscriberEmail) + '</p>',
-    '      </td></tr>',
-    '    </table>',
-    '  </td></tr>',
-    '</table>',
-    '</td></tr></table>',
-    '</body></html>'
-  ].join('\n');
-
-  try {
-    var res = await fetchWithRetry('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey
-      },
-      body: JSON.stringify({
-        from: FROM_EMAIL,
-        reply_to: 'oink@lightningpiggy.com',
-        to: [NOTIFICATION_EMAIL],
-        subject: 'New subscriber: ' + subscriberEmail,
-        html: html
-      })
-    });
-    if (!res.ok) {
-      var text = await res.text();
-      console.error('Owner notification error:', res.status, text);
-    }
-  } catch (err) {
-    console.error('Failed to send owner notification:', err.message);
-  }
-}
-
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') {
     return { statusCode: 204, headers: corsHeaders(event), body: '' };
@@ -248,10 +127,10 @@ exports.handler = async function (event) {
   }
 
   var apiKey = process.env.RESEND_API_KEY;
-  var audienceId = process.env.RESEND_AUDIENCE_ID || process.env.RESEND_NEWSLETTER_SEGMENT_ID;
+  var confirmSecret = process.env.NEWSLETTER_CONFIRM_SECRET;
 
-  if (!apiKey || !audienceId) {
-    console.error('RESEND_API_KEY or RESEND_AUDIENCE_ID environment variable is not set');
+  if (!apiKey || !confirmSecret) {
+    console.error('RESEND_API_KEY or NEWSLETTER_CONFIRM_SECRET environment variable is not set');
     return { statusCode: 500, headers: corsHeaders(event), body: JSON.stringify({ error: 'Server configuration error' }) };
   }
 
@@ -307,50 +186,71 @@ exports.handler = async function (event) {
   // Layer 5: Canonicalize — dedupes Gmail dot-trick variants in the audience.
   var canonical = canonicalEmail(email);
 
-  // Add contact to Resend audience
+  // Send the confirmation email. The contact is only added to the audience
+  // when the link inside it is clicked (newsletter-confirm).
+  var token = makeToken(canonical, confirmSecret);
+  var confirmUrl = ALLOWED_ORIGIN + '/.netlify/functions/newsletter-confirm?token=' + encodeURIComponent(token);
+
+  var html = [
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
+    '<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">',
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f5f5f5;"><tr><td align="center" style="padding:24px 16px;">',
+    '<table role="presentation" cellpadding="0" cellspacing="0" width="560" style="max-width:560px;width:100%;">',
+    '  <tr><td align="center" style="padding:0 0 24px 0;">',
+    '    <a href="https://lightningpiggy.com" style="text-decoration:none;"><img src="https://lightningpiggy.com/images/email/lightningpiggy-logo.png" alt="Lightning Piggy" width="200" style="display:block;width:200px;max-width:200px;height:auto;"></a>',
+    '  </td></tr>',
+    '  <tr><td>',
+    '    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#ffffff;border-radius:16px;overflow:hidden;">',
+    '      <tr><td style="background-color:#EC008C;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>',
+    '      <tr><td style="padding:40px 40px 24px 40px;">',
+    '        <h1 style="margin:0;font-size:28px;font-weight:700;line-height:34px;color:#111827;">One more oink to go 🐽</h1>',
+    '      </td></tr>',
+    '      <tr><td style="padding:0 40px 8px 40px;font-size:16px;line-height:26px;color:#525252;">',
+    '        <p style="margin:0 0 16px 0;">Someone - hopefully you - asked to subscribe this address to <strong>Freedom Farm News</strong>, the Lightning Piggy newsletter.</p>',
+    '        <p style="margin:0 0 16px 0;">Confirm below and you\'re in. If this wasn\'t you, just ignore this email - the address won\'t be subscribed and you won\'t hear from us again.</p>',
+    '      </td></tr>',
+    '      <tr><td style="padding:8px 40px 40px 40px;" align="center">',
+    '        <table role="presentation" cellpadding="0" cellspacing="0"><tr>',
+    '          <td style="background-color:#EC008C;border-radius:50px;">',
+    '            <a href="' + confirmUrl + '" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:50px;">Confirm my subscription</a>',
+    '          </td>',
+    '        </tr></table>',
+    '        <p style="margin:16px 0 0 0;font-size:12px;line-height:18px;color:#9ca3af;">This link works for 48 hours.</p>',
+    '      </td></tr>',
+    '    </table>',
+    '  </td></tr>',
+    '</table>',
+    '</td></tr></table>',
+    '</body></html>'
+  ].join('\n');
+
   try {
-    var res = await fetch('https://api.resend.com/audiences/' + audienceId + '/contacts', {
+    var res = await fetchWithRetry('https://api.resend.com/emails', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + apiKey,
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
       body: JSON.stringify({
-        email: canonical,
-        unsubscribed: false
+        from: FROM_EMAIL,
+        to: [canonical],
+        subject: 'Confirm your Freedom Farm News subscription',
+        html: html
       })
     });
 
     if (res.ok) {
-      // Send emails sequentially with a gap to stay under 2 req/s rate limit.
-      // Each function has its own retry with exponential backoff on 429.
-      await sendWelcomeEmail(apiKey, canonical);
-      await sleep(600);
-      await sendOwnerNotification(apiKey, canonical);
-
-      return {
-        statusCode: 200,
-        headers: corsHeaders(event),
-        body: JSON.stringify({ success: true })
-      };
+      return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true, confirm: true }) };
     }
 
-    // Handle specific Resend error codes
     var status = res.status;
     var errBody;
     try { errBody = await res.json(); } catch (e) { errBody = {}; }
-
     if (status === 429) {
       return { statusCode: 429, headers: corsHeaders(event), body: JSON.stringify({ error: 'Too many requests. Please try again in a moment.' }) };
     }
-
     if (status === 422) {
       return { statusCode: 422, headers: corsHeaders(event), body: JSON.stringify({ error: 'Invalid email address.' }) };
     }
-
     console.error('Resend API error:', status, JSON.stringify(errBody));
     return { statusCode: 502, headers: corsHeaders(event), body: JSON.stringify({ error: 'Subscription failed. Please try again.' }) };
-
   } catch (err) {
     console.error('Resend API fetch error:', err.message);
     return { statusCode: 502, headers: corsHeaders(event), body: JSON.stringify({ error: 'Subscription failed. Please try again.' }) };

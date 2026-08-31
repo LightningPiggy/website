@@ -3,7 +3,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
 const cases = [
   {
-    name: 'p1 - Genesis Piggy',
+    name: 'Genesis Piggy',
+    anchor: 'p1-genesis-piggy',
     tag: 'MPOS 2 inch',
     description: "Genesis Piggy is back with a fresh redesign, purpose-built for the Waveshare 2-inch touch LCD board. Same classic proportions, but with some key upgrades: a fully rotating head that can be positioned at any angle, a cleaner look with the cable routed behind the scenes, and easy button access from the piggy's rear.",
     images: [
@@ -33,7 +34,8 @@ const cases = [
     ],
   },
   {
-    name: 'p1 - ZapBox!',
+    name: 'ZapBox!',
+    anchor: 'p1-zapbox',
     tag: 'MPOS 2 inch',
     description: "The 'ZapBox!' pocket-size edition is engineered to be ultra-compact. Made from a single part and held together with four screws, it's perfect for travel. In fact, the team carries these very piggies on the road - an entire sounder of them fits neatly into a single backpack for workshops.",
     images: [
@@ -63,7 +65,8 @@ const cases = [
     ],
   },
   {
-    name: 'p1 - ZapStand',
+    name: 'ZapStand',
+    anchor: 'p1-zapstand',
     tag: 'MPOS 2 inch',
     description: "The 'ZapStand' desk edition sits at a comfortable viewing angle on your desk or counter, keeping the screen easy to see and easy to tap. Its party trick is the swappable badge: printed inserts drop into a pocket on the front and can be changed in seconds - print your name, your favorite project's logo, or whatever you fancy, and show it off alongside your Piggy.",
     images: [
@@ -115,7 +118,8 @@ const cases = [
     ],
   },
   {
-    name: 'Classic - Genesis Piggy',
+    name: 'Genesis Piggy',
+    anchor: 'classic-genesis-piggy',
     tag: 'Classic 2.13 inch',
     description: "BlackCoffee's original cardboard pig has been reimagined in filament and can now be printed as easily, and cheaply, as fiat money. This is a draft design so expect some tweaks and please do share any ideas you may have to improve it.",
     images: [
@@ -139,7 +143,8 @@ const cases = [
     ],
   },
   {
-    name: 'Classic - ZapBox!',
+    name: 'ZapBox!',
+    anchor: 'classic-zapbox',
     tag: 'Classic 2.13 inch',
     description: "The \"ZapBox!\" edition has been created to be as compact as possible, while maintaining easy access to the charging port and buttons. It's constructed from two parts, the main case and lid. No screws are necessary, everything fits together nice and snug, like a pig in a blanket.",
     images: [
@@ -330,7 +335,7 @@ let imgCounter = 0;
               {/* Content */}
               <div class="p-6">
                 <div class="flex items-center gap-3 mb-3">
-                  <h2 class="text-xl font-bold text-gray-900">{c.name}</h2>
+                  <h2 id={c.anchor} class="text-xl font-bold text-gray-900">{c.name}</h2>
                   <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.tag === 'MPOS 2 inch' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
                     {c.tag}
                   </span>

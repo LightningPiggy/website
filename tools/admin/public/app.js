@@ -654,6 +654,7 @@ async function loadCredits() {
     const resp = await fetch('/api/credits');
     allCredits = await resp.json();
     renderCredits(allCredits);
+    renderPartners();
   } catch (err) {
     creditsList.innerHTML = `<p class="error">Failed to load credits: ${err.message}</p>`;
   }
@@ -1026,6 +1027,95 @@ document.getElementById('copy-x-pic-btn').addEventListener('click', async () => 
     document.execCommand('copy');
   }
 });
+
+// --- Community & Partners ---
+// A filtered view over the same credit store: records that are synced to the
+// website's community/partner sections (Donate page + landing-page Friends &
+// Family block). Shares allCredits and the edit modal with the Credits tab.
+const PARTNER_SECTIONS = ['Community Supporters', 'Education Partners', 'Enabling Technologies', 'Appearances', 'In the News'];
+const partnersList = document.getElementById('partners-list');
+const partnersFilter = document.getElementById('partners-filter');
+const partnersSearch = document.getElementById('partners-search');
+const partnersCount = document.getElementById('partners-count');
+
+function partnerSections(c) {
+  return (c.websiteSections || []).filter(sec => PARTNER_SECTIONS.includes(sec));
+}
+function isSyncedPartner(c) {
+  return !!c.showOnWebsite && partnerSections(c).length > 0;
+}
+
+function renderPartnerCard(c) {
+  const pic = c.logoUrl || c.nostrProfilePic || c.xProfilePic;
+  return `
+    <div class="credit-card" data-id="${c.id}">
+      <div class="credit-avatar">
+        ${pic ? `<img src="${pic}" alt="${escapeHtmlAdmin(c.name || '')}" onerror="this.style.display='none'">`
+              : `<span>${escapeHtmlAdmin((c.name || '?')[0].toUpperCase())}</span>`}
+      </div>
+      <div class="credit-info">
+        <div class="credit-name">${escapeHtmlAdmin(c.name || 'Unnamed')}</div>
+        <div class="credit-role">${escapeHtmlAdmin(c.description || c.notes || '')}</div>
+        <div class="credit-links">
+          ${c.nostrNpub ? `<a href="https://njump.me/${encodeURIComponent(c.nostrNpub)}" target="_blank" rel="noopener" title="Nostr" class="social-icon">${ICONS.nostr}</a>` : ''}
+          ${c.xProfileUrl ? `<a href="${escapeHtmlAdmin(c.xProfileUrl)}" target="_blank" rel="noopener" title="X" class="social-icon">${ICONS.x}</a>` : ''}
+          ${c.githubUrl ? `<a href="${escapeHtmlAdmin(c.githubUrl)}" target="_blank" rel="noopener" title="GitHub" class="social-icon">${ICONS.github}</a>` : ''}
+          ${c.websiteUrl ? `<a href="${escapeHtmlAdmin(c.websiteUrl)}" target="_blank" rel="noopener" title="Website" class="social-icon">${ICONS.web}</a>` : ''}
+        </div>
+        <div class="credit-section-tags">
+          ${c.kind === 'organisation' ? '<span class="credit-section-tag kind-org">Organisation</span>' : ''}
+          ${partnerSections(c).map(sec => `<span class="credit-section-tag">${escapeHtmlAdmin(sec)}</span>`).join('')}
+        </div>
+      </div>
+      <div class="credit-actions">
+        <button class="btn-icon edit-partner" title="Edit">✏️</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderPartners() {
+  if (!partnersList) return;
+  const synced = allCredits.filter(isSyncedPartner);
+  const active = partnersFilter.dataset.active || 'all';
+  const q = (partnersSearch.value || '').trim().toLowerCase();
+
+  // Per-section counts on the filter buttons so the split is visible at a glance.
+  partnersFilter.querySelectorAll('.og-filter-btn').forEach(btn => {
+    const f = btn.dataset.filter;
+    const n = f === 'all' ? synced.length : synced.filter(c => partnerSections(c).includes(f)).length;
+    btn.textContent = `${f === 'all' ? 'All' : f} (${n})`;
+  });
+
+  const shown = synced.filter(c =>
+    (active === 'all' || partnerSections(c).includes(active)) &&
+    (!q || (c.name || '').toLowerCase().includes(q) || (c.description || c.notes || '').toLowerCase().includes(q))
+  );
+
+  const hidden = allCredits.filter(c => !c.showOnWebsite && partnerSections(c).length > 0).length;
+  partnersCount.textContent = `${shown.length} of ${synced.length} synced` +
+    (active !== 'all' ? ` · filtered to ${active}` : '') +
+    (hidden ? ` · ${hidden} assigned but hidden from the website (not synced)` : '');
+
+  if (!shown.length) {
+    partnersList.innerHTML = '<p class="empty">Nothing matches. Assign a community or partner section to a credit and turn on "Show on Website" to sync it.</p>';
+    return;
+  }
+  partnersList.innerHTML = `<div class="credits-section-list">${shown.map(renderPartnerCard).join('')}</div>`;
+  partnersList.querySelectorAll('.edit-partner').forEach(btn => {
+    btn.addEventListener('click', () => editCredit(btn.closest('.credit-card').dataset.id));
+  });
+}
+
+partnersFilter?.addEventListener('click', (e) => {
+  const btn = e.target.closest('.og-filter-btn');
+  if (!btn) return;
+  partnersFilter.querySelectorAll('.og-filter-btn').forEach(b => b.classList.toggle('active', b === btn));
+  partnersFilter.dataset.active = btn.dataset.filter;
+  renderPartners();
+});
+partnersSearch?.addEventListener('input', renderPartners);
+document.querySelector('[data-tab="partners"]')?.addEventListener('click', loadCredits);
 
 // --- NIP-05 Management ---
 

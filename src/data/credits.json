@@ -197,24 +197,13 @@
     },
     {
       "name": "Adopting Bitcoin",
-      "url": "https://adoptingbitcoin.org/",
+      "url": "https://www.adoptingbitcoin.org",
       "avatar": "/images/profiles/adopting-bitcoin-bf1e679c.jpg",
       "isBitcoinKid": false,
       "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
       "xUrl": "https://x.com/AdoptingBTC",
       "githubUrl": "",
       "contribution": "With us every step of the way.",
-      "kind": "organisation"
-    },
-    {
-      "name": "Learning Bitcoin",
-      "url": "https://www.learningbitcoin.ca/",
-      "avatar": "/images/profiles/learning-bitcoin-091d89c3.jpg",
-      "isBitcoinKid": false,
-      "nostrUrl": "https://njump.me/npub1ku3r3n4hau650a5cjudhtja2pdfsr7yxjzda9lx2py4knr3ld69s7j4wnw",
-      "xUrl": "https://x.com/learningbtcfdn",
-      "githubUrl": "",
-      "contribution": "",
       "kind": "organisation"
     },
     {
@@ -296,7 +285,7 @@
     },
     {
       "name": "Vitus Zeller",
-      "url": "https://njump.me/npub1vunp55fsh6ytdk2ah54f2z3fms4p5gl5x9d4uslxljlgd35ethjsya6grv",
+      "url": "https://teamsatoshi.com",
       "avatar": "/images/profiles/vitus-zeller-bc815594.jpg",
       "isBitcoinKid": false,
       "nostrUrl": "https://njump.me/npub1vunp55fsh6ytdk2ah54f2z3fms4p5gl5x9d4uslxljlgd35ethjsya6grv",
@@ -306,6 +295,39 @@
       "kind": "person"
     },
     {
+      "name": "Adopting Bitcoin",
+      "url": "https://adoptingbitcoin.org/",
+      "avatar": "/images/profiles/adopting-bitcoin-bf1e679c.jpg",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
+      "xUrl": "https://x.com/AdoptingBTC",
+      "githubUrl": "",
+      "contribution": "With us every step of the way.",
+      "kind": "organisation"
+    },
+    {
+      "name": "Learning Bitcoin",
+      "url": "https://www.learningbitcoin.ca/",
+      "avatar": "/images/profiles/learning-bitcoin-091d89c3.jpg",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1ku3r3n4hau650a5cjudhtja2pdfsr7yxjzda9lx2py4knr3ld69s7j4wnw",
+      "xUrl": "https://x.com/learningbtcfdn",
+      "githubUrl": "",
+      "contribution": "",
+      "kind": "organisation"
+    },
+    {
+      "name": "Bitcoin Atlantis",
+      "url": "https://bitcoinatlantis.com/",
+      "avatar": "/images/profiles/bitcoin-atlantis-971f5ed6.jpg",
+      "isBitcoinKid": false,
+      "nostrUrl": "https://njump.me/npub1h493d0qgwhu95s82zd9sxrt3ckn3ttgvaf04z02neckadxw5fkvqte4cwz",
+      "xUrl": "https://x.com/bitcoinatlantis",
+      "githubUrl": "",
+      "contribution": "Embracing project and providing the perfect family-friendly environment for learning and building.",
+      "kind": "organisation"
+    },
+    {
       "name": "CryptoCloaks",
       "url": "https://www.cryptocloaks.com/",
       "avatar": "/images/profiles/cryptocloaks-ce964392.jpg",
@@ -313,8 +335,8 @@
       "nostrUrl": "https://njump.me/npub1lrjgpa9m2dl6esdah5pq7m005ymwh4glq4aet76q2zlz2f83esfsa2zvrj",
       "xUrl": "https://x.com/CryptoCloaks",
       "githubUrl": "",
-      "contribution": "Home mining and the best bitcoin tools and equipment.",
-      "kind": "person"
+      "contribution": "3D Printed Bitcoin Accessories made in Colorado",
+      "kind": "organisation"
     },
     {
       "name": "Şelale Malkaçoğlu",
@@ -502,7 +524,7 @@
   "appearances": [
     {
       "name": "Adopting Bitcoin",
-      "description": "",
+      "description": "With us every step of the way.",
       "url": "https://adoptingbitcoin.org/",
       "logo": "/images/profiles/adopting-bitcoin-bf1e679c.jpg",
       "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
@@ -565,7 +587,7 @@
     },
     {
       "name": "Bitcoin Atlantis",
-      "description": "",
+      "description": "Embracing project and providing the perfect family-friendly environment for learning and building.",
       "url": "https://bitcoinatlantis.com/",
       "logo": "/images/profiles/bitcoin-atlantis-971f5ed6.jpg",
       "nostrUrl": "https://njump.me/npub1h493d0qgwhu95s82zd9sxrt3ckn3ttgvaf04z02neckadxw5fkvqte4cwz",
@@ -597,6 +619,15 @@
       "logo": "/images/profiles/bitcoin-copenhagen-41b921ea.jpg",
       "nostrUrl": "",
       "xUrl": "https://x.com/BTCCPH",
+      "githubUrl": ""
+    },
+    {
+      "name": "₿TCHEL",
+      "description": "",
+      "url": "https://btchel.com/",
+      "logo": "/images/profiles/tchel-1f4af925.jpg",
+      "nostrUrl": "https://njump.me/npub1w2eget49s60cyeznumcmqczk0xkmhz24ajqgzfyfrugdfl4mz7ns7rpmgp",
+      "xUrl": "https://x.com/btchelevent",
       "githubUrl": ""
     }
   ],

@@ -3,10 +3,10 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// Curated static images kept as a graceful fallback: shown only if the Nostr
-// fetch yields nothing (relay hiccup, or the profile has no image posts yet).
+// Curated gallery: the hand-picked images uploaded through the admin tool
+// (public/images/wild). Newest first, as the admin numbers them in sequence.
 const wildDir = path.join(process.cwd(), 'public/images/wild');
-const fallbackImages = fs.existsSync(wildDir)
+const images = fs.existsSync(wildDir)
   ? fs
       .readdirSync(wildDir)
       .filter((f: string) => /\.(jpe?g|png|webp|gif)$/i.test(f))
@@ -18,26 +18,61 @@ const fallbackImages = fs.existsSync(wildDir)
 
 <BaseLayout
   title="In the Wild"
-  description="Lightning Piggy builds and sightings from around the world - pulled live from Nostr."
+  description="Lightning Piggy builds and sightings from around the world - the curated gallery plus the latest posts from Nostr."
 >
   <section class="py-8 md:py-12">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="mb-8">
         <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">In the Wild</h1>
         <p class="text-lg text-gray-600">
-          Piglets, builds and sightings from around the world — pulled live from the
-          <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-medium">Lightning Piggy Nostr profile</a>.
-          Every image the project posts — including from conferences and meetups — shows up here automatically.
+          The Vogue of piggy banks: showcase your creations here to help inspire other builders.
+          Whether your Lightning Piggy is 3D printed or handmade, every unique build adds to the
+          creativity of the community.
         </p>
       </header>
 
-      <!-- Gallery grid (masonry via CSS columns), filled client-side -->
-      <div id="wild-grid" class="[column-count:2] sm:[column-count:3] lg:[column-count:4] gap-3"></div>
+      <!-- Curated gallery (uniform grid, CSS-only lightbox) -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {images.map((src, i) => (
+          <div class="gallery-item">
+            <input type="checkbox" id={`lightbox-${i}`} class="lightbox-toggle hidden" />
+            <label for={`lightbox-${i}`} class="cursor-pointer block">
+              <img
+                src={src}
+                alt={`LightningPiggy in the wild ${i + 1}`}
+                class="w-full aspect-square object-cover object-center rounded-lg hover:opacity-90 transition-opacity"
+                loading="lazy"
+              />
+            </label>
+            <label for={`lightbox-${i}`} class="lightbox-overlay">
+              <img
+                src={src}
+                alt={`LightningPiggy in the wild ${i + 1}`}
+                class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+              />
+            </label>
+          </div>
+        ))}
+      </div>
+
+      <!-- Live from Nostr -->
+      <div class="mt-16">
+        <hr class="mb-12 border-gray-200" />
+        <h2 id="fresh-from-nostr" class="text-2xl font-bold text-gray-900 mb-3">Fresh from Nostr</h2>
+        <p class="text-gray-600 mb-6">
+          The latest sightings, pulled live from the
+          <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-medium">Lightning Piggy Nostr profile</a>.
+          Every image the project posts, including from conferences and meetups, shows up here automatically.
+        </p>
+
+        <!-- Masonry grid (CSS columns), filled client-side -->
+        <div id="wild-grid" class="[column-count:2] sm:[column-count:3] lg:[column-count:4] gap-3"></div>
 
       <!-- Empty state -->
       <div id="wild-empty" class="hidden py-20 text-center">
         <svg class="w-14 h-14 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-        <p class="text-gray-500">No sightings yet — go post one!</p>
+        <p class="text-gray-500">Nothing from Nostr right now. The relays may be slow, or there are no image posts yet.</p>
+      </div>
       </div>
 
       <!-- CTA -->
@@ -63,12 +98,16 @@ const fallbackImages = fs.existsSync(wildDir)
     <img id="wild-lightbox-img" src="" alt="" class="max-w-[92vw] max-h-[92vh] object-contain rounded-lg shadow-2xl" />
   </div>
 
-  <!-- Curated fallback images, used only if Nostr returns nothing -->
-  <script type="application/json" id="wild-fallback" set:html={JSON.stringify(fallbackImages)}></script>
-
   <style>
     @keyframes wild-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
     .wild-skel { background: #e5e7eb; border-radius: 10px; animation: wild-pulse 1.4s ease-in-out infinite; }
+    /* Curated grid: CSS-only lightbox (checkbox toggle), as the original page had */
+    .lightbox-overlay {
+      position: fixed; inset: 0; z-index: 50; display: none;
+      align-items: center; justify-content: center;
+      background: rgba(0, 0, 0, 0.85); cursor: pointer;
+    }
+    .lightbox-toggle:checked ~ .lightbox-overlay { display: flex; }
   </style>
 
   <script>
@@ -219,15 +258,6 @@ const fallbackImages = fs.existsSync(wildDir)
         }
       } catch {
         urls = [];
-      }
-
-      // Fall back to the curated static images if Nostr yielded nothing.
-      if (urls.length === 0) {
-        try {
-          urls = JSON.parse(document.getElementById('wild-fallback')?.textContent || '[]');
-        } catch {
-          urls = [];
-        }
       }
 
       if (urls.length === 0) {

@@ -292,7 +292,7 @@ const orderBy = (order) => (a, b) => order.indexOf(a) - order.indexOf(b);
 const nameCounts = cases.reduce((m, c) => m.set(c.name, (m.get(c.name) || 0) + 1), new Map());
 const modelGroup = (c) => (nameCounts.get(c.name) > 1 ? c.name : 'Other');
 const facets = [
-  { key: 'board', label: 'Board', options: [...new Set(cases.map((c) => c.tag))].sort(orderBy(['T5 2.13 inch', 'S3 2 inch', 'S3 3.5 inch'])), accent: ['S3 2 inch', 'S3 3.5 inch'] },
+  { key: 'board', label: 'Board', options: [...new Set(cases.map((c) => c.tag))].sort(orderBy(['S3 3.5 inch', 'S3 2 inch', 'T5 2.13 inch'])), accent: ['S3 2 inch', 'S3 3.5 inch'] },
   { key: 'model', label: 'Model', options: [...new Set(cases.map(modelGroup))], accent: [] },
 ];
 

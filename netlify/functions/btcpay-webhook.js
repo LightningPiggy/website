@@ -107,7 +107,7 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
   const buyer = typeof metadata.buyerEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(metadata.buyerEmail) ? metadata.buyerEmail : null;
   if (buyer) {
     await send(buyer, 'Your Lightning Piggy model file',
-      '<p>Thank you for supporting the designer! Your download of <strong>' + escapeHtml(fileId) + '</strong> is ready:</p>' +
+      '<p>Thank you for supporting the Lightning Piggy project! Your download of <strong>' + escapeHtml(fileId) + '</strong> is ready:</p>' +
       '<p><a href="' + link + '" style="display:inline-block;padding:12px 24px;background:#EC008C;color:#fff;text-decoration:none;border-radius:50px;font-weight:600;">Download ' + escapeHtml(fileId) + '</a></p>' +
       '<p style="color:#525252;">Keep this email - the link keeps working, so you can download again any time. The model is licensed CC BY-SA 4.0.</p>');
   }

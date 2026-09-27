@@ -1,5 +1,5 @@
 // Netlify serverless function: creates a BTCPay invoice for a buy-to-support
-// model download. The files are CC BY-SA - payment supports the designer and
+// model download. The files are CC BY-SA - payment supports the project and
 // unlocks the download; the `download` function delivers once settled.
 //
 // Environment variables required in Netlify:

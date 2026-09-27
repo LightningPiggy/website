@@ -91,7 +91,26 @@ const cases = [
       { label: 'Download Model File', url: '/downloads/cases/lightningpiggy-v2-zapstand.3mf' },
       { label: 'Download Badge File', url: '/downloads/cases/lightningpiggy-v2-zapstand-badge.3mf' },
     ],
+  },  {
+    name: 'ZapBox!',
+    anchor: 'zapbox-35',
+    tag: 'S3 3.5 inch',
+    description: "The 'ZapBox!' for the Waveshare 3.5-inch touch display: the same single-part, four-screw pocket box scaled up for the larger screen, giving MicroPythonOS more room for the wallet display and QR codes while staying compact enough to travel.",
+    images: [],
+    specs: {
+      board: 'Waveshare ESP32-S3-Touch-LCD-3.5',
+      displaySize: '3.5 inch',
+      os: 'MicroPythonOS',
+      material: 'PLA or PETG',
+      printing: 'Sliced for a 0.4 mm nozzle at 0.16 mm layers. Three build plates: the box, the BOOT and RST buttons, and the Zap bolt inlays. Supports are enabled in the project file.',
+    },
+    creator: { name: 'Richard', url: 'https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel' },
+    licence: { name: 'CC BY-SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/' },
+    downloads: [
+      { label: 'Download Model File', url: '/downloads/cases/lightningpiggy-v2-zapbox-35.3mf' },
+    ],
   },
+
   {
     name: 'ROBOTECHY',
     tag: 'T5 2.13 inch',
@@ -297,6 +316,10 @@ let imgCounter = 0;
           class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
           S3 2 inch
         </button>
+        <button type="button" data-field="tag" data-filter="S3 3.5 inch" aria-pressed="false" data-active="bg-yellow text-gray-900"
+          class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          S3 3.5 inch
+        </button>
         <span class="hidden sm:block w-px h-6 bg-gray-200 mx-1" aria-hidden="true"></span>
         <button type="button" data-field="family" data-filter="Classic" aria-pressed="false"
           class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
@@ -314,8 +337,8 @@ let imgCounter = 0;
           imgCounter += c.images.length;
           return (
             <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-tag={c.tag} data-family={c.specs.os === 'MicroPythonOS' ? 'MicroPythonOS' : 'Classic'}>
-              {/* Image gallery */}
-              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
+              {/* Image gallery (omitted until the card has images) */}
+              {c.images.length > 0 && <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
                 {c.images.map((src, i) => {
                   const id = startIdx + i;
                   return (
@@ -339,13 +362,13 @@ let imgCounter = 0;
                     </div>
                   );
                 })}
-              </div>
+              </div>}
 
               {/* Content */}
               <div class="p-6">
                 <div class="flex items-center gap-3 mb-3">
                   <h2 id={c.anchor} class="text-xl font-bold text-gray-900">{c.name}</h2>
-                  <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.tag === 'S3 2 inch' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
+                  <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.specs.os === 'MicroPythonOS' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
                     {c.tag}
                   </span>
                 </div>

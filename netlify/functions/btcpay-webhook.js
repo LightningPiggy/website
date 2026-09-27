@@ -98,6 +98,9 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
   const fileId = String(metadata.fileId || '');
   if (!/^[a-z0-9][a-z0-9._-]{0,80}\.3mf$/i.test(fileId)) return;
   const link = 'https://lightningpiggy.com/.netlify/functions/download?invoice=' + encodeURIComponent(invoiceId) + '&file=' + encodeURIComponent(fileId);
+  const niceName = fileId.replace(/^lightningpiggy-v\d-/, '').replace(/\.3mf$/, '').replace(/-/g, ' ');
+  const paid = '$' + escapeHtml(String(amount)) + ' ' + escapeHtml(currency);
+  const when = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + apiKey },
@@ -106,13 +109,62 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
 
   const buyer = typeof metadata.buyerEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(metadata.buyerEmail) ? metadata.buyerEmail : null;
   if (buyer) {
-    await send(buyer, 'Your Lightning Piggy model file',
-      '<p>Thank you for supporting the Lightning Piggy project! Your download of <strong>' + escapeHtml(fileId) + '</strong> is ready:</p>' +
-      '<p><a href="' + link + '" style="display:inline-block;padding:12px 24px;background:#EC008C;color:#fff;text-decoration:none;border-radius:50px;font-weight:600;">Download ' + escapeHtml(fileId) + '</a></p>' +
-      '<p style="color:#525252;">Keep this email - the link keeps working, so you can download again any time. The model is licensed CC BY-SA 4.0.</p>');
+    const html = [
+      '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
+      '<body style="margin:0;padding:0;background-color:#f5f5f5;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">',
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f5f5f5;"><tr><td align="center" style="padding:24px 16px;">',
+      '<table role="presentation" cellpadding="0" cellspacing="0" width="560" style="max-width:560px;width:100%;">',
+      '  <tr><td align="center" style="padding:0 0 24px 0;">',
+      '    <a href="https://lightningpiggy.com" style="text-decoration:none;"><img src="https://lightningpiggy.com/images/email/lightningpiggy-logo.png" alt="Lightning Piggy" width="200" style="display:block;width:200px;max-width:200px;height:auto;"></a>',
+      '  </td></tr>',
+      '  <tr><td>',
+      '    <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#ffffff;border-radius:16px;overflow:hidden;">',
+      '      <tr><td style="background-color:#EC008C;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr>',
+      '      <tr><td style="padding:40px 40px 16px 40px;">',
+      '        <h1 style="margin:0;font-size:26px;font-weight:700;line-height:32px;color:#111827;">Thank you for supporting Lightning Piggy 🐽</h1>',
+      '      </td></tr>',
+      '      <tr><td style="padding:0 40px 8px 40px;font-size:16px;line-height:26px;color:#525252;">',
+      '        <p style="margin:0 0 16px 0;">Your contribution helps keep Lightning Piggy free, open source, and in the hands of the next generation of savers. It means a lot - thank you.</p>',
+      '        <p style="margin:0 0 16px 0;">Your model file is ready to download:</p>',
+      '      </td></tr>',
+      '      <tr><td style="padding:0 40px 8px 40px;" align="center">',
+      '        <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background-color:#EC008C;border-radius:50px;">',
+      '          <a href="' + link + '" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:50px;">Download ' + escapeHtml(niceName) + '</a>',
+      '        </td></tr></table>',
+      '        <p style="margin:12px 0 0 0;font-size:12px;line-height:18px;color:#9ca3af;">' + escapeHtml(fileId) + '</p>',
+      '      </td></tr>',
+      '      <tr><td style="padding:16px 40px 0 40px;">',
+      '        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f9fafb;border-radius:12px;">',
+      '          <tr><td style="padding:16px 20px;font-size:14px;line-height:22px;color:#525252;">',
+      '            <strong style="color:#111827;">Your receipt</strong><br>',
+      '            Contribution: ' + paid + '<br>',
+      '            Date: ' + escapeHtml(when) + '<br>',
+      '            Reference: <span style="font-family:monospace;">' + escapeHtml(invoiceId) + '</span>',
+      '          </td></tr>',
+      '        </table>',
+      '      </td></tr>',
+      '      <tr><td style="padding:24px 40px 8px 40px;font-size:15px;line-height:24px;color:#525252;">',
+      '        <p style="margin:0 0 12px 0;"><strong style="color:#111827;">A few things worth knowing</strong></p>',
+      '        <ul style="margin:0 0 16px 0;padding-left:20px;">',
+      '          <li style="margin-bottom:8px;">The download button above keeps working, so please keep this email if you ever need the file again.</li>',
+      '          <li style="margin-bottom:8px;">The model is licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" style="color:#EC008C;">CC BY-SA 4.0</a>. You are free to print it, share it, and remix it - just credit the designer and share your changes under the same terms.</li>',
+      '          <li style="margin-bottom:8px;">The file is a sliced 3MF project. Open it in your slicer to see the plates, materials and print settings the designer used; the <a href="https://lightningpiggy.com/build/cases" style="color:#EC008C;">cases page</a> has printing notes for each design.</li>',
+      '        </ul>',
+      '        <p style="margin:0 0 16px 0;">Once your piggy is built, we would love to see it. Post a photo on Nostr tagging <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" style="color:#EC008C;">@LightningPiggy</a> or email it to <a href="mailto:oink@lightningpiggy.com" style="color:#EC008C;">oink@lightningpiggy.com</a>, and it may appear on our <a href="https://lightningpiggy.com/community/wild" style="color:#EC008C;">In the Wild</a> page.</p>',
+      '        <p style="margin:0 0 24px 0;">Questions, or something not working? Just reply to this email, or find us on <a href="https://t.me/LightningPiggy" style="color:#EC008C;">Telegram</a>.</p>',
+      '        <p style="margin:0 0 32px 0;">With thanks,<br><strong style="color:#111827;">The Lightning Piggy team</strong></p>',
+      '      </td></tr>',
+      '    </table>',
+      '  </td></tr>',
+      '  <tr><td align="center" style="padding:24px 16px 0;font-size:11px;line-height:18px;color:#9ca3af;">&copy; ' + new Date().getFullYear() + ' Lightning Piggy Foundation. Open source, built with love.</td></tr>',
+      '</table>',
+      '</td></tr></table>',
+      '</body></html>',
+    ].join('\n');
+    await send(buyer, 'Thank you - your Lightning Piggy model file', html);
   }
-  await send('oink@lightningpiggy.com', 'Model download: ' + fileId + ' ($' + amount + ' ' + currency + ')',
-    '<p>' + escapeHtml(fileId) + ' - $' + escapeHtml(String(amount)) + ' ' + escapeHtml(currency) + (buyer ? ' - ' + escapeHtml(buyer) : ' - no email given') + '</p>');
+  await send('oink@lightningpiggy.com', 'Model download: ' + fileId + ' (' + '$' + amount + ' ' + currency + ')',
+    '<p>' + escapeHtml(fileId) + ' - ' + paid + (buyer ? ' - ' + escapeHtml(buyer) : ' - no email given') + '<br>Invoice ' + escapeHtml(invoiceId) + '</p>');
 }
 
 // Add supporter avatar (+ optional profile link) to supporters.json via GitHub API

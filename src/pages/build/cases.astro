@@ -5,7 +5,7 @@ const cases = [
   {
     name: 'Genesis Piggy',
     anchor: 'p1-genesis-piggy',
-    tag: 'MPOS 2 inch',
+    tag: 'S3 2 inch',
     description: "Genesis Piggy is back with a fresh redesign, purpose-built for the Waveshare 2-inch touch LCD board. Same classic proportions, but with some key upgrades: a fully rotating head that can be positioned at any angle, a cleaner look with the cable routed behind the scenes, and easy button access from the piggy's rear.",
     images: [
       '/images/cases/genesispiggy-lcd-photo-04.jpeg',
@@ -36,7 +36,7 @@ const cases = [
   {
     name: 'ZapBox!',
     anchor: 'p1-zapbox',
-    tag: 'MPOS 2 inch',
+    tag: 'S3 2 inch',
     description: "The 'ZapBox!' pocket-size edition is engineered to be ultra-compact. Made from a single part and held together with four screws, it's perfect for travel. In fact, the team carries these very piggies on the road - an entire sounder of them fits neatly into a single backpack for workshops.",
     images: [
       '/images/cases/zapbox-lcd-photo-01.jpeg',
@@ -67,7 +67,7 @@ const cases = [
   {
     name: 'ZapStand',
     anchor: 'p1-zapstand',
-    tag: 'MPOS 2 inch',
+    tag: 'S3 2 inch',
     description: "The 'ZapStand' desk edition sits at a comfortable viewing angle on your desk or counter, keeping the screen easy to see and easy to tap. Its party trick is the swappable badge: printed inserts drop into a pocket on the front and can be changed in seconds - print your name, your favorite project's logo, or whatever you fancy, and show it off alongside your Piggy.",
     images: [
       '/images/cases/zapstand-lcd-01.png',
@@ -94,7 +94,7 @@ const cases = [
   },
   {
     name: 'ROBOTECHY',
-    tag: 'Classic 2.13 inch',
+    tag: 'T5 2.13 inch',
     description: "Free range, grass fed, and wholesome, this little piggy is the most beautiful we've ever seen. Designed, printed, assembled and sold by enterprising young bitcoiners with a little help from mum & dad.",
     images: [
       '/images/cases/robotechy-01.jpeg',
@@ -120,7 +120,7 @@ const cases = [
   {
     name: 'Genesis Piggy',
     anchor: 'classic-genesis-piggy',
-    tag: 'Classic 2.13 inch',
+    tag: 'T5 2.13 inch',
     description: "BlackCoffee's original cardboard pig has been reimagined in filament and can now be printed as easily, and cheaply, as fiat money. This is a draft design so expect some tweaks and please do share any ideas you may have to improve it.",
     images: [
       '/images/cases/genesispiggy-classic-01.jpeg',
@@ -145,7 +145,7 @@ const cases = [
   {
     name: 'ZapBox!',
     anchor: 'classic-zapbox',
-    tag: 'Classic 2.13 inch',
+    tag: 'T5 2.13 inch',
     description: "The \"ZapBox!\" edition has been created to be as compact as possible, while maintaining easy access to the charging port and buttons. It's constructed from two parts, the main case and lid. No screws are necessary, everything fits together nice and snug, like a pig in a blanket.",
     images: [
       '/images/cases/zapbox-epaper-01.jpeg',
@@ -167,7 +167,7 @@ const cases = [
   },
   {
     name: 'MineLightningPiggy',
-    tag: 'Classic 2.13 inch',
+    tag: 'T5 2.13 inch',
     description: 'This amazing piggy has been designed by super talented 11-year old "Mixter the Boyster" who loves Minecraft and 3D printing.',
     images: [
       '/images/cases/minepiggy-01.jpg',
@@ -192,7 +192,7 @@ const cases = [
   },
   {
     name: 'LightningPiggy Block Lamp',
-    tag: 'Classic 2.13 inch',
+    tag: 'T5 2.13 inch',
     description: "Shining a light on sound money: This Minecraft-inspired savings lamp, a first of its kind, was ingeniously crafted by Silexperience and his son. The project was sparked by a curious question: \"Can bitcoin be in a piggy bank?\" This led to integrating a Lightning Piggy device inside a block shaped lamp.",
     images: [
       '/images/cases/blocklamp-01.jpg',
@@ -219,7 +219,7 @@ const cases = [
   },
   {
     name: 'LegoBlock',
-    tag: 'Classic 2.13 inch',
+    tag: 'T5 2.13 inch',
     description: 'A compact Lego-inspired block case for the Lightning Piggy.',
     images: [
       '/images/cases/legoblock-01.jpeg',
@@ -241,7 +241,7 @@ const cases = [
   },
   {
     name: 'LaserEngraved Piggy',
-    tag: 'Classic 2.13 inch',
+    tag: 'T5 2.13 inch',
     description: 'A laser-cut plywood piggy designed and built with the help of two 11-year-old makers.',
     images: [
       '/images/cases/laserengraved-photo-01.jpeg',
@@ -284,18 +284,27 @@ let imgCounter = 0;
         </p>
       </header>
 
-      <div class="flex flex-wrap gap-2 mb-8" role="group" aria-label="Filter cases by device">
-        <button type="button" data-filter="all" aria-pressed="true"
+      <div class="flex flex-wrap items-center gap-2 mb-8" role="group" aria-label="Filter cases by board or firmware">
+        <button type="button" data-field="all" data-filter="all" aria-pressed="true"
           class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-900 text-white transition-colors">
           All cases
         </button>
-        <button type="button" data-filter="Classic 2.13 inch" aria-pressed="false"
+        <button type="button" data-field="tag" data-filter="T5 2.13 inch" aria-pressed="false"
           class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-          Classic 2.13 inch
+          T5 2.13 inch
         </button>
-        <button type="button" data-filter="MPOS 2 inch" aria-pressed="false" data-active="bg-yellow text-gray-900"
+        <button type="button" data-field="tag" data-filter="S3 2 inch" aria-pressed="false" data-active="bg-yellow text-gray-900"
           class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-          MPOS 2 inch
+          S3 2 inch
+        </button>
+        <span class="hidden sm:block w-px h-6 bg-gray-200 mx-1" aria-hidden="true"></span>
+        <button type="button" data-field="family" data-filter="Classic" aria-pressed="false"
+          class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          Classic
+        </button>
+        <button type="button" data-field="family" data-filter="MicroPythonOS" aria-pressed="false" data-active="bg-yellow text-gray-900"
+          class="case-filter px-4 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          MicroPythonOS
         </button>
       </div>
 
@@ -304,7 +313,7 @@ let imgCounter = 0;
           const startIdx = imgCounter;
           imgCounter += c.images.length;
           return (
-            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-tag={c.tag}>
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-tag={c.tag} data-family={c.specs.os === 'MicroPythonOS' ? 'MicroPythonOS' : 'Classic'}>
               {/* Image gallery */}
               <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
                 {c.images.map((src, i) => {
@@ -336,7 +345,7 @@ let imgCounter = 0;
               <div class="p-6">
                 <div class="flex items-center gap-3 mb-3">
                   <h2 id={c.anchor} class="text-xl font-bold text-gray-900">{c.name}</h2>
-                  <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.tag === 'MPOS 2 inch' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
+                  <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.tag === 'S3 2 inch' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
                     {c.tag}
                   </span>
                 </div>
@@ -441,6 +450,7 @@ let imgCounter = 0;
   filterButtons.forEach((btn) => {
     btn.addEventListener('click', () => {
       const filter = btn.dataset.filter;
+      const field = btn.dataset.field;   // 'tag' (board) or 'family' (firmware)
       filterButtons.forEach((b) => {
         const on = b === btn;
         b.setAttribute('aria-pressed', String(on));
@@ -448,7 +458,7 @@ let imgCounter = 0;
         b.classList.add(...(on ? activeFor(b) : INACTIVE));
       });
       caseCards.forEach((card) => {
-        card.classList.toggle('hidden', filter !== 'all' && card.dataset.tag !== filter);
+        card.classList.toggle('hidden', filter !== 'all' && card.dataset[field] !== filter);
       });
     });
   });

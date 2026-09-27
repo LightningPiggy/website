@@ -506,6 +506,10 @@ let imgCounter = 0;
       <button type="button" data-amount="21" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">$21</button>
       <label class="inline-flex items-center gap-1 text-sm text-gray-600">$<input id="dl-custom" type="number" min="1" max="500" step="1" placeholder="other" class="w-20 px-2 py-1.5 border border-gray-200 rounded-lg" /></label>
     </div>
+    <label class="block mb-3">
+      <span class="text-sm text-gray-600">Email for a receipt with your download link <span class="text-gray-400">(optional)</span></span>
+      <input id="dl-email" type="email" autocomplete="email" placeholder="you@example.com" class="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
+    </label>
     <p id="dl-error" class="text-sm text-red-600 mb-3 hidden"></p>
     <div class="flex gap-3 justify-end">
       <button type="button" id="dl-cancel" class="px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
@@ -555,12 +559,19 @@ let imgCounter = 0;
     document.getElementById('dl-cancel')?.addEventListener('click', close);
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 
+    const emailEl = document.getElementById('dl-email') as HTMLInputElement;
     payBtn.addEventListener('click', async () => {
+      const email = emailEl.value.trim();
+      if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        errEl.textContent = 'That email address does not look right.'; errEl.classList.remove('hidden'); return;
+      }
       payBtn.disabled = true; payBtn.textContent = 'Creating invoice...';
       try {
+        // Remembered for the thank-you message when BTCPay sends us back.
+        try { sessionStorage.setItem('dl-email', email); } catch {}
         const r = await fetch('/.netlify/functions/create-download-invoice', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ file, amount }),
+          body: JSON.stringify({ file, amount, email: email || undefined }),
         });
         const d = await r.json();
         if (!r.ok || !d.checkoutLink) throw new Error(d.error || 'Could not create invoice');
@@ -586,7 +597,10 @@ let imgCounter = 0;
         let status = 'unknown';
         try { status = (await (await fetch(url + '&check=1')).json()).status || 'unknown'; } catch {}
         if (status === 'settled') {
-          txt.textContent = `Thank you! Your download of ${dl} is ready.`;
+          let email = ''; try { email = sessionStorage.getItem('dl-email') || ''; sessionStorage.removeItem('dl-email'); } catch {}
+          txt.textContent = email
+            ? `Thank you! Your download of ${dl} is ready, and a receipt with the link is on its way to ${email}.`
+            : `Thank you! Your download of ${dl} is ready.`;
           link.href = url; link.classList.remove('hidden');
           window.location.assign(url);           // starts the download; the page stays
           return;

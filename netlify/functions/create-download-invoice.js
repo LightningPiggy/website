@@ -29,11 +29,22 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: `Amount must be between $${MIN_USD} and $${MAX_USD}.` }) };
   }
 
+  // Optional receipt email. Stored as BTCPay's buyerEmail so the checkout
+  // does not ask again and btcpay-webhook can send the receipt + download link.
+  let buyerEmail;
+  if (body.email !== undefined && body.email !== null && body.email !== '') {
+    const e = String(body.email).trim();
+    if (e.length > 254 || !/^[^\s@<>"'&]+@[^\s@<>"'&]+\.[^\s@<>"'&]+$/.test(e)) {
+      return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: 'That email address does not look right.' }) };
+    }
+    buyerEmail = e;
+  }
+
   const orderId = 'dl-' + crypto.randomBytes(6).toString('hex');
   const payload = {
     amount: String(amount),
     currency: 'USD',
-    metadata: { itemCode: 'download', fileId, orderId, itemDesc: `Support & download: ${fileId}` },
+    metadata: { itemCode: 'download', fileId, orderId, itemDesc: `Support & download: ${fileId}`, ...(buyerEmail ? { buyerEmail } : {}) },
     checkout: {
       // BTCPay substitutes {InvoiceId}; the cases page picks it up and polls `download`.
       redirectURL: `${SITE}/build/cases/?dl=${encodeURIComponent(fileId)}&invoice={InvoiceId}`,

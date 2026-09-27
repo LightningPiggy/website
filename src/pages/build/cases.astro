@@ -286,9 +286,14 @@ const cases = [
 // Filter facets. Software is derived from the OS spec; Board and Form come
 // straight off the cards. Option order is fixed here so the UI is stable.
 const orderBy = (order) => (a, b) => order.indexOf(a) - order.indexOf(b);
+// A model only gets its own filter when more than one case carries the name;
+// one-offs are grouped under "Other" so the row does not sprawl. Computed from
+// the cards, so a second ZapStand would promote it to its own button.
+const nameCounts = cases.reduce((m, c) => m.set(c.name, (m.get(c.name) || 0) + 1), new Map());
+const modelGroup = (c) => (nameCounts.get(c.name) > 1 ? c.name : 'Other');
 const facets = [
   { key: 'board', label: 'Board', options: [...new Set(cases.map((c) => c.tag))].sort(orderBy(['T5 2.13 inch', 'S3 2 inch', 'S3 3.5 inch'])), accent: ['S3 2 inch', 'S3 3.5 inch'] },
-  { key: 'model', label: 'Model', options: [...new Set(cases.map((c) => c.name))], accent: [] },
+  { key: 'model', label: 'Model', options: [...new Set(cases.map(modelGroup))], accent: [] },
 ];
 
 // Global image counter for unique lightbox IDs
@@ -338,7 +343,7 @@ let imgCounter = 0;
           const startIdx = imgCounter;
           imgCounter += c.images.length;
           return (
-            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-board={c.tag} data-model={c.name}>
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-board={c.tag} data-model={modelGroup(c)}>
               {/* Image gallery (omitted until the card has images) */}
               {c.images.length > 0 && <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
                 {c.images.map((src, i) => {

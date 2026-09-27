@@ -9,13 +9,17 @@ const BTCPAY_URL = 'https://btcpay.lightningpiggy.com';
 // places included files at their repo-relative path under the task root, but
 // try a couple of bases so a layout change fails loudly rather than 404s.
 function privateDir() {
-  const candidates = [
-    path.join(process.cwd(), 'netlify', 'private', 'downloads', 'cases'),
-    path.join(__dirname, '..', 'private', 'downloads', 'cases'),
-    path.join(process.env.LAMBDA_TASK_ROOT || '', 'netlify', 'private', 'downloads', 'cases'),
-  ];
-  for (const c of candidates) if (c && fs.existsSync(c)) return c;
-  throw new Error('private downloads directory not found (tried ' + candidates.join(', ') + ')');
+  const rel = path.join('private', 'downloads', 'cases');
+  const roots = new Set([process.cwd(), process.env.LAMBDA_TASK_ROOT || '', '/var/task']);
+  // Walk up from this file: functions/lib -> functions -> task root -> ...
+  let d = __dirname;
+  for (let i = 0; i < 5; i++) { roots.add(d); d = path.dirname(d); }
+  const candidates = [];
+  for (const r of roots) if (r) candidates.push(path.join(r, 'netlify', rel), path.join(r, rel));
+  for (const c of candidates) if (fs.existsSync(c)) return c;
+  let listing = '';
+  try { listing = ' task root contains: ' + fs.readdirSync(process.env.LAMBDA_TASK_ROOT || '/var/task').join(', '); } catch {}
+  throw new Error('private downloads directory not found (tried ' + candidates.join(', ') + ')' + listing);
 }
 
 // Only a bare .3mf basename that actually exists is a valid file id.

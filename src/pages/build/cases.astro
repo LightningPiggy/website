@@ -6,7 +6,6 @@ const cases = [
     name: 'Genesis Piggy',
     anchor: 'p1-genesis-piggy',
     tag: 'S3 2 inch',
-    form: 'Piggy',
     description: "Genesis Piggy is back with a fresh redesign, purpose-built for the Waveshare 2-inch touch LCD board. Same classic proportions, but with some key upgrades: a fully rotating head that can be positioned at any angle, a cleaner look with the cable routed behind the scenes, and easy button access from the piggy's rear.",
     images: [
       '/images/cases/genesispiggy-lcd-photo-04.jpeg',
@@ -38,7 +37,6 @@ const cases = [
     name: 'ZapBox!',
     anchor: 'p1-zapbox',
     tag: 'S3 2 inch',
-    form: 'Pocket box',
     description: "The 'ZapBox!' pocket-size edition is engineered to be ultra-compact. Made from a single part and held together with four screws, it's perfect for travel. In fact, the team carries these very piggies on the road - an entire sounder of them fits neatly into a single backpack for workshops.",
     images: [
       '/images/cases/zapbox-lcd-photo-01.jpeg',
@@ -70,7 +68,6 @@ const cases = [
     name: 'ZapStand',
     anchor: 'p1-zapstand',
     tag: 'S3 2 inch',
-    form: 'Desk stand',
     description: "The 'ZapStand' desk edition sits at a comfortable viewing angle on your desk or counter, keeping the screen easy to see and easy to tap. Its party trick is the swappable badge: printed inserts drop into a pocket on the front and can be changed in seconds - print your name, your favorite project's logo, or whatever you fancy, and show it off alongside your Piggy.",
     images: [
       '/images/cases/zapstand-lcd-01.png',
@@ -98,7 +95,6 @@ const cases = [
     name: 'ZapBox!',
     anchor: 'zapbox-35',
     tag: 'S3 3.5 inch',
-    form: 'Pocket box',
     description: "The 'ZapBox!' for the Waveshare 3.5-inch touch display: the same single-part, four-screw pocket box scaled up for the larger screen, giving MicroPythonOS more room for the wallet display and QR codes while staying compact enough to travel.",
     images: [],
     specs: {
@@ -118,7 +114,6 @@ const cases = [
   {
     name: 'ROBOTECHY',
     tag: 'T5 2.13 inch',
-    form: 'Piggy',
     description: "Free range, grass fed, and wholesome, this little piggy is the most beautiful we've ever seen. Designed, printed, assembled and sold by enterprising young bitcoiners with a little help from mum & dad.",
     images: [
       '/images/cases/robotechy-01.jpeg',
@@ -145,7 +140,6 @@ const cases = [
     name: 'Genesis Piggy',
     anchor: 'classic-genesis-piggy',
     tag: 'T5 2.13 inch',
-    form: 'Piggy',
     description: "BlackCoffee's original cardboard pig has been reimagined in filament and can now be printed as easily, and cheaply, as fiat money. This is a draft design so expect some tweaks and please do share any ideas you may have to improve it.",
     images: [
       '/images/cases/genesispiggy-classic-01.jpeg',
@@ -171,7 +165,6 @@ const cases = [
     name: 'ZapBox!',
     anchor: 'classic-zapbox',
     tag: 'T5 2.13 inch',
-    form: 'Pocket box',
     description: "The \"ZapBox!\" edition has been created to be as compact as possible, while maintaining easy access to the charging port and buttons. It's constructed from two parts, the main case and lid. No screws are necessary, everything fits together nice and snug, like a pig in a blanket.",
     images: [
       '/images/cases/zapbox-epaper-01.jpeg',
@@ -194,7 +187,6 @@ const cases = [
   {
     name: 'MineLightningPiggy',
     tag: 'T5 2.13 inch',
-    form: 'Piggy',
     description: 'This amazing piggy has been designed by super talented 11-year old "Mixter the Boyster" who loves Minecraft and 3D printing.',
     images: [
       '/images/cases/minepiggy-01.jpg',
@@ -220,7 +212,6 @@ const cases = [
   {
     name: 'LightningPiggy Block Lamp',
     tag: 'T5 2.13 inch',
-    form: 'Lamp',
     description: "Shining a light on sound money: This Minecraft-inspired savings lamp, a first of its kind, was ingeniously crafted by Silexperience and his son. The project was sparked by a curious question: \"Can bitcoin be in a piggy bank?\" This led to integrating a Lightning Piggy device inside a block shaped lamp.",
     images: [
       '/images/cases/blocklamp-01.jpg',
@@ -248,7 +239,6 @@ const cases = [
   {
     name: 'LegoBlock',
     tag: 'T5 2.13 inch',
-    form: 'Block',
     description: 'A compact Lego-inspired block case for the Lightning Piggy.',
     images: [
       '/images/cases/legoblock-01.jpeg',
@@ -271,7 +261,6 @@ const cases = [
   {
     name: 'LaserEngraved Piggy',
     tag: 'T5 2.13 inch',
-    form: 'Piggy',
     description: 'A laser-cut plywood piggy designed and built with the help of two 11-year-old makers.',
     images: [
       '/images/cases/laserengraved-photo-01.jpeg',
@@ -296,12 +285,10 @@ const cases = [
 
 // Filter facets. Software is derived from the OS spec; Board and Form come
 // straight off the cards. Option order is fixed here so the UI is stable.
-const softwareOf = (c) => (c.specs.os === 'MicroPythonOS' ? 'MicroPythonOS' : 'Classic');
 const orderBy = (order) => (a, b) => order.indexOf(a) - order.indexOf(b);
 const facets = [
   { key: 'board', label: 'Board', options: [...new Set(cases.map((c) => c.tag))].sort(orderBy(['T5 2.13 inch', 'S3 2 inch', 'S3 3.5 inch'])), accent: ['S3 2 inch', 'S3 3.5 inch'] },
-  { key: 'form', label: 'Form', options: [...new Set(cases.map((c) => c.form))].sort(orderBy(['Piggy', 'Pocket box', 'Desk stand', 'Block', 'Lamp'])), accent: [] },
-  { key: 'software', label: 'Software', options: [...new Set(cases.map(softwareOf))].sort(orderBy(['Classic', 'MicroPythonOS'])), accent: ['MicroPythonOS'] },
+  { key: 'model', label: 'Model', options: [...new Set(cases.map((c) => c.name))], accent: [] },
 ];
 
 // Global image counter for unique lightbox IDs
@@ -351,7 +338,7 @@ let imgCounter = 0;
           const startIdx = imgCounter;
           imgCounter += c.images.length;
           return (
-            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-board={c.tag} data-form={c.form} data-software={softwareOf(c)}>
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-board={c.tag} data-model={c.name}>
               {/* Image gallery (omitted until the card has images) */}
               {c.images.length > 0 && <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
                 {c.images.map((src, i) => {
@@ -618,14 +605,14 @@ let imgCounter = 0;
 </script>
 
 <script>
-  // Faceted filtering: three independent groups (board, form, software) combine
+  // Faceted filtering: two independent groups (board, model) combine
   // with AND. Each option shows how many cases it would leave given the other
   // two groups' selections, and greys out at zero instead of dead-ending.
   const groups = document.querySelectorAll('#case-facets [data-group]');
   const cards = [...document.querySelectorAll('[data-board]')];
   const summary = document.getElementById('case-facet-summary');
   const clearBtn = document.getElementById('case-facet-clear');
-  const state = { board: 'all', form: 'all', software: 'all' };
+  const state = { board: 'all', model: 'all' };
   const INACTIVE = ['bg-gray-100', 'text-gray-600', 'hover:bg-gray-200'];
   const activeFor = (b) => (b.dataset.active || 'bg-gray-900 text-white').split(' ');
 

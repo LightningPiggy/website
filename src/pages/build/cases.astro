@@ -444,7 +444,20 @@ let imgCounter = 0;
 
                 {/* Download links */}
                 <div class="flex flex-wrap gap-2">
-                  {c.downloads.map((d) => (
+                  {c.downloads.map((d) => d.url.startsWith('/downloads/cases/') ? (
+                    <button
+                      type="button"
+                      data-dl-file={d.url.split('/').pop()}
+                      data-dl-name={c.name}
+                      data-dl-creator={c.creator.name}
+                      class="dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Support &amp; download
+                    </button>
+                  ) : (
                     <a
                       href={d.url}
                       target="_blank"
@@ -477,6 +490,119 @@ let imgCounter = 0;
       </div>
     </div>
   </section>
+<!-- Buy-to-support download modal -->
+<div id="dl-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+    <h3 id="dl-title" class="text-xl font-bold text-gray-900 mb-1">Support the designer</h3>
+    <p id="dl-sub" class="text-sm text-gray-500 mb-4"></p>
+    <p class="text-gray-600 text-sm mb-4">
+      The model files are <strong>CC BY-SA 4.0</strong> - free to share and remix. Paying isn't a licence, it's a
+      thank-you that goes to the designer and unlocks the download here.
+    </p>
+    <div class="flex flex-wrap gap-2 mb-3" id="dl-amounts">
+      <button type="button" data-amount="3" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">$3</button>
+      <button type="button" data-amount="5" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-900 text-white">$5</button>
+      <button type="button" data-amount="10" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">$10</button>
+      <button type="button" data-amount="21" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">$21</button>
+      <label class="inline-flex items-center gap-1 text-sm text-gray-600">$<input id="dl-custom" type="number" min="1" max="500" step="1" placeholder="other" class="w-20 px-2 py-1.5 border border-gray-200 rounded-lg" /></label>
+    </div>
+    <p id="dl-error" class="text-sm text-red-600 mb-3 hidden"></p>
+    <div class="flex gap-3 justify-end">
+      <button type="button" id="dl-cancel" class="px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
+      <button type="button" id="dl-pay" class="px-5 py-2 rounded-full text-sm font-semibold bg-pink text-white hover:bg-gray-900">Pay with Bitcoin</button>
+    </div>
+  </div>
+</div>
+
+<!-- After checkout: BTCPay redirects back here with ?dl=<file>&invoice=<id> -->
+<div id="dl-status" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white text-sm rounded-full px-5 py-3 shadow-xl flex items-center gap-3">
+  <span id="dl-status-text"></span>
+  <a id="dl-status-link" href="#" class="hidden underline font-semibold">Download</a>
+</div>
+
+<script>
+  // --- Buy-to-support downloads ---
+  {
+    const modal = document.getElementById('dl-modal');
+    const sub = document.getElementById('dl-sub');
+    const errEl = document.getElementById('dl-error');
+    const custom = document.getElementById('dl-custom') as HTMLInputElement;
+    const payBtn = document.getElementById('dl-pay') as HTMLButtonElement;
+    let file = '';
+    let amount = 5;
+
+    const setAmount = (a: number) => {
+      amount = a;
+      document.querySelectorAll('#dl-amounts .dl-amt').forEach((b) => {
+        const on = Number((b as HTMLElement).dataset.amount) === a;
+        b.classList.toggle('bg-gray-900', on); b.classList.toggle('text-white', on);
+        b.classList.toggle('bg-gray-100', !on); b.classList.toggle('text-gray-700', !on);
+      });
+    };
+    document.querySelectorAll('#dl-amounts .dl-amt').forEach((b) =>
+      b.addEventListener('click', () => { custom.value = ''; setAmount(Number((b as HTMLElement).dataset.amount)); }));
+    custom.addEventListener('input', () => { const v = Number(custom.value); if (v >= 1) setAmount(v); });
+
+    document.querySelectorAll('.dl-support').forEach((btn) => btn.addEventListener('click', () => {
+      const el = btn as HTMLElement;
+      file = el.dataset.dlFile || '';
+      sub.textContent = `${el.dataset.dlName} - designed by ${el.dataset.dlCreator} - ${file}`;
+      errEl.classList.add('hidden');
+      setAmount(5);
+      modal.classList.remove('hidden'); modal.classList.add('flex');
+    }));
+    const close = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
+    document.getElementById('dl-cancel')?.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    payBtn.addEventListener('click', async () => {
+      payBtn.disabled = true; payBtn.textContent = 'Creating invoice...';
+      try {
+        const r = await fetch('/.netlify/functions/create-download-invoice', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ file, amount }),
+        });
+        const d = await r.json();
+        if (!r.ok || !d.checkoutLink) throw new Error(d.error || 'Could not create invoice');
+        window.location.href = d.checkoutLink;   // BTCPay checkout; it redirects back with ?dl&invoice
+      } catch (e) {
+        errEl.textContent = (e as Error).message; errEl.classList.remove('hidden');
+        payBtn.disabled = false; payBtn.textContent = 'Pay with Bitcoin';
+      }
+    });
+
+    // Returning from checkout: poll until settled, then hand over the file.
+    const params = new URLSearchParams(location.search);
+    const dl = params.get('dl'), inv = params.get('invoice');
+    if (dl && inv && /^[a-z0-9][a-z0-9._-]{0,80}\.3mf$/i.test(dl)) {
+      const bar = document.getElementById('dl-status');
+      const txt = document.getElementById('dl-status-text');
+      const link = document.getElementById('dl-status-link') as HTMLAnchorElement;
+      const url = `/.netlify/functions/download?invoice=${encodeURIComponent(inv)}&file=${encodeURIComponent(dl)}`;
+      bar.classList.remove('hidden');
+      let tries = 0;
+      const poll = async () => {
+        tries++;
+        let status = 'unknown';
+        try { status = (await (await fetch(url + '&check=1')).json()).status || 'unknown'; } catch {}
+        if (status === 'settled') {
+          txt.textContent = `Thank you! Your download of ${dl} is ready.`;
+          link.href = url; link.classList.remove('hidden');
+          window.location.assign(url);           // starts the download; the page stays
+          return;
+        }
+        if (status === 'processing') txt.textContent = 'Payment seen - waiting for confirmation...';
+        else if (status === 'unpaid') txt.textContent = 'Waiting for your payment...';
+        else if (status === 'mismatch' || status === 'unknown') { txt.textContent = 'We could not match that payment to this file.'; return; }
+        else { txt.textContent = `Invoice ${status}. Please try again.`; return; }
+        if (tries < 200) setTimeout(poll, 4000);
+      };
+      poll();
+      history.replaceState(null, '', location.pathname + (location.hash || ''));
+    }
+  }
+</script>
+
 <script>
   // Faceted filtering: three independent groups (board, form, software) combine
   // with AND. Each option shows how many cases it would leave given the other

@@ -89,6 +89,32 @@ async function sendEmailNotification(amount, currency, metadata) {
   }
 }
 
+// Receipt for a buy-to-support model download: to the buyer (if BTCPay
+// collected an email at checkout) with the durable download link, and a
+// short note to the owner. Never fails the webhook.
+async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return;
+  const fileId = String(metadata.fileId || '');
+  if (!/^[a-z0-9][a-z0-9._-]{0,80}\.3mf$/i.test(fileId)) return;
+  const link = 'https://lightningpiggy.com/.netlify/functions/download?invoice=' + encodeURIComponent(invoiceId) + '&file=' + encodeURIComponent(fileId);
+  const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + apiKey },
+    body: JSON.stringify({ from: 'Lightning Piggy <newsletter@mail.lightningpiggy.com>', to: [to], subject, html }),
+  }).catch((e) => console.error('receipt email failed:', e.message));
+
+  const buyer = typeof metadata.buyerEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(metadata.buyerEmail) ? metadata.buyerEmail : null;
+  if (buyer) {
+    await send(buyer, 'Your Lightning Piggy model file',
+      '<p>Thank you for supporting the designer! Your download of <strong>' + escapeHtml(fileId) + '</strong> is ready:</p>' +
+      '<p><a href="' + link + '" style="display:inline-block;padding:12px 24px;background:#EC008C;color:#fff;text-decoration:none;border-radius:50px;font-weight:600;">Download ' + escapeHtml(fileId) + '</a></p>' +
+      '<p style="color:#525252;">Keep this email - the link keeps working, so you can download again any time. The model is licensed CC BY-SA 4.0.</p>');
+  }
+  await send('oink@lightningpiggy.com', 'Model download: ' + fileId + ' ($' + amount + ' ' + currency + ')',
+    '<p>' + escapeHtml(fileId) + ' - $' + escapeHtml(String(amount)) + ' ' + escapeHtml(currency) + (buyer ? ' - ' + escapeHtml(buyer) : ' - no email given') + '</p>');
+}
+
 // Add supporter avatar (+ optional profile link) to supporters.json via GitHub API
 async function addSupporter(avatarUrl, profileUrl, invoiceId) {
   const token = process.env.GITHUB_TOKEN;
@@ -235,6 +261,13 @@ exports.handler = async function (event) {
   const amount = invoice.amount || '0';
   const currency = invoice.currency || 'USD';
   const metadata = invoice.metadata || {};
+
+  // Buy-to-support downloads share this store but are not donations: no
+  // supporters wall, and the buyer gets a receipt carrying a re-download link.
+  if (metadata.itemCode === 'download') {
+    await sendDownloadReceipt(amount, currency, metadata, invoiceId);
+    return { statusCode: 200, body: 'OK (download)' };
+  }
 
   // Send email notification (don't fail the webhook if this errors)
   await sendEmailNotification(amount, currency, metadata);

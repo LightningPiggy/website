@@ -5,6 +5,13 @@
 [functions]
   directory = "netlify/functions"
 
+# The case model files are sold (buy-to-support). They live outside publish/
+# and are bundled only with the function that delivers them after payment.
+[functions.download]
+  included_files = ["netlify/private/downloads/**"]
+[functions.create-download-invoice]
+  included_files = ["netlify/private/downloads/**"]
+
 # Enable branch deploys for testing
 [context.branch-deploy]
   command = "npm run build"
@@ -50,3 +57,9 @@
   to = "https://lightningpiggy.com/pos/:splat"
   status = 301
   force = true
+
+# Model files moved behind the buy-to-support flow; old direct links land on the cases page.
+[[redirects]]
+  from = "/downloads/cases/*"
+  to = "/build/cases/"
+  status = 301

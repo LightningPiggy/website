@@ -291,9 +291,19 @@ const orderBy = (order) => (a, b) => order.indexOf(a) - order.indexOf(b);
 // the cards, so a second ZapStand would promote it to its own button.
 const nameCounts = cases.reduce((m, c) => m.set(c.name, (m.get(c.name) || 0) + 1), new Map());
 const modelGroup = (c) => (nameCounts.get(c.name) > 1 ? c.name : 'Other');
+// Generation is derived from the board: Classic = T5 e-paper, P1 = S3 2 inch,
+// P2 = S3 3.5 inch. It prefixes each title and is the top filter row.
+const GENERATION = { 'ESP32-T5 2.13 inch': 'Classic', 'ESP32-S3 2 inch': 'P1', 'ESP32-S3 3.5 inch': 'P2' };
+const generationOf = (c) => GENERATION[c.tag] || 'Other';
+const titleOf = (c) => `${generationOf(c)} ${c.name}`;
+// Headings used to get their anchor from the title text at runtime. Adding the
+// generation prefix would change those slugs, so cards without a pinned anchor
+// keep the slug of their plain name (e.g. #robotechy keeps working).
+const slugOf = (t) => t.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/[\s_]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
 const facets = [
+  { key: 'generation', label: 'Generation', options: [...new Set(cases.map(generationOf))].sort(orderBy(['Classic', 'P1', 'P2'])), accent: ['P1', 'P2'] },
   { key: 'board', label: 'Board', options: [...new Set(cases.map((c) => c.tag))].sort(orderBy(['ESP32-S3 3.5 inch', 'ESP32-S3 2 inch', 'ESP32-T5 2.13 inch'])), accent: ['ESP32-S3 2 inch', 'ESP32-S3 3.5 inch'] },
-  { key: 'model', label: 'Model', options: [...new Set(cases.map(modelGroup))], accent: [] },
+  { key: 'model', label: 'Model', options: [...new Set(cases.map(modelGroup))].sort((a, b) => (a === 'Other') - (b === 'Other')), accent: [] },
 ];
 
 // Global image counter for unique lightbox IDs
@@ -343,7 +353,7 @@ let imgCounter = 0;
           const startIdx = imgCounter;
           imgCounter += c.images.length;
           return (
-            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-board={c.tag} data-model={modelGroup(c)}>
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-generation={generationOf(c)} data-board={c.tag} data-model={modelGroup(c)}>
               {/* Image gallery (omitted until the card has images) */}
               {c.images.length > 0 && <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
                 {c.images.map((src, i) => {
@@ -354,7 +364,7 @@ let imgCounter = 0;
                       <label for={`case-lb-${id}`} class="cursor-pointer block w-full h-full">
                         <img
                           src={src}
-                          alt={`${c.name} - image ${i + 1}`}
+                          alt={`${titleOf(c)} - image ${i + 1}`}
                           class="w-full h-full object-cover hover:opacity-90 transition-opacity"
                           loading="lazy"
                         />
@@ -362,7 +372,7 @@ let imgCounter = 0;
                       <label for={`case-lb-${id}`} class="lightbox-overlay">
                         <img
                           src={src}
-                          alt={`${c.name} - image ${i + 1}`}
+                          alt={`${titleOf(c)} - image ${i + 1}`}
                           class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
                         />
                       </label>
@@ -374,7 +384,7 @@ let imgCounter = 0;
               {/* Content */}
               <div class="p-6">
                 <div class="flex items-center gap-3 mb-3">
-                  <h2 id={c.anchor} class="text-xl font-bold text-gray-900">{c.name}</h2>
+                  <h2 id={c.anchor || slugOf(c.name)} class="text-xl font-bold text-gray-900">{titleOf(c)}</h2>
                   <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.specs.os === 'MicroPythonOS' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
                     {c.tag}
                   </span>
@@ -440,7 +450,7 @@ let imgCounter = 0;
                     <button
                       type="button"
                       data-dl-file={d.url.split('/').pop()}
-                      data-dl-name={c.name}
+                      data-dl-name={titleOf(c)}
                       data-dl-creator={c.creator.name}
                       class="dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors"
                     >
@@ -610,14 +620,14 @@ let imgCounter = 0;
 </script>
 
 <script>
-  // Faceted filtering: two independent groups (board, model) combine
+  // Faceted filtering: three independent groups (generation, board, model) combine
   // with AND. Each option shows how many cases it would leave given the other
   // two groups' selections, and greys out at zero instead of dead-ending.
   const groups = document.querySelectorAll('#case-facets [data-group]');
   const cards = [...document.querySelectorAll('[data-board]')];
   const summary = document.getElementById('case-facet-summary');
   const clearBtn = document.getElementById('case-facet-clear');
-  const state = { board: 'all', model: 'all' };
+  const state = { generation: 'all', board: 'all', model: 'all' };
   const INACTIVE = ['bg-gray-100', 'text-gray-600', 'hover:bg-gray-200'];
   const activeFor = (b) => (b.dataset.active || 'bg-gray-900 text-white').split(' ');
 

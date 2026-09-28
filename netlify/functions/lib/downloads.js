@@ -43,4 +43,11 @@ async function getInvoice(invoiceId) {
   return res.json();
 }
 
-module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, corsHeaders, getInvoice };
+const PRICING = require('./download-pricing.json');
+// Minimum support amount for a file: its own entry if set, else the default.
+function minimumFor(fileId) {
+  const own = PRICING.minimums && PRICING.minimums[fileId];
+  return Number(own || PRICING.default || 3);
+}
+
+module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, corsHeaders, getInvoice, minimumFor, MAX_USD: Number(PRICING.maximum || 500) };

@@ -4,11 +4,9 @@
 //
 // Environment variables required in Netlify:
 //   BTCPAY_API_KEY, BTCPAY_STORE_ID  — same main store as the donate page
-const { SITE, BTCPAY_URL, resolveFile, corsHeaders } = require('./lib/downloads');
+const { SITE, BTCPAY_URL, resolveFile, corsHeaders, minimumFor, MAX_USD } = require('./lib/downloads');
 const crypto = require('crypto');
 
-const MIN_USD = 1;
-const MAX_USD = 500;
 
 exports.handler = async function (event) {
   if (event.httpMethod === 'OPTIONS') return { statusCode: 204, headers: corsHeaders(event), body: '' };
@@ -24,9 +22,10 @@ exports.handler = async function (event) {
   const fileId = String(body.file || '');
   if (!resolveFile(fileId)) return { statusCode: 404, headers: corsHeaders(event), body: JSON.stringify({ error: 'Unknown file' }) };
 
+  const minUsd = minimumFor(fileId);
   const amount = Math.round(parseFloat(body.amount) * 100) / 100;
-  if (!amount || amount < MIN_USD || amount > MAX_USD) {
-    return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: `Amount must be between $${MIN_USD} and $${MAX_USD}.` }) };
+  if (!amount || amount < minUsd || amount > MAX_USD) {
+    return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: `Amount must be between $${minUsd} and $${MAX_USD}.` }) };
   }
 
   // Optional receipt email. Stored as BTCPay's buyerEmail so the checkout

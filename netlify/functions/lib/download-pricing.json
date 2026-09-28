@@ -1,0 +1,6 @@
+{
+  "_comment": "Minimum support amount (USD) for the buy-to-support case downloads. 'default' applies to every file; add a file name under 'minimums' to override it for one case. Read by create-download-invoice (enforced) and the cases page (shown).",
+  "default": 3,
+  "maximum": 500,
+  "minimums": {}
+}

@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import pricing from '../../../netlify/functions/lib/download-pricing.json';
+const minSupportFor = (file: string) => Number((pricing.minimums as Record<string, number>)[file] || pricing.default);
 
 const cases = [
   {
@@ -450,6 +452,7 @@ let imgCounter = 0;
                     <button
                       type="button"
                       data-dl-file={d.url.split('/').pop()}
+                      data-dl-min={minSupportFor(d.url.split('/').pop())}
                       data-dl-name={titleOf(c)}
                       data-dl-creator={c.creator.name}
                       class="dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors"
@@ -506,12 +509,13 @@ let imgCounter = 0;
       <button type="button" data-amount="5" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-900 text-white">$5</button>
       <button type="button" data-amount="10" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">$10</button>
       <button type="button" data-amount="21" class="dl-amt px-4 py-2 rounded-full text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200">$21</button>
-      <label class="inline-flex items-center gap-1 text-sm text-gray-600">$<input id="dl-custom" type="number" min="1" max="500" step="1" placeholder="other" class="w-20 px-2 py-1.5 border border-gray-200 rounded-lg" /></label>
+      <label class="inline-flex items-center gap-1 text-sm text-gray-600">$<input id="dl-custom" type="number" min="3" max="500" step="1" placeholder="other" class="w-20 px-2 py-1.5 border border-gray-200 rounded-lg" /></label>
     </div>
     <label class="block mb-3">
       <span class="text-sm text-gray-600">Email for a receipt with your download link <span class="text-gray-400">(optional)</span></span>
       <input id="dl-email" type="email" autocomplete="email" placeholder="you@example.com" class="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
     </label>
+    <p id="dl-min-note" class="text-xs text-gray-500 mb-3"></p>
     <p id="dl-error" class="text-sm text-red-600 mb-3 hidden"></p>
     <div class="flex gap-3 justify-end">
       <button type="button" id="dl-cancel" class="px-4 py-2 rounded-full text-sm font-medium text-gray-600 hover:bg-gray-100">Cancel</button>
@@ -534,8 +538,10 @@ let imgCounter = 0;
     const errEl = document.getElementById('dl-error');
     const custom = document.getElementById('dl-custom') as HTMLInputElement;
     const payBtn = document.getElementById('dl-pay') as HTMLButtonElement;
+    const minNote = document.getElementById('dl-min-note');
     let file = '';
     let amount = 5;
+    let minimum = 3;
 
     const setAmount = (a: number) => {
       amount = a;
@@ -545,16 +551,28 @@ let imgCounter = 0;
         b.classList.toggle('bg-gray-100', !on); b.classList.toggle('text-gray-700', !on);
       });
     };
+    // Preset amounts under this case's minimum are hidden, not just disabled.
+    const applyMinimum = (m: number) => {
+      minimum = m;
+      custom.min = String(m);
+      custom.placeholder = `${m} or more`;
+      document.querySelectorAll('#dl-amounts .dl-amt').forEach((b) => {
+        (b as HTMLElement).classList.toggle('hidden', Number((b as HTMLElement).dataset.amount) < m);
+      });
+      if (minNote) minNote.textContent = `Minimum $${m}. Choose more if you would like to.`;
+    };
     document.querySelectorAll('#dl-amounts .dl-amt').forEach((b) =>
       b.addEventListener('click', () => { custom.value = ''; setAmount(Number((b as HTMLElement).dataset.amount)); }));
-    custom.addEventListener('input', () => { const v = Number(custom.value); if (v >= 1) setAmount(v); });
+    custom.addEventListener('input', () => { const v = Number(custom.value); if (v > 0) setAmount(v); });
 
     document.querySelectorAll('.dl-support').forEach((btn) => btn.addEventListener('click', () => {
       const el = btn as HTMLElement;
       file = el.dataset.dlFile || '';
       sub.textContent = `${el.dataset.dlName} - designed by ${el.dataset.dlCreator} - ${file}`;
       errEl.classList.add('hidden');
-      setAmount(5);
+      custom.value = '';
+      applyMinimum(Number(el.dataset.dlMin) || 3);
+      setAmount(Math.max(5, minimum));
       modal.classList.remove('hidden'); modal.classList.add('flex');
     }));
     const close = () => { modal.classList.add('hidden'); modal.classList.remove('flex'); };
@@ -563,6 +581,9 @@ let imgCounter = 0;
 
     const emailEl = document.getElementById('dl-email') as HTMLInputElement;
     payBtn.addEventListener('click', async () => {
+      if (amount < minimum) {
+        errEl.textContent = `The minimum for this model is $${minimum}.`; errEl.classList.remove('hidden'); return;
+      }
       const email = emailEl.value.trim();
       if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         errEl.textContent = 'That email address does not look right.'; errEl.classList.remove('hidden'); return;

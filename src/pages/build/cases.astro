@@ -301,7 +301,7 @@ const titleOf = (c) => `${generationOf(c)} ${c.name}`;
 // keep the slug of their plain name (e.g. #robotechy keeps working).
 const slugOf = (t) => t.toLowerCase().trim().replace(/[^a-z0-9\s-]/g, '').replace(/[\s_]+/g, '-').replace(/-{2,}/g, '-').replace(/^-+|-+$/g, '');
 const facets = [
-  { key: 'generation', label: 'Generation', options: [...new Set(cases.map(generationOf))].sort(orderBy(['Classic', 'P1', 'P2'])), accent: ['P1', 'P2'] },
+  { key: 'generation', label: 'Generation', options: [...new Set(cases.map(generationOf))].sort(orderBy(['P2', 'P1', 'Classic'])), accent: ['P1', 'P2'] },
   { key: 'board', label: 'Board', options: [...new Set(cases.map((c) => c.tag))].sort(orderBy(['ESP32-S3 3.5 inch', 'ESP32-S3 2 inch', 'ESP32-T5 2.13 inch'])), accent: ['ESP32-S3 2 inch', 'ESP32-S3 3.5 inch'] },
   { key: 'model', label: 'Model', options: [...new Set(cases.map(modelGroup))].sort((a, b) => (a === 'Other') - (b === 'Other')), accent: [] },
 ];

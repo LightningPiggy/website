@@ -22,9 +22,15 @@ function privateDir() {
   throw new Error('private downloads directory not found (tried ' + candidates.join(', ') + ')' + listing);
 }
 
-// Only a bare .3mf basename that actually exists is a valid file id.
+// Formats that can be sold, and the Content-Type each is served with.
+const FORMATS = { '3mf': 'model/3mf', stl: 'model/stl', step: 'model/step', stp: 'model/step' };
+const FILE_ID_RE = /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i;
+const extOf = (id) => String(id).split('.').pop().toLowerCase();
+const contentTypeFor = (id) => FORMATS[extOf(id)] || 'application/octet-stream';
+
+// Only a bare basename in an allowed format that actually exists is a valid file id.
 function resolveFile(id) {
-  if (typeof id !== 'string' || !/^[a-z0-9][a-z0-9._-]{0,80}\.3mf$/i.test(id) || id.includes('..')) return null;
+  if (typeof id !== 'string' || !FILE_ID_RE.test(id) || id.includes('..')) return null;
   const full = path.join(privateDir(), id);
   return fs.existsSync(full) ? full : null;
 }
@@ -50,4 +56,4 @@ function minimumFor(fileId) {
   return Number(own || PRICING.default || 3);
 }
 
-module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, corsHeaders, getInvoice, minimumFor, MAX_USD: Number(PRICING.maximum || 500) };
+module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, corsHeaders, getInvoice, minimumFor, contentTypeFor, extOf, FILE_ID_RE, MAX_USD: Number(PRICING.maximum || 500) };

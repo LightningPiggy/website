@@ -96,9 +96,15 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
   const fileId = String(metadata.fileId || '');
-  if (!/^[a-z0-9][a-z0-9._-]{0,80}\.3mf$/i.test(fileId)) return;
+  if (!/^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(fileId)) return;
   const link = 'https://lightningpiggy.com/.netlify/functions/download?invoice=' + encodeURIComponent(invoiceId) + '&file=' + encodeURIComponent(fileId);
-  const niceName = fileId.replace(/^lightningpiggy-v\d-/, '').replace(/\.3mf$/, '').replace(/-/g, ' ');
+  const ext = fileId.split('.').pop().toLowerCase();
+  const niceName = fileId.replace(/^lightningpiggy-v\d-/, '').replace(/\.[a-z0-9]+$/i, '').replace(/-/g, ' ') + ' (' + (ext === 'stp' ? 'STEP' : ext.toUpperCase()) + ')';
+  const formatNote = ext === 'stl'
+    ? 'The file is an STL mesh: the shape only. Import it into your slicer and choose your own material, supports and settings; the <a href="https://lightningpiggy.com/build/cases" style="color:#EC008C;">cases page</a> has printing notes for each design.'
+    : (ext === 'step' || ext === 'stp')
+      ? 'The file is a STEP CAD model, the best format for remixing: open it in CAD software to change dimensions, then export an STL or 3MF to print.'
+      : 'The file is a sliced 3MF project. Open it in your slicer to see the plates, materials and print settings the designer used; the <a href="https://lightningpiggy.com/build/cases" style="color:#EC008C;">cases page</a> has printing notes for each design.';
   const paid = '$' + escapeHtml(String(amount)) + ' ' + escapeHtml(currency);
   const when = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
   const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
@@ -148,7 +154,7 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
       '        <ul style="margin:0 0 16px 0;padding-left:20px;">',
       '          <li style="margin-bottom:8px;">The download button above keeps working, so please keep this email if you ever need the file again.</li>',
       '          <li style="margin-bottom:8px;">The model is licensed <a href="https://creativecommons.org/licenses/by-sa/4.0/" style="color:#EC008C;">CC BY-SA 4.0</a>. You are free to print it, share it, and remix it - just credit the designer and share your changes under the same terms.</li>',
-      '          <li style="margin-bottom:8px;">The file is a sliced 3MF project. Open it in your slicer to see the plates, materials and print settings the designer used; the <a href="https://lightningpiggy.com/build/cases" style="color:#EC008C;">cases page</a> has printing notes for each design.</li>',
+      '          <li style="margin-bottom:8px;">' + formatNote + '</li>',
       '        </ul>',
       '        <p style="margin:0 0 16px 0;">Once your piggy is built, we would love to see it. Post a photo on Nostr tagging <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" style="color:#EC008C;">@LightningPiggy</a> or email it to <a href="mailto:oink@lightningpiggy.com" style="color:#EC008C;">oink@lightningpiggy.com</a>, and it may appear on our <a href="https://lightningpiggy.com/community/wild" style="color:#EC008C;">In the Wild</a> page.</p>',
       '        <p style="margin:0 0 24px 0;">Questions, or something not working? Just reply to this email, or find us on <a href="https://t.me/LightningPiggy" style="color:#EC008C;">Telegram</a>.</p>',

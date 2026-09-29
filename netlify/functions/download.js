@@ -1,10 +1,10 @@
 // Netlify serverless function: delivers a purchased model file. Stateless -
 // it asks BTCPay whether the invoice is settled and that its metadata names
 // this file, then streams the file from the private bundle.
-//   GET ?invoice=<id>&file=<name>.3mf            -> the file (attachment)
-//   GET ?invoice=<id>&file=<name>.3mf&check=1    -> JSON status, no file
+//   GET ?invoice=<id>&file=<name>.<3mf|stl|step> -> the file (attachment)
+//   GET ?invoice=<id>&file=<name>.<ext>&check=1  -> JSON status, no file
 const fs = require('fs');
-const { resolveFile, corsHeaders, getInvoice } = require('./lib/downloads');
+const { resolveFile, corsHeaders, getInvoice, contentTypeFor } = require('./lib/downloads');
 
 const json = (event, status, obj) => ({ statusCode: status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', ...corsHeaders(event) }, body: JSON.stringify(obj) });
 
@@ -32,7 +32,7 @@ exports.handler = async function (event) {
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'model/3mf',
+        'Content-Type': contentTypeFor(fileId),
         'Content-Disposition': `attachment; filename="${fileId}"`,
         'Content-Length': String(data.length),
         'Cache-Control': 'private, no-store',

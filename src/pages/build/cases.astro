@@ -461,6 +461,7 @@ let imgCounter = 0;
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                       Support &amp; download
+                      <span class="ml-0.5 px-1.5 py-0.5 rounded bg-white/20 text-xs font-semibold uppercase">{c.downloads.filter((x) => x.url.startsWith('/downloads/cases/')).length > 1 && !/\b(model)\b/i.test(d.label) ? `${d.label.replace(/^Download /, '').replace(/ File$/, '')} · ` : ''}{(d.url.split('.').pop() || '').replace(/^stp$/i, 'step')}</span>
                     </button>
                   ) : (
                     <a
@@ -608,7 +609,7 @@ let imgCounter = 0;
     // Returning from checkout: poll until settled, then hand over the file.
     const params = new URLSearchParams(location.search);
     const dl = params.get('dl'), inv = params.get('invoice');
-    if (dl && inv && /^[a-z0-9][a-z0-9._-]{0,80}\.3mf$/i.test(dl)) {
+    if (dl && inv && /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(dl)) {
       const bar = document.getElementById('dl-status');
       const txt = document.getElementById('dl-status-text');
       const link = document.getElementById('dl-status-link') as HTMLAnchorElement;

@@ -11,6 +11,9 @@
   included_files = ["netlify/private/downloads/**"]
 [functions.create-download-invoice]
   included_files = ["netlify/private/downloads/**"]
+# The webhook lists every format of a purchased model in the receipt email.
+[functions.btcpay-webhook]
+  included_files = ["netlify/private/downloads/**"]
 
 # Enable branch deploys for testing
 [context.branch-deploy]

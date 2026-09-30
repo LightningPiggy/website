@@ -1,5 +1,5 @@
 {
-  "_comment": "Minimum support amount (USD) for the buy-to-support case downloads. 'default' applies to every file; add a file name under 'minimums' to override it for one case. Read by create-download-invoice (enforced) and the cases page (shown).",
+  "_comment": "Minimum support amount (USD) for the buy-to-support case downloads. One payment unlocks every format of a model (a model is the file name without its .3mf/.stl/.step/.stp extension), so prices are per model. 'default' applies to every model. To price one model differently, add its model name (e.g. \"lightningpiggy-v2-zapbox\") under 'minimums'; a file-name key sets that same model's price too, and if several keys match, the highest wins. An override may be below the default. Read by create-download-invoice (enforced) and the cases page (shown).",
   "default": 3,
   "maximum": 500,
   "minimums": {}

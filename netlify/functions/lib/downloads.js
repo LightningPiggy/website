@@ -27,12 +27,34 @@ const FORMATS = { '3mf': 'model/3mf', stl: 'model/stl', step: 'model/step', stp:
 const FILE_ID_RE = /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i;
 const extOf = (id) => String(id).split('.').pop().toLowerCase();
 const contentTypeFor = (id) => FORMATS[extOf(id)] || 'application/octet-stream';
+// Display name for a format: .stp and .step are both STEP.
+const formatLabel = (id) => (extOf(id) === 'stp' ? 'STEP' : extOf(id).toUpperCase());
 
 // Only a bare basename in an allowed format that actually exists is a valid file id.
 function resolveFile(id) {
   if (typeof id !== 'string' || !FILE_ID_RE.test(id) || id.includes('..')) return null;
   const full = path.join(privateDir(), id);
   return fs.existsSync(full) ? full : null;
+}
+
+// A model is identified by its file name without the format extension, so
+// lightningpiggy-v2-zapbox.3mf and lightningpiggy-v2-zapbox.stl are one model
+// and one payment covers both. Matching is exact: zapbox does not match
+// zapbox-35, and zapstand does not match zapstand-badge.
+const stemOf = (id) => String(id).replace(/\.(3mf|stl|step|stp)$/i, '');
+const sameModel = (a, b) =>
+  typeof a === 'string' && typeof b === 'string' && FILE_ID_RE.test(a) && FILE_ID_RE.test(b) && stemOf(a) === stemOf(b);
+
+// Every format of this file's model that exists in the private bundle,
+// preferred order 3mf, stl, step, stp.
+const FORMAT_ORDER = ['3mf', 'stl', 'step', 'stp'];
+function formatsFor(fileId) {
+  if (typeof fileId !== 'string' || !FILE_ID_RE.test(fileId)) return [];
+  let names = [];
+  try { names = fs.readdirSync(privateDir()); } catch { return []; }
+  return names
+    .filter((n) => FILE_ID_RE.test(n) && stemOf(n) === stemOf(fileId))
+    .sort((a, b) => FORMAT_ORDER.indexOf(extOf(a)) - FORMAT_ORDER.indexOf(extOf(b)));
 }
 
 function corsHeaders(event) {
@@ -50,10 +72,16 @@ async function getInvoice(invoiceId) {
 }
 
 const PRICING = require('./download-pricing.json');
-// Minimum support amount for a file: its own entry if set, else the default.
+// Minimum support amount for a model. One payment unlocks every format, so a
+// price belongs to the model, not a file. An override keyed by the model name
+// or by any of its file names sets the model's price (it may be below the
+// default); if several keys match, the highest wins, so buying through one
+// format can never cost less than the model's price. Otherwise the default.
 function minimumFor(fileId) {
-  const own = PRICING.minimums && PRICING.minimums[fileId];
-  return Number(own || PRICING.default || 3);
+  const mins = PRICING.minimums || {};
+  const keys = [stemOf(fileId), fileId, ...formatsFor(fileId)];
+  const overrides = keys.map((k) => Number(mins[k])).filter((n) => n > 0);
+  return overrides.length ? Math.max(...overrides) : Number(PRICING.default || 3);
 }
 
-module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, corsHeaders, getInvoice, minimumFor, contentTypeFor, extOf, FILE_ID_RE, MAX_USD: Number(PRICING.maximum || 500) };
+module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, corsHeaders, getInvoice, minimumFor, contentTypeFor, extOf, FILE_ID_RE, stemOf, sameModel, formatsFor, formatLabel, MAX_USD: Number(PRICING.maximum || 500) };

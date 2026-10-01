@@ -4,7 +4,7 @@
 //
 // Environment variables required in Netlify:
 //   BTCPAY_API_KEY, BTCPAY_STORE_ID  — same main store as the donate page
-const { SITE, BTCPAY_URL, resolveFile, corsHeaders, minimumFor, MAX_USD } = require('./lib/downloads');
+const { SITE, BTCPAY_URL, resolveFile, corsHeaders, minimumFor, MAX_USD, stemOf, formatsFor, formatLabel } = require('./lib/downloads');
 const crypto = require('crypto');
 
 
@@ -43,7 +43,13 @@ exports.handler = async function (event) {
   const payload = {
     amount: String(amount),
     currency: 'USD',
-    metadata: { itemCode: 'download', fileId, orderId, itemDesc: `Support & download: ${fileId}`, ...(buyerEmail ? { buyerEmail } : {}) },
+    // fileId is the format the buyer clicked; the payment covers every format
+    // of the model (modelId), which the download function honours.
+    metadata: {
+      itemCode: 'download', fileId, modelId: stemOf(fileId), orderId,
+      itemDesc: `Support & download: ${stemOf(fileId)} (${[...new Set(formatsFor(fileId).map(formatLabel))].join(', ') || formatLabel(fileId)})`,
+      ...(buyerEmail ? { buyerEmail } : {}),
+    },
     checkout: {
       // BTCPay substitutes {InvoiceId}; the cases page picks it up and polls `download`.
       redirectURL: `${SITE}/build/cases/?dl=${encodeURIComponent(fileId)}&invoice={InvoiceId}`,

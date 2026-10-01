@@ -10,6 +10,22 @@
 
 const crypto = require('crypto');
 
+// Every format of a purchased model, for the receipt. The private bundle is
+// included with this function (netlify.toml); if it is ever missing, fall back
+// to the single purchased file rather than failing the receipt.
+function modelFormats(fileId) {
+  try {
+    const lib = require('./lib/downloads');
+    lib.privateDir();   // throws with a clear message if the bundle is missing
+    const found = lib.formatsFor(fileId);
+    if (!found.length) console.error('receipt: no bundled files found for', fileId);
+    return found.length ? found : [fileId];
+  } catch (e) {
+    console.error('receipt: could not list model formats, sending a single link:', e.message);
+    return [fileId];
+  }
+}
+
 const BTCPAY_URL = 'https://btcpay.lightningpiggy.com';
 const NOTIFICATION_EMAIL = 'oink@lightningpiggy.com';
 const FROM_EMAIL = 'Lightning Piggy <donations@mail.lightningpiggy.com>';
@@ -97,7 +113,11 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
   if (!apiKey) return;
   const fileId = String(metadata.fileId || '');
   if (!/^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(fileId)) return;
-  const link = 'https://lightningpiggy.com/.netlify/functions/download?invoice=' + encodeURIComponent(invoiceId) + '&file=' + encodeURIComponent(fileId);
+  const linkFor = (f) => 'https://lightningpiggy.com/.netlify/functions/download?invoice=' + encodeURIComponent(invoiceId) + '&file=' + encodeURIComponent(f);
+  const link = linkFor(fileId);
+  const fmtLabel = (f) => { const e = f.split('.').pop().toLowerCase(); return e === 'stp' ? 'STEP' : e.toUpperCase(); };
+  // One payment covers every format of the model; list the others under the main button.
+  const otherFormats = modelFormats(fileId).filter((f) => f !== fileId);
   const ext = fileId.split('.').pop().toLowerCase();
   const niceName = fileId.replace(/^lightningpiggy-v\d-/, '').replace(/\.[a-z0-9]+$/i, '').replace(/-/g, ' ') + ' (' + (ext === 'stp' ? 'STEP' : ext.toUpperCase()) + ')';
   const formatNote = ext === 'stl'
@@ -131,13 +151,17 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
       '      </td></tr>',
       '      <tr><td style="padding:0 40px 8px 40px;font-size:16px;line-height:26px;color:#525252;">',
       '        <p style="margin:0 0 16px 0;">Your contribution helps keep Lightning Piggy free, open source, and in the hands of the next generation of savers. It means a lot - thank you.</p>',
-      '        <p style="margin:0 0 16px 0;">Your model file is ready to download:</p>',
+      '        <p style="margin:0 0 16px 0;">' + (otherFormats.length ? 'Your model files are ready to download. Your support covers every format of this model:' : 'Your model file is ready to download:') + '</p>',
       '      </td></tr>',
       '      <tr><td style="padding:0 40px 8px 40px;" align="center">',
       '        <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="background-color:#EC008C;border-radius:50px;">',
       '          <a href="' + link + '" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:50px;">Download ' + escapeHtml(niceName) + '</a>',
       '        </td></tr></table>',
       '        <p style="margin:12px 0 0 0;font-size:12px;line-height:18px;color:#9ca3af;">' + escapeHtml(fileId) + '</p>',
+      otherFormats.length
+        ? '        <p style="margin:16px 0 0 0;font-size:14px;line-height:22px;color:#525252;">Also included: ' +
+          otherFormats.map((f) => '<a href="' + linkFor(f) + '" style="color:#EC008C;font-weight:600;">Download ' + escapeHtml(fmtLabel(f)) + '</a>').join(' &middot; ') + '</p>'
+        : '',
       '      </td></tr>',
       '      <tr><td style="padding:16px 40px 0 40px;">',
       '        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background-color:#f9fafb;border-radius:12px;">',
@@ -170,7 +194,7 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
     await send(buyer, 'Thank you - your Lightning Piggy model file', html);
   }
   await send('oink@lightningpiggy.com', 'Model download: ' + fileId + ' (' + '$' + amount + ' ' + currency + ')',
-    '<p>' + escapeHtml(fileId) + ' - ' + paid + (buyer ? ' - ' + escapeHtml(buyer) : ' - no email given') + '<br>Invoice ' + escapeHtml(invoiceId) + '</p>');
+    '<p>' + escapeHtml(fileId) + (otherFormats.length ? ' (+ ' + otherFormats.map((f) => escapeHtml(fmtLabel(f))).join(', ') + ')' : '') + ' - ' + paid + (buyer ? ' - ' + escapeHtml(buyer) : ' - no email given') + '<br>Invoice ' + escapeHtml(invoiceId) + '</p>');
 }
 
 // Add supporter avatar (+ optional profile link) to supporters.json via GitHub API

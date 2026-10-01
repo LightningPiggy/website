@@ -1,7 +1,47 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import pricing from '../../../netlify/functions/lib/download-pricing.json';
-const minSupportFor = (file: string) => Number((pricing.minimums as Record<string, number>)[file] || pricing.default);
+import fs from 'node:fs';
+import path from 'node:path';
+// Paid downloads are grouped by model: the file name without its format
+// extension. One payment unlocks every format of a model, so each model gets
+// one button. A model's formats come from the private folder the download
+// function serves from (the same source the server uses), so dropping an
+// .stl or .step next to a model's .3mf is enough to offer it. Card links give
+// the button's label and which file it asks for.
+const PRIVATE_DIR = path.join(process.cwd(), 'netlify', 'private', 'downloads', 'cases');
+const FORMAT_ORDER = ['3mf', 'stl', 'step', 'stp'];
+const bundled: string[] = fs.readdirSync(PRIVATE_DIR).filter((f) => /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(f));
+const stemOf = (f: string) => f.replace(/\.(3mf|stl|step|stp)$/i, '');
+const extOf = (f: string) => (f.split('.').pop() || '').toLowerCase();
+const fmtOf = (f: string) => extOf(f).replace(/^stp$/, 'step');
+const formatsOfModel = (file: string) =>
+  bundled.filter((f) => stemOf(f) === stemOf(file)).sort((a, b) => FORMAT_ORDER.indexOf(extOf(a)) - FORMAT_ORDER.indexOf(extOf(b)));
+// Mirrors minimumFor in netlify/functions/lib/downloads.js: an override keyed
+// by the model name or any of its files sets the model's price; highest wins.
+const minSupportFor = (files: string[]) => {
+  const mins = pricing.minimums as Record<string, number>;
+  const overrides = [stemOf(files[0]), ...files].map((k) => Number(mins[k])).filter((n) => n > 0);
+  return overrides.length ? Math.max(...overrides) : Number(pricing.default);
+};
+type Dl = { label: string; url: string; source?: string };
+const PAID = '/downloads/cases/';
+// A card's downloads in display order: one entry per paid model, external
+// links unchanged. Fails the build if a card links a file that isn't bundled,
+// since that button could never be paid for.
+const downloadGroups = (downloads: Dl[]) => {
+  const out: Array<{ kind: 'paid'; label: string; file: string; formats: string[] } | { kind: 'link'; d: Dl }> = [];
+  const seen = new Set<string>();
+  for (const d of downloads) {
+    if (!d.url.startsWith(PAID)) { out.push({ kind: 'link', d }); continue; }
+    const file = d.url.split('/').pop() || '';
+    if (!bundled.includes(file)) throw new Error(`cases.astro: download ${d.url} has no file in netlify/private/downloads/cases`);
+    if (seen.has(stemOf(file))) continue;
+    seen.add(stemOf(file));
+    out.push({ kind: 'paid', label: d.label, file, formats: formatsOfModel(file) });
+  }
+  return out;
+};
 
 const cases = [
   {
@@ -448,11 +488,12 @@ let imgCounter = 0;
 
                 {/* Download links */}
                 <div class="flex flex-wrap gap-2">
-                  {c.downloads.map((d) => d.url.startsWith('/downloads/cases/') ? (
+                  {downloadGroups(c.downloads).map((g, _i, groups) => g.kind === 'paid' ? (
                     <button
                       type="button"
-                      data-dl-file={d.url.split('/').pop()}
-                      data-dl-min={minSupportFor(d.url.split('/').pop())}
+                      data-dl-file={g.file}
+                      data-dl-formats={[...new Set(g.formats.map(fmtOf))].join(',')}
+                      data-dl-min={minSupportFor(g.formats)}
                       data-dl-name={titleOf(c)}
                       data-dl-creator={c.creator.name}
                       class="dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors"
@@ -461,11 +502,11 @@ let imgCounter = 0;
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
                       </svg>
                       Support &amp; download
-                      <span class="ml-0.5 px-1.5 py-0.5 rounded bg-white/20 text-xs font-semibold uppercase">{c.downloads.filter((x) => x.url.startsWith('/downloads/cases/')).length > 1 && !/\b(model)\b/i.test(d.label) ? `${d.label.replace(/^Download /, '').replace(/ File$/, '')} · ` : ''}{(d.url.split('.').pop() || '').replace(/^stp$/i, 'step')}</span>
+                      <span class="ml-0.5 px-1.5 py-0.5 rounded bg-white/20 text-xs font-semibold uppercase">{groups.filter((x) => x.kind === 'paid').length > 1 && !/\b(model)\b/i.test(g.label) ? `${g.label.replace(/^Download /, '').replace(/ File$/, '')} · ` : ''}{[...new Set(g.formats.map(fmtOf))].join(' + ')}</span>
                     </button>
                   ) : (
                     <a
-                      href={d.url}
+                      href={g.d.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
@@ -473,7 +514,7 @@ let imgCounter = 0;
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
-                      {d.label}
+                      {g.d.label}
                     </a>
                   ))}
                 </div>
@@ -516,6 +557,7 @@ let imgCounter = 0;
       <span class="text-sm text-gray-600">Email for a receipt with your download link <span class="text-gray-400">(optional)</span></span>
       <input id="dl-email" type="email" autocomplete="email" placeholder="you@example.com" class="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
     </label>
+    <p id="dl-formats-note" class="text-xs text-gray-500 mb-1 hidden"></p>
     <p id="dl-min-note" class="text-xs text-gray-500 mb-3"></p>
     <p id="dl-error" class="text-sm text-red-600 mb-3 hidden"></p>
     <div class="flex gap-3 justify-end">
@@ -526,9 +568,9 @@ let imgCounter = 0;
 </div>
 
 <!-- After checkout: BTCPay redirects back here with ?dl=<file>&invoice=<id> -->
-<div id="dl-status" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-gray-900 text-white text-sm rounded-full px-5 py-3 shadow-xl flex items-center gap-3">
+<div id="dl-status" class="hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100vw-2rem)] bg-gray-900 text-white text-sm text-center rounded-2xl px-5 py-3 shadow-xl flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
   <span id="dl-status-text"></span>
-  <a id="dl-status-link" href="#" class="hidden underline font-semibold">Download</a>
+  <span id="dl-status-links" class="hidden flex flex-wrap items-center justify-center gap-x-3 gap-y-1"></span>
 </div>
 
 <script>
@@ -570,6 +612,12 @@ let imgCounter = 0;
       const el = btn as HTMLElement;
       file = el.dataset.dlFile || '';
       sub.textContent = `${el.dataset.dlName} - designed by ${el.dataset.dlCreator} - ${file}`;
+      const formats = (el.dataset.dlFormats || '').split(',').filter(Boolean).map((f) => f.toUpperCase());
+      const fNote = document.getElementById('dl-formats-note');
+      if (fNote) {
+        fNote.textContent = `One payment unlocks every format: ${formats.join(', ')}.`;
+        fNote.classList.toggle('hidden', formats.length < 2);
+      }
       errEl.classList.add('hidden');
       custom.value = '';
       applyMinimum(Number(el.dataset.dlMin) || 3);
@@ -612,26 +660,41 @@ let imgCounter = 0;
     if (dl && inv && /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(dl)) {
       const bar = document.getElementById('dl-status');
       const txt = document.getElementById('dl-status-text');
-      const link = document.getElementById('dl-status-link') as HTMLAnchorElement;
+      const links = document.getElementById('dl-status-links');
       const url = `/.netlify/functions/download?invoice=${encodeURIComponent(inv)}&file=${encodeURIComponent(dl)}`;
       bar.classList.remove('hidden');
       let tries = 0;
       const poll = async () => {
         tries++;
         let status = 'unknown';
-        try { status = (await (await fetch(url + '&check=1')).json()).status || 'unknown'; } catch {}
+        let formats: string[] = [];
+        try {
+          const r = await (await fetch(url + '&check=1')).json();
+          status = r.status || 'unknown';
+          formats = Array.isArray(r.formats) ? r.formats : [];
+        } catch {}
         if (status === 'settled') {
           let email = ''; try { email = sessionStorage.getItem('dl-email') || ''; sessionStorage.removeItem('dl-email'); } catch {}
           txt.textContent = email
             ? `Thank you! Your download of ${dl} is ready, and a receipt with the link is on its way to ${email}.`
             : `Thank you! Your download of ${dl} is ready.`;
-          link.href = url; link.classList.remove('hidden');
-          window.location.assign(url);           // starts the download; the page stays
+          // One payment covers every format: offer each one, and start the one they chose.
+          const all = formats.length ? formats : [dl];
+          links.replaceChildren(...all.map((f) => {
+            const a = document.createElement('a');
+            a.href = `/.netlify/functions/download?invoice=${encodeURIComponent(inv)}&file=${encodeURIComponent(f)}`;
+            a.className = 'underline font-semibold whitespace-nowrap';
+            const ext = (f.split('.').pop() || '').toUpperCase().replace(/^STP$/, 'STEP');
+            a.textContent = all.length > 1 ? `Download ${ext}` : 'Download';
+            return a;
+          }));
+          links.classList.remove('hidden');
+          window.location.assign(url);           // starts the chosen format; the page stays
           return;
         }
         if (status === 'processing') txt.textContent = 'Payment seen - waiting for confirmation...';
         else if (status === 'unpaid') txt.textContent = 'Waiting for your payment...';
-        else if (status === 'mismatch' || status === 'unknown') { txt.textContent = 'We could not match that payment to this file.'; return; }
+        else if (status === 'mismatch' || status === 'unknown') { txt.textContent = 'We could not match that payment to this model.'; return; }
         else { txt.textContent = `Invoice ${status}. Please try again.`; return; }
         if (tries < 200) setTimeout(poll, 4000);
       };

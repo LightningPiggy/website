@@ -71,7 +71,7 @@ Under the *Wallets* header should be *Extensions* (4). Click this and find the *
 
 ![](./LNbits_Guide_03.png)Now the Pay Links extension will appear under your wallets' list (6). Click it and select *New Pay Link* (7).
 
-![](./LNbits_Guide_04.png)Choose your wallet from the dropdown list (8), give it a description (the name of your child for example), and add a Lightning Address if you wish. Deselect *Fixed amount* (9) and configure the *Min* and *Max* amounts of satoshis your wallet can receive.
+![](./LNbits_Guide_04.png)Choose your wallet from the dropdown list (8), give it a description (the name of your young saver for example), and add a Lightning Address if you wish. Deselect *Fixed amount* (9) and configure the *Min* and *Max* amounts of satoshis your wallet can receive.
 
 ![](./LNbits_Guide_05.png)We suggest using 1 Min and 10,000,000 Max (10). Click to expand the *Advanced options* area (11), and enter the maximum number of characters you wish to allow when someone leaves a message with a payment in the *Comment maximum characters box* (12). We recommend using 100. *Enable nostr zaps* if you wish and then click *Create Pay Link* to save the settings.
 

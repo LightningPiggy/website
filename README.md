@@ -1,6 +1,6 @@
 # LightningPiggy Website
 
-The official website for [Lightning Piggy](https://lightningpiggy.com) — an open-source Bitcoin piggy bank that teaches kids sound money with sats.
+The official website for [Lightning Piggy](https://lightningpiggy.com) — an open-source Bitcoin piggy bank that teaches young savers sound money with sats.
 
 ## Tech Stack
 

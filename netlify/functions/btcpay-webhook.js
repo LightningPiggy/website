@@ -186,7 +186,7 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
       '      </td></tr>',
       '    </table>',
       '  </td></tr>',
-      '  <tr><td align="center" style="padding:24px 16px 0;font-size:11px;line-height:18px;color:#9ca3af;">&copy; ' + new Date().getFullYear() + ' Lightning Piggy Foundation. Open source, built with love.</td></tr>',
+      '  <tr><td align="center" style="padding:24px 16px 0;font-size:11px;line-height:18px;color:#9ca3af;">&copy; ' + new Date().getFullYear() + ' Lightning Piggy. Open source, built with love.</td></tr>',
       '</table>',
       '</td></tr></table>',
       '</body></html>',

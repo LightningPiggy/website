@@ -106,7 +106,7 @@ async function sendWelcomeEmail(apiKey, subscriberEmail) {
     '          <tr><td style="border-bottom:1px solid #1f2937;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>',
     '        </table>',
     '        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:16px;">',
-    '          <tr><td align="center" style="font-size:11px;line-height:18px;color:#4b5563;">&copy; 2026 Lightning Piggy Foundation. Open source, built with love.</td></tr>',
+    '          <tr><td align="center" style="font-size:11px;line-height:18px;color:#4b5563;">&copy; 2026 Lightning Piggy. Open source, built with love.</td></tr>',
     '        </table>',
     '      </td></tr>',
     '    </table>',

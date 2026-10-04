@@ -16,14 +16,14 @@ The Services are provided by the Lightning Piggy project, a free and open-source
 
 Lightning Piggy is built to collect as little personal data as possible.
 
-- The Services use **no user accounts**. You do not register, and we do not hold a profile about you.
+- The Services use **no user accounts**. You do not register, and we do not build a profile of what you do.
 - The **Device and the App connect directly to a wallet you control and to public networks** (the Bitcoin and Lightning networks and Nostr relays). They do not route your balances, transactions or activity through our servers, and **we cannot see, access or recover your keys, funds or transaction history**.
 - We take most payments with **our own BTCPay Server and LNbits**, open-source software that runs on a server we manage, rather than through a payment company (see 3b for the exception).
 - We do **not** sell or rent your personal data, we do **not** use advertising or cross-site tracking, and the Website sets **no tracking cookies**.
 
 Some features are public by design. For example, the supporters wall, Nostr handles and vendor listings publish what you give them. We say so below wherever that applies.
 
-The Website's source code and data files are kept in a **public GitHub repository**, and the Website is built from it. Anything we publish on the Website is also visible in that repository, together with its change history.
+The Website's source code and data files are kept in a **public GitHub repository**, and the Website is built from it. A maintainer also keeps a public working copy of it there. Anything we publish on the Website is also visible in these repositories, together with its change history.
 
 ## 2. When you visit the Website
 
@@ -33,7 +33,7 @@ The Website and its server functions are hosted by **Netlify**. As on virtually 
 
 Our own server functions also write some details to these logs to help us fix problems and stop abuse. These include the Nostr handles you buy from us (see 3e), Nostr public keys, payment references and error messages. When the anti-spam checks on our newsletter and vendor-application forms reject a submission, they log the **IP address** it came from and, in some cases, the email address entered. Those two forms also count recent submissions per IP address to limit abuse. The counts are held only in the memory of the running server function and are not saved.
 
-Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, the server also receives that wallet's request, including its IP address. Its technical logs are rotated automatically and overwritten after a limited time.
+Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, its request passes through Netlify to this server, so both receive it, including the wallet's IP address. The web server in front of our payment software keeps no access logs, but the payment software keeps technical logs, and the LNbits logs include IP addresses. These logs are deleted automatically, but they can be kept for several months.
 
 Our legal basis for all of this is our legitimate interest in operating, securing and protecting the Services.
 
@@ -51,7 +51,9 @@ Some pages show live content from the **Nostr** network, an open social network 
 
 The treasure-hunt pages load map tiles from **CARTO** and, only if you switch on the Bitcoin merchants layer, data from **BTC Map** and map-label fonts from MapLibre (demotiles.maplibre.org). If you use a Nostr browser extension, the treasure-hunt and leaderboard pages ask it for your list of relays when they load, and also connect to up to five of them. The firmware installer downloads firmware from our pages on **GitHub Pages**.
 
-These pages also show other people's public Nostr profiles and posts as they appear on Nostr. For example, the treasure-hunt pages show caches and find logs, the leaderboard ranks everyone who has published treasure-hunt caches or finds, and the #ZapMyPiggy page shows recent public posts with that hashtag. This content is loaded live from Nostr, and we do not store it. To stop appearing, you would need to remove the posts from Nostr or stop using the hashtag.
+These pages also show other people's public Nostr profiles and posts as they appear on Nostr. For example, the treasure-hunt pages show caches and find logs, the leaderboard shows the people who have published the most treasure-hunt caches or finds, and the #ZapMyPiggy page shows recent public posts with that hashtag. Apart from the market (see 3f), this content is loaded live from Nostr, and we do not store it. To stop appearing, you can ask Nostr relays to delete your posts (not all relays do) or stop using the hashtag.
+
+Our legal basis for these connections (2c and 2d) is our legitimate interest in providing working tools and showing community activity. You can block them with a content blocker, but some pages may then not work.
 
 ## 3. Information you choose to give us
 
@@ -75,7 +77,7 @@ Our legal basis is our legitimate interest in accepting donations, keeping recor
 
 ### c) Supporters wall
 
-If you donate **$50 or more** and give your npub or X handle, we look up your public profile picture (through Nostr relays or unavatar.io) and add you to the "Community Supporters" wall on the Donate page. It shows your profile picture linked to your Nostr or X profile. If you give both, both are published: the wall shows your X profile picture (its web address contains your X handle), linked to your Nostr profile. Being listed shows that you gave at least $50, but not the exact amount. Your entry (your profile picture's web address, your profile link and the date) is also saved in our public GitHub repository. We list you only with your consent, which you give by entering your npub or X handle. You can withdraw it at any time by asking us to remove you. If you do not want to be listed, leave these fields empty.
+If you donate **$50 or more** and give your npub or X handle, we look up your public profile picture (through Nostr relays or unavatar.io) and add you to the "Community Supporters" wall on the Donate page. It shows your profile picture linked to your Nostr or X profile. If you give both, both are published: the wall shows your X profile picture (its web address contains your X handle), linked to your Nostr profile. Being listed shows that you gave at least $50, but not the exact amount. Your entry (your profile picture's web address, your profile link, the date and time, and a short code made from your payment reference, which stops you being listed twice) is also saved in our public GitHub repository. We list you only with your consent, which you give by entering your npub or X handle. You can withdraw it at any time by asking us to remove you. If you do not want to be listed, leave these fields empty.
 
 ### d) Buying a case design download
 
@@ -85,15 +87,15 @@ When you support a case design on the [Cases page](/build/cases), we record the 
 
 Our legal basis is performing our agreement with you (delivering your download and receipt) and our legitimate interest in keeping payment records.
 
-### e) NIP-05 Nostr handles
+### e) Nostr handles
 
-If you buy a `name@lightningpiggy.com` handle, we record the handle, your npub and the amount with the payment on our BTCPay Server, together with anything you enter on its checkout page. While you type, the handle is sent to our server to check whether it is available. Once you have paid, **your handle and Nostr public key are published** in our public directory at [lightningpiggy.com/.well-known/nostr.json](/.well-known/nostr.json), which is what makes the handle work. They are also saved in our public GitHub repository, with the handle named in the change description. We email ourselves a note with the handle, npub and amount. Our legal basis is performing our agreement with you, since publishing the handle is the service you buy.
+A Nostr handle (also called a NIP-05 address) is a name like `name@lightningpiggy.com` that Nostr apps show as a verified name for your public key. If you buy one, we record the handle, your npub and the amount with the payment on our BTCPay Server, together with anything you enter on its checkout page. While you type, the handle is sent to our server to check whether it is available. Once you have paid, **your handle and Nostr public key are published** in our public directory at [lightningpiggy.com/.well-known/nostr.json](/.well-known/nostr.json), which is what makes the handle work. They are also saved in our public GitHub repository, with the handle named in the change description. We email ourselves a note with the handle, npub and amount. Our legal basis is performing our agreement with you, since publishing the handle is the service you buy.
 
 ### f) Vendor applications
 
-If you apply to be listed on our market, we collect what you submit: your **store name, contact email, country, shop type, shipping regions, store description, reason for applying, website, and Nostr npub and/or X profile**. We also record the date and the **IP address** your application came from, to help us spot spam and abuse and as a record of your application. Applications are stored with our hosting provider (**Netlify**). We review them in a tool on the computer we use to manage the Website, and applications we take forward are copied there (without the IP address). We email ourselves a copy (also without the IP address) so we can review it and reply, and we send you an acknowledgement.
+If you apply to be listed on our market, we collect what you submit: your **store name, contact email, country, shop type, shipping regions, store description, reason for applying, website, and Nostr npub and/or X profile**. We also record the date and the **IP address** your application came from, to help us spot spam and abuse. We delete the IP address once we have reviewed your application. Applications are stored with our hosting provider (**Netlify**). We review them in a tool on the computer we use to manage the Website, and applications we take forward are copied there (without the IP address). We email ourselves a copy (also without the IP address) so we can review it and reply, and we send you an acknowledgement.
 
-Applying includes agreeing that, if we approve your application, we publish your **store name, description, country, shipping regions, shop type, website, logo (usually your Nostr or X profile picture) and Nostr and X profile links** on the Website and in our public GitHub repository. Your contact email, your reason for applying and your IP address are never published. Market pages also show your public Nostr profile (name, picture, description, NIP-05 and Lightning address) and, for some vendors, your Nostr product listings. We read these from Nostr when we build the Website and again in each visitor's browser, so a change you make on Nostr reaches our saved copy only at our next update.
+Applying includes agreeing that, if we approve your application, we publish your **store name, description, country, shipping regions, shop type, website, logo (usually your Nostr or X profile picture) and Nostr and X profile links** on the Website and in our public GitHub repository. Your contact email, your reason for applying and your IP address are never published. Market pages also show your public Nostr profile (name, picture, description, Nostr handle and Lightning address) and, for some vendors, your Nostr product listings. We read these from Nostr when we build the Website and again in each visitor's browser, so a change you make on Nostr reaches our saved copy only at our next update.
 
 Our legal basis is taking steps at your request and then performing our agreement to list you, together with our legitimate interest in operating the market. You can ask us to remove your listing at any time.
 
@@ -101,7 +103,7 @@ Our legal basis is taking steps at your request and then performing our agreemen
 
 Our shop and point-of-sale pages use checkout forms from our BTCPay Server. Anything the checkout asks for, such as a shipping address for a hardware order, is stored on our BTCPay Server and used to fulfil your order. To deliver a hardware order, we give your name and delivery address to the postal or courier service, and for deliveries abroad they may also be passed to customs authorities.
 
-If you order from us through a Nostr marketplace, your order message (including your name, contact details and delivery address) is decrypted on our server and emailed to us through Resend so that we can fulfil it. The name on the order is also kept in our server's logs for up to seven days.
+If you order from us through a Nostr marketplace, your order message (including your name, contact details and delivery address) is decrypted on our server and emailed to us through Resend so that we can fulfil it. Our server's logs also record your Nostr public key, the order reference, the name on the order and the items you ordered. If you send our shop's Nostr account any other direct message, the logs record only your Nostr public key. These logs are deleted automatically after a few weeks. Your order message stays on Nostr relays in encrypted form: its contents are private, but anyone can see that your Nostr public key sent us a message, and when.
 
 Our legal basis is performing our contract with you.
 
@@ -161,16 +163,17 @@ We keep personal data only as long as needed for the purpose it was collected:
 
 - **Newsletter:** your email address stays on our list until you unsubscribe. After that we keep it, marked as unsubscribed, so that we do not email you again. Email us if you want it deleted completely, including from our sign-up notifications.
 - **Payments:** payment records on our BTCPay Server and LNbits, including any email address, delivery address, npub, handle or comment given with them, are kept as our record of payments and so that download links keep working. We do not delete them automatically. Once your order is complete, you can ask us to remove your email or delivery address.
-- **Vendor applications:** if we decline an application, we delete it, including the copy emailed to us. Applications waiting for review are kept until we review them. If we accept one, we keep it (including the IP address) as a record of your listing while you are listed, and delete it on request.
+- **Vendor applications:** if we decline an application, we delete it, including the copy emailed to us. We delete the IP address once we have reviewed an application. If we accept one, we keep it as a record of your listing, and delete it on request.
 - **Published content:** we keep it on the Website until it is removed, at your request or ours.
-- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. Our own server's technical logs are rotated automatically and overwritten after a limited time.
+- **Our private list of featured people and vendors:** kept while we feature you, and updated or deleted on request.
+- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. Our own server's technical logs are deleted automatically, but the LNbits logs, which include IP addresses, can be kept for several months. Logs from our Nostr order service are deleted after a few weeks (see 3g).
 - **Emails:** emails you send us, and the notifications our systems send us about sign-ups, donations, purchases, orders and vendor applications, are kept in our mailbox only as long as we need them, and we delete them on request. Resend, our email provider, keeps copies of the emails we send for a limited period that it sets.
 
 ## 10. Your rights
 
 Depending on where you live, you may have the right to access, correct or delete your personal data, to restrict or object to how we use it, to receive a copy in a portable format, and to withdraw your consent at any time. Withdrawing consent does not affect anything we did before you withdrew it. To exercise these rights, email **<oink@lightningpiggy.com>**. You can unsubscribe from the newsletter at any time using the link in our newsletters. If you are in the EEA or UK and believe we have mishandled your data, you also have the right to complain to your local data-protection authority.
 
-Please note the limits of what we can remove. We can take your details off the Website, but earlier versions remain in the history of our public GitHub repositories, in earlier deploys kept by Netlify until we delete them, and in any copies others have made. We cannot delete posts published to Nostr, including zap receipts, or transactions recorded on the Bitcoin blockchain.
+Please note the limits of what we can remove. We can take your details off the Website, but earlier versions remain in the history of our public GitHub repositories (including a maintainer's working copy), in earlier deploys kept by Netlify until we delete them, and in any copies others have made. We cannot delete posts published to Nostr, including zap receipts, or transactions recorded on the Bitcoin blockchain.
 
 ## 11. Children's privacy
 
@@ -182,7 +185,7 @@ We take reasonable technical and organisational measures to protect the limited 
 
 ## 13. Third-party services
 
-The Services link to and interoperate with third parties (such as wallet providers, app stores, code hosting, Nostr relays and Geyser.fund). Their handling of your data is governed by their own privacy policies, which we encourage you to review. We are not responsible for the privacy practices of third parties.
+The Services also link to and work with independent third parties, such as wallet providers, app stores, Nostr relays and Geyser.fund. Their own privacy policies apply to how they handle your data, and we encourage you to read them. We are not responsible for their privacy practices. This does not cover the service providers listed in section 7, which handle data on our behalf.
 
 ## 14. Changes to this policy
 

@@ -3,10 +3,10 @@ title: "Terms & Conditions"
 slug: "terms"
 description: "The terms governing your use of the Lightning Piggy website, hardware, mobile app, Treasure Hunt, marketplace and related services."
 pubDate: 2026-06-26
-updatedDate: 2026-06-26
+updatedDate: 2026-10-04
 ---
 
-**Last updated: 26 June 2026**
+**Last updated: 4 October 2026**
 
 These Terms & Conditions ("Terms") govern your access to and use of the Lightning Piggy website at lightningpiggy.com and its subdomains, the open-source Lightning Piggy hardware, the Lightning Piggy mobile application, the Treasure Hunt, the vendor marketplace, and any related content, tools and services (together, the "Services").
 
@@ -78,7 +78,7 @@ The App (and certain firmware and tools) may be offered as pre-release, "open be
 
 ## 9. Third-party services, wallets and networks
 
-The Services interoperate with, link to, or rely on third parties that we neither control nor endorse, including but not limited to: wallet providers and software (such as LNbits, Alby Hub, Coinos, Zeus and Primal), the Bitcoin network, the Lightning Network, Nostr relays, app distribution platforms (Apple, Google), code hosting (GitHub), and payment or donation processors (such as BTCPay Server).
+The Services interoperate with, link to, or rely on third parties that we neither control nor endorse, including but not limited to: wallet providers and software (such as LNbits, Alby Hub, Coinos, Zeus and Primal), the Bitcoin network, the Lightning Network, Nostr relays, app distribution platforms (Apple, Google), code hosting (GitHub), and donation platforms (such as Geyser.fund). The BTCPay Server and LNbits that we use to accept payments are run by us, and our [Privacy Policy](/privacy) explains how they handle your data.
 
 Your use of any third-party service is governed by that third party's own terms and privacy practices, which are solely between you and that third party. We are not responsible or liable for the availability, accuracy, security, custody practices, acts or omissions of any third party, including any loss of funds arising from a connected wallet or network. Choose your wallet and counterparties carefully and do your own research.
 
@@ -107,7 +107,7 @@ If you subscribe to our newsletter you consent to receiving emails from us. You 
 
 ## 14. User-submitted content
 
-If you submit content to the Services - for example posts to a community message board, builds shared "in the wild", ZapMyPiggy entries, vendor applications, or feedback - you confirm that you own or have the right to submit it and that it does not infringe any third-party rights or any law. You grant us a worldwide, non-exclusive, royalty-free licence to use, reproduce, display and distribute that content in connection with operating and promoting the Services. We may moderate, edit or remove any user content at our discretion. Feedback and suggestions may be used by us freely and without obligation.
+If you submit content to the Services - for example builds shared "in the wild", ZapMyPiggy entries, vendor applications, or feedback - you confirm that you own or have the right to submit it and that it does not infringe any third-party rights or any law. You grant us a worldwide, non-exclusive, royalty-free licence to use, reproduce, display and distribute that content in connection with operating and promoting the Services. We may moderate, edit or remove any user content at our discretion. Feedback and suggestions may be used by us freely and without obligation.
 
 ## 15. Acceptable use
 

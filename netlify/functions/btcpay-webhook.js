@@ -130,7 +130,8 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
   const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + apiKey },
-    body: JSON.stringify({ from: 'Lightning Piggy <newsletter@mail.lightningpiggy.com>', to: [to], subject, html }),
+    // mail.lightningpiggy.com has no MX, so replies ("Just reply to this email") need reply_to.
+    body: JSON.stringify({ from: 'Lightning Piggy <newsletter@mail.lightningpiggy.com>', reply_to: 'oink@lightningpiggy.com', to: [to], subject, html }),
   }).catch((e) => console.error('receipt email failed:', e.message));
 
   const buyer = typeof metadata.buyerEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(metadata.buyerEmail) ? metadata.buyerEmail : null;
@@ -186,7 +187,7 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
       '      </td></tr>',
       '    </table>',
       '  </td></tr>',
-      '  <tr><td align="center" style="padding:24px 16px 0;font-size:11px;line-height:18px;color:#9ca3af;">&copy; ' + new Date().getFullYear() + ' Lightning Piggy Foundation. Open source, built with love.</td></tr>',
+      '  <tr><td align="center" style="padding:24px 16px 0;font-size:11px;line-height:18px;color:#9ca3af;">&copy; ' + new Date().getFullYear() + ' Lightning Piggy. Open source, built with love.</td></tr>',
       '</table>',
       '</td></tr></table>',
       '</body></html>',
@@ -225,10 +226,13 @@ async function addSupporter(avatarUrl, profileUrl, invoiceId) {
     const supporters = JSON.parse(currentContent);
 
     // BTCPay re-delivers a webhook until it gets a 2xx, so the same
-    // InvoiceSettled can arrive several times. Stamp the invoice id on the
-    // entry and use the file itself as the idempotency record, otherwise a
-    // retry adds the same donor to the public wall again.
-    if (invoiceId && supporters.some((s) => s && s.invoiceId === invoiceId)) {
+    // InvoiceSettled can arrive several times. Stamp the entry with a hash of
+    // the invoice id and use the file itself as the idempotency record,
+    // otherwise a retry adds the same donor to the public wall again. The raw
+    // id is not published: anyone holding it can open the invoice on BTCPay
+    // and see the exact amount.
+    const invoiceRef = invoiceId ? crypto.createHash('sha256').update(String(invoiceId)).digest('hex').slice(0, 16) : null;
+    if (invoiceRef && supporters.some((s) => s && s.invoiceRef === invoiceRef)) {
       console.log('Supporter already recorded for invoice', invoiceId, '- skipping');
       return true;
     }
@@ -236,7 +240,7 @@ async function addSupporter(avatarUrl, profileUrl, invoiceId) {
     // Append new supporter
     const entry = { avatarUrl: avatarUrl, addedAt: new Date().toISOString() };
     if (profileUrl) entry.profileUrl = profileUrl;
-    if (invoiceId) entry.invoiceId = invoiceId;
+    if (invoiceRef) entry.invoiceRef = invoiceRef;
     supporters.push(entry);
 
     // Commit updated file

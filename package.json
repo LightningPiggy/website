@@ -16,6 +16,7 @@
     "@astrojs/mdx": "^4.0.0",
     "@astrojs/rss": "^4.0.0",
     "@astrojs/sitemap": "^3.2.0",
+    "@fontsource/inter": "^5.3.0",
     "@netlify/blobs": "^8.2.0",
     "astro": "^5.1.0",
     "qrcode-generator": "^2.0.4",

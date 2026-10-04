@@ -1,11 +1,10 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 
-// The "oink" wallet on the live LNbits server. The Invoice/Read key is
-// read-only (it can see incoming payments but cannot spend), so it is safe to
-// expose client-side - the original ZapNotify tool did the same.
-const LNBITS_HOST = 'lnbits.lightningpiggy.com';
-const OINK_READ_KEY = 'ed6438475ede36f8111a942fd415f7a1';
+// Live payments to the "oink" wallet, as a public read-only stream of
+// {sats, comment}. A relay on our server holds the wallet's LNbits key, so no
+// key is needed (or exposed) here. Source: vps/oink-feed (not in this repo).
+const OINK_FEED_URL = 'https://lnbits.lightningpiggy.com/oink-feed';
 const LIGHTNING_ADDRESS = 'oink@lightningpiggy.com';
 // bech32 LNURL for the oink pay link (encodes
 // https://lightningpiggy.com/.well-known/lnurlp/oink). The LNURL form is the
@@ -92,11 +91,9 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" is:inline></script>
   <script
     is:inline
-    define:vars={{ LNBITS_HOST, OINK_READ_KEY, LIGHTNING_ADDRESS, OINK_LNURL }}
+    define:vars={{ OINK_FEED_URL, LIGHTNING_ADDRESS, OINK_LNURL }}
   >
     document.addEventListener('DOMContentLoaded', function () {
-      var WS_URL = 'wss://' + LNBITS_HOST + '/api/v1/ws/' + OINK_READ_KEY;
-
       var toggleBtn = document.getElementById('oink-toggle');
       var toggleText = document.getElementById('oink-toggle-text');
       var statusEl = document.getElementById('oink-status');
@@ -207,8 +204,8 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
       }
 
       var active = false;       // user has enabled notifications
-      var socket = null;
-      var reconnectDelay = 1000; // backoff, capped
+      var feed = null;
+      var reconnectDelay = 5000; // backoff, capped
       var reconnectTimer = null;
       var overlayQueue = [];
       var overlayShowing = false;
@@ -221,53 +218,41 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
           .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
       }
 
-      // LNbits sends comment as a string or an array of strings
-      function normaliseComment(c) {
-        if (Array.isArray(c)) return c.join(' ');
-        return c == null ? '' : String(c);
-      }
-
       function formatSats(n) {
         try { return Number(n).toLocaleString(); } catch (e) { return String(n); }
       }
 
       function connect() {
-        socket = new WebSocket(WS_URL);
+        feed = new EventSource(OINK_FEED_URL);
 
-        socket.onopen = function () {
-          reconnectDelay = 1000;
+        feed.onopen = function () {
+          reconnectDelay = 5000;
           setStatus('Connected - notifications are live. 🔊');
         };
 
-        socket.onmessage = function (event) {
+        // The relay sends only settled incoming payments as {sats, comment}
+        feed.addEventListener('payment', function (event) {
           var data;
           try { data = JSON.parse(event.data); } catch (e) {
-            console.error('Bad JSON from LNbits', e);
+            console.error('Bad JSON from the oink feed', e);
             return;
           }
-          if (!data || typeof data !== 'object' || !data.payment) return;
-          var payment = data.payment;
-          if (typeof payment.amount !== 'number') return;
+          if (!data || typeof data.sats !== 'number') return;
+          enqueueOverlay(data.sats, typeof data.comment === 'string' ? data.comment : '');
+        });
 
-          var sats = Math.round(payment.amount / 1000);
-          var comment = '';
-          if (payment.extra) comment = normaliseComment(payment.extra.comment);
-          enqueueOverlay(sats, comment);
-        };
-
-        socket.onclose = function () {
-          if (active) {
-            // Unexpected drop while active - auto-reconnect with backoff (stay pink)
+        feed.onerror = function () {
+          if (!active) return;
+          if (feed.readyState === EventSource.CONNECTING) {
+            // The browser retries on its own; stay pink while it does
             setStatus('Reconnecting…');
-            reconnectTimer = setTimeout(connect, reconnectDelay);
-            reconnectDelay = Math.min(reconnectDelay * 2, 30000);
-          } else {
-            setStatus('Notifications off.');
+            return;
           }
-        };
-
-        socket.onerror = function () {
-          console.error('WebSocket error');
+          // The browser gave up (e.g. the feed returned an error): retry with backoff
+          setStatus('Reconnecting…');
+          feed.close();
+          reconnectTimer = setTimeout(connect, reconnectDelay);
+          reconnectDelay = Math.min(reconnectDelay * 2, 60000);
         };
       }
 
@@ -336,7 +321,7 @@ const OINK_LNURL = 'LNURL1DP68GURN8GHJ7MRFVA58GMNFDENHQ6T8VAUJUCM0D5HJUAM9D3KZ66
         // Back to the yellow "enable first" prompt
         setToggleState(false);
         if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
-        if (socket) { try { socket.close(); } catch (e) {} }
+        if (feed) { feed.close(); feed = null; }
         setStatus('Notifications off.');
       }
 

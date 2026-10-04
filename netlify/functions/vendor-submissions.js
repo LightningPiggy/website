@@ -97,6 +97,9 @@ export default async (req) => {
 
       existing.status = 'imported';
       existing.importedAt = new Date().toISOString();
+      // The IP only helps spot spam while an application is pending; the
+      // Privacy Policy promises we drop it once the application is reviewed.
+      delete existing.ip;
       await store.setJSON(id, existing);
       return json(200, { success: true, id, action: 'imported' });
     } catch (err) {

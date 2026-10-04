@@ -3,10 +3,10 @@ title: "Terms & Conditions"
 slug: "terms"
 description: "The terms governing your use of the Lightning Piggy website, hardware, mobile app, Treasure Hunt, marketplace and related services."
 pubDate: 2026-06-26
-updatedDate: 2026-06-26
+updatedDate: 2026-10-04
 ---
 
-**Last updated: 26 June 2026**
+**Last updated: 4 October 2026**
 
 These Terms & Conditions ("Terms") govern your access to and use of the Lightning Piggy website at lightningpiggy.com and its subdomains, the open-source Lightning Piggy hardware, the Lightning Piggy mobile application, the Treasure Hunt, the vendor marketplace, and any related content, tools and services (together, the "Services").
 
@@ -78,7 +78,7 @@ The App (and certain firmware and tools) may be offered as pre-release, "open be
 
 ## 9. Third-party services, wallets and networks
 
-The Services interoperate with, link to, or rely on third parties that we neither control nor endorse, including but not limited to: wallet providers and software (such as LNbits, Alby Hub, Coinos, Zeus and Primal), the Bitcoin network, the Lightning Network, Nostr relays, app distribution platforms (Apple, Google), code hosting (GitHub), and payment or donation processors (such as BTCPay Server).
+The Services interoperate with, link to, or rely on third parties that we neither control nor endorse, including but not limited to: wallet providers and software (such as LNbits, Alby Hub, Coinos, Zeus and Primal), the Bitcoin network, the Lightning Network, Nostr relays, app distribution platforms (Apple, Google), code hosting (GitHub), and donation platforms (such as Geyser.fund). The BTCPay Server and LNbits that we use to accept payments are run by us, and our [Privacy Policy](/privacy) explains how they handle your data.
 
 Your use of any third-party service is governed by that third party's own terms and privacy practices, which are solely between you and that third party. We are not responsible or liable for the availability, accuracy, security, custody practices, acts or omissions of any third party, including any loss of funds arising from a connected wallet or network. Choose your wallet and counterparties carefully and do your own research.
 

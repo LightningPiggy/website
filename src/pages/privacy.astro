@@ -14,7 +14,7 @@ if (privacyPost) {
 
 <ContentLayout
   title="Privacy Policy"
-  description="What limited personal data Lightning Piggy collects, why, and the choices and rights you have."
+  description={privacyPost?.data.description ?? "What personal data Lightning Piggy collects, publishes and shares, why, and the choices and rights you have."}
 >
   {Content && <Content />}
 </ContentLayout>

@@ -10,7 +10,7 @@ updatedDate: 2026-10-04
 
 This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
 
-The Services are provided by the Lightning Piggy project, a free and open-source project with volunteer contributors ("Lightning Piggy", "we", "us" or "our"). The project is in early development and is not currently incorporated as a legal entity. The maintainers who run the Website and our payment servers on the project's behalf are responsible for the personal data described in this policy (the "controller"). You can contact them about your data at **<oink@lightningpiggy.com>**.
+The Services are provided by Lightning Piggy ("we", "us" or "our"), a free and open-source project with volunteer contributors. The project is in early development and is not currently incorporated as a legal entity. The maintainers who run the Website and our payment servers on the project's behalf are responsible for the personal data described in this policy (the "controller"). You can contact them about your data at **<oink@lightningpiggy.com>**.
 
 ## 1. Our approach: privacy by design
 

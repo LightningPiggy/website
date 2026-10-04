@@ -12,6 +12,8 @@
 var crypto = require('crypto');
 
 var SITE = 'https://lightningpiggy.com';
+var NOTIFICATION_EMAIL = 'oink@lightningpiggy.com';
+var FROM_EMAIL = 'Lightning Piggy <newsletter@mail.lightningpiggy.com>';
 var TOKEN_MAX_AGE_MS = 48 * 60 * 60 * 1000; // confirmation links last 48 hours
 
 function redirect(status) {

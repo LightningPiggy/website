@@ -107,7 +107,7 @@ If you subscribe to our newsletter you consent to receiving emails from us. You 
 
 ## 14. User-submitted content
 
-If you submit content to the Services - for example posts to a community message board, builds shared "in the wild", ZapMyPiggy entries, vendor applications, or feedback - you confirm that you own or have the right to submit it and that it does not infringe any third-party rights or any law. You grant us a worldwide, non-exclusive, royalty-free licence to use, reproduce, display and distribute that content in connection with operating and promoting the Services. We may moderate, edit or remove any user content at our discretion. Feedback and suggestions may be used by us freely and without obligation.
+If you submit content to the Services - for example builds shared "in the wild", ZapMyPiggy entries, vendor applications, or feedback - you confirm that you own or have the right to submit it and that it does not infringe any third-party rights or any law. You grant us a worldwide, non-exclusive, royalty-free licence to use, reproduce, display and distribute that content in connection with operating and promoting the Services. We may moderate, edit or remove any user content at our discretion. Feedback and suggestions may be used by us freely and without obligation.
 
 ## 15. Acceptable use
 

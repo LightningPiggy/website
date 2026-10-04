@@ -18,7 +18,7 @@ Lightning Piggy is built to collect as little personal data as possible.
 
 - The Services use **no user accounts**. You do not register, and we do not hold a profile about you.
 - The **Device and the App connect directly to a wallet you control and to public networks** (the Bitcoin and Lightning networks and Nostr relays). They do not route your balances, transactions or activity through our servers, and **we cannot see, access or recover your keys, funds or transaction history**.
-- We take most payments with **our own BTCPay Server and LNbits**, open-source software that runs on a server we manage, rather than through a payment company (see 3b and 3h for the exceptions).
+- We take most payments with **our own BTCPay Server and LNbits**, open-source software that runs on a server we manage, rather than through a payment company (see 3b for the exception).
 - We do **not** sell or rent your personal data, we do **not** use advertising or cross-site tracking, and the Website sets **no tracking cookies**.
 
 Some features are public by design. For example, the supporters wall, Nostr handles and vendor listings publish what you give them. We say so below wherever that applies.
@@ -43,11 +43,11 @@ We use **Umami Cloud**, a privacy-friendly, **cookieless** analytics service, to
 
 ### c) Fonts and code libraries
 
-Our web fonts are served from the Website itself, so loading them sends nothing to Google or any other font service. A few pages load code libraries from public content delivery networks (CDNs), which receive your IP address and browser details when you open those pages: **jsDelivr** (the treasure-hunt map), **cdnjs** (the QR code tools and the Oink page), **unpkg** (the firmware installer) and **esm.sh** (the community message board).
+Our web fonts are served from the Website itself, so loading them sends nothing to Google or any other font service. A few pages load code libraries from public content delivery networks (CDNs), which receive your IP address and browser details when you open those pages: **jsDelivr** (the treasure-hunt map), **cdnjs** (the QR code tools and the Oink page) and **unpkg** (the firmware installer).
 
 ### d) Content from Nostr and other sites
 
-Some pages show live content from the **Nostr** network, an open social network run on public servers called relays: the treasure hunt, leaderboard, market, In the Wild and #ZapMyPiggy pages, and the message board on the Community page, which connects to Alby's relay (relay.getalby.com) when the page loads. On those pages your browser connects directly to the relays and loads pictures from wherever they are hosted (for example Primal, unavatar.io or robohash.org). Those relays and image hosts receive your IP address and browser details. The homepage, the market and the supporters wall also load some profile pictures directly from Primal and unavatar.io.
+Some pages show live content from the **Nostr** network, an open social network run on public servers called relays: the treasure hunt, leaderboard, market, In the Wild and #ZapMyPiggy pages. On those pages your browser connects directly to the relays and loads pictures from wherever they are hosted (for example Primal, unavatar.io or robohash.org). Those relays and image hosts receive your IP address and browser details. The homepage, the market and the supporters wall also load some profile pictures directly from Primal and unavatar.io.
 
 The treasure-hunt pages load map tiles from **CARTO** and, only if you switch on the Bitcoin merchants layer, data from **BTC Map** and map-label fonts from MapLibre (demotiles.maplibre.org). If you use a Nostr browser extension, the treasure-hunt and leaderboard pages ask it for your list of relays when they load, and also connect to up to five of them. The firmware installer downloads firmware from our pages on **GitHub Pages**.
 
@@ -65,7 +65,7 @@ You can donate on the Donate page through our **BTCPay Server**. We record the a
 
 You can also donate to our Lightning address **[oink@lightningpiggy.com](lightning:oink@lightningpiggy.com)**, which is handled by our **LNbits** server. It records the amount and any comment you add. If your wallet sends the payment as a Nostr "zap" (a Lightning payment linked to your Nostr profile), it includes your Nostr public key, and our LNbits server then publishes a public "zap receipt" to the Nostr relays your wallet names. The receipt contains your public key, the amount and any comment, and like other Nostr posts it cannot reliably be deleted.
 
-**The amount and comment of each payment to this address are public.** They are shown live on our [Oink page](/oink), and because that page reads them with a key that is visible in its source code, anyone can also look up earlier payments to this address and their comments. Please do not put anything private in a comment.
+**The amount and comment of each payment to this address are public.** They are shown live on our [Oink page](/oink), and in the public feed that page reads, as each payment arrives. Please do not put anything private in a comment.
 
 Donations through **Geyser.fund** are handled entirely by Geyser under its own privacy policy.
 
@@ -105,21 +105,17 @@ If you order from us through a Nostr marketplace, your order message (including 
 
 Our legal basis is performing our contract with you.
 
-### h) Community message board
-
-The message board on the Community page is a third-party widget from **Alby**, loaded from esm.sh. If you post, **your message, the optional name you give and the amount you pay are shown publicly** to every visitor. They are stored as payment records in our own Lightning wallet that runs the board, which the widget reaches through a relay server run by Alby. Posts stay on the board for as long as the payment remains in that wallet's history, and we may not be able to remove a single post. If you connect your own wallet through the widget's "Bitcoin Connect" dialog, the connection details are saved in your browser's local storage until you disconnect. Our legal basis is performing our agreement with you to publish the message you pay to post.
-
-### i) Treasure-hunt posts and zaps
+### h) Treasure-hunt posts and zaps
 
 On the treasure-hunt pages you can share a treasure or log a find on Nostr. Your Nostr browser extension signs the post, so **we never see your private key**. The post is published publicly to Nostr relays under your Nostr public key, and it cannot reliably be deleted afterwards.
 
 If you zap a hider, a player or a market vendor, your browser contacts **their** Lightning address provider directly, and your payment goes from your own wallet. If you use a Nostr extension, the zap may include a signed request with your public key and comment, which the recipient's provider may publish to Nostr relays as a public zap receipt.
 
-### j) Tools that run in your browser
+### i) Tools that run in your browser
 
 Our QR code generators, Wi-Fi QR tool, serial monitor and firmware installer run entirely in your browser. What you type into them (including wallet connection strings and Wi-Fi passwords) and what your Device sends back over USB are **not sent to us**. The firmware installer sends Wi-Fi details only to your Device, over its USB connection.
 
-### k) Emails and messages you send us
+### j) Emails and messages you send us
 
 If you email us or contact us through our community channels, we process the information you choose to share so we can respond. Email to <oink@lightningpiggy.com> is hosted by **Namecheap Private Email**. If you send us photos, case designs or troubleshooting tips to share, we may publish them on the Website with the name you give us. Tell us if you would rather not be named. Our legal basis is our legitimate interest in replying to you and, where you send us material to share, your consent.
 
@@ -138,7 +134,6 @@ We never collect, and the Device and App never transmit to us, your **private ke
 Pages on lightningpiggy.com do not set cookies. They use your browser's storage only where a feature needs it:
 
 - **Session storage** holds your email address while you buy a case design download (see 3d). It is cleared once your payment is confirmed, or when you close the tab.
-- **Local storage** on the Community page holds your wallet connection if you connect one to the message board (see 3h).
 - Umami checks local storage for a setting that switches analytics off. It does not store anything there itself.
 
 Our BTCPay Server (btcpay.lightningpiggy.com), which also loads inside our point-of-sale and shop pages, may use cookies and local storage that it needs for checkout and for your shopping cart.
@@ -153,7 +148,6 @@ We share personal data with these service providers, which act on our behalf (wh
 - **Hostinger**: provides the server, in Lithuania, that runs our BTCPay Server and LNbits and handles orders from Nostr marketplaces.
 - **GitHub**: hosts our public code repository, including the data we publish on the Website.
 - **Namecheap Private Email**: hosts our <oink@lightningpiggy.com> mailbox.
-- **Alby**: runs the relay that connects our community message board to the wallet behind it.
 
 If you order hardware, we also give your delivery details to the postal or courier service that delivers it. When you use certain features, your browser also connects directly to independent third parties, such as Nostr relays, image hosts, CDNs, map providers and other people's Lightning address providers (see sections 2 and 3). They are not our processors, and their own privacy policies apply. We may also disclose information if required by law, to enforce our Terms, or to protect the rights, safety and security of our users or the Services. Public networks (Bitcoin, Lightning, Nostr) are public by design and are not our processors.
 
@@ -176,7 +170,7 @@ We keep personal data only as long as needed for the purpose it was collected:
 
 Depending on where you live, you may have the right to access, correct or delete your personal data, to restrict or object to how we use it, to receive a copy in a portable format, and to withdraw your consent at any time. Withdrawing consent does not affect anything we did before you withdrew it. To exercise these rights, email **<oink@lightningpiggy.com>**. You can unsubscribe from the newsletter at any time using the link in our newsletters. If you are in the EEA or UK and believe we have mishandled your data, you also have the right to complain to your local data-protection authority.
 
-Please note the limits of what we can remove. We can take your details off the Website, but earlier versions remain in the history of our public GitHub repositories, in earlier deploys kept by Netlify until we delete them, and in any copies others have made. Message-board posts are kept in our wallet's payment history, and we may not be able to remove a single post. We cannot delete posts published to Nostr, including zap receipts, or transactions recorded on the Bitcoin blockchain.
+Please note the limits of what we can remove. We can take your details off the Website, but earlier versions remain in the history of our public GitHub repositories, in earlier deploys kept by Netlify until we delete them, and in any copies others have made. We cannot delete posts published to Nostr, including zap receipts, or transactions recorded on the Bitcoin blockchain.
 
 ## 11. Children's privacy
 
@@ -184,11 +178,11 @@ The Services are intended to be set up and supervised by a parent or legal guard
 
 ## 12. Security
 
-We take reasonable technical and organisational measures to protect the limited data we hold. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security. Some keys our public pages need, such as the read-only key behind the Oink page, are visible to anyone. They cannot move funds, but they do reveal the payment details described in 3b. Remember that the security of your **wallet, keys and funds** is your responsibility and is governed by your chosen wallet provider, not by us.
+We take reasonable technical and organisational measures to protect the limited data we hold. However, no method of transmission or storage is completely secure, and we cannot guarantee absolute security. Remember that the security of your **wallet, keys and funds** is your responsibility and is governed by your chosen wallet provider, not by us.
 
 ## 13. Third-party services
 
-The Services link to and interoperate with third parties (such as wallet providers, app stores, code hosting, Nostr relays, Alby and Geyser.fund). Their handling of your data is governed by their own privacy policies, which we encourage you to review. We are not responsible for the privacy practices of third parties.
+The Services link to and interoperate with third parties (such as wallet providers, app stores, code hosting, Nostr relays and Geyser.fund). Their handling of your data is governed by their own privacy policies, which we encourage you to review. We are not responsible for the privacy practices of third parties.
 
 ## 14. Changes to this policy
 

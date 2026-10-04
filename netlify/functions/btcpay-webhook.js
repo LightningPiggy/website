@@ -130,7 +130,8 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
   const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + apiKey },
-    body: JSON.stringify({ from: 'Lightning Piggy <newsletter@mail.lightningpiggy.com>', to: [to], subject, html }),
+    // mail.lightningpiggy.com has no MX, so replies ("Just reply to this email") need reply_to.
+    body: JSON.stringify({ from: 'Lightning Piggy <newsletter@mail.lightningpiggy.com>', reply_to: 'oink@lightningpiggy.com', to: [to], subject, html }),
   }).catch((e) => console.error('receipt email failed:', e.message));
 
   const buyer = typeof metadata.buyerEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(metadata.buyerEmail) ? metadata.buyerEmail : null;

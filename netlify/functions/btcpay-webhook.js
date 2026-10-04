@@ -226,10 +226,13 @@ async function addSupporter(avatarUrl, profileUrl, invoiceId) {
     const supporters = JSON.parse(currentContent);
 
     // BTCPay re-delivers a webhook until it gets a 2xx, so the same
-    // InvoiceSettled can arrive several times. Stamp the invoice id on the
-    // entry and use the file itself as the idempotency record, otherwise a
-    // retry adds the same donor to the public wall again.
-    if (invoiceId && supporters.some((s) => s && s.invoiceId === invoiceId)) {
+    // InvoiceSettled can arrive several times. Stamp the entry with a hash of
+    // the invoice id and use the file itself as the idempotency record,
+    // otherwise a retry adds the same donor to the public wall again. The raw
+    // id is not published: anyone holding it can open the invoice on BTCPay
+    // and see the exact amount.
+    const invoiceRef = invoiceId ? crypto.createHash('sha256').update(String(invoiceId)).digest('hex').slice(0, 16) : null;
+    if (invoiceRef && supporters.some((s) => s && s.invoiceRef === invoiceRef)) {
       console.log('Supporter already recorded for invoice', invoiceId, '- skipping');
       return true;
     }
@@ -237,7 +240,7 @@ async function addSupporter(avatarUrl, profileUrl, invoiceId) {
     // Append new supporter
     const entry = { avatarUrl: avatarUrl, addedAt: new Date().toISOString() };
     if (profileUrl) entry.profileUrl = profileUrl;
-    if (invoiceId) entry.invoiceId = invoiceId;
+    if (invoiceRef) entry.invoiceRef = invoiceRef;
     supporters.push(entry);
 
     // Commit updated file

@@ -28,8 +28,8 @@ exports.handler = async function (event) {
     return { statusCode: 400, headers: corsHeaders(event), body: JSON.stringify({ error: `Amount must be between $${minUsd} and $${MAX_USD}.` }) };
   }
 
-  // Optional receipt email. Stored as BTCPay's buyerEmail so the checkout
-  // does not ask again and btcpay-webhook can send the receipt + download link.
+  // Optional receipt email. Stored as BTCPay's buyerEmail so btcpay-webhook can
+  // send the receipt + download link.
   let buyerEmail;
   if (body.email !== undefined && body.email !== null && body.email !== '') {
     const e = String(body.email).trim();
@@ -54,9 +54,10 @@ exports.handler = async function (event) {
       // BTCPay substitutes {InvoiceId}; the cases page picks it up and polls `download`.
       redirectURL: `${SITE}/build/cases/?dl=${encodeURIComponent(fileId)}&invoice={InvoiceId}`,
       redirectAutomatically: true,
-      // Asks for an email at checkout so btcpay-webhook can send a receipt with
-      // a re-download link (stored by BTCPay as metadata.buyerEmail).
-      requiresRefundEmail: true,
+      // The email really is optional: never make BTCPay's checkout demand one
+      // (whatever the store default). Without it the buyer still gets the file
+      // on the redirect back, just no receipt to re-download from later.
+      requiresRefundEmail: false,
     },
   };
 

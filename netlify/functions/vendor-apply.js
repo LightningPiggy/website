@@ -19,7 +19,9 @@ const FROM_EMAIL = 'Lightning Piggy <newsletter@mail.lightningpiggy.com>';
 const STORE_NAME = 'vendor-submissions';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const URL_REGEX = /^https?:\/\/[^\s.]+\.[^\s]+$/i;
+// No quotes or angle brackets: these URLs end up in HTML attributes in the
+// admin tool and on the market page.
+const URL_REGEX = /^https?:\/\/[^\s."'<>`]+\.[^\s"'<>`]+$/i;
 const NPUB_REGEX = /^npub1[a-z0-9]{20,}$/i;
 const SHOP_TYPES = ['online', 'physical', 'both'];
 const VALID_REGIONS = ['Europe', 'North America', 'South America', 'Asia', 'Africa', 'Oceania', 'Worldwide'];

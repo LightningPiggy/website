@@ -29,7 +29,13 @@ function treasureDevRewrite() {
 
 export default defineConfig({
   site: 'https://lightningpiggy.com',
-  integrations: [mdx(), sitemap(), tailwind(), treasureDevRewrite()],
+  integrations: [
+    mdx(),
+    // The newsletter confirm pages are only reached from emails.
+    sitemap({ filter: (page) => !/\/newsletter-confirm(ed)?\/?$/.test(page) }),
+    tailwind(),
+    treasureDevRewrite(),
+  ],
   vite: { cacheDir: "/tmp/vite-cache-lp4" },
   // Help moved onto the build page; keep the old /help URL working.
   // The standalone NIP-05 page was folded into /market; keep its old URL working.

@@ -48,6 +48,11 @@ const navItems = [
 ];
 
 const currentPath = Astro.url.pathname;
+// Whole path segments only: /news is active on /news/... but not on /newsletter-confirm.
+const isActive = (href: string) => {
+  const base = href.replace(/\/$/, '');
+  return href !== '/' && (currentPath === href || currentPath === base || currentPath.startsWith(base + '/'));
+};
 ---
 
 <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
@@ -65,7 +70,7 @@ const currentPath = Astro.url.pathname;
             <a
               href={item.href}
               class={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                currentPath.startsWith(item.href) && item.href !== '/'
+                isActive(item.href)
                   ? 'text-pink bg-pink-light/30'
                   : item.label === 'Donate'
                     ? 'text-pink hover:text-pink hover:bg-pink-light/30'
@@ -129,7 +134,7 @@ const currentPath = Astro.url.pathname;
           <a
             href={item.href}
             class={`block px-3 py-2 text-base font-medium rounded-lg ${
-              currentPath.startsWith(item.href) && item.href !== '/'
+              isActive(item.href)
                 ? 'text-pink bg-pink-light/30'
                 : item.label === 'Donate'
                   ? 'text-pink hover:text-pink hover:bg-pink-light/30'

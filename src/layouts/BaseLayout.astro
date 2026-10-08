@@ -19,6 +19,14 @@ interface Props {
   updatedDate?: Date;
   tags?: string[];
   author?: string;
+  // false leaves out analytics, for pages whose address carries personal data
+  // (Umami receives the full address, query string included).
+  analytics?: boolean;
+  // true asks search engines not to index the page.
+  noindex?: boolean;
+  // true sends no Referer from this page (to the next page or anywhere), for
+  // pages whose address carries personal data.
+  noReferrer?: boolean;
 }
 
 const DEFAULT_OG_IMAGE = '/images/og-image.png';
@@ -34,6 +42,9 @@ const {
   updatedDate,
   tags,
   author = 'Lightning Piggy',
+  analytics = true,
+  noindex = false,
+  noReferrer = false,
 } = Astro.props;
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
@@ -123,8 +134,11 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
       ]
     })} />
 
+    {noindex && <meta name="robots" content="noindex" />}
+    {noReferrer && <meta name="referrer" content="no-referrer" />}
+
     <!-- Analytics -->
-    <script defer src="https://cloud.umami.is/script.js" data-website-id="078dd909-9f20-4738-a479-d1d0c0226f94"></script>
+    {analytics && <script defer src="https://cloud.umami.is/script.js" data-website-id="078dd909-9f20-4738-a479-d1d0c0226f94"></script>}
   </head>
   <body class="min-h-screen flex flex-col bg-white">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-pink">

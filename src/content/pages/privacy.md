@@ -3,10 +3,10 @@ title: "Privacy Policy"
 slug: "privacy"
 description: "What personal data Lightning Piggy collects, publishes and shares, why, and the choices and rights you have."
 pubDate: 2026-06-26
-updatedDate: 2026-10-04
+updatedDate: 2026-10-08
 ---
 
-**Last updated: 4 October 2026**
+**Last updated: 8 October 2026**
 
 This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
 
@@ -31,7 +31,7 @@ The Website's source code and data files are kept in a **public GitHub repositor
 
 The Website and its server functions are hosted by **Netlify**. As on virtually all websites, every page request reveals technical data such as your **IP address**, browser type, the page requested and the time. Netlify processes this to deliver the Website and keeps logs for a limited period that Netlify sets.
 
-Our own server functions also write some details to these logs to help us fix problems and stop abuse. These include the Nostr handles you buy from us (see 3e), Nostr public keys, payment references and error messages. When the anti-spam checks on our newsletter and vendor-application forms reject a submission, they log the **IP address** it came from and, in some cases, the email address entered. Those two forms also count recent submissions per IP address to limit abuse. The counts are held only in the memory of the running server function and are not saved.
+Our own server functions also write some details to these logs to help us fix problems and stop abuse. These include the Nostr handles you buy from us (see 3e), Nostr public keys, payment references and error messages. When the anti-spam checks on our newsletter and vendor-application forms reject a submission, they log the **IP address** it came from and, in some cases, the email address entered. When a newsletter confirmation link is opened or confirmed, we log the browser details (user agent) of the visit, without the email or IP address, so we can tell people apart from email security filters that open links automatically. Those two forms also count recent submissions per IP address to limit abuse. The counts are held only in the memory of the running server function and are not saved.
 
 Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, its request passes through Netlify to this server, so both receive it, including the wallet's IP address. The web server in front of our payment software keeps no access logs, but the payment software keeps technical logs, and the LNbits logs include IP addresses. These logs are deleted automatically, normally within three weeks.
 
@@ -59,7 +59,7 @@ Our legal basis for these connections (2c and 2d) is our legitimate interest in 
 
 ### a) Newsletter (Freedom Farm News)
 
-If you subscribe, we collect your **email address**. To prevent duplicate and abusive sign-ups, we store Gmail addresses in a standard form (without dots or "+" tags). We use a double opt-in: we first email you a confirmation link, which works for 48 hours and contains your address in encoded form. You are added to the list only after you click it. We then send you a welcome email and send ourselves a short notification containing your address. Your address is stored and emails are sent through our email provider, **Resend**. We use your address only to run your subscription: to send you the newsletter and related project updates, and to let us know that you have joined. We rely on your **consent**, which you can withdraw at any time using the unsubscribe link in any newsletter or by emailing us. If you unsubscribe, we stop emailing you, but your address stays in our list, marked as unsubscribed, until you ask us to delete it.
+If you subscribe, we collect your **email address**. To prevent duplicate and abusive sign-ups, we store Gmail addresses in a standard form (without dots or "+" tags). We use a double opt-in: we first email you a confirmation link, which works for 48 hours and contains your address in encoded form. It opens a page on the Website (without analytics) where you press **Confirm**, and you are added to the list only then. We then send you a welcome email and send ourselves a short notification containing your address. If your address is already subscribed, we don't send another confirmation, welcome or notification email. Your address is stored and emails are sent through our email provider, **Resend**. We use your address only to run your subscription: to send you the newsletter and related project updates, and to let us know that you have joined. We rely on your **consent**, which you can withdraw at any time using the unsubscribe link in any newsletter or by emailing us. If you unsubscribe, we stop emailing you, but your address stays in our list, marked as unsubscribed, until you ask us to delete it.
 
 ### b) Donations
 

@@ -1,8 +1,18 @@
 // Netlify serverless function: completes a double opt-in newsletter signup.
-// The subscribe function emails a signed confirmation link; this endpoint
-// verifies the token, adds the contact to the Resend audience, and only then
-// sends the welcome email and owner notification - so bots that never click
-// never enter the list.
+// The subscribe function emails a signed confirmation link to the
+// /newsletter-confirm page, which has a "Confirm" button that POSTs the token
+// here. This endpoint verifies the token, adds the contact to the Resend
+// audience, and only then sends the welcome email and owner notification - so
+// bots that never confirm never enter the list.
+//
+// Opening a link is not consent: company mail filters (e.g. Microsoft
+// Defender Safe Links) open every link in incoming mail to check it. So a GET
+// only shows the confirm page (old emails link straight here), and only the
+// button's POST subscribes anyone.
+//
+// Resend accepts a "create contact" for an address it already has, so the
+// welcome email and owner notification go out only when the address was not
+// on the list before this request (see lib/newsletter-contacts).
 //
 // Environment variables required in Netlify:
 //   RESEND_API_KEY            - API key from resend.com
@@ -10,6 +20,7 @@
 //   NEWSLETTER_CONFIRM_SECRET - HMAC secret shared with newsletter-subscribe
 
 var crypto = require('crypto');
+var newsletterStatus = require('./lib/newsletter-contacts').newsletterStatus;
 
 var SITE = 'https://lightningpiggy.com';
 var NOTIFICATION_EMAIL = 'oink@lightningpiggy.com';
@@ -18,11 +29,27 @@ var TOKEN_MAX_AGE_MS = 48 * 60 * 60 * 1000; // confirmation links last 48 hours
 
 function redirect(status) {
   return {
-    statusCode: 302,
+    statusCode: 303, // after a POST, the browser loads the result page with a GET
     headers: { Location: SITE + '/newsletter-confirmed?status=' + status, 'Cache-Control': 'no-store' },
     body: ''
   };
 }
+
+// Who opened or confirmed a link (a person's browser or a mail filter), for
+// telling the two apart later. No address or IP is logged.
+function logVisit(event, what) {
+  var ua = String((event.headers || {})['user-agent'] || 'unknown').slice(0, 200);
+  console.log('[newsletter-confirm] ' + what + ' - ' + ua);
+}
+
+// The token arrives as a form field (the confirm page's button) or, for links
+// in emails sent before the confirm page existed, in the query string.
+function tokenFromPost(event) {
+  var raw = event.body || '';
+  if (event.isBase64Encoded) raw = Buffer.from(raw, 'base64').toString('utf8');
+  return new URLSearchParams(raw).get('token') || '';
+}
+
 
 // Token format: base64url(email).timestamp.hmac - created by newsletter-subscribe.
 function verifyToken(token, secret) {
@@ -195,7 +222,7 @@ async function sendOwnerNotification(apiKey, subscriberEmail) {
 }
 
 exports.handler = async function (event) {
-  if (event.httpMethod !== 'GET') {
+  if (event.httpMethod !== 'GET' && event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method not allowed' };
   }
   var apiKey = process.env.RESEND_API_KEY;
@@ -206,20 +233,49 @@ exports.handler = async function (event) {
     return redirect('error');
   }
 
-  var email = verifyToken((event.queryStringParameters || {}).token, secret);
+  if (event.httpMethod === 'GET') {
+    // A link opened (by a person, or by a mail filter checking it): show the
+    // confirm page and change nothing.
+    var linkToken = (event.queryStringParameters || {}).token || '';
+    logVisit(event, 'link opened');
+    if (!verifyToken(linkToken, secret)) return redirect('expired');
+    return {
+      statusCode: 302,
+      headers: { Location: SITE + '/newsletter-confirm?token=' + encodeURIComponent(linkToken), 'Cache-Control': 'no-store' },
+      body: ''
+    };
+  }
+
+  logVisit(event, 'confirm pressed');
+  var email = verifyToken(tokenFromPost(event), secret);
   if (!email) return redirect('expired');
 
   try {
+    // Already on the list: nothing to do, and no second welcome or
+    // notification. If Resend can't be asked (null), carry on as for a new
+    // address.
+    var status = await newsletterStatus(apiKey, email, audienceId);
+    if (status === 'subscribed') return redirect('ok');
+
+    // Someone who unsubscribed earlier and has now confirmed again.
+    if (status === 'unsubscribed') {
+      var upd = await fetchWithRetry('https://api.resend.com/contacts/' + encodeURIComponent(email), {
+        method: 'PATCH',
+        headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ unsubscribed: false })
+      });
+      if (!upd.ok) {
+        var updBody; try { updBody = await upd.json(); } catch (e) { updBody = {}; }
+        console.error('newsletter-confirm: Resend error re-subscribing', upd.status, JSON.stringify(updBody));
+        return redirect('error');
+      }
+    }
+
     var res = await fetchWithRetry('https://api.resend.com/audiences/' + audienceId + '/contacts', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: email, unsubscribed: false })
     });
-
-    if (res.status === 409) {
-      // Already confirmed earlier (link clicked twice) - fine, no duplicate emails.
-      return redirect('ok');
-    }
     if (!res.ok) {
       var errBody; try { errBody = await res.json(); } catch (e) { errBody = {}; }
       console.error('newsletter-confirm: Resend error', res.status, JSON.stringify(errBody));

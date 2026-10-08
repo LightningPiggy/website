@@ -1,19 +1,24 @@
 // Netlify serverless function: first half of the double opt-in newsletter
 // signup. Validates the address (honeypot, fill-time, rate limit, dot-trick),
 // then emails a signed confirmation link. Nothing is added to the audience
-// here - newsletter-confirm does that when the link is clicked, so bots that
-// never open the mailbox never enter the list.
+// here - the link opens the /newsletter-confirm page, whose button POSTs to
+// newsletter-confirm, so bots (and mail filters that open links) never enter
+// the list. An address that is already on the list gets no new email; the
+// reply (and roughly its timing) is the same either way, so the form does not
+// tell anyone who is subscribed.
 //
 // Environment variables required in Netlify:
 //   RESEND_API_KEY            — API key from resend.com (shared with webhook functions)
 //   NEWSLETTER_CONFIRM_SECRET — HMAC secret shared with newsletter-confirm
 
 var crypto = require('crypto');
+var newsletterStatus = require('./lib/newsletter-contacts').newsletterStatus;
 
 var ALLOWED_ORIGIN = 'https://lightningpiggy.com';
 
 // Signed confirmation token: base64url(email).timestamp.hmac - verified by
 // newsletter-confirm, which enforces a 48h expiry.
+
 function makeToken(email, secret) {
   var e = Buffer.from(email, 'utf8').toString('base64url');
   var payload = e + '.' + Date.now();
@@ -186,10 +191,20 @@ exports.handler = async function (event) {
   // Layer 5: Canonicalize — dedupes Gmail dot-trick variants in the audience.
   var canonical = canonicalEmail(email);
 
+  // Already on the list: nothing to confirm, so no email. Same reply as a new
+  // signup, after about as long as sending the email takes (see the top of
+  // this file). Unknown status: send the confirmation as usual.
+  var segmentId = process.env.RESEND_AUDIENCE_ID || process.env.RESEND_NEWSLETTER_SEGMENT_ID;
+  if (await newsletterStatus(apiKey, canonical, segmentId) === 'subscribed') {
+    console.log('[newsletter-subscribe] already subscribed, no email sent');
+    await sleep(250 + Math.floor(Math.random() * 450));
+    return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true, confirm: true }) };
+  }
+
   // Send the confirmation email. The contact is only added to the audience
-  // when the link inside it is clicked (newsletter-confirm).
+  // when the button on the confirm page is pressed (newsletter-confirm).
   var token = makeToken(canonical, confirmSecret);
-  var confirmUrl = ALLOWED_ORIGIN + '/.netlify/functions/newsletter-confirm?token=' + encodeURIComponent(token);
+  var confirmUrl = ALLOWED_ORIGIN + '/newsletter-confirm?token=' + encodeURIComponent(token);
 
   var html = [
     '<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>',
@@ -207,7 +222,7 @@ exports.handler = async function (event) {
     '      </td></tr>',
     '      <tr><td style="padding:0 40px 8px 40px;font-size:16px;line-height:26px;color:#525252;">',
     '        <p style="margin:0 0 16px 0;">Someone - hopefully you - asked to subscribe this address to <strong>Freedom Farm News</strong>, the Lightning Piggy newsletter.</p>',
-    '        <p style="margin:0 0 16px 0;">Confirm below and you\'re in. If this wasn\'t you, just ignore this email - the address won\'t be subscribed and you won\'t hear from us again.</p>',
+    '        <p style="margin:0 0 16px 0;">Click below, press Confirm on the page that opens, and you\'re in. If this wasn\'t you, just ignore this email - the address won\'t be subscribed and you won\'t hear from us again.</p>',
     '      </td></tr>',
     '      <tr><td style="padding:8px 40px 40px 40px;" align="center">',
     '        <table role="presentation" cellpadding="0" cellspacing="0"><tr>',

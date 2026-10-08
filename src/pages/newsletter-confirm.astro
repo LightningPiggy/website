@@ -1,0 +1,87 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+// The link in the confirmation email opens this page. Opening it changes
+// nothing: company mail filters open every link in incoming mail to check it,
+// so the subscription is only confirmed when the button below is pressed
+// (a POST to the newsletter-confirm function). The page address holds the
+// token, which contains the email address, so this page has no analytics and
+// sends no Referer (the next page's analytics would otherwise receive it).
+---
+
+<BaseLayout
+  title="Confirm Your Subscription"
+  description="Confirm your Freedom Farm News subscription."
+  analytics={false}
+  noindex
+  noReferrer
+>
+  <section class="py-16 md:py-24">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <div id="state-confirm" class="hidden">
+        <img src="/images/mascot.png" alt="" class="w-20 h-20 mx-auto mb-6 rounded-2xl" />
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">One more oink to go 🐽</h1>
+        <p class="text-lg text-gray-600 mb-8">
+          Press the button to subscribe <strong id="confirm-email" class="text-gray-900 break-words"></strong>
+          to Freedom Farm News, the Lightning Piggy newsletter.
+        </p>
+        <form id="confirm-form" method="post" action="/.netlify/functions/newsletter-confirm">
+          <input type="hidden" name="token" id="confirm-token" />
+          <button
+            type="submit"
+            autocomplete="off"
+            class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-gray-900 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >Confirm my subscription</button>
+        </form>
+        <p class="text-sm text-gray-500 mt-6">Didn't ask for this? Just close this page and the address won't be subscribed.</p>
+      </div>
+      <noscript>
+        <style is:inline>#state-missing { display: none; }</style>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">One more oink to go 🐽</h1>
+        <p class="text-lg text-gray-600">Confirming your subscription needs JavaScript. Please turn it on for this page and open the link again.</p>
+      </noscript>
+      <div id="state-missing">
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">This link isn't complete</h1>
+        <p class="text-lg text-gray-600 mb-8">
+          Open the link from your confirmation email again, or subscribe once more and we'll send a fresh one.
+        </p>
+        <a href="/#newsletter" class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-gray-900 transition-colors">Subscribe</a>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // The token is base64url(email).timestamp.signature; the function checks
+    // it. The address is shown so the reader can see what they are confirming,
+    // but only if it looks like an email address (same rule as the signup), so
+    // a made-up link can't put other text on this page.
+    const EMAIL_REGEX = /^[^\s@<>"'&]+@[^\s@<>"'&]+\.[^\s@<>"'&]+$/;
+    const token = new URLSearchParams(location.search).get('token') || '';
+    const parts = token.split('.');
+    let email = '';
+    if (parts.length === 3) {
+      try {
+        const b64 = parts[0].replace(/-/g, '+').replace(/_/g, '/');
+        const bytes = Uint8Array.from(atob(b64 + '='.repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
+        email = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+      } catch { email = ''; }
+    }
+    if (email.length > 320 || !EMAIL_REGEX.test(email)) email = '';
+    if (email) {
+      (document.getElementById('confirm-token') as HTMLInputElement).value = token;
+      document.getElementById('confirm-email')!.textContent = email;
+      document.getElementById('state-missing')?.classList.add('hidden');
+      document.getElementById('state-confirm')?.classList.remove('hidden');
+      // One press is enough; a second would only repeat the request.
+      document.getElementById('confirm-form')?.addEventListener('submit', (e) => {
+        const btn = (e.currentTarget as HTMLFormElement).querySelector('button');
+        if (btn) btn.disabled = true;
+      });
+      // Coming Back to this page (e.g. after an error) must allow another try.
+      window.addEventListener('pageshow', () => {
+        const btn = document.querySelector('#confirm-form button') as HTMLButtonElement | null;
+        if (btn) btn.disabled = false;
+      });
+    }
+  </script>
+</BaseLayout>

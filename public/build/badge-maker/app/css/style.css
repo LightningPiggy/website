@@ -62,8 +62,10 @@ body {
   gap: 20px;
 }
 
-/* masthead (left out inside another page, which has the title) */
-.embedded .masthead { display: none; }
+/* masthead; inside another page, which has the title, only its light/dark button is left: a slim
+   row at the top right */
+.embedded .masthead > .title, .embedded .spec { display: none; }
+.embedded .masthead { border-bottom: 0; padding-bottom: 0; justify-content: flex-end; margin-bottom: -10px; }
 .masthead {
   display: flex;
   flex-wrap: wrap;
@@ -82,6 +84,8 @@ body {
 }
 .masthead h1 span { color: var(--accent); }
 .masthead p { margin: 6px 0 0; color: var(--muted); max-width: 60ch; }
+.masthead-side { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 22px; }
+.theme-toggle svg { flex: none; }
 .spec { display: flex; gap: 22px; margin: 0; }
 .spec div { display: grid; }
 .spec dt { font: 500 0.7rem/1.2 var(--mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }

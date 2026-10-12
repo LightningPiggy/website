@@ -785,11 +785,36 @@ function toast(text) {
   toastTimer = setTimeout(() => { t.hidden = true; }, 7000);
 }
 
+// ---------------------------------------------------------------- light or dark
+
+// The visitor's choice is kept under this key; index.html's head applies it before the page shows.
+// Without one the page follows its own default (lightningpiggy.com's copy has data-theme="light"),
+// else the system's setting.
+const THEME = "zapstand-badge-theme";
+const SYSTEM_DARK = matchMedia("(prefers-color-scheme: dark)");
+const MOON = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20.5 13.6A8.5 8.5 0 1 1 10.4 3.5a6.6 6.6 0 0 0 10.1 10.1z" fill="currentColor"/></svg>';
+const SUN = '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><path d="M12 2v2.6M12 19.4V22M2 12h2.6M19.4 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+
+function themeUI() {
+  const root = document.documentElement, btn = $("#theme-toggle");
+  const dark = () => (root.dataset.theme || (SYSTEM_DARK.matches ? "dark" : "light")) === "dark";
+  const show = () => { btn.innerHTML = dark() ? `${SUN}Light mode` : `${MOON}Dark mode`; };
+  btn.addEventListener("click", () => {
+    root.dataset.theme = dark() ? "light" : "dark";
+    try { localStorage.setItem(THEME, root.dataset.theme); } catch (e) { /* not kept, fine */ }
+    show();
+  });
+  SYSTEM_DARK.addEventListener("change", show);
+  show();
+  btn.hidden = false;
+}
+
 // ---------------------------------------------------------------- start
 
 async function start() {
   // shown inside another page (lightningpiggy.com's /build/badge-maker): that page has the title
   if (window.self !== window.top) document.documentElement.classList.add("embedded");
+  themeUI();
   try {
     printers = await (await fetch("printers/index.json")).json();
   } catch (e) {

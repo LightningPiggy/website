@@ -1,0 +1,72 @@
+[
+ {
+  "id": "a1",
+  "label": "A1",
+  "printer": "Bambu Lab A1 0.4 nozzle"
+ },
+ {
+  "id": "a1-mini",
+  "label": "A1 mini",
+  "printer": "Bambu Lab A1 mini 0.4 nozzle"
+ },
+ {
+  "id": "a2l",
+  "label": "A2L",
+  "printer": "Bambu Lab A2L 0.4 nozzle"
+ },
+ {
+  "id": "h2c",
+  "label": "H2C",
+  "printer": "Bambu Lab H2C 0.4 nozzle"
+ },
+ {
+  "id": "h2d",
+  "label": "H2D",
+  "printer": "Bambu Lab H2D 0.4 nozzle"
+ },
+ {
+  "id": "h2d-pro",
+  "label": "H2D Pro",
+  "printer": "Bambu Lab H2D Pro 0.4 nozzle"
+ },
+ {
+  "id": "h2s",
+  "label": "H2S",
+  "printer": "Bambu Lab H2S 0.4 nozzle"
+ },
+ {
+  "id": "p1p",
+  "label": "P1P",
+  "printer": "Bambu Lab P1P 0.4 nozzle"
+ },
+ {
+  "id": "p1s",
+  "label": "P1S",
+  "printer": "Bambu Lab P1S 0.4 nozzle"
+ },
+ {
+  "id": "p2s",
+  "label": "P2S",
+  "printer": "Bambu Lab P2S 0.4 nozzle"
+ },
+ {
+  "id": "x1",
+  "label": "X1",
+  "printer": "Bambu Lab X1 0.4 nozzle"
+ },
+ {
+  "id": "x1-carbon",
+  "label": "X1 Carbon",
+  "printer": "Bambu Lab X1 Carbon 0.4 nozzle"
+ },
+ {
+  "id": "x1e",
+  "label": "X1E",
+  "printer": "Bambu Lab X1E 0.4 nozzle"
+ },
+ {
+  "id": "x2d",
+  "label": "X2D",
+  "printer": "Bambu Lab X2D 0.4 nozzle"
+ }
+]

@@ -1,0 +1,13 @@
+/* lightningpiggy.com: the site's own font (Inter, served by the site from /fonts/inter/), its pink
+   and greys (tailwind.config.mjs: pink #EC008C; Tailwind's gray-50/200/600/900), and light only. */
+@font-face { font-family: "Inter"; font-weight: 400; font-display: swap; src: url("/fonts/inter/inter-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 500; font-display: swap; src: url("/fonts/inter/inter-latin-500-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 600; font-display: swap; src: url("/fonts/inter/inter-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Inter"; font-weight: 700; font-display: swap; src: url("/fonts/inter/inter-latin-700-normal.woff2") format("woff2"); }
+:root {
+  --display: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "SF Mono", Monaco, "Cascadia Code", ui-monospace, monospace;
+  --paper: #F9FAFB; --panel: #FFFFFF; --ink: #111827; --muted: #4B5563; --line: #E5E7EB;
+  --accent: #EC008C; --accent-ink: #FFFFFF; --accent-soft: #FDEAF4;
+}

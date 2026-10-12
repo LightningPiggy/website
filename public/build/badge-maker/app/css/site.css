@@ -1,5 +1,8 @@
 /* lightningpiggy.com: the site's own font (Inter, served by the site from /fonts/inter/), its pink
-   and greys (tailwind.config.mjs: pink #EC008C; Tailwind's gray-50/200/600/900), and light only. */
+   and greys (tailwind.config.mjs: pink #EC008C; Tailwind's gray-50/200/600/900). Dark (the
+   visitor's setting) keeps style.css's dark greys, with the site's pink lighter: #FF4DB0 is
+   #EC008C's hue at 65% lightness, 6:1 on the dark paper. Same selector as style.css's dark
+   tokens, so this file, loaded after it, wins. */
 @font-face { font-family: "Inter"; font-weight: 400; font-display: swap; src: url("/fonts/inter/inter-latin-400-normal.woff2") format("woff2"); }
 @font-face { font-family: "Inter"; font-weight: 500; font-display: swap; src: url("/fonts/inter/inter-latin-500-normal.woff2") format("woff2"); }
 @font-face { font-family: "Inter"; font-weight: 600; font-display: swap; src: url("/fonts/inter/inter-latin-600-normal.woff2") format("woff2"); }
@@ -10,4 +13,14 @@
   --mono: "SF Mono", Monaco, "Cascadia Code", ui-monospace, monospace;
   --paper: #F9FAFB; --panel: #FFFFFF; --ink: #111827; --muted: #4B5563; --line: #E5E7EB;
   --accent: #EC008C; --accent-ink: #FFFFFF; --accent-soft: #FDEAF4;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111317; --panel: #191C21; --ink: #E7EAEE; --muted: #9AA3AE; --line: #2D323A;
+    --accent: #FF4DB0; --accent-ink: #1A0E13; --accent-soft: #3A1229;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111317; --panel: #191C21; --ink: #E7EAEE; --muted: #9AA3AE; --line: #2D323A;
+  --accent: #FF4DB0; --accent-ink: #1A0E13; --accent-soft: #3A1229;
 }

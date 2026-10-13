@@ -404,10 +404,13 @@ function standFilesUI() {
     info.textContent = "Its print files aren’t up yet.";
     a.hidden = true;
   }
-  if (s.credit && (dl || page)) {                     // the creator's credit, as the licence asks
-    const lic = document.createElement("a");
-    lic.href = s.credit.url; lic.target = "_blank"; lic.rel = "noopener"; lic.textContent = s.credit.licence;
-    info.append(` By ${s.credit.creator || "its creator"}, `, lic, ".");
+  if (s.credit && (dl || page)) {                     // the designer's credit, as the licence asks: by
+    const link = (href, text) => {                    // reference to the page that credits them
+      const l = document.createElement("a");
+      l.href = href; l.target = "_blank"; l.rel = "noopener"; l.textContent = text;
+      return l;
+    };
+    info.append(" By ", link(s.credit.source, "its designer"), ", ", link(s.credit.url, s.credit.licence), ".");
   }
 }
 

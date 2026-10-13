@@ -1,6 +1,7 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import NewsletterForm from '../components/ui/NewsletterForm.astro';
+import { safeJsonLd } from '../lib/jsonLd';
 
 interface Props {
   title: string;
@@ -59,7 +60,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
   updatedDate={updatedDate}
   tags={tags}
 >
-  <script type="application/ld+json" set:html={JSON.stringify(articleSchema)} />
+  <script type="application/ld+json" set:html={safeJsonLd(articleSchema)} />
   <article class="py-8 md:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       {heroImage && (

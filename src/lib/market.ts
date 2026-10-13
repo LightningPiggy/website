@@ -8,6 +8,8 @@
 // specific: see marketServer.ts (Node, build) and each component's <script>
 // (browser).
 
+import { safeJsonLd } from './jsonLd';
+
 export const RELAYS = [
   'wss://relay.damus.io',
   'wss://nos.lol',
@@ -429,7 +431,8 @@ export function vendorHtml(v: VendorView, showProducts: boolean): string {
       </div>`;
 }
 
-// JSON-LD ItemList of Products for SEO (build-time only).
+// JSON-LD ItemList of Products for SEO (build-time only). Titles, descriptions
+// and vendor names come from relays, so the output is escaped via safeJsonLd.
 export function productsJsonLd(products: Product[], pageUrl: string): string {
   const items = products.map((p, i) => {
     const item: any = {
@@ -452,7 +455,7 @@ export function productsJsonLd(products: Product[], pageUrl: string): string {
     }
     return { '@type': 'ListItem', position: i + 1, item };
   });
-  return JSON.stringify({
+  return safeJsonLd({
     '@context': 'https://schema.org',
     '@type': 'ItemList',
     name: 'Lightning Piggy Market',

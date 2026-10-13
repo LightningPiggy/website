@@ -1,7 +1,7 @@
 {
  "title": "Dino",
  "version": 1,
- "source": "previews/zapstand-dino-v1.glb",
+ "source": "previews/lightningpiggy-v2-zapstand-dino.glb",
  "unit": 0.01,
  "colour": "#7CC95A",
  "data": "dino.bin",

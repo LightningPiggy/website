@@ -1,7 +1,7 @@
 {
  "title": "Piggy",
  "version": 1,
- "source": "previews/zapstand-piggy-v1.glb",
+ "source": "previews/lightningpiggy-v2-zapstand-piggy.glb",
  "unit": 0.01,
  "colour": "#F4A6B8",
  "data": "piggy.bin",

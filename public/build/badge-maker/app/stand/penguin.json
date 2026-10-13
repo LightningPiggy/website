@@ -1,7 +1,7 @@
 {
  "title": "Penguin",
  "version": 1,
- "source": "previews/zapstand-penguin-v1.glb",
+ "source": "previews/lightningpiggy-v2-zapstand-penguin.glb",
  "unit": 0.01,
  "colour": "#2B2D33",
  "data": "penguin.bin",
@@ -137,23 +137,23 @@
    "wide": false
   },
   {
-   "name": "foot_back_L",
-   "colour": "#F59A23",
-   "main": false,
-   "points": 552,
+   "name": "foot_cap_back_L",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 564,
    "positions": 717200,
-   "triangles": 1101,
-   "indices": 720512,
+   "triangles": 1126,
+   "indices": 720584,
    "wide": false
   },
   {
-   "name": "foot_back_R",
-   "colour": "#F59A23",
-   "main": false,
-   "points": 582,
-   "positions": 727120,
-   "triangles": 1160,
-   "indices": 730612,
+   "name": "foot_cap_back_R",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 561,
+   "positions": 727340,
+   "triangles": 1119,
+   "indices": 730708,
    "wide": false
   },
   {
@@ -161,9 +161,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 2496,
-   "positions": 737572,
+   "positions": 737424,
    "triangles": 5223,
-   "indices": 752548,
+   "indices": 752400,
    "wide": false
   },
   {
@@ -171,9 +171,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 2541,
-   "positions": 783888,
+   "positions": 783740,
    "triangles": 5266,
-   "indices": 799136,
+   "indices": 798988,
    "wide": false
   },
   {
@@ -181,9 +181,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 1461,
-   "positions": 830732,
+   "positions": 830584,
    "triangles": 3124,
-   "indices": 839500,
+   "indices": 839352,
    "wide": false
   },
   {
@@ -191,9 +191,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 1389,
-   "positions": 858244,
+   "positions": 858096,
    "triangles": 2941,
-   "indices": 866580,
+   "indices": 866432,
    "wide": false
   },
   {
@@ -201,9 +201,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 1750,
-   "positions": 884228,
+   "positions": 884080,
    "triangles": 3677,
-   "indices": 894728,
+   "indices": 894580,
    "wide": false
   },
   {
@@ -211,9 +211,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 1431,
-   "positions": 916792,
+   "positions": 916644,
    "triangles": 2993,
-   "indices": 925380,
+   "indices": 925232,
    "wide": false
   }
  ],

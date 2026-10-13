@@ -1,7 +1,7 @@
 {
  "title": "Chicken",
  "version": 1,
- "source": "previews/zapstand-chicken-v1.glb",
+ "source": "previews/lightningpiggy-v2-zapstand-chicken.glb",
  "unit": 0.01,
  "colour": "#F4F1E8",
  "data": "chicken.bin",
@@ -187,23 +187,23 @@
    "wide": false
   },
   {
-   "name": "foot_back_L",
-   "colour": "#F5A623",
-   "main": false,
-   "points": 599,
+   "name": "foot_cap_back_L",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 635,
    "positions": 897456,
-   "triangles": 1196,
-   "indices": 901052,
+   "triangles": 1268,
+   "indices": 901268,
    "wide": false
   },
   {
-   "name": "foot_back_R",
-   "colour": "#F5A623",
-   "main": false,
-   "points": 597,
-   "positions": 908228,
-   "triangles": 1193,
-   "indices": 911812,
+   "name": "foot_cap_back_R",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 630,
+   "positions": 908876,
+   "triangles": 1255,
+   "indices": 912656,
    "wide": false
   },
   {
@@ -211,9 +211,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 1461,
-   "positions": 918972,
+   "positions": 920188,
    "triangles": 3124,
-   "indices": 927740,
+   "indices": 928956,
    "wide": false
   },
   {
@@ -221,9 +221,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 1389,
-   "positions": 946484,
+   "positions": 947700,
    "triangles": 2941,
-   "indices": 954820,
+   "indices": 956036,
    "wide": false
   },
   {
@@ -231,9 +231,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 1750,
-   "positions": 972468,
+   "positions": 973684,
    "triangles": 3677,
-   "indices": 982968,
+   "indices": 984184,
    "wide": false
   },
   {
@@ -241,9 +241,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 1431,
-   "positions": 1005032,
+   "positions": 1006248,
    "triangles": 2993,
-   "indices": 1013620,
+   "indices": 1014836,
    "wide": false
   },
   {
@@ -251,9 +251,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 11697,
-   "positions": 1031580,
+   "positions": 1032796,
    "triangles": 23523,
-   "indices": 1101764,
+   "indices": 1102980,
    "wide": false
   }
  ],

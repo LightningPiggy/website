@@ -29,7 +29,7 @@ astro.config.mjs     # Astro configuration
 
 ```bash
 npm install      # Install dependencies
-npm run dev      # Start dev server (localhost:4321)
+npm run dev      # Start dev server (localhost:4321; already running if its launch agent is)
 npm run build    # Build for production
 npm run preview  # Preview production build
 npm run admin    # Start the admin by hand (only if its launch agent isn't installed)
@@ -61,15 +61,13 @@ All collections require `title` and `slug`. See `src/content.config.ts` for opti
 
 ## Startup
 
-On session start:
-
-1. `preview_start` with name `web-lightningpiggy` (Astro dev server on port 4321). If port
-   4321 is already in use by this project's `astro dev` (the Lightning Piggy Admin app starts
-   it), `navigate` to <http://localhost:4321> instead.
-2. The admin (port 3000) runs as a macOS launch agent: it starts at login and launchd restarts
-   it if it stops. Don't `preview_start` it; `navigate` to <http://localhost:3000>. Manage it with
-   `tools/admin/ops/admin-agent.sh status|restart|log` (run from a normal terminal; restart
-   after pulling admin changes).
+The Astro dev server (port 4321) and the admin (port 3000) run as macOS launch agents on the
+maintainer's Mac: they start at login and launchd restarts them if they stop. Don't
+`preview_start` either one (the port is taken); `navigate` to <http://localhost:4321> and
+<http://localhost:3000>. Manage them with `tools/admin/ops/admin-agent.sh status|restart|log
+[admin|dev]` from a normal terminal (restart the admin after pulling admin changes, the dev
+server after changing dependencies or `astro.config.mjs`). If `status` says they aren't
+installed, start them with `preview_start` as before.
 
 ## Development Notes
 

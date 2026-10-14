@@ -84,9 +84,15 @@ Data files (`src/data/`) store structured content (credits, partners, testimonia
 
 A local Express.js admin panel for managing content (not deployed to production):
 
+On the maintainer's Mac it runs as a launch agent (always on at <http://localhost:3000>,
+restarted by launchd if it stops):
+
 ```bash
-npm run admin      # Start admin panel → http://localhost:3000
+tools/admin/ops/admin-agent.sh install   # once
+tools/admin/ops/admin-agent.sh status    # or restart, stop, start, log, uninstall
 ```
+
+Without the agent, start it by hand with `npm run admin`.
 
 Features:
 - Upload & optimize photos (wild, showcase) with Sharp

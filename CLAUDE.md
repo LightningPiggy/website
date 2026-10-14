@@ -32,7 +32,7 @@ npm install      # Install dependencies
 npm run dev      # Start dev server (localhost:4321)
 npm run build    # Build for production
 npm run preview  # Preview production build
-npm run admin    # Start the admin server (tools/admin, port 3000)
+npm run admin    # Start the admin by hand (only if its launch agent isn't installed)
 npm run lint:md  # Lint & auto-fix Markdown in content/ and archive/
 ```
 
@@ -61,9 +61,15 @@ All collections require `title` and `slug`. See `src/content.config.ts` for opti
 
 ## Startup
 
-On session start, always start both preview servers:
-1. `preview_start` with name `web-lightningpiggy` (Astro dev server on port 4321)
-2. `preview_start` with name `admin` (Admin server on port 3000)
+On session start:
+
+1. `preview_start` with name `web-lightningpiggy` (Astro dev server on port 4321). If port
+   4321 is already in use by this project's `astro dev` (the Lightning Piggy Admin app starts
+   it), `navigate` to <http://localhost:4321> instead.
+2. The admin (port 3000) runs as a macOS launch agent: it starts at login and launchd restarts
+   it if it stops. Don't `preview_start` it; `navigate` to <http://localhost:3000>. Manage it with
+   `tools/admin/ops/admin-agent.sh status|restart|log` (run from a normal terminal; restart
+   after pulling admin changes).
 
 ## Development Notes
 

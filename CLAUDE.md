@@ -62,12 +62,19 @@ All collections require `title` and `slug`. See `src/content.config.ts` for opti
 ## Startup
 
 The Astro dev server (port 4321) and the admin (port 3000) run as macOS launch agents on the
-maintainer's Mac: they start at login and launchd restarts them if they stop. Don't
-`preview_start` either one (the port is taken); `navigate` to <http://localhost:4321> and
-<http://localhost:3000>. Manage them with `tools/admin/ops/admin-agent.sh status|restart|log
-[admin|dev]` from a normal terminal (restart the admin after pulling admin changes, the dev
-server after changing dependencies or `astro.config.mjs`). If `status` says they aren't
-installed, start them with `preview_start` as before.
+maintainer's Mac: they start at login and launchd restarts them if they stop. Both serve the
+**main checkout** (`/Users/RT/Developer/dev-lightning-piggy/web-lightning-piggy`) only.
+
+- **In the main checkout:** don't `preview_start` either one (the port is taken); `navigate` to
+  <http://localhost:4321> and <http://localhost:3000>. Manage them from a normal terminal with
+  `/Users/RT/Developer/dev-lightning-piggy/web-lightning-piggy/tools/admin/ops/admin-agent.sh
+  status|restart|log [admin|dev]`: restart the admin after pulling admin changes, the dev server
+  after changing dependencies or `astro.config.mjs`. If `status` says they aren't installed,
+  start them with `preview_start` as before.
+- **In a worktree** (`.claude/worktrees/…` or any other checkout): port 4321 shows the main
+  checkout, not your files, and `tools/admin` doesn't exist there. Run your own dev server on
+  another port (`npm run dev -- --port 4322`, or a launch.json entry with that port) and
+  `navigate` to it. Never stop or restart the agents to free port 4321.
 
 ## Development Notes
 

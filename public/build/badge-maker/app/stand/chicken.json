@@ -1,0 +1,289 @@
+{
+ "title": "Chicken",
+ "version": 1,
+ "source": "previews/lightningpiggy-v2-zapstand-chicken.glb",
+ "unit": 0.01,
+ "colour": "#F4F1E8",
+ "data": "chicken.bin",
+ "parts": [
+  {
+   "name": "body",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 14702,
+   "positions": 0,
+   "triangles": 29965,
+   "indices": 88212,
+   "wide": false
+  },
+  {
+   "name": "ZapBox_enclosure",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 1987,
+   "positions": 268004,
+   "triangles": 4002,
+   "indices": 279928,
+   "wide": false
+  },
+  {
+   "name": "eye_L",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1390,
+   "positions": 303940,
+   "triangles": 2800,
+   "indices": 312280,
+   "wide": false
+  },
+  {
+   "name": "shine_L",
+   "colour": "#F4F1E8",
+   "main": false,
+   "points": 230,
+   "positions": 329080,
+   "triangles": 463,
+   "indices": 330460,
+   "wide": false
+  },
+  {
+   "name": "eye_R",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1388,
+   "positions": 333240,
+   "triangles": 2793,
+   "indices": 341568,
+   "wide": false
+  },
+  {
+   "name": "shine_R",
+   "colour": "#F4F1E8",
+   "main": false,
+   "points": 226,
+   "positions": 358328,
+   "triangles": 454,
+   "indices": 359684,
+   "wide": false
+  },
+  {
+   "name": "cheek_L",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 701,
+   "positions": 362408,
+   "triangles": 1404,
+   "indices": 366616,
+   "wide": false
+  },
+  {
+   "name": "cheek_R",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 803,
+   "positions": 375040,
+   "triangles": 1608,
+   "indices": 379860,
+   "wide": false
+  },
+  {
+   "name": "comb_0",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 3709,
+   "positions": 389508,
+   "triangles": 7424,
+   "indices": 411764,
+   "wide": false
+  },
+  {
+   "name": "comb_1",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 3605,
+   "positions": 456308,
+   "triangles": 7224,
+   "indices": 477940,
+   "wide": false
+  },
+  {
+   "name": "comb_2",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 3305,
+   "positions": 521284,
+   "triangles": 6628,
+   "indices": 541116,
+   "wide": false
+  },
+  {
+   "name": "feather_0",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 3195,
+   "positions": 580884,
+   "triangles": 6538,
+   "indices": 600056,
+   "wide": false
+  },
+  {
+   "name": "feather_1",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 3040,
+   "positions": 639284,
+   "triangles": 6138,
+   "indices": 657524,
+   "wide": false
+  },
+  {
+   "name": "feather_2",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 3204,
+   "positions": 694352,
+   "triangles": 6538,
+   "indices": 713576,
+   "wide": false
+  },
+  {
+   "name": "beak",
+   "colour": "#F5A623",
+   "main": false,
+   "points": 4464,
+   "positions": 752804,
+   "triangles": 9016,
+   "indices": 779588,
+   "wide": false
+  },
+  {
+   "name": "wattle",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 2321,
+   "positions": 833684,
+   "triangles": 4639,
+   "indices": 847612,
+   "wide": false
+  },
+  {
+   "name": "foot_front_L",
+   "colour": "#F5A623",
+   "main": false,
+   "points": 609,
+   "positions": 875448,
+   "triangles": 1215,
+   "indices": 879104,
+   "wide": false
+  },
+  {
+   "name": "foot_front_R",
+   "colour": "#F5A623",
+   "main": false,
+   "points": 615,
+   "positions": 886396,
+   "triangles": 1228,
+   "indices": 890088,
+   "wide": false
+  },
+  {
+   "name": "foot_cap_back_L",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 635,
+   "positions": 897456,
+   "triangles": 1268,
+   "indices": 901268,
+   "wide": false
+  },
+  {
+   "name": "foot_cap_back_R",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 630,
+   "positions": 908876,
+   "triangles": 1255,
+   "indices": 912656,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_0",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 1461,
+   "positions": 920188,
+   "triangles": 3124,
+   "indices": 928956,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_1",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 1389,
+   "positions": 947700,
+   "triangles": 2941,
+   "indices": 956036,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_2",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 1750,
+   "positions": 973684,
+   "triangles": 3677,
+   "indices": 984184,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_3",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 1431,
+   "positions": 1006248,
+   "triangles": 2993,
+   "indices": 1014836,
+   "wide": false
+  },
+  {
+   "name": "head_front+head_back",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 11697,
+   "positions": 1032796,
+   "triangles": 23523,
+   "indices": 1102980,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.431,
+   8.624
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.423,
+   0.906
+  ],
+  "out": [
+   0.0,
+   -0.906,
+   0.423
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 1.98,
+  "part": "body"
+ }
+}

@@ -1,0 +1,59 @@
+{
+ "title": "Classic",
+ "version": 1,
+ "source": "previews/lightningpiggy-v2-zapstand-classic.3mf",
+ "unit": 0.01,
+ "colour": "#1A1A1A",
+ "data": "classic.bin",
+ "parts": [
+  {
+   "name": "part 1",
+   "colour": "#1A1A1A",
+   "main": true,
+   "points": 1987,
+   "positions": 0,
+   "triangles": 4002,
+   "indices": 11924,
+   "wide": false
+  },
+  {
+   "name": "part 2",
+   "colour": "#1A1A1A",
+   "main": true,
+   "points": 4754,
+   "positions": 35936,
+   "triangles": 9564,
+   "indices": 64460,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.431,
+   8.624
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.423,
+   0.906
+  ],
+  "out": [
+   -0.0,
+   -0.906,
+   0.423
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 1.98,
+  "part": "part 2"
+ }
+}

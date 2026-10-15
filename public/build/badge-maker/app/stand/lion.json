@@ -1,0 +1,269 @@
+{
+ "title": "Lion",
+ "version": 1,
+ "source": "previews/lightningpiggy-v2-zapstand-lion.glb",
+ "unit": 0.01,
+ "colour": "#E8B04A",
+ "data": "lion.bin",
+ "parts": [
+  {
+   "name": "body",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 15782,
+   "positions": 0,
+   "triangles": 32136,
+   "indices": 94692,
+   "wide": false
+  },
+  {
+   "name": "ZapBox_enclosure",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 1987,
+   "positions": 287508,
+   "triangles": 4002,
+   "indices": 299432,
+   "wide": false
+  },
+  {
+   "name": "ear_L",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 3720,
+   "positions": 323444,
+   "triangles": 7436,
+   "indices": 345764,
+   "wide": false
+  },
+  {
+   "name": "inner_ear_L",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 321,
+   "positions": 390380,
+   "triangles": 649,
+   "indices": 392308,
+   "wide": false
+  },
+  {
+   "name": "ear_R",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 3759,
+   "positions": 396204,
+   "triangles": 7521,
+   "indices": 418760,
+   "wide": false
+  },
+  {
+   "name": "inner_ear_R",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 324,
+   "positions": 463888,
+   "triangles": 658,
+   "indices": 465832,
+   "wide": false
+  },
+  {
+   "name": "eye_L",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1400,
+   "positions": 469780,
+   "triangles": 2802,
+   "indices": 478180,
+   "wide": false
+  },
+  {
+   "name": "shine_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 227,
+   "positions": 494992,
+   "triangles": 459,
+   "indices": 496356,
+   "wide": false
+  },
+  {
+   "name": "eye_R",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1396,
+   "positions": 499112,
+   "triangles": 2793,
+   "indices": 507488,
+   "wide": false
+  },
+  {
+   "name": "shine_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 229,
+   "positions": 524248,
+   "triangles": 469,
+   "indices": 525624,
+   "wide": false
+  },
+  {
+   "name": "nose",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 378,
+   "positions": 528440,
+   "triangles": 756,
+   "indices": 530708,
+   "wide": false
+  },
+  {
+   "name": "mane",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 9950,
+   "positions": 535244,
+   "triangles": 20623,
+   "indices": 594944,
+   "wide": false
+  },
+  {
+   "name": "head_front",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 6435,
+   "positions": 718684,
+   "triangles": 13016,
+   "indices": 757296,
+   "wide": false
+  },
+  {
+   "name": "head_back",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 4263,
+   "positions": 835392,
+   "triangles": 8573,
+   "indices": 860972,
+   "wide": false
+  },
+  {
+   "name": "tuft",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 5528,
+   "positions": 912412,
+   "triangles": 11133,
+   "indices": 945580,
+   "wide": false
+  },
+  {
+   "name": "paw_front_L",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 627,
+   "positions": 1012380,
+   "triangles": 1251,
+   "indices": 1016144,
+   "wide": false
+  },
+  {
+   "name": "paw_front_R",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 627,
+   "positions": 1023652,
+   "triangles": 1251,
+   "indices": 1027416,
+   "wide": false
+  },
+  {
+   "name": "paw_back_L",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 584,
+   "positions": 1034924,
+   "triangles": 1166,
+   "indices": 1038428,
+   "wide": false
+  },
+  {
+   "name": "paw_back_R",
+   "colour": "#A8561C",
+   "main": false,
+   "points": 635,
+   "positions": 1045424,
+   "triangles": 1266,
+   "indices": 1049236,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_0",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 1461,
+   "positions": 1056832,
+   "triangles": 3124,
+   "indices": 1065600,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_1",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 1389,
+   "positions": 1084344,
+   "triangles": 2941,
+   "indices": 1092680,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_2",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 1750,
+   "positions": 1110328,
+   "triangles": 3677,
+   "indices": 1120828,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_3",
+   "colour": "#E8B04A",
+   "main": true,
+   "points": 1431,
+   "positions": 1142892,
+   "triangles": 2993,
+   "indices": 1151480,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.431,
+   8.624
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.423,
+   0.906
+  ],
+  "out": [
+   0.0,
+   -0.906,
+   0.423
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 1.98,
+  "part": "body"
+ }
+}

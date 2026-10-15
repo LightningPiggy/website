@@ -1,0 +1,146 @@
+[
+ {
+  "id": "classic",
+  "title": "Classic",
+  "version": 1,
+  "colour": "#1A1A1A",
+  "file": "stand/classic.json",
+  "picture": "stand/classic.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=classic#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ },
+ {
+  "id": "piggy",
+  "title": "Piggy",
+  "version": 1,
+  "colour": "#F4A6B8",
+  "file": "stand/piggy.json",
+  "picture": "stand/piggy.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=piggy#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ },
+ {
+  "id": "kitty",
+  "title": "Kitty",
+  "version": 1,
+  "colour": "#F2A65A",
+  "file": "stand/kitty.json",
+  "picture": "stand/kitty.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=kitty#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ },
+ {
+  "id": "bunny",
+  "title": "Bunny",
+  "version": 1,
+  "colour": "#CFCFD6",
+  "file": "stand/bunny.json",
+  "picture": "stand/bunny.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=bunny#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ },
+ {
+  "id": "lion",
+  "title": "Lion",
+  "version": 1,
+  "colour": "#E8B04A",
+  "file": "stand/lion.json",
+  "picture": "stand/lion.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=lion#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ },
+ {
+  "id": "dino",
+  "title": "Dino",
+  "version": 1,
+  "colour": "#7CC95A",
+  "file": "stand/dino.json",
+  "picture": "stand/dino.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=dino#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ },
+ {
+  "id": "penguin",
+  "title": "Penguin",
+  "version": 1,
+  "colour": "#2B2D33",
+  "file": "stand/penguin.json",
+  "picture": "stand/penguin.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=penguin#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ },
+ {
+  "id": "chicken",
+  "title": "Chicken",
+  "version": 1,
+  "colour": "#F4F1E8",
+  "file": "stand/chicken.json",
+  "picture": "stand/chicken.png",
+  "credit": {
+   "licence": "CC BY-SA 4.0",
+   "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "source": "https://lightningpiggy.com/build/cases/"
+  },
+  "page": {
+   "url": "/build/cases/?zapstand=chicken#p1-zapstand",
+   "label": "Get the stand files",
+   "note": "Its print files are on the ZapStand card on the Cases page."
+  }
+ }
+]

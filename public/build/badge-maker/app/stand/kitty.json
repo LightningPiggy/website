@@ -1,0 +1,259 @@
+{
+ "title": "Kitty",
+ "version": 1,
+ "source": "previews/lightningpiggy-v2-zapstand-kitty.glb",
+ "unit": 0.01,
+ "colour": "#F2A65A",
+ "data": "kitty.bin",
+ "parts": [
+  {
+   "name": "body",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 15976,
+   "positions": 0,
+   "triangles": 32530,
+   "indices": 95856,
+   "wide": false
+  },
+  {
+   "name": "ZapBox_enclosure",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 1987,
+   "positions": 291036,
+   "triangles": 4002,
+   "indices": 302960,
+   "wide": false
+  },
+  {
+   "name": "ear_L",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 3352,
+   "positions": 326972,
+   "triangles": 6723,
+   "indices": 347084,
+   "wide": false
+  },
+  {
+   "name": "inner_ear_L",
+   "colour": "#F29BB0",
+   "main": false,
+   "points": 259,
+   "positions": 387424,
+   "triangles": 525,
+   "indices": 388980,
+   "wide": false
+  },
+  {
+   "name": "ear_R",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 3406,
+   "positions": 392132,
+   "triangles": 6837,
+   "indices": 412568,
+   "wide": false
+  },
+  {
+   "name": "inner_ear_R",
+   "colour": "#F29BB0",
+   "main": false,
+   "points": 254,
+   "positions": 453592,
+   "triangles": 508,
+   "indices": 455116,
+   "wide": false
+  },
+  {
+   "name": "eye_L",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1404,
+   "positions": 458164,
+   "triangles": 2816,
+   "indices": 466588,
+   "wide": false
+  },
+  {
+   "name": "shine_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 231,
+   "positions": 483484,
+   "triangles": 465,
+   "indices": 484872,
+   "wide": false
+  },
+  {
+   "name": "eye_R",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1409,
+   "positions": 487664,
+   "triangles": 2825,
+   "indices": 496120,
+   "wide": false
+  },
+  {
+   "name": "shine_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 221,
+   "positions": 513072,
+   "triangles": 443,
+   "indices": 514400,
+   "wide": false
+  },
+  {
+   "name": "cheek_L",
+   "colour": "#F4A0B5",
+   "main": false,
+   "points": 732,
+   "positions": 517060,
+   "triangles": 1468,
+   "indices": 521452,
+   "wide": false
+  },
+  {
+   "name": "cheek_R",
+   "colour": "#F4A0B5",
+   "main": false,
+   "points": 841,
+   "positions": 530260,
+   "triangles": 1683,
+   "indices": 535308,
+   "wide": false
+  },
+  {
+   "name": "nose",
+   "colour": "#F4A0B5",
+   "main": false,
+   "points": 381,
+   "positions": 545408,
+   "triangles": 759,
+   "indices": 547696,
+   "wide": false
+  },
+  {
+   "name": "paw_front_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 627,
+   "positions": 552252,
+   "triangles": 1251,
+   "indices": 556016,
+   "wide": false
+  },
+  {
+   "name": "paw_front_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 627,
+   "positions": 563524,
+   "triangles": 1251,
+   "indices": 567288,
+   "wide": false
+  },
+  {
+   "name": "paw_back_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 584,
+   "positions": 574796,
+   "triangles": 1166,
+   "indices": 578300,
+   "wide": false
+  },
+  {
+   "name": "paw_back_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 635,
+   "positions": 585296,
+   "triangles": 1266,
+   "indices": 589108,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_0",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 1461,
+   "positions": 596704,
+   "triangles": 3124,
+   "indices": 605472,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_1",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 1389,
+   "positions": 624216,
+   "triangles": 2941,
+   "indices": 632552,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_2",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 1750,
+   "positions": 650200,
+   "triangles": 3677,
+   "indices": 660700,
+   "wide": false
+  },
+  {
+   "name": "screw_plug_3",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 1431,
+   "positions": 682764,
+   "triangles": 2993,
+   "indices": 691352,
+   "wide": false
+  },
+  {
+   "name": "head_front+head_back",
+   "colour": "#F2A65A",
+   "main": true,
+   "points": 12078,
+   "positions": 709312,
+   "triangles": 24403,
+   "indices": 781780,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.431,
+   8.624
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.423,
+   0.906
+  ],
+  "out": [
+   0.0,
+   -0.906,
+   0.423
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 1.98,
+  "part": "body"
+ }
+}

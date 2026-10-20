@@ -11,7 +11,7 @@ import path from 'node:path';
 // the button's label and which file it asks for.
 const PRIVATE_DIR = path.join(process.cwd(), 'netlify', 'private', 'downloads', 'cases');
 const FORMAT_ORDER = ['3mf', 'stl', 'step', 'stp'];
-const bundled: string[] = fs.readdirSync(PRIVATE_DIR).filter((f) => /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(f));
+const bundled: string[] = fs.readdirSync(PRIVATE_DIR).filter((f) => /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp)$/i.test(f));
 const stemOf = (f: string) => f.replace(/\.(3mf|stl|step|stp)$/i, '');
 const extOf = (f: string) => (f.split('.').pop() || '').toLowerCase();
 const fmtOf = (f: string) => extOf(f).replace(/^stp$/, 'step');
@@ -100,8 +100,8 @@ const cases = [
     creator: { name: 'Jake', url: 'https://njump.me/npub1a8us7vr738n7cvdxh0gdtnt5qzrk4qe3qklhmsrs45llq2k48agqjkrvn3' },
     licence: { name: 'CC BY-SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/' },
     downloads: [
-      { label: 'Download Model File', url: '/downloads/cases/lightningpiggy-v2-zapstand.3mf', edition: 'classic' },
-      { label: 'Download Badge File', url: '/downloads/cases/lightningpiggy-v2-zapstand-badge.3mf' },
+      { label: 'Download Model File', url: '/downloads/cases/P1 ZapStand_Classic.3mf', edition: 'classic' },
+      { label: 'Download Badge File', url: '/downloads/cases/P1 ZapStand_Badge.3mf' },
     ],
     // The same stand, board and badge slot in eight designs, as chips under the description: each
     // switches the pictures (an animal's are images/cases/zapstand-<id>-01..04.jpg, rendered by the
@@ -722,7 +722,7 @@ const galleriesOf = (c) => c.editions
     // Returning from checkout: poll until settled, then hand over the file.
     const params = new URLSearchParams(location.search);
     const dl = params.get('dl'), inv = params.get('invoice');
-    if (dl && inv && /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(dl)) {
+    if (dl && inv && /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp)$/i.test(dl)) {
       const bar = document.getElementById('dl-status');
       const txt = document.getElementById('dl-status-text');
       const links = document.getElementById('dl-status-links');

@@ -1,7 +1,7 @@
 {
  "title": "Chicken",
  "version": 1,
- "source": "previews/lightningpiggy-v2-zapstand-chicken.glb",
+ "source": "previews/P1 ZapStand_Chicken.glb",
  "unit": 0.01,
  "colour": "#F4F1E8",
  "data": "chicken.bin",
@@ -10,10 +10,10 @@
    "name": "body",
    "colour": "#F4F1E8",
    "main": true,
-   "points": 14702,
+   "points": 11070,
    "positions": 0,
-   "triangles": 29965,
-   "indices": 88212,
+   "triangles": 22509,
+   "indices": 66420,
    "wide": false
   },
   {
@@ -21,9 +21,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 1987,
-   "positions": 268004,
+   "positions": 201476,
    "triangles": 4002,
-   "indices": 279928,
+   "indices": 213400,
    "wide": false
   },
   {
@@ -31,9 +31,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1390,
-   "positions": 303940,
+   "positions": 237412,
    "triangles": 2800,
-   "indices": 312280,
+   "indices": 245752,
    "wide": false
   },
   {
@@ -41,9 +41,9 @@
    "colour": "#F4F1E8",
    "main": false,
    "points": 230,
-   "positions": 329080,
+   "positions": 262552,
    "triangles": 463,
-   "indices": 330460,
+   "indices": 263932,
    "wide": false
   },
   {
@@ -51,9 +51,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1388,
-   "positions": 333240,
+   "positions": 266712,
    "triangles": 2793,
-   "indices": 341568,
+   "indices": 275040,
    "wide": false
   },
   {
@@ -61,9 +61,9 @@
    "colour": "#F4F1E8",
    "main": false,
    "points": 226,
-   "positions": 358328,
+   "positions": 291800,
    "triangles": 454,
-   "indices": 359684,
+   "indices": 293156,
    "wide": false
   },
   {
@@ -71,9 +71,9 @@
    "colour": "#E0453A",
    "main": false,
    "points": 701,
-   "positions": 362408,
+   "positions": 295880,
    "triangles": 1404,
-   "indices": 366616,
+   "indices": 300088,
    "wide": false
   },
   {
@@ -81,9 +81,9 @@
    "colour": "#E0453A",
    "main": false,
    "points": 803,
-   "positions": 375040,
+   "positions": 308512,
    "triangles": 1608,
-   "indices": 379860,
+   "indices": 313332,
    "wide": false
   },
   {
@@ -91,9 +91,9 @@
    "colour": "#E0453A",
    "main": false,
    "points": 3709,
-   "positions": 389508,
+   "positions": 322980,
    "triangles": 7424,
-   "indices": 411764,
+   "indices": 345236,
    "wide": false
   },
   {
@@ -101,9 +101,9 @@
    "colour": "#E0453A",
    "main": false,
    "points": 3605,
-   "positions": 456308,
+   "positions": 389780,
    "triangles": 7224,
-   "indices": 477940,
+   "indices": 411412,
    "wide": false
   },
   {
@@ -111,9 +111,9 @@
    "colour": "#E0453A",
    "main": false,
    "points": 3305,
-   "positions": 521284,
+   "positions": 454756,
    "triangles": 6628,
-   "indices": 541116,
+   "indices": 474588,
    "wide": false
   },
   {
@@ -121,9 +121,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 3195,
-   "positions": 580884,
+   "positions": 514356,
    "triangles": 6538,
-   "indices": 600056,
+   "indices": 533528,
    "wide": false
   },
   {
@@ -131,9 +131,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 3040,
-   "positions": 639284,
+   "positions": 572756,
    "triangles": 6138,
-   "indices": 657524,
+   "indices": 590996,
    "wide": false
   },
   {
@@ -141,9 +141,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 3204,
-   "positions": 694352,
+   "positions": 627824,
    "triangles": 6538,
-   "indices": 713576,
+   "indices": 647048,
    "wide": false
   },
   {
@@ -151,9 +151,9 @@
    "colour": "#F5A623",
    "main": false,
    "points": 4464,
-   "positions": 752804,
+   "positions": 686276,
    "triangles": 9016,
-   "indices": 779588,
+   "indices": 713060,
    "wide": false
   },
   {
@@ -161,89 +161,49 @@
    "colour": "#E0453A",
    "main": false,
    "points": 2321,
-   "positions": 833684,
+   "positions": 767156,
    "triangles": 4639,
-   "indices": 847612,
+   "indices": 781084,
    "wide": false
   },
   {
    "name": "foot_front_L",
    "colour": "#F5A623",
    "main": false,
-   "points": 609,
-   "positions": 875448,
-   "triangles": 1215,
-   "indices": 879104,
+   "points": 734,
+   "positions": 808920,
+   "triangles": 1475,
+   "indices": 813324,
    "wide": false
   },
   {
    "name": "foot_front_R",
    "colour": "#F5A623",
    "main": false,
-   "points": 615,
-   "positions": 886396,
-   "triangles": 1228,
-   "indices": 890088,
+   "points": 733,
+   "positions": 822176,
+   "triangles": 1473,
+   "indices": 826576,
    "wide": false
   },
   {
-   "name": "foot_cap_back_L",
+   "name": "foot_back_L",
    "colour": "#F4F1E8",
    "main": true,
-   "points": 635,
-   "positions": 897456,
-   "triangles": 1268,
-   "indices": 901268,
+   "points": 831,
+   "positions": 835416,
+   "triangles": 1666,
+   "indices": 840404,
    "wide": false
   },
   {
-   "name": "foot_cap_back_R",
+   "name": "foot_back_R",
    "colour": "#F4F1E8",
    "main": true,
-   "points": 630,
-   "positions": 908876,
-   "triangles": 1255,
-   "indices": 912656,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_0",
-   "colour": "#F4F1E8",
-   "main": true,
-   "points": 1461,
-   "positions": 920188,
-   "triangles": 3124,
-   "indices": 928956,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_1",
-   "colour": "#F4F1E8",
-   "main": true,
-   "points": 1389,
-   "positions": 947700,
-   "triangles": 2941,
-   "indices": 956036,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_2",
-   "colour": "#F4F1E8",
-   "main": true,
-   "points": 1750,
-   "positions": 973684,
-   "triangles": 3677,
-   "indices": 984184,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_3",
-   "colour": "#F4F1E8",
-   "main": true,
-   "points": 1431,
-   "positions": 1006248,
-   "triangles": 2993,
-   "indices": 1014836,
+   "points": 831,
+   "positions": 850400,
+   "triangles": 1665,
+   "indices": 855388,
    "wide": false
   },
   {
@@ -251,9 +211,9 @@
    "colour": "#F4F1E8",
    "main": true,
    "points": 11697,
-   "positions": 1032796,
+   "positions": 865380,
    "triangles": 23523,
-   "indices": 1102980,
+   "indices": 935564,
    "wide": false
   }
  ],
@@ -283,7 +243,7 @@
    12.4
   ],
   "depth": 3.62,
-  "radius": 1.98,
+  "radius": 1.99,
   "part": "body"
  }
 }

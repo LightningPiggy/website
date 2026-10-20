@@ -1,7 +1,7 @@
 {
  "title": "Bunny",
  "version": 1,
- "source": "previews/lightningpiggy-v2-zapstand-bunny.glb",
+ "source": "previews/P1 ZapStand_Bunny.glb",
  "unit": 0.01,
  "colour": "#CFCFD6",
  "data": "bunny.bin",
@@ -10,10 +10,10 @@
    "name": "body",
    "colour": "#CFCFD6",
    "main": true,
-   "points": 14638,
+   "points": 11022,
    "positions": 0,
-   "triangles": 29830,
-   "indices": 87828,
+   "triangles": 22431,
+   "indices": 66132,
    "wide": false
   },
   {
@@ -21,9 +21,9 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 1987,
-   "positions": 266808,
+   "positions": 200720,
    "triangles": 4002,
-   "indices": 278732,
+   "indices": 212644,
    "wide": false
   },
   {
@@ -31,9 +31,9 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 2354,
-   "positions": 302744,
+   "positions": 236656,
    "triangles": 4757,
-   "indices": 316868,
+   "indices": 250780,
    "wide": false
   },
   {
@@ -41,9 +41,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 221,
-   "positions": 345412,
+   "positions": 279324,
    "triangles": 440,
-   "indices": 346740,
+   "indices": 280652,
    "wide": false
   },
   {
@@ -51,9 +51,9 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 2369,
-   "positions": 349380,
+   "positions": 283292,
    "triangles": 4783,
-   "indices": 363596,
+   "indices": 297508,
    "wide": false
   },
   {
@@ -61,9 +61,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 238,
-   "positions": 392296,
+   "positions": 326208,
    "triangles": 475,
-   "indices": 393724,
+   "indices": 327636,
    "wide": false
   },
   {
@@ -71,9 +71,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1398,
-   "positions": 396576,
+   "positions": 330488,
    "triangles": 2805,
-   "indices": 404964,
+   "indices": 338876,
    "wide": false
   },
   {
@@ -81,9 +81,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 222,
-   "positions": 421796,
+   "positions": 355708,
    "triangles": 445,
-   "indices": 423128,
+   "indices": 357040,
    "wide": false
   },
   {
@@ -91,9 +91,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1401,
-   "positions": 425800,
+   "positions": 359712,
    "triangles": 2811,
-   "indices": 434208,
+   "indices": 368120,
    "wide": false
   },
   {
@@ -101,9 +101,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 223,
-   "positions": 451076,
+   "positions": 384988,
    "triangles": 455,
-   "indices": 452416,
+   "indices": 386328,
    "wide": false
   },
   {
@@ -111,9 +111,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 727,
-   "positions": 455148,
+   "positions": 389060,
    "triangles": 1459,
-   "indices": 459512,
+   "indices": 393424,
    "wide": false
   },
   {
@@ -121,9 +121,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 724,
-   "positions": 468268,
+   "positions": 402180,
    "triangles": 1454,
-   "indices": 472612,
+   "indices": 406524,
    "wide": false
   },
   {
@@ -131,9 +131,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 277,
-   "positions": 481336,
+   "positions": 415248,
    "triangles": 550,
-   "indices": 483000,
+   "indices": 416912,
    "wide": false
   },
   {
@@ -141,9 +141,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 376,
-   "positions": 486300,
+   "positions": 420212,
    "triangles": 751,
-   "indices": 488556,
+   "indices": 422468,
    "wide": false
   },
   {
@@ -151,89 +151,49 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 5080,
-   "positions": 493064,
+   "positions": 426976,
    "triangles": 10333,
-   "indices": 523544,
+   "indices": 457456,
    "wide": false
   },
   {
    "name": "paw_front_L",
    "colour": "#FFFFFF",
    "main": false,
-   "points": 627,
-   "positions": 585544,
-   "triangles": 1251,
-   "indices": 589308,
+   "points": 833,
+   "positions": 519456,
+   "triangles": 1675,
+   "indices": 524456,
    "wide": false
   },
   {
    "name": "paw_front_R",
    "colour": "#FFFFFF",
    "main": false,
-   "points": 627,
-   "positions": 596816,
-   "triangles": 1251,
-   "indices": 600580,
+   "points": 833,
+   "positions": 534508,
+   "triangles": 1674,
+   "indices": 539508,
    "wide": false
   },
   {
    "name": "paw_back_L",
    "colour": "#FFFFFF",
    "main": false,
-   "points": 621,
-   "positions": 608088,
-   "triangles": 1239,
-   "indices": 611816,
+   "points": 850,
+   "positions": 549552,
+   "triangles": 1704,
+   "indices": 554652,
    "wide": false
   },
   {
    "name": "paw_back_R",
    "colour": "#FFFFFF",
    "main": false,
-   "points": 635,
-   "positions": 619252,
-   "triangles": 1266,
-   "indices": 623064,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_0",
-   "colour": "#CFCFD6",
-   "main": true,
-   "points": 1461,
-   "positions": 630660,
-   "triangles": 3124,
-   "indices": 639428,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_1",
-   "colour": "#CFCFD6",
-   "main": true,
-   "points": 1389,
-   "positions": 658172,
-   "triangles": 2941,
-   "indices": 666508,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_2",
-   "colour": "#CFCFD6",
-   "main": true,
-   "points": 1750,
-   "positions": 684156,
-   "triangles": 3677,
-   "indices": 694656,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_3",
-   "colour": "#CFCFD6",
-   "main": true,
-   "points": 1431,
-   "positions": 716720,
-   "triangles": 2993,
-   "indices": 725308,
+   "points": 844,
+   "positions": 564876,
+   "triangles": 1696,
+   "indices": 569940,
    "wide": false
   },
   {
@@ -241,9 +201,9 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 11632,
-   "positions": 743268,
+   "positions": 580116,
    "triangles": 23467,
-   "indices": 813060,
+   "indices": 649908,
    "wide": false
   }
  ],
@@ -273,7 +233,7 @@
    12.4
   ],
   "depth": 3.62,
-  "radius": 1.98,
+  "radius": 1.99,
   "part": "body"
  }
 }

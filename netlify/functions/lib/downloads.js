@@ -24,14 +24,24 @@ function privateDir() {
 
 // Formats that can be sold, and the Content-Type each is served with.
 const FORMATS = { '3mf': 'model/3mf', stl: 'model/stl', step: 'model/step', stp: 'model/step' };
-const FILE_ID_RE = /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i;
+// A name may hold spaces (the ZapStand's are "P1 ZapStand_Classic.3mf"), never a slash.
+const FILE_ID_RE = /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp)$/i;
 const extOf = (id) => String(id).split('.').pop().toLowerCase();
 const contentTypeFor = (id) => FORMATS[extOf(id)] || 'application/octet-stream';
 // Display name for a format: .stp and .step are both STEP.
 const formatLabel = (id) => (extOf(id) === 'stp' ? 'STEP' : extOf(id).toUpperCase());
 
+// Files given new names: the earlier name, in older receipts' links and invoices, still means
+// the file it became.
+const RENAMED = {
+  'lightningpiggy-v2-zapstand.3mf': 'P1 ZapStand_Classic.3mf',
+  'lightningpiggy-v2-zapstand-badge.3mf': 'P1 ZapStand_Badge.3mf',
+};
+const currentName = (id) => (typeof id === 'string' && Object.prototype.hasOwnProperty.call(RENAMED, id) ? RENAMED[id] : id);
+
 // Only a bare basename in an allowed format that actually exists is a valid file id.
 function resolveFile(id) {
+  id = currentName(id);
   if (typeof id !== 'string' || !FILE_ID_RE.test(id) || id.includes('..')) return null;
   const full = path.join(privateDir(), id);
   return fs.existsSync(full) ? full : null;
@@ -42,13 +52,16 @@ function resolveFile(id) {
 // and one payment covers both. Matching is exact: zapbox does not match
 // zapbox-35, and zapstand does not match zapstand-badge.
 const stemOf = (id) => String(id).replace(/\.(3mf|stl|step|stp)$/i, '');
-const sameModel = (a, b) =>
-  typeof a === 'string' && typeof b === 'string' && FILE_ID_RE.test(a) && FILE_ID_RE.test(b) && stemOf(a) === stemOf(b);
+const sameModel = (a, b) => {
+  a = currentName(a); b = currentName(b);
+  return typeof a === 'string' && typeof b === 'string' && FILE_ID_RE.test(a) && FILE_ID_RE.test(b) && stemOf(a) === stemOf(b);
+};
 
 // Every format of this file's model that exists in the private bundle,
 // preferred order 3mf, stl, step, stp.
 const FORMAT_ORDER = ['3mf', 'stl', 'step', 'stp'];
 function formatsFor(fileId) {
+  fileId = currentName(fileId);
   if (typeof fileId !== 'string' || !FILE_ID_RE.test(fileId)) return [];
   let names = [];
   try { names = fs.readdirSync(privateDir()); } catch { return []; }
@@ -84,4 +97,4 @@ function minimumFor(fileId) {
   return overrides.length ? Math.max(...overrides) : Number(PRICING.default || 3);
 }
 
-module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, corsHeaders, getInvoice, minimumFor, contentTypeFor, extOf, FILE_ID_RE, stemOf, sameModel, formatsFor, formatLabel, MAX_USD: Number(PRICING.maximum || 500) };
+module.exports = { SITE, BTCPAY_URL, privateDir, resolveFile, currentName, corsHeaders, getInvoice, minimumFor, contentTypeFor, extOf, FILE_ID_RE, stemOf, sameModel, formatsFor, formatLabel, MAX_USD: Number(PRICING.maximum || 500) };

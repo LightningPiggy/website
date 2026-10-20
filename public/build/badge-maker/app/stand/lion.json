@@ -1,7 +1,7 @@
 {
  "title": "Lion",
  "version": 1,
- "source": "previews/lightningpiggy-v2-zapstand-lion.glb",
+ "source": "previews/P1 ZapStand_Lion.glb",
  "unit": 0.01,
  "colour": "#E8B04A",
  "data": "lion.bin",
@@ -10,10 +10,10 @@
    "name": "body",
    "colour": "#E8B04A",
    "main": true,
-   "points": 15782,
+   "points": 12254,
    "positions": 0,
-   "triangles": 32136,
-   "indices": 94692,
+   "triangles": 24873,
+   "indices": 73524,
    "wide": false
   },
   {
@@ -21,9 +21,9 @@
    "colour": "#E8B04A",
    "main": true,
    "points": 1987,
-   "positions": 287508,
+   "positions": 222764,
    "triangles": 4002,
-   "indices": 299432,
+   "indices": 234688,
    "wide": false
   },
   {
@@ -31,9 +31,9 @@
    "colour": "#E8B04A",
    "main": true,
    "points": 3720,
-   "positions": 323444,
+   "positions": 258700,
    "triangles": 7436,
-   "indices": 345764,
+   "indices": 281020,
    "wide": false
   },
   {
@@ -41,9 +41,9 @@
    "colour": "#A8561C",
    "main": false,
    "points": 321,
-   "positions": 390380,
+   "positions": 325636,
    "triangles": 649,
-   "indices": 392308,
+   "indices": 327564,
    "wide": false
   },
   {
@@ -51,9 +51,9 @@
    "colour": "#E8B04A",
    "main": true,
    "points": 3759,
-   "positions": 396204,
+   "positions": 331460,
    "triangles": 7521,
-   "indices": 418760,
+   "indices": 354016,
    "wide": false
   },
   {
@@ -61,9 +61,9 @@
    "colour": "#A8561C",
    "main": false,
    "points": 324,
-   "positions": 463888,
+   "positions": 399144,
    "triangles": 658,
-   "indices": 465832,
+   "indices": 401088,
    "wide": false
   },
   {
@@ -71,9 +71,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1400,
-   "positions": 469780,
+   "positions": 405036,
    "triangles": 2802,
-   "indices": 478180,
+   "indices": 413436,
    "wide": false
   },
   {
@@ -81,9 +81,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 227,
-   "positions": 494992,
+   "positions": 430248,
    "triangles": 459,
-   "indices": 496356,
+   "indices": 431612,
    "wide": false
   },
   {
@@ -91,9 +91,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1396,
-   "positions": 499112,
+   "positions": 434368,
    "triangles": 2793,
-   "indices": 507488,
+   "indices": 442744,
    "wide": false
   },
   {
@@ -101,9 +101,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 229,
-   "positions": 524248,
+   "positions": 459504,
    "triangles": 469,
-   "indices": 525624,
+   "indices": 460880,
    "wide": false
   },
   {
@@ -111,9 +111,9 @@
    "colour": "#A8561C",
    "main": false,
    "points": 378,
-   "positions": 528440,
+   "positions": 463696,
    "triangles": 756,
-   "indices": 530708,
+   "indices": 465964,
    "wide": false
   },
   {
@@ -121,9 +121,9 @@
    "colour": "#A8561C",
    "main": false,
    "points": 9950,
-   "positions": 535244,
+   "positions": 470500,
    "triangles": 20623,
-   "indices": 594944,
+   "indices": 530200,
    "wide": false
   },
   {
@@ -131,9 +131,9 @@
    "colour": "#E8B04A",
    "main": true,
    "points": 6435,
-   "positions": 718684,
+   "positions": 653940,
    "triangles": 13016,
-   "indices": 757296,
+   "indices": 692552,
    "wide": false
   },
   {
@@ -141,9 +141,9 @@
    "colour": "#E8B04A",
    "main": true,
    "points": 4263,
-   "positions": 835392,
+   "positions": 770648,
    "triangles": 8573,
-   "indices": 860972,
+   "indices": 796228,
    "wide": false
   },
   {
@@ -151,89 +151,49 @@
    "colour": "#A8561C",
    "main": false,
    "points": 5528,
-   "positions": 912412,
+   "positions": 847668,
    "triangles": 11133,
-   "indices": 945580,
+   "indices": 880836,
    "wide": false
   },
   {
    "name": "paw_front_L",
    "colour": "#A8561C",
    "main": false,
-   "points": 627,
-   "positions": 1012380,
-   "triangles": 1251,
-   "indices": 1016144,
+   "points": 832,
+   "positions": 947636,
+   "triangles": 1668,
+   "indices": 952628,
    "wide": false
   },
   {
    "name": "paw_front_R",
    "colour": "#A8561C",
    "main": false,
-   "points": 627,
-   "positions": 1023652,
-   "triangles": 1251,
-   "indices": 1027416,
+   "points": 833,
+   "positions": 962636,
+   "triangles": 1671,
+   "indices": 967636,
    "wide": false
   },
   {
    "name": "paw_back_L",
    "colour": "#A8561C",
    "main": false,
-   "points": 584,
-   "positions": 1034924,
-   "triangles": 1166,
-   "indices": 1038428,
+   "points": 776,
+   "positions": 977664,
+   "triangles": 1555,
+   "indices": 982320,
    "wide": false
   },
   {
    "name": "paw_back_R",
    "colour": "#A8561C",
    "main": false,
-   "points": 635,
-   "positions": 1045424,
-   "triangles": 1266,
-   "indices": 1049236,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_0",
-   "colour": "#E8B04A",
-   "main": true,
-   "points": 1461,
-   "positions": 1056832,
-   "triangles": 3124,
-   "indices": 1065600,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_1",
-   "colour": "#E8B04A",
-   "main": true,
-   "points": 1389,
-   "positions": 1084344,
-   "triangles": 2941,
-   "indices": 1092680,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_2",
-   "colour": "#E8B04A",
-   "main": true,
-   "points": 1750,
-   "positions": 1110328,
-   "triangles": 3677,
-   "indices": 1120828,
-   "wide": false
-  },
-  {
-   "name": "screw_plug_3",
-   "colour": "#E8B04A",
-   "main": true,
-   "points": 1431,
-   "positions": 1142892,
-   "triangles": 2993,
-   "indices": 1151480,
+   "points": 844,
+   "positions": 991652,
+   "triangles": 1694,
+   "indices": 996716,
    "wide": false
   }
  ],
@@ -263,7 +223,7 @@
    12.4
   ],
   "depth": 3.62,
-  "radius": 1.98,
+  "radius": 1.99,
   "part": "body"
  }
 }

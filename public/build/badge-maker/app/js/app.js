@@ -390,7 +390,7 @@ function standFilesUI() {
   if (dl) {
     const mb = dl.size / 1e6;
     info.textContent = `${dl.pieces} pieces to print, ${mb < 1 ? "under 1" : mb.toFixed(0)} MB, with a README on settings and colours.`;
-    a.href = dl.file;
+    a.href = encodeURI(dl.file);                      // "P1 ZapStand_Piggy.zip": the space as %20
     a.download = dl.file.split("/").pop();
     a.textContent = "Download the stand";
     a.hidden = false;
@@ -722,10 +722,11 @@ function loadPrinter(id) {
   return printerCache.get(id);
 }
 
+// named as the stands' files are: "P1 ZapStand_Badge_SATOSHI.3mf"
 function fileName(d, ext) {
-  const base = d.name ? d.name.text : state.logo ? state.logo.fileName.replace(/\.svg$/i, "").replace(/ \(ready-made\)$/, "") : "badge";
-  const slug = base.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "").toLowerCase() || "badge";
-  return `zapstand-badge-${slug}.${ext}`;
+  const base = d.name ? d.name.text : state.logo ? state.logo.fileName.replace(/\.svg$/i, "").replace(/ \(ready-made\)$/, "") : "";
+  const slug = base.normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return `P1 ZapStand_Badge${slug ? "_" + slug : ""}.${ext}`;
 }
 
 function saveFile(bytes, name, type) {

@@ -1,41 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Button from '../components/ui/Button.astro';
-import supporters from '../data/supporters.json';
-import creditsData from '../data/credits.json';
-
-// Community Supporters = curated credits tagged "Community Supporters" in the
-// admin tool, plus $50+ donors (avatar-only, added by the BTCPay webhook).
-// They render in one grid, so donors become avatar cards that link to a profile.
-const communitySupporters = (creditsData as Record<string, any[]>).communitySupporters || [];
-
-// Dedupe: a curated supporter who also donates should appear once. Match donors
-// to curated supporters by npub / X handle (from the profile link) or by the
-// underlying avatar image, and drop any donor that's already a curated supporter.
-function profileKey(url?: string): string {
-  if (!url) return '';
-  const npub = url.match(/(npub1[0-9a-z]+)/i);
-  if (npub) return 'nostr:' + npub[1].toLowerCase();
-  const x = url.match(/(?:x\.com|twitter\.com)\/([^\/?#]+)/i);
-  if (x) return 'x:' + x[1].toLowerCase();
-  return url;
-}
-function donorImageSource(avatarUrl?: string): string {
-  if (!avatarUrl) return '';
-  try { return new URL(avatarUrl).searchParams.get('u') || avatarUrl; } catch { return avatarUrl; }
-}
-const curatedKeys = new Set<string>();
-const curatedLogos = new Set<string>();
-for (const c of communitySupporters) {
-  if (c.nostrUrl) curatedKeys.add(profileKey(c.nostrUrl));
-  if (c.xUrl) curatedKeys.add(profileKey(c.xUrl));
-  if (c.logo) curatedLogos.add(c.logo);
-}
-const donorCards = (supporters as any[])
-  .filter((s) => !(s.profileUrl && curatedKeys.has(profileKey(s.profileUrl))) && !curatedLogos.has(donorImageSource(s.avatarUrl)))
-  .map((s) => ({ name: '', logo: s.avatarUrl, url: s.profileUrl }));
-
-const allSupporters = [...communitySupporters, ...donorCards];
 ---
 
 <BaseLayout title="Donate" description="Support Lightning Piggy - an open source Bitcoin piggy bank for families. Donate with Bitcoin on-chain or over Lightning.">
@@ -57,45 +22,13 @@ const allSupporters = [...communitySupporters, ...donorCards];
     </div>
   </div>
 
-  <!-- Community Supporters: curated credits + $50+ donors, one grid -->
-  {allSupporters.length > 0 && (
-    <section class="py-12 bg-gray-50">
-      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <h2 class="text-xl font-bold text-gray-900 mb-2">Community Supporters</h2>
-        <p class="text-gray-600 mb-8">Generous supporters helping keep Lightning Piggy free and open source.</p>
-        <div class="flex flex-wrap justify-center items-center gap-4">
-          {allSupporters.map((p) => {
-            const link = p.nostrUrl || p.xUrl || p.url;
-            return (
-              <a
-                href={link || undefined}
-                target={link ? '_blank' : undefined}
-                rel={link ? 'noopener noreferrer' : undefined}
-                title={p.name || undefined}
-                class="block w-16 h-16 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-pink/50 transition"
-              >
-                {p.logo ? (
-                  <img src={p.logo} alt={p.name || 'Supporter'} class="w-full h-full object-cover" loading="lazy"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
-                ) : null}
-                <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink font-bold" style={p.logo ? 'display:none;' : ''}>
-                  {(p.name || '?').charAt(0).toUpperCase()}
-                </div>
-              </a>
-            );
-          })}
-        </div>
-      </div>
-    </section>
-  )}
-
   <!-- Bitcoin Donation Form -->
   <section class="py-10 md:py-16 bg-white">
     <div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-8">
         <h2 class="text-3xl font-bold text-gray-900 mb-4">Support our mission with Bitcoin</h2>
         <p class="text-lg text-gray-600 max-w-xl mx-auto">
-          On-chain or Lightning - any amount is appreciated. Donate $50 and your profile pic will appear here :)
+          On-chain or Lightning - any amount is appreciated. Donate $50 and your profile pic will appear with our <a href="/#community-supporters" class="text-pink hover:underline">Community Supporters</a> on the home page :)
         </p>
       </div>
 

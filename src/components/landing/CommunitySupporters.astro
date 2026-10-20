@@ -1,0 +1,72 @@
+---
+import supporters from '../../data/supporters.json';
+import creditsData from '../../data/credits.json';
+
+// Community Supporters = curated credits tagged "Community Supporters" in the
+// admin tool, plus $50+ donors (avatar-only, added by the BTCPay webhook).
+// They render in one grid, so donors become avatar cards that link to a profile.
+const communitySupporters = (creditsData as Record<string, any[]>).communitySupporters || [];
+
+// Dedupe: a curated supporter who also donates should appear once. Match donors
+// to curated supporters by npub / X handle (from the profile link) or by the
+// underlying avatar image, and drop any donor that's already a curated supporter.
+function profileKey(url?: string): string {
+  if (!url) return '';
+  const npub = url.match(/(npub1[0-9a-z]+)/i);
+  if (npub) return 'nostr:' + npub[1].toLowerCase();
+  const x = url.match(/(?:x\.com|twitter\.com)\/([^\/?#]+)/i);
+  if (x) return 'x:' + x[1].toLowerCase();
+  return url;
+}
+function donorImageSource(avatarUrl?: string): string {
+  if (!avatarUrl) return '';
+  try { return new URL(avatarUrl).searchParams.get('u') || avatarUrl; } catch { return avatarUrl; }
+}
+const curatedKeys = new Set<string>();
+const curatedLogos = new Set<string>();
+for (const c of communitySupporters) {
+  if (c.nostrUrl) curatedKeys.add(profileKey(c.nostrUrl));
+  if (c.xUrl) curatedKeys.add(profileKey(c.xUrl));
+  if (c.logo) curatedLogos.add(c.logo);
+}
+const donorCards = (supporters as any[])
+  .filter((s) => !(s.profileUrl && curatedKeys.has(profileKey(s.profileUrl))) && !curatedLogos.has(donorImageSource(s.avatarUrl)))
+  .map((s) => ({ name: '', logo: s.avatarUrl, url: s.profileUrl }));
+
+const allSupporters = [...communitySupporters, ...donorCards];
+---
+
+<!-- Community Supporters: curated credits plus $50+ donors (supporters.json,
+     added by the BTCPay webhook when a donation is paid), one grid. Shown on
+     the home page inside Community & Partners, above Education Partners. -->
+{allSupporters.length > 0 && (
+  <div id="community-supporters" class="mt-12 scroll-mt-24">
+    <h3 class="text-xl font-bold text-gray-900 mb-2 text-center">Community Supporters</h3>
+    <p class="text-gray-600 mb-6 text-center">Generous supporters helping keep Lightning Piggy free and open source.</p>
+    <div class="flex flex-wrap justify-center items-center gap-4">
+      {allSupporters.map((p) => {
+        const link = p.nostrUrl || p.xUrl || p.url;
+        return (
+          <a
+            href={link || undefined}
+            target={link ? '_blank' : undefined}
+            rel={link ? 'noopener noreferrer' : undefined}
+            title={p.name || undefined}
+            class="block w-16 h-16 rounded-full bg-gray-100 overflow-hidden hover:ring-2 hover:ring-pink/50 transition"
+          >
+            {p.logo ? (
+              <img src={p.logo} alt={p.name || 'Supporter'} class="w-full h-full object-cover" loading="lazy"
+                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+            ) : null}
+            <div class="w-full h-full bg-pink/10 flex items-center justify-center text-pink font-bold" style={p.logo ? 'display:none;' : ''}>
+              {(p.name || '?').charAt(0).toUpperCase()}
+            </div>
+          </a>
+        );
+      })}
+    </div>
+    <p class="text-sm text-gray-500 mt-5 text-center">
+      <a href="/donate" class="text-pink hover:underline">Donate $50 or more</a> and your profile picture can join them.
+    </p>
+  </div>
+)}

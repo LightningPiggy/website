@@ -1,6 +1,8 @@
 ---
 import SectionHeading from '../ui/SectionHeading.astro';
 import PartnerCard from './PartnerCard.astro';
+import CommunitySupporters from './CommunitySupporters.astro';
+import supporters from '../../data/supporters.json';
 import partnersData from '../../data/partners.json';
 import creditsData from '../../data/credits.json';
 
@@ -18,7 +20,10 @@ const sections = [
   { items: mergeSection('inTheNews'), title: 'In the News', subtitle: 'Publications and articles featuring Lightning Piggy.' },
 ].filter((s) => s.items.length > 0);
 
-const hasPartners = sections.length > 0;
+// Community Supporters (curated plus $50+ donors) come first, above
+// Education Partners; the block shows if either has anyone.
+const hasSupporters = ((creditsData as Record<string, any[]>).communitySupporters || []).length > 0 || (supporters as any[]).length > 0;
+const hasPartners = sections.length > 0 || hasSupporters;
 ---
 
 {hasPartners && (
@@ -28,6 +33,8 @@ const hasPartners = sections.length > 0;
       title="Community & Partners"
       subtitle="The amazing projects, platforms, and creators powering Lightning Piggy."
     />
+
+    <CommunitySupporters />
 
     {sections.map((section) => (
       <div class="mt-12">

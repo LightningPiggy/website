@@ -3,10 +3,10 @@ title: "Privacy Policy"
 slug: "privacy"
 description: "What personal data Lightning Piggy collects, publishes and shares, why, and the choices and rights you have."
 pubDate: 2026-06-26
-updatedDate: 2026-10-08
+updatedDate: 2026-10-20
 ---
 
-**Last updated: 8 October 2026**
+**Last updated: 20 October 2026**
 
 This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
 
@@ -77,7 +77,7 @@ Our legal basis is our legitimate interest in accepting donations, keeping recor
 
 ### c) Supporters wall
 
-If you donate **$50 or more** and give your npub or X handle, we look up your public profile picture (through Nostr relays or unavatar.io) and add you to the "Community Supporters" wall on the Donate page. It shows your profile picture linked to your Nostr or X profile. If you give both, both are published: the wall shows your X profile picture (its web address contains your X handle), linked to your Nostr profile. Being listed shows that you gave at least $50, but not the exact amount. Your entry (your profile picture's web address, your profile link, the date and time, and a short code made from your payment reference, which stops you being listed twice) is also saved in our public GitHub repository. We list you only with your consent, which you give by entering your npub or X handle. You can withdraw it at any time by asking us to remove you. If you do not want to be listed, leave these fields empty.
+If you donate **$50 or more** and give your npub or X handle, we look up your public profile picture (through Nostr relays or unavatar.io) and add you to the "Community Supporters" wall on the home page. It shows your profile picture linked to your Nostr or X profile. If you give both, both are published: the wall shows your X profile picture (its web address contains your X handle), linked to your Nostr profile. Being listed shows that you gave at least $50, but not the exact amount. Your entry (your profile picture's web address, your profile link, the date and time, and a short code made from your payment reference, which stops you being listed twice) is also saved in our public GitHub repository. We list you only with your consent, which you give by entering your npub or X handle. You can withdraw it at any time by asking us to remove you. If you do not want to be listed, leave these fields empty.
 
 ### d) Buying a case design download
 

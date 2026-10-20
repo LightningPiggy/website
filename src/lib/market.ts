@@ -391,12 +391,6 @@ export function vendorHtml(v: VendorView, showProducts: boolean): string {
   const website = v.website
     ? `<a href="${escapeHtml(v.website)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-semibold text-gray-700 hover:text-pink"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z M3.6 9h16.8 M3.6 15h16.8 M12 3a15 15 0 010 18 M12 3a15 15 0 000 18"/></svg>Visit store</a>`
     : '';
-  const zap = v.lud16
-    ? `<button type="button" class="zap-btn inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-yellow text-gray-900 text-sm font-semibold hover:brightness-95 transition" data-lud16="${escapeHtml(
-        v.lud16,
-      )}" data-name="${escapeHtml(v.name)}">
-           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M11 21h-1l1-7H6.74a.6.6 0 01-.5-.92L13 3h1l-1 7h4.26a.6.6 0 01.5.92L11 21z"/></svg>Zap</button>`
-    : '';
   const products =
     showProducts && v.products.length > 0
       ? `<div class="mt-5 grid grid-cols-2 sm:grid-cols-3 gap-3">${v.products
@@ -424,7 +418,7 @@ export function vendorHtml(v: VendorView, showProducts: boolean): string {
             ${meta ? `<p class="text-xs text-gray-500 mt-0.5">${escapeHtml(meta)}</p>` : ''}
             ${v.nip05 ? `<div class="mt-1">${nip05}</div>` : ''}
             ${v.about ? `<p class="text-sm text-gray-600 mt-2 line-clamp-2">${escapeHtml(v.about)}</p>` : ''}
-            <div class="flex flex-wrap items-center gap-3 mt-3">${website}${zap}</div>
+            <div class="flex flex-wrap items-center gap-3 mt-3">${website}</div>
           </div>
         </div>
         ${products}

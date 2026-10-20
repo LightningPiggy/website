@@ -111,7 +111,7 @@ Our legal basis is performing our contract with you.
 
 On the treasure-hunt pages you can share a treasure or log a find on Nostr. Your Nostr browser extension signs the post, so **we never see your private key**. The post is published publicly to Nostr relays under your Nostr public key, and it cannot reliably be deleted afterwards.
 
-If you zap a hider, a player or a market vendor, your browser contacts **their** Lightning address provider directly, and your payment goes from your own wallet. If you use a Nostr extension, the zap may include a signed request with your public key and comment, which the recipient's provider may publish to Nostr relays as a public zap receipt.
+If you zap a hider or a player, your browser contacts **their** Lightning address provider directly, and your payment goes from your own wallet. If you use a Nostr extension, the zap may include a signed request with your public key and comment, which the recipient's provider may publish to Nostr relays as a public zap receipt.
 
 ### i) Tools that run in your browser
 

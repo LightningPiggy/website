@@ -3,8 +3,8 @@
 // A Nostr-native market: each vendor is driven live from their npub. We pull
 // the vendor's kind-0 profile (name, picture, about, nip-05, lightning address)
 // and their NIP-99 (kind 30402) / NIP-15 (kind 30018) products in one relay
-// pass, then render a vendor card with a ⚡ Zap button and their curated
-// products. Vendors opt in / curate via src/data/vendors.json:
+// pass, then render a vendor card with their curated products. Vendors opt
+// in / curate via src/data/vendors.json:
 //
 //   "products": { "mode": "curated", "include": ["<d-tag>", ...] }
 //   "products": { "mode": "keywords", "keywords": ["piggy", "zap"] }
@@ -172,27 +172,6 @@ const hasPrerender = views.length > 0;
       listEl.classList.remove('hidden');
     }
   }
-
-  // ---------- Zap: lightweight LNURL-pay link-out (v1) ----------
-  document.addEventListener('click', async (e) => {
-    const btn = (e.target as HTMLElement)?.closest?.('.zap-btn') as HTMLElement | null;
-    if (!btn) return;
-    e.preventDefault();
-    const lud16 = btn.dataset.lud16 || '';
-    const at = lud16.indexOf('@');
-    if (at < 1) return;
-    const name = lud16.slice(0, at);
-    const domain = lud16.slice(at + 1);
-    try {
-      const res = await fetch(`https://${domain}/.well-known/lnurlp/${name}`);
-      const data = await res.json();
-      if (data && data.callback) {
-        window.location.href = `lightning:${lud16}`;
-        return;
-      }
-    } catch {}
-    window.location.href = `lightning:${lud16}`;
-  });
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

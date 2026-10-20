@@ -67,7 +67,63 @@ const nip05Points = [
     </div>
   </section>
 
-  <!-- 3. Your Nostr identity — dark band with NIP-05 points + pop-up form -->
+  <!-- 3. Vendors — a card per vendor -->
+  <section id="vendors" class="py-12 md:py-16 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-2">Where to buy</h2>
+        <p class="text-gray-600 max-w-2xl">
+          Vendors stocking Lightning Piggy — each card is pulled <strong>live from the vendor's Nostr profile</strong>.
+          Vendors marked <span class="font-semibold">★ Pride of the Market</span> have pledged at least
+          <strong>10% of their sales</strong> back to the project. ⚡ Zap them a thank-you!
+        </p>
+      </div>
+      <NostrMarket vendors={vendors} showProducts={false} />
+    </div>
+  </section>
+
+  <!-- 4. Become a vendor + build your own -->
+  <section class="py-12 md:py-16 bg-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+      <!-- Become a vendor -->
+      <div id="become-a-vendor" class="rounded-2xl border border-gray-200 bg-gradient-to-br from-pink/5 to-white p-8 md:p-10">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Run a Store? Stock Lightning Piggies?</h2>
+        <p class="text-gray-600 mb-6 max-w-2xl">
+          We'd love to add your shop to the market. The team will review your application.
+          Making sats the savings standard for every smart saver is a team effort!
+        </p>
+
+        <button
+          type="button"
+          id="vendor-apply-toggle"
+          aria-expanded="false"
+          aria-controls="vendor-apply-panel"
+          class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors focus:outline-none focus:ring-2 focus:ring-pink/50"
+        >
+          Apply to Sell
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+        </button>
+
+        <div id="vendor-apply-panel" class="mt-6" hidden>
+          <VendorApplyForm />
+        </div>
+      </div>
+
+      <!-- Build your own -->
+      <div class="rounded-2xl border border-gray-200 p-8 md:p-10">
+        <h2 class="text-2xl font-bold text-gray-900 mb-2">Prefer to Build Your Own?</h2>
+        <p class="text-gray-600 mb-6 max-w-2xl">
+          Lightning Piggy is fully open source. Source the parts yourself and follow our
+          step-by-step build guide.
+        </p>
+        <Button href="/build" variant="outline">
+          View Build Guide →
+        </Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Your Nostr identity — dark band with NIP-05 points + pop-up form -->
   <section id="nostr-handles" class="bg-gradient-to-b from-gray-900 to-gray-800 text-white">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
       <div class="text-center max-w-2xl mx-auto">
@@ -105,62 +161,6 @@ const nip05Points = [
             </div>
           ))}
         </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 4. Vendors — a card per vendor -->
-  <section id="vendors" class="py-12 md:py-16 bg-gray-50">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="mb-8">
-        <h2 class="text-3xl font-bold text-gray-900 mb-2">Where to buy</h2>
-        <p class="text-gray-600 max-w-2xl">
-          Vendors stocking Lightning Piggy — each card is pulled <strong>live from the vendor's Nostr profile</strong>.
-          Vendors marked <span class="font-semibold">★ Pride of the Market</span> have pledged at least
-          <strong>10% of their sales</strong> back to the project. ⚡ Zap them a thank-you!
-        </p>
-      </div>
-      <NostrMarket vendors={vendors} showProducts={false} />
-    </div>
-  </section>
-
-  <!-- Become a vendor + build your own -->
-  <section class="py-12 md:py-16 bg-white">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-      <!-- Become a vendor -->
-      <div id="become-a-vendor" class="rounded-2xl border border-gray-200 bg-gradient-to-br from-pink/5 to-white p-8 md:p-10">
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Run a Store? Stock Lightning Piggies?</h2>
-        <p class="text-gray-600 mb-6 max-w-2xl">
-          We'd love to add your shop to the market. The team will review your application.
-          Making sats the savings standard for every smart saver is a team effort!
-        </p>
-
-        <button
-          type="button"
-          id="vendor-apply-toggle"
-          aria-expanded="false"
-          aria-controls="vendor-apply-panel"
-          class="inline-flex items-center gap-2 px-6 py-3 bg-pink text-white font-semibold rounded-xl hover:bg-pink/90 transition-colors focus:outline-none focus:ring-2 focus:ring-pink/50"
-        >
-          Apply to Sell
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-        </button>
-
-        <div id="vendor-apply-panel" class="mt-6" hidden>
-          <VendorApplyForm />
-        </div>
-      </div>
-
-      <!-- Build your own -->
-      <div class="rounded-2xl border border-gray-200 p-8 md:p-10">
-        <h2 class="text-2xl font-bold text-gray-900 mb-2">Prefer to Build Your Own?</h2>
-        <p class="text-gray-600 mb-6 max-w-2xl">
-          Lightning Piggy is fully open source. Source the parts yourself and follow our
-          step-by-step build guide.
-        </p>
-        <Button href="/build" variant="outline">
-          View Build Guide →
-        </Button>
       </div>
     </div>
   </section>

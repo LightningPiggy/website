@@ -63,7 +63,6 @@
       </div>
       <div class="stand-files" id="stand-files" hidden>
         <p><strong id="stand-files-title">The stand</strong> <span id="stand-files-info"></span></p>
-        <a class="button secondary" id="stand-download" href="#" download>Download the stand</a>
       </div>
       <ul class="notes" id="notes" aria-live="polite"></ul>
     </section>
@@ -181,10 +180,10 @@
 
       <div class="actions">
         <div class="buttons">
-          <button type="submit" class="button primary" id="download">Download the badge</button>
-          <button type="button" class="button secondary" id="download-stl" hidden>Download STL</button>
+          <button type="submit" class="button primary" id="download">Support &amp; download</button>
         </div>
         <p class="hint" id="download-hint"></p>
+        <div class="paystatus" id="paystatus" role="status" hidden><span id="paystatus-text"></span><button type="button" class="button secondary small" id="paystatus-again" hidden>Save it again</button></div>
       </div>
     </form>
   </main>
@@ -200,6 +199,29 @@
   <div class="picker-body" id="picker-body"></div>
   <div class="picker-custom"><label for="picker-custom">Other colour</label><input type="color" id="picker-custom" value="#888888"><button type="button" class="button secondary small" id="picker-custom-use">Use</button></div>
 </div>
+<dialog class="support" id="support" aria-labelledby="support-title">
+  <div class="support-body">
+    <h2 id="support-title">Support Lightning Piggy</h2>
+    <p class="hint" id="support-what"></p>
+    <p>The ZapStands are CC BY-SA 4.0: free to share and remix. Paying isn’t a licence. It’s a thank-you that supports Lightning Piggy and unlocks the download.</p>
+    <div class="amounts" id="support-amounts" role="group" aria-label="Amount">
+      <button type="button" data-amount="3">$3</button>
+      <button type="button" data-amount="5">$5</button>
+      <button type="button" data-amount="10">$10</button>
+      <button type="button" data-amount="21">$21</button>
+      <label>$ <input type="number" id="support-custom" min="3" max="500" step="1" placeholder="other"></label>
+    </div>
+    <label class="field" for="support-email">Email for a receipt with the download link <span class="hint">(optional)</span></label>
+    <input type="email" id="support-email" autocomplete="email" placeholder="you@example.com">
+    <p class="hint" id="support-min"></p>
+    <p class="error" id="support-error" hidden></p>
+    <div class="buttons">
+      <button type="button" class="button secondary" id="support-cancel">Cancel</button>
+      <button type="button" class="button primary" id="support-pay">Pay with Bitcoin</button>
+    </div>
+  </div>
+</dialog>
+
 <div class="toast" id="toast" role="status" hidden></div>
 </body>
 </html>

@@ -22,10 +22,11 @@ function privateDir() {
   throw new Error('private downloads directory not found (tried ' + candidates.join(', ') + ')' + listing);
 }
 
-// Formats that can be sold, and the Content-Type each is served with.
-const FORMATS = { '3mf': 'model/3mf', stl: 'model/stl', step: 'model/step', stp: 'model/step' };
-// A name may hold spaces (the ZapStand's are "P1 ZapStand_Classic.3mf"), never a slash.
-const FILE_ID_RE = /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp)$/i;
+// Formats that can be sold, and the Content-Type each is served with. A zip holds several files
+// (a ZapStand: the stand, its README and badges).
+const FORMATS = { '3mf': 'model/3mf', stl: 'model/stl', step: 'model/step', stp: 'model/step', zip: 'application/zip' };
+// A name may hold spaces (the ZapStand's are "P1 ZapStand_Classic.zip"), never a slash.
+const FILE_ID_RE = /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp|zip)$/i;
 const extOf = (id) => String(id).split('.').pop().toLowerCase();
 const contentTypeFor = (id) => FORMATS[extOf(id)] || 'application/octet-stream';
 // Display name for a format: .stp and .step are both STEP.
@@ -33,9 +34,10 @@ const formatLabel = (id) => (extOf(id) === 'stp' ? 'STEP' : extOf(id).toUpperCas
 
 // Files given new names: the earlier name, in older receipts' links and invoices, still means
 // the file it became.
+// The ZapStand's stand and badge were sold apart; now one zip holds the stand with its badges.
 const RENAMED = {
-  'lightningpiggy-v2-zapstand.3mf': 'P1 ZapStand_Classic.3mf',
-  'lightningpiggy-v2-zapstand-badge.3mf': 'P1 ZapStand_Badge.3mf',
+  'lightningpiggy-v2-zapstand.3mf': 'P1 ZapStand_Classic.zip',
+  'lightningpiggy-v2-zapstand-badge.3mf': 'P1 ZapStand_Classic.zip',
 };
 const currentName = (id) => (typeof id === 'string' && Object.prototype.hasOwnProperty.call(RENAMED, id) ? RENAMED[id] : id);
 
@@ -51,7 +53,7 @@ function resolveFile(id) {
 // lightningpiggy-v2-zapbox.3mf and lightningpiggy-v2-zapbox.stl are one model
 // and one payment covers both. Matching is exact: zapbox does not match
 // zapbox-35, and zapstand does not match zapstand-badge.
-const stemOf = (id) => String(id).replace(/\.(3mf|stl|step|stp)$/i, '');
+const stemOf = (id) => String(id).replace(/\.(3mf|stl|step|stp|zip)$/i, '');
 const sameModel = (a, b) => {
   a = currentName(a); b = currentName(b);
   return typeof a === 'string' && typeof b === 'string' && FILE_ID_RE.test(a) && FILE_ID_RE.test(b) && stemOf(a) === stemOf(b);
@@ -59,7 +61,7 @@ const sameModel = (a, b) => {
 
 // Every format of this file's model that exists in the private bundle,
 // preferred order 3mf, stl, step, stp.
-const FORMAT_ORDER = ['3mf', 'stl', 'step', 'stp'];
+const FORMAT_ORDER = ['zip', '3mf', 'stl', 'step', 'stp'];
 function formatsFor(fileId) {
   fileId = currentName(fileId);
   if (typeof fileId !== 'string' || !FILE_ID_RE.test(fileId)) return [];

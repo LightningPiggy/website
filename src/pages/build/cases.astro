@@ -10,9 +10,9 @@ import path from 'node:path';
 // .stl or .step next to a model's .3mf is enough to offer it. Card links give
 // the button's label and which file it asks for.
 const PRIVATE_DIR = path.join(process.cwd(), 'netlify', 'private', 'downloads', 'cases');
-const FORMAT_ORDER = ['3mf', 'stl', 'step', 'stp'];
-const bundled: string[] = fs.readdirSync(PRIVATE_DIR).filter((f) => /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp)$/i.test(f));
-const stemOf = (f: string) => f.replace(/\.(3mf|stl|step|stp)$/i, '');
+const FORMAT_ORDER = ['zip', '3mf', 'stl', 'step', 'stp'];
+const bundled: string[] = fs.readdirSync(PRIVATE_DIR).filter((f) => /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp|zip)$/i.test(f));
+const stemOf = (f: string) => f.replace(/\.(3mf|stl|step|stp|zip)$/i, '');
 const extOf = (f: string) => (f.split('.').pop() || '').toLowerCase();
 const fmtOf = (f: string) => extOf(f).replace(/^stp$/, 'step');
 const formatsOfModel = (file: string) =>
@@ -92,31 +92,38 @@ const cases = [
       displaySize: '2 inch',
       os: 'MicroPythonOS',
       material: 'Stand: PLA or PETG | Badges: PLA (multi-color)',
-      printing: 'Prints support-free in the plated orientation. Add rafts to secure the two buttons to the printer bed. Badges print face down; the multi-color detail lives in the first few layers only.',
+      printing: 'Prints support-free, every piece turned the way it prints. Add rafts to secure the two buttons to the printer bed. The badges print flat, each colour its own part, with 0.2 mm layers; the README in the download covers colours, settings and assembly.',
       extraHardware: [
         { label: 'M2 x8mm screws (Qty 4)', url: 'https://www.amazon.de/-/en/dp/B0FKTFTB44', source: 'amazon.de' },
       ],
     },
     creator: { name: 'Jake', url: 'https://njump.me/npub1a8us7vr738n7cvdxh0gdtnt5qzrk4qe3qklhmsrs45llq2k48agqjkrvn3' },
     licence: { name: 'CC BY-SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/' },
+    // One download per stand: a zip with the stand (a plain 3MF for any slicer), its README and the
+    // SATOSHI and Lightning Piggy badges, made by the badge maker project (make-stand-files.py).
     downloads: [
-      { label: 'Download Model File', url: '/downloads/cases/P1 ZapStand_Classic.3mf', edition: 'classic' },
-      { label: 'Download Badge File', url: '/downloads/cases/P1 ZapStand_Badge.3mf' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Classic.zip', edition: 'classic' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Piggy.zip', edition: 'piggy' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Kitty.zip', edition: 'kitty' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Bunny.zip', edition: 'bunny' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Lion.zip', edition: 'lion' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Dino.zip', edition: 'dino' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Penguin.zip', edition: 'penguin' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Chicken.zip', edition: 'chicken' },
     ],
     // The same stand, board and badge slot in eight designs, as chips under the description: each
     // switches the pictures (an animal's are images/cases/zapstand-<id>-01..04.jpg, rendered by the
-    // badge maker), the stand's files and the badge maker's stand. Only the Classic's print files
-    // are on the site so far; the animals' are 18-27 MB each, too big for the download function, so
-    // where to host them is still to be decided. ?zapstand=<id> opens the card on an edition.
+    // badge maker), the stand's download and the badge maker's stand. ?zapstand=<id> opens the
+    // card on an edition.
     editions: [
       { id: 'classic', name: 'Classic', files: true },
-      { id: 'piggy', name: 'Piggy' },
-      { id: 'kitty', name: 'Kitty' },
-      { id: 'bunny', name: 'Bunny' },
-      { id: 'lion', name: 'Lion' },
-      { id: 'dino', name: 'Dino' },
-      { id: 'penguin', name: 'Penguin' },
-      { id: 'chicken', name: 'Chicken' },
+      { id: 'piggy', name: 'Piggy', files: true },
+      { id: 'kitty', name: 'Kitty', files: true },
+      { id: 'bunny', name: 'Bunny', files: true },
+      { id: 'lion', name: 'Lion', files: true },
+      { id: 'dino', name: 'Dino', files: true },
+      { id: 'penguin', name: 'Penguin', files: true },
+      { id: 'chicken', name: 'Chicken', files: true },
     ],
   },
   {
@@ -544,7 +551,7 @@ const galleriesOf = (c) => c.editions
                       data-dl-min={minSupportFor(g.formats)}
                       data-dl-name={titleOf(c)}
                       data-dl-creator={c.creator.name}
-                      class="dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors"
+                      class={`dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors${g.edition && c.editions && g.edition !== c.editions[0].id ? ' hidden' : ''}`}
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -722,7 +729,7 @@ const galleriesOf = (c) => c.editions
     // Returning from checkout: poll until settled, then hand over the file.
     const params = new URLSearchParams(location.search);
     const dl = params.get('dl'), inv = params.get('invoice');
-    if (dl && inv && /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp)$/i.test(dl)) {
+    if (dl && inv && /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp|zip)$/i.test(dl)) {
       const bar = document.getElementById('dl-status');
       const txt = document.getElementById('dl-status-text');
       const links = document.getElementById('dl-status-links');
@@ -834,9 +841,10 @@ const galleriesOf = (c) => c.editions
 
 <script>
   // --- Editions (the ZapStand's animals) ---
-  // A chip shows that edition's pictures, its stand files (only editions with files on the site
-  // have them; the others say they are coming) and points "Design your badge" at the badge maker
-  // with that stand. ?zapstand=<id> opens the card on an edition (the badge maker links here so).
+  // A chip shows that edition's pictures, its own download (a download marked with an edition shows
+  // only on that edition; one without files says they are coming) and points "Design your badge"
+  // at the badge maker with that stand. ?zapstand=<id> opens the card on an edition (the badge
+  // maker links here so).
   for (const card of document.querySelectorAll<HTMLElement>('[data-editions]')) {
     const chips = [...card.querySelectorAll<HTMLButtonElement>('.edition-chip')];
     const show = (id: string) => {
@@ -850,7 +858,7 @@ const galleriesOf = (c) => c.editions
         g.classList.toggle('hidden', !on);
         if (on) for (const img of g.querySelectorAll<HTMLImageElement>('img[data-src]')) { img.src = img.dataset.src || ''; img.removeAttribute('data-src'); }
       }
-      for (const el of card.querySelectorAll<HTMLElement>('[data-edition-files]')) el.classList.toggle('hidden', !hasFiles);
+      for (const el of card.querySelectorAll<HTMLElement>('[data-edition-files]')) el.classList.toggle('hidden', !hasFiles || el.dataset.editionFiles !== id);
       const pending = card.querySelector<HTMLElement>('[data-edition-pending]');
       pending?.classList.toggle('hidden', hasFiles);
       const pendingName = card.querySelector('[data-edition-pending-name]');

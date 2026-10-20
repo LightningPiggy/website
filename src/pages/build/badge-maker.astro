@@ -4,6 +4,8 @@
 // project (public/build/badge-maker/app/COPY.md says how); this page shows it in a frame under
 // the site's header, so it keeps its own layout and nothing it styles can clash with the site's.
 // ?stand=kitty is passed on to the app, which opens that stand (the Cases page links here so).
+// Back from paying for a stand (?dl=<file>&invoice=<id>, from create-download-invoice), both are
+// passed on too: the app waits for the payment, then saves the stand's zip with the buyer's badge.
 import BaseLayout from '../../layouts/BaseLayout.astro';
 ---
 
@@ -39,7 +41,14 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </BaseLayout>
 
 <script>
-  const stand = new URLSearchParams(location.search).get('stand');
+  const q = new URLSearchParams(location.search);
   const frame = document.getElementById('badge-maker') as HTMLIFrameElement | null;
-  if (stand && /^[a-z0-9-]{1,32}$/.test(stand) && frame) frame.src = `/build/badge-maker/app/?stand=${stand}`;
+  const pass = new URLSearchParams();
+  const stand = q.get('stand'), dl = q.get('dl'), invoice = q.get('invoice');
+  if (stand && /^[a-z0-9-]{1,32}$/.test(stand)) pass.set('stand', stand);
+  if (dl && invoice && /^[a-z0-9][a-z0-9 ._-]{0,80}\.zip$/i.test(dl) && /^[A-Za-z0-9_-]{6,64}$/.test(invoice)) {
+    pass.set('dl', dl); pass.set('invoice', invoice);
+    history.replaceState(null, '', location.pathname + (stand ? `?stand=${encodeURIComponent(stand)}` : ''));
+  }
+  if (frame && [...pass.keys()].length) frame.src = `/build/badge-maker/app/?${pass}`;
 </script>

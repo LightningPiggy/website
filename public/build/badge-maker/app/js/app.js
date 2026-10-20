@@ -175,6 +175,7 @@ async function design() {
 let seq = 0, timer = 0;
 function changed() {
   save();
+  downloadUI();
   clearTimeout(timer);
   timer = setTimeout(render, 60);
 }
@@ -384,27 +385,18 @@ function standFilesUI() {
   const s = standEntry(), box = $("#stand-files");
   box.hidden = !s;
   if (!s) return;
-  const dl = s.download, page = s.page, a = $("#stand-download"), info = $("#stand-files-info");
+  // the stand's files: s.download here (stand/files/), s.support on lightningpiggy.com (behind
+  // Support & download); either way they come with the badge, from the one button
+  const files = s.support || s.download, info = $("#stand-files-info");
   $("#stand-files-title").textContent = `ZapStand ${s.title}`;
-  a.removeAttribute("download"); a.removeAttribute("target");
-  if (dl) {
-    const mb = dl.size / 1e6;
-    info.textContent = `${dl.pieces} pieces to print, ${mb < 1 ? "under 1" : mb.toFixed(0)} MB, with a README on settings and colours.`;
-    a.href = encodeURI(dl.file);                      // "P1 ZapStand_Piggy.zip": the space as %20
-    a.download = dl.file.split("/").pop();
-    a.textContent = "Download the stand";
-    a.hidden = false;
-  } else if (page) {
-    info.textContent = page.note || "Its print files are on another page.";
-    a.href = page.url;
-    a.target = "_top";                                // out of the frame the page may be shown in
-    a.textContent = page.label || "Get the stand files";
-    a.hidden = false;
+  if (files) {
+    const mb = files.size / 1e6;
+    info.textContent = `${files.pieces} pieces to print, ${mb < 1 ? "under 1" : mb.toFixed(0)} MB with the badges, and a README on settings and colours.`;
   } else {
     info.textContent = "Its print files aren’t up yet.";
-    a.hidden = true;
   }
-  if (s.credit && (dl || page)) {                     // the designer's credit, as the licence asks: by
+  downloadUI();
+  if (s.credit && files) {                     // the designer's credit, as the licence asks: by
     const link = (href, text) => {                    // reference to the page that credits them
       const l = document.createElement("a");
       l.href = href; l.target = "_blank"; l.rel = "noopener"; l.textContent = text;
@@ -570,12 +562,7 @@ function syncControls() {
   $("#printer-hint").textContent = other
     ? "The badge comes without print settings: set them up in your slicer for your printer and filaments."
     : "The project comes with suggested settings for this printer: a starting point, not a guarantee. Before printing, check in your slicer that the printer and nozzle, the plate, the filaments in each slot and the layer height match yours.";
-  $("#download-stl").hidden = !other;
-  $("#download").textContent = other ? "Download the badge (.3mf)" : "Download the badge";
-  $("#download-stl").textContent = "Download the badge (STL)";
-  $("#download-hint").textContent = other
-    ? "The badge only. The .3mf has each colour as its own part, named with its filament number: pick each part’s filament in your slicer and print with 0.2 mm layers. The STL download has one file per colour, zipped, all on the same origin: load them together as one object. The stand’s own files are under the stand."
-    : "The badge only, as a .3mf project for the printer you chose with each colour on its own filament: open it, check its settings and filaments, then slice and print. The stand’s own files are under the stand.";
+  downloadUI();
   $("#plate-name").textContent = other ? "Print plate" : $("#plate").selectedOptions[0]?.textContent + " plate";
   $("#face-label").textContent = state.style === "flush" ? "face side, as it will look on the stand" : "seen from above";
   swatch($("#name-colour"), state.nameColour);
@@ -703,8 +690,12 @@ function wire() {
   bed.addEventListener("dragleave", () => bed.classList.remove("dragging"));
   bed.addEventListener("drop", (e) => { e.preventDefault(); bed.classList.remove("dragging"); readFile(e.dataTransfer.files[0]); });
 
-  on("#controls", "submit", (e) => { e.preventDefault(); download("3mf"); });
-  on("#download-stl", "click", () => download("stl"));
+  on("#controls", "submit", (e) => { e.preventDefault(); getStand(); });
+  on("#support-cancel", "click", () => $("#support").close());
+  on("#support-pay", "click", pay);
+  for (const b of document.querySelectorAll("#support-amounts [data-amount]"))
+    b.addEventListener("click", () => { $("#support-custom").value = ""; setSupportAmount(+b.dataset.amount); });
+  on("#support-custom", "input", (e) => { const v = +e.target.value; if (v > 0) setSupportAmount(v); });
   let rt = 0;
   window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => current && draw(current.comp, current.design), 80); });
 }
@@ -737,47 +728,192 @@ function saveFile(bytes, name, type) {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-// kind: "3mf" (Bambu Studio project, or a plain .3mf for another printer) or "stl"
-async function download(kind) {
-  const btn = kind === "stl" ? $("#download-stl") : $("#download");
-  if (!current || !current.comp) return;
-  btn.disabled = true;
-  const was = btn.textContent;
-  btn.textContent = "Making the file…";
-  try {
-    const { design: d, comp } = current;
-    const slots = filaments(d, comp);
-    const built = parts(d, comp, slots, label);
-    checkParts(d, built);
-    const title = d.name ? d.name.text : (state.logo?.fileName || "Badge").replace(/\.svg$/i, "").replace(/ \(ready-made\)$/, "");
+// The badge, as files for the stand's zip: for a Bambu printer its project; for any other printer a
+// plain .3mf and STL files (one per colour, in a folder). -> {files: {name: bytes}, order}
+async function badgeFiles() {
+  const { design: d, comp } = current;
+  const slots = filaments(d, comp);
+  const built = parts(d, comp, slots, label);
+  checkParts(d, built);
+  const title = d.name ? d.name.text : (state.logo?.fileName || "Badge").replace(/\.svg$/i, "").replace(/ \(ready-made\)$/, "");
+  const order = slots.map((f, i) => `${i + 1} ${fil(f).name}`).join(", ");
+  const files = {};
+  if (state.printer === OTHER) {
+    files[fileName(d, "3mf")] = genericProject(built.parts, slots.map(fil), `${title} badge`, +state.copies, BADGE.w, BADGE.h);
+    const stl = stlFiles(built.parts, slots.map(fil), title);
+    const folder = fileName(d, "stl").replace(/\.stl$/, " STL/");
+    if (stl.ext === "zip") for (const [n, b] of Object.entries(fflate.unzipSync(stl.bytes))) files[folder + n] = b;
+    else files[folder + fileName(d, "stl")] = stl.bytes;
+  } else {
     const badges = Array.from({ length: +state.copies }, (_, i) => ({
       name: state.copies > 1 ? `${title} badge ${i + 1}` : `${title} badge`,
       parts: built.parts, top: built.top, w: BADGE.w, h: BADGE.h,
     }));
-    const order = slots.map((f, i) => `${i + 1} ${fil(f).name}`).join(", ");
-    let name;
-    if (state.printer === OTHER && kind === "stl") {
-      const out = stlFiles(built.parts, slots.map(fil), title);
-      name = fileName(d, out.ext);
-      saveFile(out.bytes, name, out.ext === "zip" ? "application/zip" : "model/stl");
-      toast(`Saved ${name}. Filaments: ${order}.`);
-    } else if (state.printer === OTHER) {
-      name = fileName(d, "3mf");
-      saveFile(genericProject(built.parts, slots.map(fil), `${title} badge`, +state.copies, BADGE.w, BADGE.h), name, "model/3mf");
-      toast(`Saved ${name}. Filaments: ${order}.`);
-    } else {
-      const printer = await loadPrinter(state.printer);
-      const { bytes } = buildProject(printer, badges, { colours: slots.map(hexOf), plate: state.plate, style: d.style });
-      name = fileName(d, "3mf");
-      saveFile(bytes, name, "model/3mf");
-      toast(`Saved ${name}. Open it in your slicer and load filaments ${order}.`);
-    }
+    const printer = await loadPrinter(state.printer);
+    files[fileName(d, "3mf")] = buildProject(printer, badges, { colours: slots.map(hexOf), plate: state.plate, style: d.style }).bytes;
+  }
+  return { files, order };
+}
+
+// Is the badge the page's own SATOSHI, as it opens? Then the stand comes with the SATOSHI and
+// Lightning Piggy badges; any other badge (picked, changed or made) takes their place.
+let defaultSig = null;
+const designSig = (s) => JSON.stringify(DESIGN_KEYS.map((k) => (k === "logo" ? (s.logo ? [s.logo.svg, s.logo.use, +s.logo.height] : null) : s[k])));
+function isDefaultDesign() {
+  if (!defaultSig) {
+    const d = structuredClone(DEFAULTS);
+    d.logo.use = readLogo(d.logo.svg).regions.map((r) => (r.background ? null : nearest(r.hex)));
+    defaultSig = designSig(d);
+  }
+  return state.preset === "satoshi" && designSig(state) === defaultSig;
+}
+
+// The stand's zip with the badge: the visitor's own in place of the SATOSHI and Lightning Piggy
+// badges it comes with, unless they kept the page's own SATOSHI. -> {bytes, note}
+async function bundleZip(standBytes) {
+  const entries = fflate.unzipSync(new Uint8Array(standBytes));
+  let note = "and the SATOSHI and Lightning Piggy badges";
+  if (!isDefaultDesign()) {
+    if (!current || !current.comp) throw new Error("Add a name or a logo to the badge first, or pick a ready-made badge.");
+    for (const n of Object.keys(entries)) if (/^P1 ZapStand_Badge_/.test(n)) delete entries[n];
+    const { files, order } = await badgeFiles();
+    Object.assign(entries, files);
+    note = `and your badge (filaments ${order})`;
+  }
+  const zip = {};
+  for (const [n, b] of Object.entries(entries)) zip[n] = [b, { level: /\.(3mf|zip)$/i.test(n) ? 0 : 6 }];
+  return { bytes: fflate.zipSync(zip), note };
+}
+
+async function saveBundle(s, standBytes) {
+  const { bytes, note } = await bundleZip(standBytes);
+  const name = `P1 ZapStand_${s.title}.zip`;
+  saveFile(bytes, name, "application/zip");
+  toast(`Saved ${name}: the ZapStand ${s.title} ${note}.`);
+  return name;
+}
+
+// The one button: the chosen stand with the badge, in one zip. On lightningpiggy.com (s.support)
+// after a thank-you payment; here, straight from stand/files/.
+async function getStand() {
+  const s = standEntry();
+  if (!s) return;
+  if (s.support) { openSupport(s); return; }
+  if (!s.download) { toast("This stand’s print files aren’t up yet."); return; }
+  const btn = $("#download"), was = btn.textContent;
+  btn.disabled = true; btn.textContent = "Making the zip…";
+  try {
+    const r = await fetch(encodeURI(s.download.file));      // "P1 ZapStand_Piggy.zip": the space as %20
+    if (!r.ok) throw new Error(`Couldn’t load the stand’s files (${r.status}).`);
+    await saveBundle(s, await r.arrayBuffer());
   } catch (e) {
     console.error(e);
     toast(e.message || String(e));
   } finally {
-    btn.textContent = was;
-    btn.disabled = false;
+    btn.textContent = was; btn.disabled = false;
+  }
+}
+
+function downloadUI() {
+  const s = standEntry(), btn = $("#download"), hint = $("#download-hint");
+  if (!btn) return;
+  const site = !!(s && s.support);
+  btn.textContent = site ? "Support & download" : "Download the stand and badge";
+  if (!s) { hint.textContent = ""; return; }
+  const badge = isDefaultDesign()
+    ? "the SATOSHI and Lightning Piggy badges (pick or make your own and it takes their place)"
+    : state.printer === OTHER
+      ? "your badge as a plain .3mf, each colour its own part named with its filament number (pick each part’s filament in your slicer and print with 0.2 mm layers), and as STL files, one per colour"
+      : "your badge as a .3mf project for the printer you chose, each colour on its own filament: open it, check its settings and filaments, then slice and print";
+  hint.textContent = `The ZapStand ${s.title} as a plain .3mf for any slicer, with a README on printing it, and ${badge}, all in one zip.`
+    + (site ? ` A thank-you of $${s.support.min || 3} or more supports Lightning Piggy and unlocks the download.` : "");
+}
+
+// ---------------------------------------------------------------- Support & download (lightningpiggy.com)
+
+let supportAmount = 5, supportMin = 3;
+
+function setSupportAmount(a) {
+  supportAmount = a;
+  for (const b of document.querySelectorAll("#support-amounts [data-amount]")) b.setAttribute("aria-pressed", String(+b.dataset.amount === a));
+}
+
+function openSupport(s) {
+  supportMin = s.support.min || 3;
+  $("#support-what").textContent = `The ZapStand ${s.title} and ${isDefaultDesign() ? "the SATOSHI and Lightning Piggy badges" : "your badge"}, in one zip.`;
+  const custom = $("#support-custom");
+  custom.min = String(supportMin); custom.placeholder = `${supportMin} or more`; custom.value = "";
+  for (const b of document.querySelectorAll("#support-amounts [data-amount]")) b.hidden = +b.dataset.amount < supportMin;
+  setSupportAmount(Math.max(5, supportMin));
+  $("#support-min").textContent = `Minimum $${supportMin}. Choose more if you would like to.`;
+  $("#support-error").hidden = true;
+  $("#support-pay").disabled = false; $("#support-pay").textContent = "Pay with Bitcoin";
+  $("#support").showModal();
+}
+
+// BTCPay's checkout, then back to the badge maker on the same stand (create-download-invoice's
+// "back"), where afterPayment() takes over; the badge waits in the browser's storage meanwhile
+async function pay() {
+  const s = standEntry(), err = $("#support-error"), btn = $("#support-pay");
+  const email = $("#support-email").value.trim();
+  const fail = (t) => { err.textContent = t; err.hidden = false; };
+  if (!(supportAmount >= supportMin)) return fail(`The minimum for this stand is $${supportMin}.`);
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("That email address doesn’t look right.");
+  btn.disabled = true; btn.textContent = "Creating the invoice…";
+  try {
+    try { sessionStorage.setItem("zapstand-badge-email", email); } catch (e) { /* only for the thank-you */ }
+    save();
+    const r = await fetch("/.netlify/functions/create-download-invoice", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ file: s.support.file, amount: supportAmount, email: email || undefined, back: "badge-maker", stand: s.id }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.checkoutLink) throw new Error(d.error || "Couldn’t create the invoice. Please try again.");
+    (window.top || window).location.href = d.checkoutLink;
+  } catch (e) {
+    fail(e.message);
+    btn.disabled = false; btn.textContent = "Pay with Bitcoin";
+  }
+}
+
+// Back from paying (?dl=<file>&invoice=<id>, passed on by the site's page): wait until the payment
+// is settled, then save the stand's zip with the badge. The receipt's link gets the stand with the
+// SATOSHI and Lightning Piggy badges; a badge of one's own is only in this download.
+async function afterPayment() {
+  const q = new URLSearchParams(location.search);
+  const file = q.get("dl"), inv = q.get("invoice");
+  if (!file || !inv) return;
+  const bar = $("#paystatus"), again = $("#paystatus-again");
+  const say = (t) => { $("#paystatus-text").textContent = t; bar.hidden = false; };
+  const s = stands.find((x) => x.support && x.support.file === file);
+  if (!s) { say("We couldn’t match that payment to a stand."); return; }
+  const url = `/.netlify/functions/download?invoice=${encodeURIComponent(inv)}&file=${encodeURIComponent(file)}`;
+  bar.scrollIntoView({ block: "nearest" });
+  for (let tries = 0; tries < 200; tries++) {
+    let status = "unknown";
+    try { status = (await (await fetch(url + "&check=1")).json()).status || "unknown"; } catch (e) { /* asked again below */ }
+    if (status === "settled") {
+      try {
+        say("Thank you! Making your zip…");
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`Couldn’t fetch the stand’s files (${r.status}). Try the link in your receipt.`);
+        const bytes = await r.arrayBuffer();
+        let email = "";
+        try { email = sessionStorage.getItem("zapstand-badge-email") || ""; sessionStorage.removeItem("zapstand-badge-email"); } catch (e) { /* no thank-you line */ }
+        const name = await saveBundle(s, bytes);
+        say(`Thank you! ${name} is saved` + (email ? `, and a receipt with a link to the stand is on its way to ${email}.` : "."));
+        again.hidden = false;
+        again.onclick = () => saveBundle(s, bytes).catch((e) => toast(e.message || String(e)));
+      } catch (e) {
+        say(e.message || String(e));
+      }
+      return;
+    }
+    if (status === "processing") say("Payment seen: waiting for it to be confirmed…");
+    else if (status === "unpaid") say("Waiting for your payment…");
+    else if (status === "mismatch" || status === "unknown") { say("We couldn’t match that payment to this stand."); return; }
+    else { say(`The invoice is ${status}. Please try again.`); return; }
+    await new Promise((r) => setTimeout(r, 4000));
   }
 }
 
@@ -841,6 +977,6 @@ async function start() {
   restoreLogo();
   readymadeUI();
   syncControls();
-  render().then(startStand);
+  render().then(() => { startStand(); afterPayment(); });
 }
 start();

@@ -11,10 +11,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=classic#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Classic.zip",
+   "size": 207765,
+   "pieces": 3,
+   "min": 3.0
   }
  },
  {
@@ -29,10 +30,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=piggy#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Piggy.zip",
+   "size": 3175687,
+   "pieces": 27,
+   "min": 3.0
   }
  },
  {
@@ -47,10 +49,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=kitty#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Kitty.zip",
+   "size": 2992239,
+   "pieces": 25,
+   "min": 3.0
   }
  },
  {
@@ -65,10 +68,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=bunny#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Bunny.zip",
+   "size": 3431621,
+   "pieces": 27,
+   "min": 3.0
   }
  },
  {
@@ -83,10 +87,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=lion#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Lion.zip",
+   "size": 4123172,
+   "pieces": 25,
+   "min": 3.0
   }
  },
  {
@@ -101,10 +106,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=dino#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Dino.zip",
+   "size": 3312553,
+   "pieces": 27,
+   "min": 3.0
   }
  },
  {
@@ -119,10 +125,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=penguin#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Penguin.zip",
+   "size": 2844804,
+   "pieces": 23,
+   "min": 3.0
   }
  },
  {
@@ -137,10 +144,11 @@
    "url": "https://creativecommons.org/licenses/by-sa/4.0/",
    "source": "https://lightningpiggy.com/build/cases/"
   },
-  "page": {
-   "url": "/build/cases/?zapstand=chicken#p1-zapstand",
-   "label": "Get the stand files",
-   "note": "Its print files are on the ZapStand card on the Cases page."
+  "support": {
+   "file": "P1 ZapStand_Chicken.zip",
+   "size": 3103882,
+   "pieces": 28,
+   "min": 3.0
   }
  }
 ]

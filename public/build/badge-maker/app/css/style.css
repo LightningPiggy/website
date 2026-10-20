@@ -388,4 +388,25 @@ input[type="text"] { font-size: 1rem; }
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
 }
 
+/* paying for a stand's download (on lightningpiggy.com) and coming back from it */
+.paystatus { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px;
+  border: 1px solid var(--accent); border-radius: 10px; background: var(--accent-soft); font-size: 0.9rem; }
+.paystatus span { flex: 1 1 14rem; min-width: 0; }
+.support { width: min(30rem, calc(100vw - 32px)); border: 1px solid var(--line); border-radius: 14px;
+  padding: 0; background: var(--paper); color: var(--ink); }
+.support::backdrop { background: rgba(0, 0, 0, 0.55); }
+.support-body { display: grid; gap: 12px; padding: 20px; }
+.support-body h2 { margin: 0; font-size: 1.2rem; }
+.support-body p { margin: 0; font-size: 0.9rem; }
+.support .amounts { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.support .amounts button { font: 600 0.9rem var(--body); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 14px; cursor: pointer; }
+.support .amounts button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.support .amounts label { display: inline-flex; align-items: center; gap: 4px; font-size: 0.9rem; }
+.support .amounts input { width: 6rem; }
+.support input { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--panel); color: var(--ink); }
+.support .error { color: #C62828; }
+.support .buttons { display: flex; justify-content: flex-end; gap: 8px; }
+
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }

@@ -1,7 +1,9 @@
 // Netlify serverless function: first half of the double opt-in newsletter
 // signup. Validates the address (honeypot, fill-time, rate limit, dot-trick),
-// then emails a signed confirmation link. Nothing is added to the audience
-// here - the link opens the /newsletter-confirm page, whose button POSTs to
+// then emails a signed confirmation link: at most one per address a day, and
+// about NEWSLETTER_DAILY_CAP a day in all, a soft cap (lib/newsletter-sends).
+// Nothing is added to the audience here - the link opens the
+// /newsletter-confirm page, whose button POSTs to
 // newsletter-confirm, so bots (and mail filters that open links) never enter
 // the list. An address that is already on the list gets no new email; the
 // reply (and roughly its timing) is the same either way, so the form does not
@@ -10,9 +12,11 @@
 // Environment variables required in Netlify:
 //   RESEND_API_KEY            — API key from resend.com (shared with webhook functions)
 //   NEWSLETTER_CONFIRM_SECRET — HMAC secret shared with newsletter-confirm
+//   NEWSLETTER_DAILY_CAP      — optional; confirmations a day, default 40; 0 pauses them
 
 var crypto = require('crypto');
 var newsletterStatus = require('./lib/newsletter-contacts').newsletterStatus;
+var newsletterSends = require('./lib/newsletter-sends');
 
 var ALLOWED_ORIGIN = 'https://lightningpiggy.com';
 
@@ -38,6 +42,15 @@ function corsHeaders(event) {
 
 var NOTIFICATION_EMAIL = 'oink@lightningpiggy.com';
 var FROM_EMAIL = 'Lightning Piggy <newsletter@mail.lightningpiggy.com>';
+// lib/newsletter-sends finds earlier confirmations in Resend's log by this.
+var CONFIRM_SUBJECT = 'Confirm your Freedom Farm News subscription';
+
+// Resend's free plan sends 100 emails a day; this leaves the rest for the
+// donation, Nostr handle and vendor emails.
+function dailyCap() {
+  var n = parseInt(process.env.NEWSLETTER_DAILY_CAP, 10);
+  return n >= 0 ? n : 40;
+}
 
 // Excludes HTML metacharacters as well as whitespace/@: the address is echoed
 // into the owner-notification email, and the old pattern happily accepted
@@ -67,13 +80,27 @@ async function fetchWithRetry(url, options, maxRetries) {
 
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
+// The reply to an address that gets no email this time, sent after about as
+// long as sending the email takes, so it reads like a normal signup. Callers
+// that haven't asked Resend anything yet wait longer (see silentSuccess).
+async function quietlyDone(event, minMs, spreadMs) {
+  await sleep((minMs || 250) + Math.floor(Math.random() * (spreadMs || 450)));
+  return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true, confirm: true }) };
+}
+
 // --- Spam-prevention helpers ---
 
-// Silent-success response — never tell bots they were caught.
-// Logs server-side so we can monitor rejection patterns.
-function silentSuccess(event, reason, detail) {
+// Logs a rejection server-side so we can monitor the patterns.
+function logSpam(event, reason, detail) {
   console.log('[spam] ' + reason + (detail ? ' — ' + detail : '') + ' from ' + (event.headers['x-forwarded-for'] || event.headers['client-ip'] || 'unknown'));
-  return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true }) };
+}
+
+// Silent-success response for the checks that run before any Resend call —
+// never tell bots they were caught: the same reply as a real signup, after
+// about as long as a whole one takes (the Resend lookups plus the send).
+function silentSuccess(event, reason, detail) {
+  logSpam(event, reason, detail);
+  return quietlyDone(event, 700, 800);
 }
 
 // Count dots in the local part of an email (used for Gmail dot-trick detection).
@@ -154,12 +181,16 @@ exports.handler = async function (event) {
     return silentSuccess(event, 'honeypot');
   }
 
-  // Layer 2: Time-to-fill check — humans take >3s to read+fill+click.
-  if (typeof body.startedAt === 'number') {
-    var elapsed = Date.now() - body.startedAt;
-    if (elapsed >= 0 && elapsed < 3000) {
-      return silentSuccess(event, 'too-fast', elapsed + 'ms');
-    }
+  // Layer 2: Time-to-fill check — humans take >3s to read+fill+click. The
+  // form always sends startedAt, so a request without it didn't come from the
+  // form. A negative time is let through: startedAt comes from the visitor's
+  // clock, which can run ahead of ours.
+  if (typeof body.startedAt !== 'number' || !isFinite(body.startedAt)) {
+    return silentSuccess(event, 'no-startedAt');
+  }
+  var elapsed = Date.now() - body.startedAt;
+  if (elapsed >= 0 && elapsed < 3000) {
+    return silentSuccess(event, 'too-fast', elapsed + 'ms');
   }
 
   // Layer 3: Rate limit per IP (1/min burst, 5/hr sustained).
@@ -191,14 +222,47 @@ exports.handler = async function (event) {
   // Layer 5: Canonicalize — dedupes Gmail dot-trick variants in the audience.
   var canonical = canonicalEmail(email);
 
-  // Already on the list: nothing to confirm, so no email. Same reply as a new
-  // signup, after about as long as sending the email takes (see the top of
-  // this file). Unknown status: send the confirmation as usual.
+  // What Resend's log says about the last 24 hours, and whether the address is
+  // already on the list, asked together so every reply waits for both. The
+  // limits come first and apply to every address alike, so the reply never
+  // shows who is subscribed (see the top of this file). If the log can't be
+  // read for any other reason, send as before rather than turn signups away.
   var segmentId = process.env.RESEND_AUDIENCE_ID || process.env.RESEND_NEWSLETTER_SEGMENT_ID;
-  if (await newsletterStatus(apiKey, canonical, segmentId) === 'subscribed') {
+  var lookups = await Promise.all([
+    newsletterSends.recentConfirmations(apiKey, CONFIRM_SUBJECT, Date.now()),
+    newsletterStatus(apiKey, canonical, segmentId)
+  ]);
+  var recent = lookups[0];
+  var dedupe = newsletterSends.dedupeKey(canonical);
+
+  // Layer 6: Resend is rate-limiting us (a flood of requests can cause that),
+  // so the log can't be checked: refuse rather than send unchecked.
+  if (recent && recent.busy) {
+    console.log('[newsletter-subscribe] Resend busy, log not read, no email sent');
+    return { statusCode: 429, headers: corsHeaders(event), body: JSON.stringify({ error: 'Too many requests. Please try again in a moment.' }) };
+  }
+
+  // Layer 7: daily cap on confirmations.
+  if (recent && recent.count >= dailyCap()) {
+    console.log('[newsletter-subscribe] daily cap reached (' + recent.count + ' confirmations in 24h), no email sent');
+    return { statusCode: 429, headers: corsHeaders(event), body: JSON.stringify({ error: "We've sent all the confirmation emails we can for today. Please try again tomorrow." }) };
+  }
+
+  // Already on the list: nothing to confirm, so no email. Same reply as a new
+  // signup. Unknown status: send the confirmation as usual.
+  if (lookups[1] === 'subscribed') {
     console.log('[newsletter-subscribe] already subscribed, no email sent');
-    await sleep(250 + Math.floor(Math.random() * 450));
-    return { statusCode: 200, headers: corsHeaders(event), body: JSON.stringify({ success: true, confirm: true }) };
+    return quietlyDone(event);
+  }
+
+  // Layer 8: one confirmation per address a day; the earlier one's link still
+  // works. The Idempotency-Key on the send below covers requests that arrive
+  // together, before the first shows up in the log.
+  if (!recent) {
+    console.error('[newsletter-subscribe] could not read recent confirmations from Resend; daily limits not applied');
+  } else if (recent.recipients.has(dedupe)) {
+    logSpam(event, 'repeat-address');
+    return quietlyDone(event);
   }
 
   // Send the confirmation email. The contact is only added to the audience
@@ -242,11 +306,20 @@ exports.handler = async function (event) {
   try {
     var res = await fetchWithRetry('https://api.resend.com/emails', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey,
+        // Resend refuses (409) a second, different send under the same key.
+        // The key changes every 2 minutes: it only has to cover requests that
+        // arrive together (the log check covers the rest of the day), and a
+        // failed send then can't hold the address back for long.
+        'Idempotency-Key': 'newsletter-confirm/' + crypto.createHash('sha256')
+          .update(dedupe + '/' + Math.floor(Date.now() / 120000)).digest('hex')
+      },
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [canonical],
-        subject: 'Confirm your Freedom Farm News subscription',
+        subject: CONFIRM_SUBJECT,
         html: html
       })
     });
@@ -258,6 +331,10 @@ exports.handler = async function (event) {
     var status = res.status;
     var errBody;
     try { errBody = await res.json(); } catch (e) { errBody = {}; }
+    if (status === 409 && /idempotent/.test(errBody.name || '')) {
+      logSpam(event, 'repeat-address', errBody.name);
+      return quietlyDone(event);
+    }
     if (status === 429) {
       return { statusCode: 429, headers: corsHeaders(event), body: JSON.stringify({ error: 'Too many requests. Please try again in a moment.' }) };
     }

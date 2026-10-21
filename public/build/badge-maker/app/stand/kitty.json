@@ -10,10 +10,10 @@
    "name": "body",
    "colour": "#F2A65A",
    "main": true,
-   "points": 12541,
+   "points": 10942,
    "positions": 0,
-   "triangles": 25461,
-   "indices": 75248,
+   "triangles": 22397,
+   "indices": 65652,
    "wide": false
   },
   {
@@ -21,9 +21,9 @@
    "colour": "#F2A65A",
    "main": true,
    "points": 1987,
-   "positions": 228016,
+   "positions": 200036,
    "triangles": 4002,
-   "indices": 239940,
+   "indices": 211960,
    "wide": false
   },
   {
@@ -31,9 +31,9 @@
    "colour": "#F2A65A",
    "main": true,
    "points": 3352,
-   "positions": 263952,
+   "positions": 235972,
    "triangles": 6723,
-   "indices": 284064,
+   "indices": 256084,
    "wide": false
   },
   {
@@ -41,9 +41,9 @@
    "colour": "#F29BB0",
    "main": false,
    "points": 259,
-   "positions": 324404,
+   "positions": 296424,
    "triangles": 525,
-   "indices": 325960,
+   "indices": 297980,
    "wide": false
   },
   {
@@ -51,9 +51,9 @@
    "colour": "#F2A65A",
    "main": true,
    "points": 3406,
-   "positions": 329112,
+   "positions": 301132,
    "triangles": 6837,
-   "indices": 349548,
+   "indices": 321568,
    "wide": false
   },
   {
@@ -61,9 +61,9 @@
    "colour": "#F29BB0",
    "main": false,
    "points": 254,
-   "positions": 390572,
+   "positions": 362592,
    "triangles": 508,
-   "indices": 392096,
+   "indices": 364116,
    "wide": false
   },
   {
@@ -71,9 +71,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1404,
-   "positions": 395144,
+   "positions": 367164,
    "triangles": 2816,
-   "indices": 403568,
+   "indices": 375588,
    "wide": false
   },
   {
@@ -81,9 +81,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 231,
-   "positions": 420464,
+   "positions": 392484,
    "triangles": 465,
-   "indices": 421852,
+   "indices": 393872,
    "wide": false
   },
   {
@@ -91,9 +91,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1409,
-   "positions": 424644,
+   "positions": 396664,
    "triangles": 2825,
-   "indices": 433100,
+   "indices": 405120,
    "wide": false
   },
   {
@@ -101,9 +101,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 221,
-   "positions": 450052,
+   "positions": 422072,
    "triangles": 443,
-   "indices": 451380,
+   "indices": 423400,
    "wide": false
   },
   {
@@ -111,9 +111,9 @@
    "colour": "#F4A0B5",
    "main": false,
    "points": 732,
-   "positions": 454040,
+   "positions": 426060,
    "triangles": 1468,
-   "indices": 458432,
+   "indices": 430452,
    "wide": false
   },
   {
@@ -121,9 +121,9 @@
    "colour": "#F4A0B5",
    "main": false,
    "points": 841,
-   "positions": 467240,
+   "positions": 439260,
    "triangles": 1683,
-   "indices": 472288,
+   "indices": 444308,
    "wide": false
   },
   {
@@ -131,9 +131,9 @@
    "colour": "#F4A0B5",
    "main": false,
    "points": 381,
-   "positions": 482388,
+   "positions": 454408,
    "triangles": 759,
-   "indices": 484676,
+   "indices": 456696,
    "wide": false
   },
   {
@@ -141,9 +141,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 832,
-   "positions": 489232,
+   "positions": 461252,
    "triangles": 1668,
-   "indices": 494224,
+   "indices": 466244,
    "wide": false
   },
   {
@@ -151,9 +151,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 833,
-   "positions": 504232,
+   "positions": 476252,
    "triangles": 1671,
-   "indices": 509232,
+   "indices": 481252,
    "wide": false
   },
   {
@@ -161,9 +161,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 776,
-   "positions": 519260,
+   "positions": 491280,
    "triangles": 1555,
-   "indices": 523916,
+   "indices": 495936,
    "wide": false
   },
   {
@@ -171,9 +171,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 844,
-   "positions": 533248,
+   "positions": 505268,
    "triangles": 1694,
-   "indices": 538312,
+   "indices": 510332,
    "wide": false
   },
   {
@@ -181,17 +181,17 @@
    "colour": "#F2A65A",
    "main": true,
    "points": 12078,
-   "positions": 548476,
+   "positions": 520496,
    "triangles": 24403,
-   "indices": 620944,
+   "indices": 592964,
    "wide": false
   }
  ],
  "slot": {
   "centre": [
    0.0,
-   -1.431,
-   8.624
+   -1.434,
+   8.627
   ],
   "x": [
    1,
@@ -200,20 +200,20 @@
   ],
   "up": [
    -0.0,
-   0.423,
-   0.906
+   0.422618,
+   0.906308
   ],
   "out": [
    0.0,
-   -0.906,
-   0.423
+   -0.906308,
+   0.422618
   ],
   "size": [
    50.4,
    12.4
   ],
   "depth": 3.62,
-  "radius": 1.99,
+  "radius": 2.15,
   "part": "body"
  }
 }

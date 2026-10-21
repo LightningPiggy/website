@@ -10,10 +10,10 @@
    "name": "body",
    "colour": "#CFCFD6",
    "main": true,
-   "points": 11022,
+   "points": 10322,
    "positions": 0,
-   "triangles": 22431,
-   "indices": 66132,
+   "triangles": 21218,
+   "indices": 61932,
    "wide": false
   },
   {
@@ -21,9 +21,9 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 1987,
-   "positions": 200720,
+   "positions": 189240,
    "triangles": 4002,
-   "indices": 212644,
+   "indices": 201164,
    "wide": false
   },
   {
@@ -31,9 +31,9 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 2354,
-   "positions": 236656,
+   "positions": 225176,
    "triangles": 4757,
-   "indices": 250780,
+   "indices": 239300,
    "wide": false
   },
   {
@@ -41,9 +41,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 221,
-   "positions": 279324,
+   "positions": 267844,
    "triangles": 440,
-   "indices": 280652,
+   "indices": 269172,
    "wide": false
   },
   {
@@ -51,9 +51,9 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 2369,
-   "positions": 283292,
+   "positions": 271812,
    "triangles": 4783,
-   "indices": 297508,
+   "indices": 286028,
    "wide": false
   },
   {
@@ -61,9 +61,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 238,
-   "positions": 326208,
+   "positions": 314728,
    "triangles": 475,
-   "indices": 327636,
+   "indices": 316156,
    "wide": false
   },
   {
@@ -71,9 +71,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1398,
-   "positions": 330488,
+   "positions": 319008,
    "triangles": 2805,
-   "indices": 338876,
+   "indices": 327396,
    "wide": false
   },
   {
@@ -81,9 +81,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 222,
-   "positions": 355708,
+   "positions": 344228,
    "triangles": 445,
-   "indices": 357040,
+   "indices": 345560,
    "wide": false
   },
   {
@@ -91,9 +91,9 @@
    "colour": "#1A1A1A",
    "main": false,
    "points": 1401,
-   "positions": 359712,
+   "positions": 348232,
    "triangles": 2811,
-   "indices": 368120,
+   "indices": 356640,
    "wide": false
   },
   {
@@ -101,9 +101,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 223,
-   "positions": 384988,
+   "positions": 373508,
    "triangles": 455,
-   "indices": 386328,
+   "indices": 374848,
    "wide": false
   },
   {
@@ -111,9 +111,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 727,
-   "positions": 389060,
+   "positions": 377580,
    "triangles": 1459,
-   "indices": 393424,
+   "indices": 381944,
    "wide": false
   },
   {
@@ -121,9 +121,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 724,
-   "positions": 402180,
+   "positions": 390700,
    "triangles": 1454,
-   "indices": 406524,
+   "indices": 395044,
    "wide": false
   },
   {
@@ -131,9 +131,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 277,
-   "positions": 415248,
+   "positions": 403768,
    "triangles": 550,
-   "indices": 416912,
+   "indices": 405432,
    "wide": false
   },
   {
@@ -141,9 +141,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 376,
-   "positions": 420212,
+   "positions": 408732,
    "triangles": 751,
-   "indices": 422468,
+   "indices": 410988,
    "wide": false
   },
   {
@@ -151,9 +151,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 5080,
-   "positions": 426976,
+   "positions": 415496,
    "triangles": 10333,
-   "indices": 457456,
+   "indices": 445976,
    "wide": false
   },
   {
@@ -161,9 +161,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 833,
-   "positions": 519456,
+   "positions": 507976,
    "triangles": 1675,
-   "indices": 524456,
+   "indices": 512976,
    "wide": false
   },
   {
@@ -171,9 +171,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 833,
-   "positions": 534508,
+   "positions": 523028,
    "triangles": 1674,
-   "indices": 539508,
+   "indices": 528028,
    "wide": false
   },
   {
@@ -181,9 +181,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 850,
-   "positions": 549552,
+   "positions": 538072,
    "triangles": 1704,
-   "indices": 554652,
+   "indices": 543172,
    "wide": false
   },
   {
@@ -191,9 +191,9 @@
    "colour": "#FFFFFF",
    "main": false,
    "points": 844,
-   "positions": 564876,
+   "positions": 553396,
    "triangles": 1696,
-   "indices": 569940,
+   "indices": 558460,
    "wide": false
   },
   {
@@ -201,17 +201,17 @@
    "colour": "#CFCFD6",
    "main": true,
    "points": 11632,
-   "positions": 580116,
+   "positions": 568636,
    "triangles": 23467,
-   "indices": 649908,
+   "indices": 638428,
    "wide": false
   }
  ],
  "slot": {
   "centre": [
    0.0,
-   -1.431,
-   8.624
+   -1.434,
+   8.627
   ],
   "x": [
    1,
@@ -220,20 +220,20 @@
   ],
   "up": [
    -0.0,
-   0.423,
-   0.906
+   0.422618,
+   0.906308
   ],
   "out": [
    0.0,
-   -0.906,
-   0.423
+   -0.906308,
+   0.422618
   ],
   "size": [
    50.4,
    12.4
   ],
   "depth": 3.62,
-  "radius": 1.99,
+  "radius": 2.15,
   "part": "body"
  }
 }

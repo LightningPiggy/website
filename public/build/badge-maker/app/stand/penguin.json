@@ -10,10 +10,10 @@
    "name": "body",
    "colour": "#2B2D33",
    "main": true,
-   "points": 11029,
+   "points": 9792,
    "positions": 0,
-   "triangles": 22431,
-   "indices": 66176,
+   "triangles": 20080,
+   "indices": 58752,
    "wide": false
   },
   {
@@ -21,9 +21,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 1987,
-   "positions": 200764,
+   "positions": 179232,
    "triangles": 4002,
-   "indices": 212688,
+   "indices": 191156,
    "wide": false
   },
   {
@@ -31,9 +31,9 @@
    "colour": "#0A0A0A",
    "main": false,
    "points": 1395,
-   "positions": 236700,
+   "positions": 215168,
    "triangles": 2797,
-   "indices": 245072,
+   "indices": 223540,
    "wide": false
   },
   {
@@ -41,9 +41,9 @@
    "colour": "#F5F5F2",
    "main": false,
    "points": 230,
-   "positions": 261856,
+   "positions": 240324,
    "triangles": 465,
-   "indices": 263236,
+   "indices": 241704,
    "wide": false
   },
   {
@@ -51,9 +51,9 @@
    "colour": "#0A0A0A",
    "main": false,
    "points": 1410,
-   "positions": 266028,
+   "positions": 244496,
    "triangles": 2821,
-   "indices": 274488,
+   "indices": 252956,
    "wide": false
   },
   {
@@ -61,9 +61,9 @@
    "colour": "#F5F5F2",
    "main": false,
    "points": 228,
-   "positions": 291416,
+   "positions": 269884,
    "triangles": 457,
-   "indices": 292784,
+   "indices": 271252,
    "wide": false
   },
   {
@@ -71,9 +71,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 673,
-   "positions": 295528,
+   "positions": 273996,
    "triangles": 1342,
-   "indices": 299568,
+   "indices": 278036,
    "wide": false
   },
   {
@@ -81,9 +81,9 @@
    "colour": "#F7A1C4",
    "main": false,
    "points": 700,
-   "positions": 307620,
+   "positions": 286088,
    "triangles": 1398,
-   "indices": 311820,
+   "indices": 290288,
    "wide": false
   },
   {
@@ -91,9 +91,9 @@
    "colour": "#F5F5F2",
    "main": false,
    "points": 6533,
-   "positions": 320208,
+   "positions": 298676,
    "triangles": 13160,
-   "indices": 359408,
+   "indices": 337876,
    "wide": false
   },
   {
@@ -101,9 +101,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 5964,
-   "positions": 438368,
+   "positions": 416836,
    "triangles": 12003,
-   "indices": 474152,
+   "indices": 452620,
    "wide": false
   },
   {
@@ -111,9 +111,9 @@
    "colour": "#F59A23",
    "main": false,
    "points": 4598,
-   "positions": 546172,
+   "positions": 524640,
    "triangles": 9274,
-   "indices": 573760,
+   "indices": 552228,
    "wide": false
   },
   {
@@ -121,9 +121,9 @@
    "colour": "#F59A23",
    "main": false,
    "points": 753,
-   "positions": 629404,
+   "positions": 607872,
    "triangles": 1506,
-   "indices": 633924,
+   "indices": 612392,
    "wide": false
   },
   {
@@ -131,9 +131,9 @@
    "colour": "#F59A23",
    "main": false,
    "points": 753,
-   "positions": 642960,
+   "positions": 621428,
    "triangles": 1506,
-   "indices": 647480,
+   "indices": 625948,
    "wide": false
   },
   {
@@ -141,9 +141,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 750,
-   "positions": 656516,
+   "positions": 634984,
    "triangles": 1500,
-   "indices": 661016,
+   "indices": 639484,
    "wide": false
   },
   {
@@ -151,9 +151,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 750,
-   "positions": 670016,
+   "positions": 648484,
    "triangles": 1500,
-   "indices": 674516,
+   "indices": 652984,
    "wide": false
   },
   {
@@ -161,9 +161,9 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 2496,
-   "positions": 683516,
+   "positions": 661984,
    "triangles": 5223,
-   "indices": 698492,
+   "indices": 676960,
    "wide": false
   },
   {
@@ -171,17 +171,17 @@
    "colour": "#2B2D33",
    "main": true,
    "points": 2541,
-   "positions": 729832,
+   "positions": 708300,
    "triangles": 5266,
-   "indices": 745080,
+   "indices": 723548,
    "wide": false
   }
  ],
  "slot": {
   "centre": [
    0.0,
-   -1.431,
-   8.624
+   -1.434,
+   8.627
   ],
   "x": [
    1,
@@ -190,20 +190,20 @@
   ],
   "up": [
    -0.0,
-   0.423,
-   0.906
+   0.422618,
+   0.906308
   ],
   "out": [
    0.0,
-   -0.906,
-   0.423
+   -0.906308,
+   0.422618
   ],
   "size": [
    50.4,
    12.4
   ],
   "depth": 3.62,
-  "radius": 1.99,
+  "radius": 2.15,
   "part": "body"
  }
 }

@@ -3,7 +3,8 @@
     "richard": "6bb36e4f65717a8e8acec00e726cdb93e51020d8e576e482720309c874b8e187",
     "jake": "e9f90f307e89e7ec31a6bbd0d5cd7400876a833105bf7dc070ad3ff02ad53f50",
     "thomas": "181137054fe60df5168976311f0bf44dbe4bd4d2e0af69325dfee9fa81a8cbda",
-    "esther": "a3f26413ac9f15658fed66ca5238c8606fef8f1489e4efe2ea44af68d67f7d44"
+    "esther": "a3f26413ac9f15658fed66ca5238c8606fef8f1489e4efe2ea44af68d67f7d44",
+    "ben": "971615b70ad9ec896f8d5ba0f2d01652f1dfe5f9ced81ac9469ca7facefad68b"
   },
   "relays": {
     "6bb36e4f65717a8e8acec00e726cdb93e51020d8e576e482720309c874b8e187": [
@@ -33,6 +34,13 @@
       "wss://relay.nostr.band",
       "wss://nos.lol",
       "wss://relay.snort.social"
+    ],
+    "971615b70ad9ec896f8d5ba0f2d01652f1dfe5f9ced81ac9469ca7facefad68b": [
+      "wss://relay.primal.net",
+      "wss://nostr.oxtr.dev",
+      "wss://relay.ditto.pub",
+      "wss://nos.lol",
+      "wss://relay.nostr.net"
     ]
   }
 }

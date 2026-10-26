@@ -11,7 +11,7 @@
 import { safeJsonLd } from './jsonLd';
 
 export const RELAYS = [
-  'wss://relay.damus.io',
+  'wss://nostr.oxtr.dev',
   'wss://nos.lol',
   'wss://relay.primal.net',
   'wss://relay.nostr.net',

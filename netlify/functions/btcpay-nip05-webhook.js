@@ -21,9 +21,9 @@ var NOSTR_JSON_PATH = 'public/.well-known/nostr.json';
 var DEFAULT_RELAYS = [
   'wss://relay.primal.net',
   'wss://relay.damus.io',
-  'wss://relay.nostr.band',
+  'wss://relay.ditto.pub',
   'wss://nos.lol',
-  'wss://relay.snort.social'
+  'wss://relay.nostr.net'
 ];
 
 function verifySignature(payload, secret, signatureHeader) {

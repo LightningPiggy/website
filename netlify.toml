@@ -32,6 +32,13 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
+# NIP-05: Nostr web clients fetch this from other sites, and without the
+# header the browser hides the answer from them.
+[[headers]]
+  for = "/.well-known/nostr.json"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+
 [[redirects]]
   from = "/.well-known/lnurlp/*"
   to = "https://lnbits.lightningpiggy.com/.well-known/lnurlp/:splat"

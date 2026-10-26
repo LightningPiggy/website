@@ -7,7 +7,7 @@ const WebSocket = require('ws');
 
 const RELAYS = [
   'wss://relay.primal.net',
-  'wss://relay.damus.io',
+  'wss://nostr.oxtr.dev',
   'wss://nos.lol',
 ];
 

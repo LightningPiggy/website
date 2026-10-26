@@ -16,7 +16,7 @@ import { bech32 } from 'bech32';
 
 // Nostr relays to query
 const RELAYS = [
-  'wss://relay.damus.io',
+  'wss://nostr.oxtr.dev',
   'wss://relay.primal.net',
   'wss://nos.lol',
 ];

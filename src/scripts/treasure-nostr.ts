@@ -99,7 +99,7 @@ export function sanitizeUrl(url: string): string {
 // -----------------------------------------------------------------------
 export const GC_RELAYS = [
   'wss://nos.lol',
-  'wss://relay.damus.io',
+  'wss://nostr.oxtr.dev',
   'wss://relay.ditto.pub',
   'wss://relay.dreamith.to',
 ];

@@ -1,0 +1,209 @@
+{
+ "title": "Penguin",
+ "version": 1,
+ "source": "previews/P1 ZapStand_Penguin.glb",
+ "unit": 0.01,
+ "colour": "#2B2D33",
+ "data": "penguin.bin",
+ "parts": [
+  {
+   "name": "body",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 9792,
+   "positions": 0,
+   "triangles": 20080,
+   "indices": 58752,
+   "wide": false
+  },
+  {
+   "name": "ZapBox_enclosure",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 1987,
+   "positions": 179232,
+   "triangles": 4002,
+   "indices": 191156,
+   "wide": false
+  },
+  {
+   "name": "eye_L",
+   "colour": "#0A0A0A",
+   "main": false,
+   "points": 1395,
+   "positions": 215168,
+   "triangles": 2797,
+   "indices": 223540,
+   "wide": false
+  },
+  {
+   "name": "shine_L",
+   "colour": "#F5F5F2",
+   "main": false,
+   "points": 230,
+   "positions": 240324,
+   "triangles": 465,
+   "indices": 241704,
+   "wide": false
+  },
+  {
+   "name": "eye_R",
+   "colour": "#0A0A0A",
+   "main": false,
+   "points": 1410,
+   "positions": 244496,
+   "triangles": 2821,
+   "indices": 252956,
+   "wide": false
+  },
+  {
+   "name": "shine_R",
+   "colour": "#F5F5F2",
+   "main": false,
+   "points": 228,
+   "positions": 269884,
+   "triangles": 457,
+   "indices": 271252,
+   "wide": false
+  },
+  {
+   "name": "cheek_L",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 673,
+   "positions": 273996,
+   "triangles": 1342,
+   "indices": 278036,
+   "wide": false
+  },
+  {
+   "name": "cheek_R",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 700,
+   "positions": 286088,
+   "triangles": 1398,
+   "indices": 290288,
+   "wide": false
+  },
+  {
+   "name": "head_front",
+   "colour": "#F5F5F2",
+   "main": false,
+   "points": 6533,
+   "positions": 298676,
+   "triangles": 13160,
+   "indices": 337876,
+   "wide": false
+  },
+  {
+   "name": "head_back",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 5964,
+   "positions": 416836,
+   "triangles": 12003,
+   "indices": 452620,
+   "wide": false
+  },
+  {
+   "name": "beak",
+   "colour": "#F59A23",
+   "main": false,
+   "points": 4598,
+   "positions": 524640,
+   "triangles": 9274,
+   "indices": 552228,
+   "wide": false
+  },
+  {
+   "name": "foot_front_L",
+   "colour": "#F59A23",
+   "main": false,
+   "points": 753,
+   "positions": 607872,
+   "triangles": 1506,
+   "indices": 612392,
+   "wide": false
+  },
+  {
+   "name": "foot_front_R",
+   "colour": "#F59A23",
+   "main": false,
+   "points": 753,
+   "positions": 621428,
+   "triangles": 1506,
+   "indices": 625948,
+   "wide": false
+  },
+  {
+   "name": "foot_back_L",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 750,
+   "positions": 634984,
+   "triangles": 1500,
+   "indices": 639484,
+   "wide": false
+  },
+  {
+   "name": "foot_back_R",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 750,
+   "positions": 648484,
+   "triangles": 1500,
+   "indices": 652984,
+   "wide": false
+  },
+  {
+   "name": "flipper_L",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 2496,
+   "positions": 661984,
+   "triangles": 5223,
+   "indices": 676960,
+   "wide": false
+  },
+  {
+   "name": "flipper_R",
+   "colour": "#2B2D33",
+   "main": true,
+   "points": 2541,
+   "positions": 708300,
+   "triangles": 5266,
+   "indices": 723548,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.434,
+   8.627
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.422618,
+   0.906308
+  ],
+  "out": [
+   0.0,
+   -0.906308,
+   0.422618
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 2.15,
+  "part": "body"
+ }
+}

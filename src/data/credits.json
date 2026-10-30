@@ -196,17 +196,6 @@
       "kind": "person"
     },
     {
-      "name": "Adopting Bitcoin",
-      "url": "https://www.adoptingbitcoin.org",
-      "avatar": "/images/profiles/adopting-bitcoin-bf1e679c.jpg",
-      "isBitcoinKid": false,
-      "nostrUrl": "https://njump.me/npub1ad0ptuzte83alpkpqqctvewlaqj5zq23c83m82xw8apg4t6zlyns6xng2c",
-      "xUrl": "https://x.com/AdoptingBTC",
-      "githubUrl": "",
-      "contribution": "With us every step of the way.",
-      "kind": "organisation"
-    },
-    {
       "name": "Satoshi Summer Camp & BSTEM",
       "url": "https://bstem.co",
       "avatar": "",
@@ -215,17 +204,6 @@
       "xUrl": "",
       "githubUrl": "",
       "contribution": "",
-      "kind": "organisation"
-    },
-    {
-      "name": "Bitcoin Atlantis",
-      "url": "https://bitcoinatlantis.com/",
-      "avatar": "/images/profiles/bitcoin-atlantis-971f5ed6.jpg",
-      "isBitcoinKid": false,
-      "nostrUrl": "https://njump.me/npub1h493d0qgwhu95s82zd9sxrt3ckn3ttgvaf04z02neckadxw5fkvqte4cwz",
-      "xUrl": "https://x.com/bitcoinatlantis",
-      "githubUrl": "",
-      "contribution": "Embracing project and providing the perfect family-friendly environment for learning and building.",
       "kind": "organisation"
     },
     {

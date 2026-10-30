@@ -18,9 +18,18 @@ function isWebsiteUrl(url?: string): boolean {
   return !socialPatterns.some(pattern => pattern.test(url));
 }
 
+// Pictures on this page come only from the site's own /images/ folder, as
+// the admin's export already ensures: a link to another site would send every
+// visitor's IP address there (the Privacy Policy lists no such host for this
+// page). Anything else shows the initial instead.
+function localImage(src?: string): string {
+  return typeof src === 'string' && src.startsWith('/images/') ? src : '';
+}
+
 // Helper to extract username and avatar from various URL formats
-function parseProfile(name: string, url?: string, avatar?: string, nostrUrl?: string, xUrl?: string, githubUrl?: string): { displayName: string; username: string; avatar: string; url?: string; websiteUrl?: string; nostrUrl?: string; xUrl?: string; githubUrl?: string } {
+function parseProfile(name: string, url?: string, rawAvatar?: string, nostrUrl?: string, xUrl?: string, githubUrl?: string): { displayName: string; username: string; avatar: string; url?: string; websiteUrl?: string; nostrUrl?: string; xUrl?: string; githubUrl?: string } {
   const cleanName = name.replace(/^⭐️\s*/, '').trim();
+  const avatar = localImage(rawAvatar);
 
   const websiteUrl = isWebsiteUrl(url) ? url : undefined;
 
@@ -33,13 +42,13 @@ function parseProfile(name: string, url?: string, avatar?: string, nostrUrl?: st
     return { displayName: cleanName, username: cleanName, avatar: '', websiteUrl, nostrUrl, xUrl, githubUrl };
   }
 
-  // Twitter URLs - try to get avatar
+  // Twitter URLs - show the handle (no picture: see localImage)
   const twitterMatch = url.match(/twitter\.com\/([^\/\?]+)/i) || url.match(/x\.com\/([^\/\?]+)/i);
   if (twitterMatch) {
     return {
       displayName: cleanName,
       username: `@${twitterMatch[1]}`,
-      avatar: `https://unavatar.io/twitter/${twitterMatch[1]}`,
+      avatar: '',
       url,
       websiteUrl,
       nostrUrl,
@@ -75,7 +84,7 @@ const contributorsMain = allContributors;
 const communitySupportersMain = communitySupporters.map((s) => ({
   name: s.name,
   url: s.url,
-  avatar: s.logo,
+  avatar: localImage(s.logo),
   contribution: s.description,
   nostrUrl: s.nostrUrl,
   xUrl: s.xUrl,

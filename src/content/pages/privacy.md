@@ -3,10 +3,10 @@ title: "Privacy Policy"
 slug: "privacy"
 description: "What personal data Lightning Piggy collects, publishes and shares, why, and the choices and rights you have."
 pubDate: 2026-06-26
-updatedDate: 2026-10-20
+updatedDate: 2026-11-09
 ---
 
-**Last updated: 20 October 2026**
+**Last updated: 9 November 2026**
 
 This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
 
@@ -33,7 +33,7 @@ The Website and its server functions are hosted by **Netlify**. As on virtually 
 
 Our own server functions also write some details to these logs to help us fix problems and stop abuse. These include the Nostr handles you buy from us (see 3e), Nostr public keys, payment references and error messages. When the anti-spam checks on our newsletter and vendor-application forms reject a submission, they log the **IP address** it came from and, in some cases, the email address entered. When a newsletter confirmation link is opened or confirmed, we log the browser details (user agent) of the visit, without the email or IP address, so we can tell people apart from email security filters that open links automatically. Those two forms also count recent submissions per IP address to limit abuse. The counts are held only in the memory of the running server function and are not saved.
 
-Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, its request passes through Netlify to this server, so both receive it, including the wallet's IP address. The web server in front of our payment software keeps no access logs, but the payment software keeps technical logs, and the LNbits logs include IP addresses. These logs are deleted automatically, normally within three weeks.
+Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, its request passes through Netlify to this server, so both receive it, including the wallet's IP address. The web server in front of our payment software keeps an access log of each request it receives: the **IP address** (for a payment to our Lightning address, the wallet's), browser details, the address requested, the time and the response. Before saving a request, it removes wallet keys, login codes and tokens, cookies and the address of the page you came from. We use these logs to fix problems and stop abuse. They are deleted automatically after 7 days and are not included in our backups. The payment software also keeps technical logs, and the LNbits logs include IP addresses. These are deleted automatically, normally within three weeks.
 
 Our legal basis for all of this is our legitimate interest in operating, securing and protecting the Services.
 
@@ -166,7 +166,7 @@ We keep personal data only as long as needed for the purpose it was collected:
 - **Vendor applications:** if we decline an application, we delete it, including the copy emailed to us. We delete the IP address once we have reviewed an application. If we accept one, we keep it as a record of your listing, and delete it on request.
 - **Published content:** we keep it on the Website until it is removed, at your request or ours.
 - **Our private list of featured people and vendors:** kept while we feature you, and updated or deleted on request.
-- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. Our own server's technical logs, including the LNbits logs with IP addresses, are deleted automatically, normally within three weeks (see 2a and 3g).
+- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. Our own server's access logs are deleted automatically after 7 days, and its technical logs, including the LNbits logs with IP addresses, normally within three weeks (see 2a and 3g).
 - **Emails:** emails you send us, and the notifications our systems send us about sign-ups, donations, purchases, orders and vendor applications, are kept in our mailbox only as long as we need them, and we delete them on request. Resend, our email provider, keeps copies of the emails we send for a limited period that it sets.
 
 ## 10. Your rights

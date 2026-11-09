@@ -224,7 +224,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       const name = escapeHtml(displayName(entry));
       const npub = npubEncode(entry.pubkey);
       const zap = entry.lnAddress
-        ? `<button type="button" class="pg-lb-zap" data-pubkey="${entry.pubkey}" aria-label="Zap ${name}" title="Zap ${name}">${ZAP_SVG}</button>`
+        ? `<button type="button" class="pg-lb-zap" data-pubkey="${escapeHtml(entry.pubkey)}" aria-label="Zap ${name}" title="Zap ${name}">${ZAP_SVG}</button>`
         : '';
       return `
         <div class="pg-lb-row">

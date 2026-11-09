@@ -59,13 +59,12 @@ import LightningPaused from '../components/ui/LightningPaused.astro';
 
       <!-- Donation details -->
       <div class="mt-2 bg-white border border-gray-200 rounded-2xl p-6 md:p-8">
-        <h2 class="text-xl font-bold text-gray-900 mb-1">Send some sats to hear the oinks!</h2>
-        <p class="text-gray-500 text-sm mb-6">Scan with any Lightning wallet, or tap the address to open it.</p>
-
         <LightningPaused class="mb-6">
-          <p>Our Lightning server is switched off for now while we wait for a software update, so payments to oink@lightningpiggy.com won't work, and there won't be any oinks until it's back.</p>
+          <p>Our Lightning server is off for now while we wait for a software update. Payments to oink@lightningpiggy.com won't work, so there won't be any oinks until it's back.</p>
           <p>You can still donate with on-chain bitcoin on our <a href="/donate" class="font-semibold underline">Donate page</a>.</p>
         </LightningPaused>
+        <h2 class="text-xl font-bold text-gray-900 mb-1">Send some sats to hear the oinks!</h2>
+        <p class="text-gray-500 text-sm mb-6">Scan with any Lightning wallet, or tap the address to open it.</p>
 
         <!-- This banner IS the enable/disable toggle -->
         <button

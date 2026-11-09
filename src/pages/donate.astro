@@ -30,12 +30,12 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
       <div class="text-center mb-8">
         <h2 class="text-3xl font-bold text-gray-900 mb-4">Support our mission with Bitcoin</h2>
         <p class="text-lg text-gray-600 max-w-xl mx-auto">
-          On-chain or Lightning - any amount is appreciated. Donate $50 and your profile pic will appear with our <a href="/#community-supporters" class="text-pink hover:underline">Community Supporters</a> on the home page :)
+          {LIGHTNING_PAUSED ? 'Any amount is appreciated.' : 'On-chain or Lightning - any amount is appreciated.'} Donate $50 and your profile pic will appear with our <a href="/#community-supporters" class="text-pink hover:underline">Community Supporters</a> on the home page :)
         </p>
       </div>
 
       <LightningPaused class="mb-6">
-        <p>Our Lightning server is switched off for now while we wait for a software update, so Lightning payments to us, including to oink@lightningpiggy.com, won't work until it's back. Donations through Geyser may not work either.</p>
+        <p>Our Lightning server is off for now while we wait for a software update. Lightning payments to us won't work until it's back, including to oink@lightningpiggy.com. Donations through Geyser may not work either.</p>
         <p>You can still donate with on-chain bitcoin using the form below.</p>
       </LightningPaused>
 
@@ -143,7 +143,7 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
     </div>
   </section>
 
-  <script is:inline>
+  <script is:inline define:vars={{ LIGHTNING_PAUSED }}>
     document.addEventListener('DOMContentLoaded', function () {
       var INVOICE_ENDPOINT = '/.netlify/functions/create-invoice';
 
@@ -265,7 +265,9 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
           })
           .catch(function (err) {
             console.error('Donation error:', err);
-            showError('Something went wrong creating the invoice. Please try again or use one of the alternative methods below.');
+            showError(LIGHTNING_PAUSED
+              ? 'Something went wrong creating the invoice. Please try again in a few minutes.'
+              : 'Something went wrong creating the invoice. Please try again or use one of the alternative methods below.');
             setLoading(false);
           });
       }

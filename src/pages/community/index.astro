@@ -40,6 +40,7 @@ const socialLinks = [
   { label: 'Telegram', href: 'https://t.me/LightningPiggy', description: 'Join the conversation' },
   { label: 'GitHub', href: 'https://github.com/LightningPiggy', description: 'Contribute code' },
 ];
+import LightningPaused from '../../components/ui/LightningPaused.astro';
 ---
 
 <BaseLayout title="Community" description="Join the Lightning Piggy community of builders, educators, and families">
@@ -110,6 +111,9 @@ const socialLinks = [
         <p class="text-gray-600 mb-6 max-w-lg mx-auto">
           Lightning Piggy is funded entirely by the community. Every sat helps us reach more smart savers.
         </p>
+        <LightningPaused class="max-w-lg mx-auto mb-6">
+          <p>Our Lightning server is off for now, so Geyser donations may not work. You can still donate with on-chain bitcoin on our <a href="/donate" class="font-semibold underline">Donate page</a>.</p>
+        </LightningPaused>
         <div class="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
           <a
             href="/donate"

@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Button from '../components/ui/Button.astro';
+import LightningPaused from '../components/ui/LightningPaused.astro';
+import { LIGHTNING_PAUSED } from '../lib/lightning';
 ---
 
 <BaseLayout title="Donate" description="Support Lightning Piggy - an open source Bitcoin piggy bank for families. Donate with Bitcoin on-chain or over Lightning.">
@@ -31,6 +33,11 @@ import Button from '../components/ui/Button.astro';
           On-chain or Lightning - any amount is appreciated. Donate $50 and your profile pic will appear with our <a href="/#community-supporters" class="text-pink hover:underline">Community Supporters</a> on the home page :)
         </p>
       </div>
+
+      <LightningPaused class="mb-6">
+        <p>Our Lightning server is switched off for now while we wait for a software update, so Lightning payments to us, including to oink@lightningpiggy.com, won't work until it's back. Donations through Geyser may not work either.</p>
+        <p>You can still donate with on-chain bitcoin using the form below.</p>
+      </LightningPaused>
 
       <div class="bg-white rounded-2xl border border-gray-200 p-6 md:p-8">
         <form id="donate-form" class="space-y-6">
@@ -347,6 +354,7 @@ import Button from '../components/ui/Button.astro';
           </div>
           <h3 class="font-bold text-gray-900 mb-2">Lightning Address</h3>
           <p class="text-sm text-gray-600 mb-4">Send sats directly from any Lightning wallet.</p>
+          {LIGHTNING_PAUSED && <p class="text-sm font-semibold text-yellow-900 mb-4">Paused for now while our Lightning server is off.</p>}
           <a
             href="lightning:oink@lightningpiggy.com"
             class="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-full text-sm font-semibold hover:bg-gray-800 transition-colors"
@@ -363,6 +371,7 @@ import Button from '../components/ui/Button.astro';
           </div>
           <h3 class="font-bold text-gray-900 mb-2">Geyser.fund</h3>
           <p class="text-sm text-gray-600 mb-4">Support us through the Bitcoin crowdfunding platform.</p>
+          {LIGHTNING_PAUSED && <p class="text-sm font-semibold text-yellow-900 mb-4">May not work while our Lightning server is off.</p>}
           <a
             href="https://geyser.fund/project/lightningpiggy"
             target="_blank"

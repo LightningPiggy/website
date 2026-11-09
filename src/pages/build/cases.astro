@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LightningPaused from '../../components/ui/LightningPaused.astro';
 import pricing from '../../../netlify/functions/lib/download-pricing.json';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -557,6 +558,9 @@ let imgCounter = 0;
       <span class="text-sm text-gray-600">Email for a receipt with your download link <span class="text-gray-400">(optional)</span></span>
       <input id="dl-email" type="email" autocomplete="email" placeholder="you@example.com" class="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
     </label>
+    <LightningPaused class="mb-3">
+      <p>Our Lightning server is switched off for now while we wait for a software update. You can still pay with on-chain bitcoin at checkout.</p>
+    </LightningPaused>
     <p id="dl-formats-note" class="text-xs text-gray-500 mb-1 hidden"></p>
     <p id="dl-min-note" class="text-xs text-gray-500 mb-3"></p>
     <p id="dl-error" class="text-sm text-red-600 mb-3 hidden"></p>

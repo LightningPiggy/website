@@ -4,6 +4,7 @@ import terminals from '../data/pos-terminals.json';
 
 const defaultTerminal = terminals[0];
 const BASE_URL = 'https://btcpay.lightningpiggy.com/apps/';
+import LightningPaused from '../components/ui/LightningPaused.astro';
 ---
 
 <BaseLayout
@@ -17,6 +18,9 @@ const BASE_URL = 'https://btcpay.lightningpiggy.com/apps/';
       <p class="text-lg text-gray-600 max-w-xl mx-auto leading-relaxed">
         Accept Bitcoin over Lightning in your local currency. Select a currency below to get started.
       </p>
+      <LightningPaused class="max-w-xl mx-auto mt-6">
+        <p>Our Lightning server is off for now while we wait for a software update. Until it's back, these terminals can only take on-chain bitcoin.</p>
+      </LightningPaused>
     </div>
   </section>
 

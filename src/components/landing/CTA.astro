@@ -1,6 +1,7 @@
 ---
 import Button from '../ui/Button.astro';
 import NewsletterForm from '../ui/NewsletterForm.astro';
+import LightningPaused from '../ui/LightningPaused.astro';
 ---
 
 <section class="py-14 bg-gradient-to-br from-gray-900 to-gray-800 text-white">
@@ -52,6 +53,9 @@ import NewsletterForm from '../ui/NewsletterForm.astro';
           oink@lightningpiggy.com
         </a>
       </div>
+      <LightningPaused dark class="max-w-xl mx-auto mb-8">
+        <p>Our Lightning server is off for now, so payments to oink@lightningpiggy.com won't work until it's back. Geyser donations may not work either. You can still donate with on-chain bitcoin on our <a href="/donate" class="font-semibold text-white underline">Donate page</a>.</p>
+      </LightningPaused>
     </div>
 
     <!-- Newsletter signup -->

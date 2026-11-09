@@ -1,0 +1,35 @@
+---
+// LightningPaused.astro
+// A notice that Lightning payments are paused, shown wherever the site takes
+// Lightning payments while LIGHTNING_PAUSED (lib/lightning.ts) is true.
+// The slot holds the page's own sentences about what still works there.
+import { LIGHTNING_PAUSED } from '../../lib/lightning';
+
+interface Props {
+  /** For dark sections, such as the home page's call to action. */
+  dark?: boolean;
+  class?: string;
+}
+
+const { dark = false, class: className = '' } = Astro.props;
+---
+
+{LIGHTNING_PAUSED && (
+  <div
+    role="note"
+    class:list={[
+      'flex gap-3 rounded-xl border px-4 py-3 text-left text-sm',
+      dark ? 'border-yellow/40 bg-yellow/10 text-yellow-light' : 'border-yellow bg-yellow-light/60 text-yellow-900',
+      className,
+    ]}
+  >
+    <svg class="mt-0.5 h-5 w-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" />
+      <path stroke-linecap="round" stroke-width="2" d="M3 3l18 18" />
+    </svg>
+    <div>
+      <p class="font-semibold">Lightning payments are paused</p>
+      <div class="mt-0.5 space-y-1"><slot /></div>
+    </div>
+  </div>
+)}

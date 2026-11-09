@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LightningPaused from '../../components/ui/LightningPaused.astro';
 import pricing from '../../../netlify/functions/lib/download-pricing.json';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -539,7 +540,7 @@ let imgCounter = 0;
   </section>
 <!-- Buy-to-support download modal -->
 <div id="dl-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 p-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6" role="dialog" aria-modal="true" aria-labelledby="dl-title">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="dl-title">
     <h3 id="dl-title" class="text-xl font-bold text-gray-900 mb-1">Support the project</h3>
     <p id="dl-sub" class="text-sm text-gray-500 mb-4"></p>
     <p class="text-gray-600 text-sm mb-4">
@@ -557,6 +558,10 @@ let imgCounter = 0;
       <span class="text-sm text-gray-600">Email for a receipt with your download link <span class="text-gray-400">(optional)</span></span>
       <input id="dl-email" type="email" autocomplete="email" placeholder="you@example.com" class="mt-1 w-full px-3 py-2 border border-gray-200 rounded-lg text-sm" />
     </label>
+    <LightningPaused class="mb-3">
+      <p>Our Lightning server is off for now. You can still pay with on-chain bitcoin at checkout.</p>
+      <p>On-chain payments can take a while to confirm, so add your email above and we'll send your download link once yours does.</p>
+    </LightningPaused>
     <p id="dl-formats-note" class="text-xs text-gray-500 mb-1 hidden"></p>
     <p id="dl-min-note" class="text-xs text-gray-500 mb-3"></p>
     <p id="dl-error" class="text-sm text-red-600 mb-3 hidden"></p>

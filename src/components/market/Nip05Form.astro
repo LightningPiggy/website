@@ -3,7 +3,13 @@
 // Self-contained "claim your yourname@lightningpiggy.com NIP-05 handle" form.
 // Extracted from the old /market/nip05 page so it can live inside the pop-up
 // modal on /market. Checks availability live and creates a BTCPay invoice.
+import LightningPaused from '../ui/LightningPaused.astro';
 ---
+
+<LightningPaused class="mb-6">
+  <p>Our Lightning server is off for now while we wait for a software update. You can still pay with on-chain bitcoin at checkout.</p>
+  <p>On-chain payments take longer to confirm. Your handle goes live once your payment confirms.</p>
+</LightningPaused>
 
 <form id="nip05-form" class="space-y-6">
   <!-- Handle input -->

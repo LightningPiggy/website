@@ -28,6 +28,7 @@ const nip05Points = [
     body: 'Your contribution helps fund Lightning Piggy development, education resources, and community events.',
   },
 ];
+import { LIGHTNING_PAUSED } from '../lib/lightning';
 ---
 
 <BaseLayout
@@ -135,7 +136,9 @@ const nip05Points = [
           A verified, memorable NIP-05 handle for Nostr — powered by the Lightning Piggy community.
         </p>
         <p class="text-gray-400 text-sm mb-6">
-          Pay what you want (min&nbsp;$5) over Lightning. Live within minutes.
+          {LIGHTNING_PAUSED
+            ? <Fragment>Pay what you want (min&nbsp;$5) in bitcoin. Live once your payment confirms.</Fragment>
+            : <Fragment>Pay what you want (min&nbsp;$5) over Lightning. Live within minutes.</Fragment>}
         </p>
         <button
           type="button"
@@ -186,7 +189,7 @@ const nip05Points = [
       <div class="text-center mb-6">
         <h2 id="nip05-modal-title" class="text-2xl font-bold text-gray-900 mb-2">Choose Your Handle</h2>
         <p class="text-gray-600">
-          Pick a username, paste your npub, and pay what you want. Your NIP-05 handle will be live within minutes.
+          Pick a username, paste your npub, and pay what you want. {LIGHTNING_PAUSED ? 'Your NIP-05 handle goes live once your payment confirms.' : 'Your NIP-05 handle will be live within minutes.'}
         </p>
       </div>
       <Nip05Form />

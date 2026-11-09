@@ -112,15 +112,17 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return;
   const fileId = String(metadata.fileId || '');
-  if (!/^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(fileId)) return;
+  if (!/^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp|zip)$/i.test(fileId)) return;
   const linkFor = (f) => 'https://lightningpiggy.com/.netlify/functions/download?invoice=' + encodeURIComponent(invoiceId) + '&file=' + encodeURIComponent(f);
   const link = linkFor(fileId);
   const fmtLabel = (f) => { const e = f.split('.').pop().toLowerCase(); return e === 'stp' ? 'STEP' : e.toUpperCase(); };
   // One payment covers every format of the model; list the others under the main button.
   const otherFormats = modelFormats(fileId).filter((f) => f !== fileId);
   const ext = fileId.split('.').pop().toLowerCase();
-  const niceName = fileId.replace(/^lightningpiggy-v\d-/, '').replace(/\.[a-z0-9]+$/i, '').replace(/-/g, ' ') + ' (' + (ext === 'stp' ? 'STEP' : ext.toUpperCase()) + ')';
-  const formatNote = ext === 'stl'
+  const niceName = fileId.replace(/^lightningpiggy-v\d-/, '').replace(/\.[a-z0-9]+$/i, '').replace(/[-_]/g, ' ') + ' (' + (ext === 'stp' ? 'STEP' : ext.toUpperCase()) + ')';
+  const formatNote = ext === 'zip'
+    ? 'The zip holds the stand as a plain 3MF that any slicer opens, a README on its colours, print settings and assembly, and the badges for its slot.'
+    : ext === 'stl'
     ? 'The file is an STL mesh: the shape only. Import it into your slicer and choose your own material, supports and settings; the <a href="https://lightningpiggy.com/build/cases" style="color:#EC008C;">cases page</a> has printing notes for each design.'
     : (ext === 'step' || ext === 'stp')
       ? 'The file is a STEP CAD model, the best format for remixing: open it in CAD software to change dimensions, then export an STL or 3MF to print.'

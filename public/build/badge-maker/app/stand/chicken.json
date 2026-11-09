@@ -1,0 +1,249 @@
+{
+ "title": "Chicken",
+ "version": 1,
+ "source": "previews/P1 ZapStand_Chicken.glb",
+ "unit": 0.01,
+ "colour": "#F4F1E8",
+ "data": "chicken.bin",
+ "parts": [
+  {
+   "name": "body",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 9850,
+   "positions": 0,
+   "triangles": 20192,
+   "indices": 59100,
+   "wide": false
+  },
+  {
+   "name": "ZapBox_enclosure",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 1987,
+   "positions": 180252,
+   "triangles": 4002,
+   "indices": 192176,
+   "wide": false
+  },
+  {
+   "name": "eye_L",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1390,
+   "positions": 216188,
+   "triangles": 2800,
+   "indices": 224528,
+   "wide": false
+  },
+  {
+   "name": "shine_L",
+   "colour": "#F4F1E8",
+   "main": false,
+   "points": 230,
+   "positions": 241328,
+   "triangles": 463,
+   "indices": 242708,
+   "wide": false
+  },
+  {
+   "name": "eye_R",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1388,
+   "positions": 245488,
+   "triangles": 2793,
+   "indices": 253816,
+   "wide": false
+  },
+  {
+   "name": "shine_R",
+   "colour": "#F4F1E8",
+   "main": false,
+   "points": 226,
+   "positions": 270576,
+   "triangles": 454,
+   "indices": 271932,
+   "wide": false
+  },
+  {
+   "name": "cheek_L",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 701,
+   "positions": 274656,
+   "triangles": 1404,
+   "indices": 278864,
+   "wide": false
+  },
+  {
+   "name": "cheek_R",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 803,
+   "positions": 287288,
+   "triangles": 1608,
+   "indices": 292108,
+   "wide": false
+  },
+  {
+   "name": "comb_0",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 3709,
+   "positions": 301756,
+   "triangles": 7424,
+   "indices": 324012,
+   "wide": false
+  },
+  {
+   "name": "comb_1",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 3605,
+   "positions": 368556,
+   "triangles": 7224,
+   "indices": 390188,
+   "wide": false
+  },
+  {
+   "name": "comb_2",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 3305,
+   "positions": 433532,
+   "triangles": 6628,
+   "indices": 453364,
+   "wide": false
+  },
+  {
+   "name": "feather_0",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 3195,
+   "positions": 493132,
+   "triangles": 6538,
+   "indices": 512304,
+   "wide": false
+  },
+  {
+   "name": "feather_1",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 3040,
+   "positions": 551532,
+   "triangles": 6138,
+   "indices": 569772,
+   "wide": false
+  },
+  {
+   "name": "feather_2",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 3204,
+   "positions": 606600,
+   "triangles": 6538,
+   "indices": 625824,
+   "wide": false
+  },
+  {
+   "name": "beak",
+   "colour": "#F5A623",
+   "main": false,
+   "points": 4464,
+   "positions": 665052,
+   "triangles": 9016,
+   "indices": 691836,
+   "wide": false
+  },
+  {
+   "name": "wattle",
+   "colour": "#E0453A",
+   "main": false,
+   "points": 2321,
+   "positions": 745932,
+   "triangles": 4639,
+   "indices": 759860,
+   "wide": false
+  },
+  {
+   "name": "foot_front_L",
+   "colour": "#F5A623",
+   "main": false,
+   "points": 734,
+   "positions": 787696,
+   "triangles": 1475,
+   "indices": 792100,
+   "wide": false
+  },
+  {
+   "name": "foot_front_R",
+   "colour": "#F5A623",
+   "main": false,
+   "points": 733,
+   "positions": 800952,
+   "triangles": 1473,
+   "indices": 805352,
+   "wide": false
+  },
+  {
+   "name": "foot_back_L",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 831,
+   "positions": 814192,
+   "triangles": 1666,
+   "indices": 819180,
+   "wide": false
+  },
+  {
+   "name": "foot_back_R",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 831,
+   "positions": 829176,
+   "triangles": 1665,
+   "indices": 834164,
+   "wide": false
+  },
+  {
+   "name": "head_front+head_back",
+   "colour": "#F4F1E8",
+   "main": true,
+   "points": 11697,
+   "positions": 844156,
+   "triangles": 23523,
+   "indices": 914340,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.434,
+   8.627
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.422618,
+   0.906308
+  ],
+  "out": [
+   0.0,
+   -0.906308,
+   0.422618
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 2.15,
+  "part": "body"
+ }
+}

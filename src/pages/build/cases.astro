@@ -10,9 +10,9 @@ import path from 'node:path';
 // .stl or .step next to a model's .3mf is enough to offer it. Card links give
 // the button's label and which file it asks for.
 const PRIVATE_DIR = path.join(process.cwd(), 'netlify', 'private', 'downloads', 'cases');
-const FORMAT_ORDER = ['3mf', 'stl', 'step', 'stp'];
-const bundled: string[] = fs.readdirSync(PRIVATE_DIR).filter((f) => /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(f));
-const stemOf = (f: string) => f.replace(/\.(3mf|stl|step|stp)$/i, '');
+const FORMAT_ORDER = ['zip', '3mf', 'stl', 'step', 'stp'];
+const bundled: string[] = fs.readdirSync(PRIVATE_DIR).filter((f) => /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp|zip)$/i.test(f));
+const stemOf = (f: string) => f.replace(/\.(3mf|stl|step|stp|zip)$/i, '');
 const extOf = (f: string) => (f.split('.').pop() || '').toLowerCase();
 const fmtOf = (f: string) => extOf(f).replace(/^stp$/, 'step');
 const formatsOfModel = (file: string) =>
@@ -24,13 +24,14 @@ const minSupportFor = (files: string[]) => {
   const overrides = [stemOf(files[0]), ...files].map((k) => Number(mins[k])).filter((n) => n > 0);
   return overrides.length ? Math.max(...overrides) : Number(pricing.default);
 };
-type Dl = { label: string; url: string; source?: string };
+// edition: on a card with editions, the one edition the file belongs to (others hide it)
+type Dl = { label: string; url: string; source?: string; edition?: string };
 const PAID = '/downloads/cases/';
 // A card's downloads in display order: one entry per paid model, external
 // links unchanged. Fails the build if a card links a file that isn't bundled,
 // since that button could never be paid for.
 const downloadGroups = (downloads: Dl[]) => {
-  const out: Array<{ kind: 'paid'; label: string; file: string; formats: string[] } | { kind: 'link'; d: Dl }> = [];
+  const out: Array<{ kind: 'paid'; label: string; file: string; formats: string[]; edition?: string } | { kind: 'link'; d: Dl }> = [];
   const seen = new Set<string>();
   for (const d of downloads) {
     if (!d.url.startsWith(PAID)) { out.push({ kind: 'link', d }); continue; }
@@ -38,7 +39,7 @@ const downloadGroups = (downloads: Dl[]) => {
     if (!bundled.includes(file)) throw new Error(`cases.astro: download ${d.url} has no file in netlify/private/downloads/cases`);
     if (seen.has(stemOf(file))) continue;
     seen.add(stemOf(file));
-    out.push({ kind: 'paid', label: d.label, file, formats: formatsOfModel(file) });
+    out.push({ kind: 'paid', label: d.label, file, formats: formatsOfModel(file), edition: d.edition });
   }
   return out;
 };
@@ -91,16 +92,38 @@ const cases = [
       displaySize: '2 inch',
       os: 'MicroPythonOS',
       material: 'Stand: PLA or PETG | Badges: PLA (multi-color)',
-      printing: 'Prints support-free in the plated orientation. Add rafts to secure the two buttons to the printer bed. Badges print face down; the multi-color detail lives in the first few layers only.',
+      printing: 'Prints support-free, every piece turned the way it prints. Add rafts to secure the two buttons to the printer bed. The badges print flat, each colour its own part, with 0.2 mm layers; the README in the download covers colours, settings and assembly.',
       extraHardware: [
         { label: 'M2 x8mm screws (Qty 4)', url: 'https://www.amazon.de/-/en/dp/B0FKTFTB44', source: 'amazon.de' },
       ],
     },
     creator: { name: 'Jake', url: 'https://njump.me/npub1a8us7vr738n7cvdxh0gdtnt5qzrk4qe3qklhmsrs45llq2k48agqjkrvn3' },
     licence: { name: 'CC BY-SA 4.0', url: 'https://creativecommons.org/licenses/by-sa/4.0/' },
+    // One download per stand: a zip with the stand (a plain 3MF for any slicer), its README and the
+    // SATOSHI and Lightning Piggy badges, made by the badge maker project (make-stand-files.py).
     downloads: [
-      { label: 'Download Model File', url: '/downloads/cases/lightningpiggy-v2-zapstand.3mf' },
-      { label: 'Download Badge File', url: '/downloads/cases/lightningpiggy-v2-zapstand-badge.3mf' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Classic.zip', edition: 'classic' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Piggy.zip', edition: 'piggy' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Kitty.zip', edition: 'kitty' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Bunny.zip', edition: 'bunny' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Lion.zip', edition: 'lion' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Dino.zip', edition: 'dino' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Penguin.zip', edition: 'penguin' },
+      { label: 'Download Stand + badges', url: '/downloads/cases/P1 ZapStand_Chicken.zip', edition: 'chicken' },
+    ],
+    // The same stand, board and badge slot in eight designs, as chips under the description: each
+    // switches the pictures (an animal's are images/cases/zapstand-<id>-01..04.jpg, rendered by the
+    // badge maker), the stand's download and the badge maker's stand. ?zapstand=<id> opens the
+    // card on an edition.
+    editions: [
+      { id: 'classic', name: 'Classic', files: true },
+      { id: 'piggy', name: 'Piggy', files: true },
+      { id: 'kitty', name: 'Kitty', files: true },
+      { id: 'bunny', name: 'Bunny', files: true },
+      { id: 'lion', name: 'Lion', files: true },
+      { id: 'dino', name: 'Dino', files: true },
+      { id: 'penguin', name: 'Penguin', files: true },
+      { id: 'chicken', name: 'Chicken', files: true },
     ],
   },
   {
@@ -350,6 +373,11 @@ const facets = [
 
 // Global image counter for unique lightbox IDs
 let imgCounter = 0;
+// A card's picture sets: on a card with editions one per edition, the first being the card's own
+// images, the others images/cases/zapstand-<id>-01..04.jpg; else just the card's images.
+const galleriesOf = (c) => c.editions
+  ? c.editions.map((e, i) => ({ id: e.id, name: e.name, images: i === 0 ? c.images : [1, 2, 3, 4].map((n) => `/images/cases/zapstand-${e.id}-0${n}.jpg`) }))
+  : [{ id: undefined, name: undefined, images: c.images }];
 ---
 
 <BaseLayout
@@ -392,47 +420,73 @@ let imgCounter = 0;
 
       <div class="space-y-10">
         {cases.map((c) => {
-          const startIdx = imgCounter;
-          imgCounter += c.images.length;
+          const galleries = galleriesOf(c).map((g) => ({ ...g, start: (imgCounter += g.images.length) - g.images.length }));
           return (
-            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-generation={generationOf(c)} data-board={c.tag} data-model={modelGroup(c)}>
-              {/* Image gallery (omitted until the card has images) */}
-              {c.images.length > 0 && <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1">
-                {c.images.map((src, i) => {
-                  const id = startIdx + i;
+            <div class="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow" data-generation={generationOf(c)} data-board={c.tag} data-model={modelGroup(c)} data-editions={c.editions ? '' : undefined}>
+              {/* Image gallery (omitted until the card has images); with editions, one per edition, the others hidden */}
+              {galleries.map((g, gi) => g.images.length > 0 && <div data-edition-gallery={g.id} class={`grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 bg-gray-100 p-1${gi > 0 ? ' hidden' : ''}`}>
+                {g.images.map((src, i) => {
+                  const id = g.start + i;
+                  const alt = `${titleOf(c)}${gi > 0 ? ` ${g.name}` : ''} - image ${i + 1}`;
+                  // another edition's pictures wait in data-src until its chip is picked
+                  const pic = gi > 0 ? { 'data-src': src } : { src };
                   return (
                     <div class="relative aspect-square overflow-hidden rounded-lg">
                       <input type="checkbox" id={`case-lb-${id}`} class="lightbox-toggle hidden" />
                       <label for={`case-lb-${id}`} class="cursor-pointer block w-full h-full">
                         <img
-                          src={src}
-                          alt={`${titleOf(c)} - image ${i + 1}`}
+                          {...pic}
+                          alt={alt}
                           class="w-full h-full object-cover hover:opacity-90 transition-opacity"
                           loading="lazy"
                         />
                       </label>
                       <label for={`case-lb-${id}`} class="lightbox-overlay">
                         <img
-                          src={src}
-                          alt={`${titleOf(c)} - image ${i + 1}`}
+                          {...pic}
+                          alt={alt}
                           class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
                         />
                       </label>
                     </div>
                   );
                 })}
-              </div>}
+              </div>)}
 
               {/* Content */}
               <div class="p-6">
                 <div class="flex items-center gap-3 mb-3">
-                  <h2 id={c.anchor || slugOf(c.name)} class="text-xl font-bold text-gray-900">{titleOf(c)}</h2>
+                  <h2 id={c.anchor || slugOf(c.name)} class="text-xl font-bold text-gray-900">{titleOf(c)}{c.editions && <span data-edition-title class="text-gray-400"></span>}</h2>
                   <span class={`px-2 py-0.5 text-xs font-medium rounded-full ${c.specs.os === 'MicroPythonOS' ? 'bg-yellow text-gray-900' : 'bg-gray-100 text-gray-600'}`}>
                     {c.tag}
                   </span>
                 </div>
 
                 <p class="text-gray-600 mb-4">{c.description}</p>
+
+                {/* Editions: chips that switch the pictures, the stand's files and the badge maker's stand */}
+                {c.editions && (
+                  <div class="mb-5">
+                    <p class="text-sm text-gray-600 mb-2">
+                      <span class="font-medium text-gray-900">{c.editions.length} editions</span> - the same stand, board and badge slot in {c.editions.length} designs.
+                    </p>
+                    <div class="flex flex-wrap gap-2" role="group" aria-label={`${c.name} editions`}>
+                      {c.editions.map((e, i) => (
+                        <button
+                          type="button"
+                          data-edition={e.id}
+                          data-edition-name={e.name}
+                          data-has-files={e.files ? '1' : '0'}
+                          aria-pressed={i === 0 ? 'true' : 'false'}
+                          class="edition-chip inline-flex items-center gap-1.5 pl-1 pr-3 py-1 rounded-full border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:border-gray-400 aria-pressed:border-pink aria-pressed:bg-pink-light/40 aria-pressed:text-gray-900 transition-colors"
+                        >
+                          <img src={`/build/badge-maker/app/stand/${e.id}.png`} alt="" width="28" height="28" class="w-7 h-7 rounded-full object-cover bg-gray-100" loading="lazy" />
+                          {e.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Specs */}
                 <div class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
@@ -491,12 +545,13 @@ let imgCounter = 0;
                   {downloadGroups(c.downloads).map((g, _i, groups) => g.kind === 'paid' ? (
                     <button
                       type="button"
+                      data-edition-files={g.edition}
                       data-dl-file={g.file}
                       data-dl-formats={[...new Set(g.formats.map(fmtOf))].join(',')}
                       data-dl-min={minSupportFor(g.formats)}
                       data-dl-name={titleOf(c)}
                       data-dl-creator={c.creator.name}
-                      class="dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors"
+                      class={`dl-support inline-flex items-center gap-1.5 px-3 py-1.5 bg-pink text-white hover:bg-gray-900 text-sm font-medium rounded-lg transition-colors${g.edition && c.editions && g.edition !== c.editions[0].id ? ' hidden' : ''}`}
                     >
                       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -517,6 +572,23 @@ let imgCounter = 0;
                       {g.d.label}
                     </a>
                   ))}
+                  {c.editions && (
+                    <span data-edition-pending class="hidden self-center text-sm text-gray-500">
+                      Print files for the <span data-edition-pending-name></span> are coming soon.
+                    </span>
+                  )}
+                  {c.editions && (
+                    <a
+                      href="/build/badge-maker?stand=classic"
+                      data-edition-badge
+                      class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                    >
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                      </svg>
+                      Design your badge
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
@@ -657,7 +729,7 @@ let imgCounter = 0;
     // Returning from checkout: poll until settled, then hand over the file.
     const params = new URLSearchParams(location.search);
     const dl = params.get('dl'), inv = params.get('invoice');
-    if (dl && inv && /^[a-z0-9][a-z0-9._-]{0,80}\.(3mf|stl|step|stp)$/i.test(dl)) {
+    if (dl && inv && /^[a-z0-9][a-z0-9 ._-]{0,80}\.(3mf|stl|step|stp|zip)$/i.test(dl)) {
       const bar = document.getElementById('dl-status');
       const txt = document.getElementById('dl-status-text');
       const links = document.getElementById('dl-status-links');
@@ -765,6 +837,41 @@ let imgCounter = 0;
     render();
   });
   render();
+</script>
+
+<script>
+  // --- Editions (the ZapStand's animals) ---
+  // A chip shows that edition's pictures, its own download (a download marked with an edition shows
+  // only on that edition; one without files says they are coming) and points "Design your badge"
+  // at the badge maker with that stand. ?zapstand=<id> opens the card on an edition (the badge
+  // maker links here so).
+  for (const card of document.querySelectorAll<HTMLElement>('[data-editions]')) {
+    const chips = [...card.querySelectorAll<HTMLButtonElement>('.edition-chip')];
+    const show = (id: string) => {
+      const chip = chips.find((b) => b.dataset.edition === id);
+      if (!chip) return;
+      const first = chip === chips[0];
+      const hasFiles = chip.dataset.hasFiles === '1';
+      for (const b of chips) b.setAttribute('aria-pressed', String(b === chip));
+      for (const g of card.querySelectorAll<HTMLElement>('[data-edition-gallery]')) {
+        const on = g.dataset.editionGallery === id;
+        g.classList.toggle('hidden', !on);
+        if (on) for (const img of g.querySelectorAll<HTMLImageElement>('img[data-src]')) { img.src = img.dataset.src || ''; img.removeAttribute('data-src'); }
+      }
+      for (const el of card.querySelectorAll<HTMLElement>('[data-edition-files]')) el.classList.toggle('hidden', !hasFiles || el.dataset.editionFiles !== id);
+      const pending = card.querySelector<HTMLElement>('[data-edition-pending]');
+      pending?.classList.toggle('hidden', hasFiles);
+      const pendingName = card.querySelector('[data-edition-pending-name]');
+      if (pendingName) pendingName.textContent = chip.dataset.editionName || '';
+      const title = card.querySelector('[data-edition-title]');
+      if (title) title.textContent = first ? '' : ` · ${chip.dataset.editionName}`;
+      const badge = card.querySelector<HTMLAnchorElement>('[data-edition-badge]');
+      if (badge) badge.href = `/build/badge-maker?stand=${encodeURIComponent(id)}`;
+    };
+    for (const b of chips) b.addEventListener('click', () => show(b.dataset.edition || ''));
+    const asked = new URLSearchParams(location.search).get('zapstand');
+    if (asked) show(asked);
+  }
 </script>
 
 </BaseLayout>

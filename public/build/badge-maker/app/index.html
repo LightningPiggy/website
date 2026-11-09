@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ZapStand Badge Maker</title>
+<meta name="description" content="Make a name or logo badge for the Lightning Piggy ZapStand, see it on the stand, and download it ready to print.">
+<link rel="canonical" href="https://lightningpiggy.com/build/badge-maker">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/site.css">
+<!-- light or dark as the visitor chose with the page's button (js/app.js themeUI), before the page shows -->
+<script>try { const t = localStorage.getItem("zapstand-badge-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<!-- libraries served with the page (vendor/): clipper-lib 6.4.2, earcut 2.2.4, opentype.js 1.3.4, fflate 0.8.2, three.js 0.160.0 -->
+<script src="vendor/clipper.js"></script>
+<script src="vendor/earcut.min.js"></script>
+<script src="vendor/opentype.min.js"></script>
+<script src="vendor/fflate.js"></script>
+<script type="importmap">{"imports": {"three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/"}}</script>
+<script type="module" src="js/app.js"></script>
+</head>
+<body>
+<div class="page">
+  <header class="masthead">
+    <div class="title">
+      <h1>ZapStand <span>Badge Maker</span></h1>
+      <p>A name, a logo or both on a badge for the Lightning Piggy ZapStand, ready to print.</p>
+    </div>
+    <div class="masthead-side">
+      <dl class="spec">
+        <div><dt>Badge</dt><dd>50.2 × 12.2 mm</dd></div>
+        <div><dt>Layers</dt><dd>0.20 mm</dd></div>
+        <div><dt>Filament</dt><dd>PLA</dd></div>
+      </dl>
+      <button type="button" class="button secondary small theme-toggle" id="theme-toggle" hidden>Dark mode</button>
+    </div>
+  </header>
+
+  <section class="readymade" aria-labelledby="readymade-title" id="readymade" hidden>
+    <div class="section-head"><h2 id="readymade-title">Ready-made badges</h2><span class="hint">Start from one of these and change its colours if you like, or make your own below with your logo or a name.</span></div>
+    <div class="readymade-list" id="readymade-list"></div>
+  </section>
+
+  <main class="app">
+    <section class="stage" aria-label="Preview">
+      <div class="bed" id="drop">
+        <div class="bed-label"><span id="plate-name">Textured PEI plate</span><span id="face-label">face side, as it will look on the stand</span></div>
+        <canvas id="preview" role="img" aria-label="The badge as it will look"></canvas>
+        <div class="ruler" aria-hidden="true"><span>0</span><span>10</span><span>20</span><span>30</span><span>40</span><span>50.2 mm</span></div>
+        <div class="drop-hint" id="drop-hint">Drop an SVG logo here</div>
+        <div class="busy" id="busy" hidden>Working…</div>
+      </div>
+      <section class="stand-pick" id="stand-pick" aria-labelledby="stand-pick-title" hidden>
+        <div class="section-head"><h2 id="stand-pick-title">Choose your ZapStand</h2><span class="hint" id="stand-pick-hint"></span></div>
+        <div class="stand-list" id="stand-list" role="group" aria-label="Choose a stand"></div>
+      </section>
+      <div class="standview" id="standview">
+        <div class="stand-canvas" id="stand-canvas" role="img" aria-label="The badge in the ZapStand's slot, in 3D"></div>
+        <div class="stand-label"><span id="stand-name">On the ZapStand</span><span>Drag to turn</span></div>
+        <div class="stand-tools"><span>Stand</span><button type="button" class="swatch-button small" id="stand-colour" data-target="stand"></button><button type="button" class="button secondary small" id="stand-front">Front view</button></div>
+        <button type="button" class="stand-step prev" id="stand-prev" aria-label="Previous stand" hidden>‹</button>
+        <button type="button" class="stand-step next" id="stand-next" aria-label="Next stand" hidden>›</button>
+        <p class="stand-status" id="stand-status">Loading the stand…</p>
+      </div>
+      <div class="stand-files" id="stand-files" hidden>
+        <p><strong id="stand-files-title">The stand</strong> <span id="stand-files-info"></span></p>
+      </div>
+      <ul class="notes" id="notes" aria-live="polite"></ul>
+    </section>
+
+    <form class="controls" id="controls" autocomplete="off">
+      <fieldset class="group">
+        <legend>Logo</legend>
+        <div class="file-row">
+          <label class="button secondary" for="logo-file">Upload SVG…</label>
+          <input type="file" id="logo-file" accept=".svg,image/svg+xml" class="visually-hidden">
+          <span class="file-name" id="logo-name">No logo</span>
+          <button type="button" class="link" id="logo-remove" hidden>Remove</button>
+        </div>
+        <p class="hint" id="logo-hint">A vector logo (SVG) made of filled shapes. Each of its colours gets a filament below.</p>
+        <ul class="regions" id="regions"></ul>
+        <div class="field" id="logo-size-row">
+          <label for="logo-height">Logo height</label>
+          <div class="range"><input type="range" id="logo-height" min="4" max="10.2" step="0.1" value="10.2"><output for="logo-height" id="logo-height-out">10.2 mm</output></div>
+        </div>
+        <div class="field" id="logo-side-row">
+          <span class="label">Logo position, next to the name</span>
+          <div class="seg" role="radiogroup" aria-label="Logo position">
+            <input type="radio" name="side" id="side-left" value="left" checked><label for="side-left">Left</label>
+            <input type="radio" name="side" id="side-right" value="right"><label for="side-right">Right</label>
+            <input type="radio" name="side" id="side-above" value="above"><label for="side-above">Above</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Name</legend>
+        <div class="field">
+          <label for="name-text">Text</label>
+          <input type="text" id="name-text" maxlength="32" placeholder="Leave empty for a logo-only badge" spellcheck="false">
+        </div>
+        <div class="field two">
+          <div>
+            <label for="name-font">Font</label>
+            <select id="name-font"></select>
+          </div>
+          <div>
+            <span class="label">Colour</span>
+            <button type="button" class="swatch-button" id="name-colour" data-target="name"></button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="name-cap">Letter height</label>
+          <div class="range"><input type="range" id="name-cap" min="2.5" max="9" step="0.1" value="5.4"><output for="name-cap" id="name-cap-out">5.4 mm</output></div>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Badge</legend>
+        <div class="field two">
+          <div>
+            <span class="label">Colour</span>
+            <button type="button" class="swatch-button" id="badge-colour" data-target="badge"></button>
+          </div>
+          <div>
+            <span class="label">Thickness</span>
+            <div class="seg" role="radiogroup" aria-label="Thickness">
+              <input type="radio" name="thickness" id="t36" value="3.6" checked><label for="t36">3.6</label>
+              <input type="radio" name="thickness" id="t46" value="4.6"><label for="t46">4.6</label>
+              <input type="radio" name="thickness" id="t56" value="5.6"><label for="t56">5.6</label>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <span class="label">Style</span>
+          <div class="choice" role="radiogroup" aria-label="Style">
+            <input type="radio" name="style" id="style-flush" value="flush" checked>
+            <label for="style-flush"><strong>Flush</strong><span>Printed face down. The colours are set into a smooth face that takes the plate’s finish.</span></label>
+            <input type="radio" name="style" id="style-raised" value="raised">
+            <label for="style-raised"><strong>Raised</strong><span>Printed face up. The logo and name stand 1.2 mm proud, like the Bull Bitcoin badge.</span></label>
+          </div>
+        </div>
+        <div class="field border-row">
+          <label class="check"><input type="checkbox" id="border-on"> Line round the edge</label>
+          <button type="button" class="swatch-button small" id="border-colour" data-target="border"></button>
+        </div>
+      </fieldset>
+
+      <fieldset class="group">
+        <legend>Printer</legend>
+        <div class="field two">
+          <div>
+            <label for="printer">Printer</label>
+            <select id="printer"></select>
+          </div>
+          <div id="plate-field">
+            <label for="plate">Plate</label>
+            <select id="plate">
+              <option value="Textured PEI Plate">Textured PEI</option>
+              <option value="High Temp Plate">Smooth PEI</option>
+              <option value="Cool Plate">Cool Plate / SuperTack</option>
+            </select>
+          </div>
+        </div>
+        <p class="hint" id="printer-hint"></p>
+        <div class="field">
+          <label for="copies">Badges on the plate</label>
+          <div class="range"><input type="range" id="copies" min="1" max="12" step="1" value="1"><output for="copies" id="copies-out">1</output></div>
+          <p class="hint">Colour changes cost the same filament for one badge or twelve, so a full plate wastes far less per badge.</p>
+        </div>
+      </fieldset>
+
+      <section class="readout" aria-label="Print summary">
+        <div class="section-head"><h2>Filaments</h2><span class="hint" id="slot-count"></span></div>
+        <ol class="slots" id="slots"></ol>
+        <figure class="xsection">
+          <svg id="xsection" viewBox="0 0 320 92" role="img" aria-label="Cross-section of the badge"></svg>
+          <figcaption id="xsection-text"></figcaption>
+        </figure>
+      </section>
+
+      <div class="actions">
+        <div class="buttons">
+          <button type="submit" class="button primary" id="download">Support &amp; download</button>
+        </div>
+        <p class="hint" id="download-hint"></p>
+        <div class="paystatus" id="paystatus" role="status" hidden><span id="paystatus-text"></span><button type="button" class="button secondary small" id="paystatus-again" hidden>Save it again</button></div>
+      </div>
+    </form>
+  </main>
+
+  <footer class="foot">
+    <p>Runs in your browser: logos and names never leave your computer. Badge size from the ZapStand’s slot; print settings from the printer makers’ own profiles.</p>
+    <p>The badge maker is free software under the <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GPL-3.0</a>. The ZapStands are by their designer, credited on <a href="https://lightningpiggy.com/build/cases/" target="_blank" rel="noopener">lightningpiggy.com</a>, and shared under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>. The logos on the ready-made badges belong to their owners.</p>
+  </footer>
+</div>
+
+<div class="picker" id="picker" hidden role="dialog" aria-label="Choose a filament">
+  <div class="picker-head"><div><strong id="picker-title">Filament</strong><span class="hint" id="picker-name"></span></div><button type="button" class="link" id="picker-close">Close</button></div>
+  <div class="picker-body" id="picker-body"></div>
+  <div class="picker-custom"><label for="picker-custom">Other colour</label><input type="color" id="picker-custom" value="#888888"><button type="button" class="button secondary small" id="picker-custom-use">Use</button></div>
+</div>
+<dialog class="support" id="support" aria-labelledby="support-title">
+  <div class="support-body">
+    <h2 id="support-title">Support Lightning Piggy</h2>
+    <p class="hint" id="support-what"></p>
+    <p>The ZapStands are CC BY-SA 4.0: free to share and remix. Paying isn’t a licence. It’s a thank-you that supports Lightning Piggy and unlocks the download.</p>
+    <div class="amounts" id="support-amounts" role="group" aria-label="Amount">
+      <button type="button" data-amount="3">$3</button>
+      <button type="button" data-amount="5">$5</button>
+      <button type="button" data-amount="10">$10</button>
+      <button type="button" data-amount="21">$21</button>
+      <label>$ <input type="number" id="support-custom" min="3" max="500" step="1" placeholder="other"></label>
+    </div>
+    <label class="field" for="support-email">Email for a receipt with the download link <span class="hint">(optional)</span></label>
+    <input type="email" id="support-email" autocomplete="email" placeholder="you@example.com">
+    <p class="hint" id="support-min"></p>
+    <p class="error" id="support-error" hidden></p>
+    <div class="buttons">
+      <button type="button" class="button secondary" id="support-cancel">Cancel</button>
+      <button type="button" class="button primary" id="support-pay">Pay with Bitcoin</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>

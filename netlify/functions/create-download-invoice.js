@@ -39,6 +39,14 @@ exports.handler = async function (event) {
     buyerEmail = e;
   }
 
+  // Where BTCPay sends the buyer back: the cases page, or the badge maker (which then adds the
+  // buyer's own badge to the stand's zip), opened on the same stand.
+  let back = `${SITE}/build/cases/?dl=${encodeURIComponent(fileId)}&invoice={InvoiceId}`;
+  if (body.back === 'badge-maker') {
+    const stand = /^[a-z0-9-]{1,32}$/.test(String(body.stand || '')) ? `&stand=${body.stand}` : '';
+    back = `${SITE}/build/badge-maker/?dl=${encodeURIComponent(fileId)}&invoice={InvoiceId}${stand}`;
+  }
+
   const orderId = 'dl-' + crypto.randomBytes(6).toString('hex');
   const payload = {
     amount: String(amount),
@@ -51,8 +59,8 @@ exports.handler = async function (event) {
       ...(buyerEmail ? { buyerEmail } : {}),
     },
     checkout: {
-      // BTCPay substitutes {InvoiceId}; the cases page picks it up and polls `download`.
-      redirectURL: `${SITE}/build/cases/?dl=${encodeURIComponent(fileId)}&invoice={InvoiceId}`,
+      // BTCPay substitutes {InvoiceId}; the page picks it up and polls `download`.
+      redirectURL: back,
       redirectAutomatically: true,
       // The email really is optional: never make BTCPay's checkout demand one
       // (whatever the store default). Without it the buyer still gets the file

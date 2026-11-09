@@ -1,0 +1,239 @@
+{
+ "title": "Bunny",
+ "version": 1,
+ "source": "previews/P1 ZapStand_Bunny.glb",
+ "unit": 0.01,
+ "colour": "#CFCFD6",
+ "data": "bunny.bin",
+ "parts": [
+  {
+   "name": "body",
+   "colour": "#CFCFD6",
+   "main": true,
+   "points": 10322,
+   "positions": 0,
+   "triangles": 21218,
+   "indices": 61932,
+   "wide": false
+  },
+  {
+   "name": "ZapBox_enclosure",
+   "colour": "#CFCFD6",
+   "main": true,
+   "points": 1987,
+   "positions": 189240,
+   "triangles": 4002,
+   "indices": 201164,
+   "wide": false
+  },
+  {
+   "name": "ear_L",
+   "colour": "#CFCFD6",
+   "main": true,
+   "points": 2354,
+   "positions": 225176,
+   "triangles": 4757,
+   "indices": 239300,
+   "wide": false
+  },
+  {
+   "name": "inner_ear_L",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 221,
+   "positions": 267844,
+   "triangles": 440,
+   "indices": 269172,
+   "wide": false
+  },
+  {
+   "name": "ear_R",
+   "colour": "#CFCFD6",
+   "main": true,
+   "points": 2369,
+   "positions": 271812,
+   "triangles": 4783,
+   "indices": 286028,
+   "wide": false
+  },
+  {
+   "name": "inner_ear_R",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 238,
+   "positions": 314728,
+   "triangles": 475,
+   "indices": 316156,
+   "wide": false
+  },
+  {
+   "name": "eye_L",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1398,
+   "positions": 319008,
+   "triangles": 2805,
+   "indices": 327396,
+   "wide": false
+  },
+  {
+   "name": "shine_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 222,
+   "positions": 344228,
+   "triangles": 445,
+   "indices": 345560,
+   "wide": false
+  },
+  {
+   "name": "eye_R",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1401,
+   "positions": 348232,
+   "triangles": 2811,
+   "indices": 356640,
+   "wide": false
+  },
+  {
+   "name": "shine_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 223,
+   "positions": 373508,
+   "triangles": 455,
+   "indices": 374848,
+   "wide": false
+  },
+  {
+   "name": "cheek_L",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 727,
+   "positions": 377580,
+   "triangles": 1459,
+   "indices": 381944,
+   "wide": false
+  },
+  {
+   "name": "cheek_R",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 724,
+   "positions": 390700,
+   "triangles": 1454,
+   "indices": 395044,
+   "wide": false
+  },
+  {
+   "name": "nose",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 277,
+   "positions": 403768,
+   "triangles": 550,
+   "indices": 405432,
+   "wide": false
+  },
+  {
+   "name": "teeth",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 376,
+   "positions": 408732,
+   "triangles": 751,
+   "indices": 410988,
+   "wide": false
+  },
+  {
+   "name": "pompom",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 5080,
+   "positions": 415496,
+   "triangles": 10333,
+   "indices": 445976,
+   "wide": false
+  },
+  {
+   "name": "paw_front_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 833,
+   "positions": 507976,
+   "triangles": 1675,
+   "indices": 512976,
+   "wide": false
+  },
+  {
+   "name": "paw_front_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 833,
+   "positions": 523028,
+   "triangles": 1674,
+   "indices": 528028,
+   "wide": false
+  },
+  {
+   "name": "paw_back_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 850,
+   "positions": 538072,
+   "triangles": 1704,
+   "indices": 543172,
+   "wide": false
+  },
+  {
+   "name": "paw_back_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 844,
+   "positions": 553396,
+   "triangles": 1696,
+   "indices": 558460,
+   "wide": false
+  },
+  {
+   "name": "head_front+head_back",
+   "colour": "#CFCFD6",
+   "main": true,
+   "points": 11632,
+   "positions": 568636,
+   "triangles": 23467,
+   "indices": 638428,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.434,
+   8.627
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.422618,
+   0.906308
+  ],
+  "out": [
+   0.0,
+   -0.906308,
+   0.422618
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 2.15,
+  "part": "body"
+ }
+}

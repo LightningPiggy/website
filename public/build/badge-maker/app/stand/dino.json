@@ -1,0 +1,239 @@
+{
+ "title": "Dino",
+ "version": 1,
+ "source": "previews/P1 ZapStand_Dino.glb",
+ "unit": 0.01,
+ "colour": "#7CC95A",
+ "data": "dino.bin",
+ "parts": [
+  {
+   "name": "body",
+   "colour": "#7CC95A",
+   "main": true,
+   "points": 11208,
+   "positions": 0,
+   "triangles": 22937,
+   "indices": 67248,
+   "wide": false
+  },
+  {
+   "name": "ZapBox_enclosure",
+   "colour": "#7CC95A",
+   "main": true,
+   "points": 1987,
+   "positions": 204872,
+   "triangles": 4002,
+   "indices": 216796,
+   "wide": false
+  },
+  {
+   "name": "eye_L",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1391,
+   "positions": 240808,
+   "triangles": 2791,
+   "indices": 249156,
+   "wide": false
+  },
+  {
+   "name": "shine_L",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 229,
+   "positions": 265904,
+   "triangles": 466,
+   "indices": 267280,
+   "wide": false
+  },
+  {
+   "name": "eye_R",
+   "colour": "#1A1A1A",
+   "main": false,
+   "points": 1390,
+   "positions": 270076,
+   "triangles": 2787,
+   "indices": 278416,
+   "wide": false
+  },
+  {
+   "name": "shine_R",
+   "colour": "#FFFFFF",
+   "main": false,
+   "points": 232,
+   "positions": 295140,
+   "triangles": 472,
+   "indices": 296532,
+   "wide": false
+  },
+  {
+   "name": "cheek_L",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 745,
+   "positions": 299364,
+   "triangles": 1491,
+   "indices": 303836,
+   "wide": false
+  },
+  {
+   "name": "cheek_R",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 857,
+   "positions": 312784,
+   "triangles": 1716,
+   "indices": 317928,
+   "wide": false
+  },
+  {
+   "name": "paw_front_L",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 828,
+   "positions": 328224,
+   "triangles": 1662,
+   "indices": 333192,
+   "wide": false
+  },
+  {
+   "name": "paw_front_R",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 826,
+   "positions": 343164,
+   "triangles": 1660,
+   "indices": 348120,
+   "wide": false
+  },
+  {
+   "name": "paw_back_L",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 776,
+   "positions": 358080,
+   "triangles": 1555,
+   "indices": 362736,
+   "wide": false
+  },
+  {
+   "name": "paw_back_R",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 855,
+   "positions": 372068,
+   "triangles": 1715,
+   "indices": 377200,
+   "wide": false
+  },
+  {
+   "name": "spike_head_0",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 3499,
+   "positions": 387492,
+   "triangles": 7018,
+   "indices": 408488,
+   "wide": false
+  },
+  {
+   "name": "spike_head_1",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 3422,
+   "positions": 450596,
+   "triangles": 6858,
+   "indices": 471128,
+   "wide": false
+  },
+  {
+   "name": "spike_head_2",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 3332,
+   "positions": 512276,
+   "triangles": 6715,
+   "indices": 532268,
+   "wide": false
+  },
+  {
+   "name": "spike_head_3",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 3537,
+   "positions": 572560,
+   "triangles": 7083,
+   "indices": 593784,
+   "wide": false
+  },
+  {
+   "name": "spike_tail_0",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 3903,
+   "positions": 636284,
+   "triangles": 7821,
+   "indices": 659704,
+   "wide": false
+  },
+  {
+   "name": "spike_tail_1",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 4026,
+   "positions": 706632,
+   "triangles": 8048,
+   "indices": 730788,
+   "wide": false
+  },
+  {
+   "name": "spike_tail_2",
+   "colour": "#F7A1C4",
+   "main": false,
+   "points": 3412,
+   "positions": 779076,
+   "triangles": 6833,
+   "indices": 799548,
+   "wide": false
+  },
+  {
+   "name": "head_front+head_back",
+   "colour": "#7CC95A",
+   "main": true,
+   "points": 12714,
+   "positions": 840548,
+   "triangles": 25620,
+   "indices": 916832,
+   "wide": false
+  }
+ ],
+ "slot": {
+  "centre": [
+   0.0,
+   -1.434,
+   8.627
+  ],
+  "x": [
+   1,
+   0,
+   0
+  ],
+  "up": [
+   -0.0,
+   0.422618,
+   0.906308
+  ],
+  "out": [
+   0.0,
+   -0.906308,
+   0.422618
+  ],
+  "size": [
+   50.4,
+   12.4
+  ],
+  "depth": 3.62,
+  "radius": 2.15,
+  "part": "body"
+ }
+}

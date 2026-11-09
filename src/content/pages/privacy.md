@@ -3,10 +3,12 @@ title: "Privacy Policy"
 slug: "privacy"
 description: "What personal data Lightning Piggy collects, publishes and shares, why, and the choices and rights you have."
 pubDate: 2026-06-26
-updatedDate: 2026-10-20
+updatedDate: 2026-11-09
 ---
 
-**Last updated: 20 October 2026**
+**Last updated: 9 November 2026**
+
+**What changed on 9 November 2026:** the web server in front of our payment software now keeps access logs for 7 days, and we now describe in more detail what our payment software's logs keep and how our payment server is backed up (see 2a and 9).
 
 This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
 
@@ -33,7 +35,13 @@ The Website and its server functions are hosted by **Netlify**. As on virtually 
 
 Our own server functions also write some details to these logs to help us fix problems and stop abuse. These include the Nostr handles you buy from us (see 3e), Nostr public keys, payment references and error messages. When the anti-spam checks on our newsletter and vendor-application forms reject a submission, they log the **IP address** it came from and, in some cases, the email address entered. When a newsletter confirmation link is opened or confirmed, we log the browser details (user agent) of the visit, without the email or IP address, so we can tell people apart from email security filters that open links automatically. Those two forms also count recent submissions per IP address to limit abuse. The counts are held only in the memory of the running server function and are not saved.
 
-Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, its request passes through Netlify to this server, so both receive it, including the wallet's IP address. The web server in front of our payment software keeps no access logs, but the payment software keeps technical logs, and the LNbits logs include IP addresses. These logs are deleted automatically, normally within three weeks.
+Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, its request passes through Netlify to this server, so both receive it, including the wallet's IP address.
+
+The web server in front of our payment software keeps an access log. For each request, it records the **IP address**, browser details and the other technical details sent with the request, the web address requested, the time, and the status and size of the response. For a payment to our Lightning address, the IP address is that of the paying wallet, which is often your own phone or computer, and the web address includes the amount. Before saving each entry, the web server removes LNbits wallet access keys, login codes and tokens, cookies, the address of the page you came from, and what a wallet can send about you with a payment: a comment, payer details such as a name or email address, and the Nostr public key in a zap. We use these access logs to fix problems and stop abuse. They are deleted automatically after 7 days and are not included in our own backups.
+
+The payment software also keeps its own technical logs. LNbits logs each request it receives with the **IP address** and the full web address requested. For a payment to our Lightning address, that web address includes the amount and any comment, payer details or Nostr public key sent with it. Unlike the access logs, these logs keep all of that. The LNbits logs are deleted automatically, normally within three weeks. BTCPay Server's technical logs contain no IP addresses, email addresses or Nostr public keys, and are kept until we next update the software, which can take several months.
+
+We back up the payment server every day. Our own backups stay on the same server and are deleted after 30 days. They include the payment records described in section 3 and the LNbits technical logs, so copies of those logs are kept for up to 30 days after the logs themselves are deleted. They do not include the access logs. Hostinger also makes weekly backups of the whole server, which contain everything on it, including the access logs and our own backups. Hostinger decides how long to keep them, and at present that appears to be about two weeks (see section 9).
 
 Our legal basis for all of this is our legitimate interest in operating, securing and protecting the Services.
 
@@ -65,7 +73,7 @@ If you subscribe, we collect your **email address**. To prevent duplicate and ab
 
 You can donate on the Donate page through our **BTCPay Server**. We record the amount and, if you give them, your Nostr public key (npub) and/or X handle, which we use for the supporters wall (see 3c). We email ourselves a note of each donation with the amount and any npub or handle you gave. Our BTCPay checkout page may ask for further details, such as an email address for a refund, and anything you enter there is stored on our BTCPay Server.
 
-You can also donate to our Lightning address **[oink@lightningpiggy.com](lightning:oink@lightningpiggy.com)**, which is handled by our **LNbits** server. It records the amount and any comment you add. If your wallet sends the payment as a Nostr "zap" (a Lightning payment linked to your Nostr profile), it includes your Nostr public key, and our LNbits server then publishes a public "zap receipt" to the Nostr relays your wallet names. The receipt contains your public key, the amount and any comment, and like other Nostr posts it cannot reliably be deleted.
+You can also donate to our Lightning address **[oink@lightningpiggy.com](lightning:oink@lightningpiggy.com)**, which is handled by our **LNbits** server. It records the amount and any comment you add. Some wallets also send payer details, such as a name or email address. Our LNbits technical logs record what your wallet sends with the payment, together with the IP address it comes from, which is often your own phone's or computer's (see 2a). If your wallet sends the payment as a Nostr "zap" (a Lightning payment linked to your Nostr profile), it includes your Nostr public key, and our LNbits server then publishes a public "zap receipt" to the Nostr relays your wallet names. The receipt contains your public key, the amount and any comment, and like other Nostr posts it cannot reliably be deleted.
 
 **The amount and comment of each payment to this address are public.** They are shown live on our [Oink page](/oink), and in the public feed that page reads, as each payment arrives. Please do not put anything private in a comment.
 
@@ -103,7 +111,7 @@ Our legal basis is taking steps at your request and then performing our agreemen
 
 Our shop and point-of-sale pages use checkout forms from our BTCPay Server. Anything the checkout asks for, such as a shipping address for a hardware order, is stored on our BTCPay Server and used to fulfil your order. To deliver a hardware order, we give your name and delivery address to the postal or courier service, and for deliveries abroad they may also be passed to customs authorities.
 
-If you order from us through a Nostr marketplace, your order message (including your name, contact details and delivery address) is decrypted on our server and emailed to us through Resend so that we can fulfil it. Our server's logs also record your Nostr public key, the order reference, the name on the order and the items you ordered. If you send our shop's Nostr account any other direct message, the logs record only your Nostr public key. These logs are deleted automatically after a few weeks. Your order message stays on Nostr relays in encrypted form: its contents are private, but anyone can see that your Nostr public key sent us a message, and when.
+If you order from us through a Nostr marketplace, your order message (including your name, contact details and delivery address) is decrypted on our server and emailed to us through Resend so that we can fulfil it. Our server's logs also record your Nostr public key, the order reference, the name on the order and the items you ordered. If you send our shop's Nostr account any other direct message, the logs record only your Nostr public key. These logs are deleted automatically within about five weeks. Your order message stays on Nostr relays in encrypted form: its contents are private, but anyone can see that your Nostr public key sent us a message, and when.
 
 Our legal basis is performing our contract with you.
 
@@ -147,7 +155,7 @@ We share personal data with these service providers, which act on our behalf (wh
 - **Netlify**: hosts the Website and its server functions and logs, and stores vendor applications.
 - **Resend**: sends our emails and holds the newsletter list.
 - **Umami**: analytics (see 2b).
-- **Hostinger**: provides the server, in Lithuania, that runs our BTCPay Server and LNbits and handles orders from Nostr marketplaces.
+- **Hostinger**: provides the server, in Lithuania, that runs our BTCPay Server and LNbits and handles orders from Nostr marketplaces, and makes weekly backups of that whole server.
 - **GitHub**: hosts our public code repository, including the data we publish on the Website.
 - **Namecheap Private Email**: hosts our <oink@lightningpiggy.com> mailbox.
 
@@ -166,14 +174,15 @@ We keep personal data only as long as needed for the purpose it was collected:
 - **Vendor applications:** if we decline an application, we delete it, including the copy emailed to us. We delete the IP address once we have reviewed an application. If we accept one, we keep it as a record of your listing, and delete it on request.
 - **Published content:** we keep it on the Website until it is removed, at your request or ours.
 - **Our private list of featured people and vendors:** kept while we feature you, and updated or deleted on request.
-- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. Our own server's technical logs, including the LNbits logs with IP addresses, are deleted automatically, normally within three weeks (see 2a and 3g).
+- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. On our own server, the web server's access logs are deleted automatically after 7 days. The LNbits technical logs, which include IP addresses, are normally deleted within three weeks, and BTCPay Server's, which do not, when we next update the software (see 2a). The logs of orders from Nostr marketplaces are deleted within about five weeks (see 3g). Copies may stay longer in backups (see the next point).
+- **Backups:** we back up our payment server every day, to the same server, and delete each backup after 30 days. These backups include the payment records and the LNbits technical logs, but not the access logs. Hostinger's weekly backups of the whole server contain everything on it, including the access logs and our own backups. Hostinger decides how long to keep them, and at present that appears to be about two weeks. So something we delete from that server may stay in our own backups for up to 30 days, and in Hostinger's for about two weeks more.
 - **Emails:** emails you send us, and the notifications our systems send us about sign-ups, donations, purchases, orders and vendor applications, are kept in our mailbox only as long as we need them, and we delete them on request. Resend, our email provider, keeps copies of the emails we send for a limited period that it sets.
 
 ## 10. Your rights
 
 Depending on where you live, you may have the right to access, correct or delete your personal data, to restrict or object to how we use it, to receive a copy in a portable format, and to withdraw your consent at any time. Withdrawing consent does not affect anything we did before you withdrew it. To exercise these rights, email **<oink@lightningpiggy.com>**. You can unsubscribe from the newsletter at any time using the link in our newsletters. If you are in the EEA or UK and believe we have mishandled your data, you also have the right to complain to your local data-protection authority.
 
-Please note the limits of what we can remove. We can take your details off the Website, but earlier versions remain in the history of our public GitHub repositories (including a maintainer's working copy), in earlier deploys kept by Netlify until we delete them, and in any copies others have made. We cannot delete posts published to Nostr, including zap receipts, or transactions recorded on the Bitcoin blockchain.
+Please note the limits of what we can remove. We can take your details off the Website, but earlier versions remain in the history of our public GitHub repositories (including a maintainer's working copy), in earlier deploys kept by Netlify until we delete them, and in any copies others have made. When we delete something from our payment server, such as an email or delivery address in a payment record, a copy may stay in our own backups for up to 30 days, and in Hostinger's backups for about two weeks more (see section 9). We cannot delete posts published to Nostr, including zap receipts, or transactions recorded on the Bitcoin blockchain.
 
 ## 11. Children's privacy
 

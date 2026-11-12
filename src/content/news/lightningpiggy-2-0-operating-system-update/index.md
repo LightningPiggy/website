@@ -5,7 +5,7 @@ description: "MicroPythonOS 0.4.0 is out for Lightning Piggy p1, with a bigger t
 seoTitle: "p1 Update: MicroPythonOS 0.4.0"
 heroImageAlt: "Cartoon Lightning Piggy farmer with a pitchfork and a 21,000 sats sign"
 category: software-update
-pubDate: 2025-11-19
+pubDate: 2025-11-19T12:00:00Z
 heroImage: './05F49068-65DA-401F-8119-C566D586BAA2.png'
 ---
 
@@ -40,4 +40,4 @@ Here’s the change log:
 
 - Thomas [GitHub](https://github.com/ThomasFarstrike)  [Nostr](https://primal.net/p/nprofile1qqspsyfhq487vr04z6yhvvglp06ym0jt6nfwptmfxfwla606sx5vhks9qgyxq)
 
-Team LightningPiggy
+Team Lightning Piggy

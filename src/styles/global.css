@@ -101,6 +101,11 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0.75rem;
 }
 
+.prose h4 {
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
 /* Offset anchor targets so they land below the sticky header instead of being
    hidden underneath it when arriving via /page/#some-id.
    Covers any element carrying an id, not just headings: the nav's dropdown

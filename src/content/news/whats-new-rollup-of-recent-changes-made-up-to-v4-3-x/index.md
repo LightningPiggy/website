@@ -1,7 +1,7 @@
 ---
 title: Software Update V4.3.x
 slug: whats-new-rollup-of-recent-changes-made-up-to-v4-3-x
-description: "Firmware v4.3.x shows every incoming payment and battery as a percentage, refreshes on tilt and supports custom LNbits HTTPS ports, plus many fixes."
+description: "Firmware v4.3.x lists every incoming payment, shows battery as a percentage, refreshes on tilt and supports custom LNbits HTTPS ports, plus many fixes."
 seoTitle: "Classic Firmware v4.3.x Release Notes"
 heroImageAlt: "A drawing of a white rabbit with pink pipe-cleaner whiskers"
 category: software-update

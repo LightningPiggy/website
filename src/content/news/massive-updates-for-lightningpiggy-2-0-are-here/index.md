@@ -51,4 +51,4 @@ Enjoy the update! Stay humble, hog sats!
 
 - Thomas [GitHub](https://github.com/ThomasFarstrike)  [Nostr](https://primal.net/p/nprofile1qqspsyfhq487vr04z6yhvvglp06ym0jt6nfwptmfxfwla606sx5vhks9qgyxq)
 
-Team LightningPiggy
+Team Lightning Piggy

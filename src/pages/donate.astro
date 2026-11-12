@@ -5,7 +5,9 @@ import LightningPaused from '../components/ui/LightningPaused.astro';
 import { LIGHTNING_PAUSED } from '../lib/lightning';
 ---
 
-<BaseLayout title="Donate" metaTitle="Donate Bitcoin to Keep the Piggy Oinking" description="Support Lightning Piggy - an open source Bitcoin piggy bank for families. Donate with Bitcoin on-chain or over Lightning.">
+<BaseLayout title="Donate" metaTitle="Donate Bitcoin to Keep the Piggy Oinking" description={LIGHTNING_PAUSED
+  ? 'Support Lightning Piggy, the open source Bitcoin piggy bank for families. Donate bitcoin on-chain through our own BTCPay Server.'
+  : 'Support Lightning Piggy, the open source Bitcoin piggy bank for families. Donate bitcoin on-chain or over Lightning through our own BTCPay Server.'}>
 
   <!-- Hero -->
   <div class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 text-white">

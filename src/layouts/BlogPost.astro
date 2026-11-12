@@ -15,9 +15,12 @@ interface Props {
   heroImage?: ImageMetadata;
   heroImageAlt?: string;
   tags?: string[];
+  // An 'In the News' post: the article it is about, linked under the header
+  url?: string;
 }
 
-const { title, metaTitle, description, pubDate, updatedDate, heroImage, heroImageAlt, tags } = Astro.props;
+const { title, metaTitle, description, pubDate, updatedDate, heroImage, heroImageAlt, tags, url } = Astro.props;
+const articleHost = url ? new URL(url).hostname.replace(/^www\./, '') : '';
 // The original file stays the share image (og:image, JSON-LD): social crawlers
 // get the full-size JPEG/PNG. The page itself shows a resized WebP.
 const heroSrc = heroImage?.src;
@@ -56,7 +59,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-GB', {
   metaTitle={metaTitle}
   description={description}
   image={heroSrc}
-  imageAlt={heroImageAlt ?? title}
+  imageAlt={heroImage ? (heroImageAlt ?? title) : undefined}
   pageType="article"
   pubDate={pubDate}
   updatedDate={updatedDate}
@@ -70,7 +73,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-GB', {
           <Image
             src={heroImage}
             alt={heroImageAlt ?? title}
-            widths={[480, 768, 1024, 1536].filter((w) => w <= heroImage.width)}
+            widths={[480, 768, 1024, 1536]}
             sizes="(min-width: 768px) 768px, 100vw"
             loading="eager"
             fetchpriority="high"
@@ -99,6 +102,11 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-GB', {
               </span>
             ))}
           </div>
+        )}
+        {url && (
+          <p class="mt-4">
+            <a href={url} target="_blank" rel="noopener noreferrer" class="text-pink font-semibold hover:underline">Read the article on {articleHost}</a>
+          </p>
         )}
       </header>
 

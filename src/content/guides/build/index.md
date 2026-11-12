@@ -5,7 +5,6 @@ pubDate: 2023-01-30
 heroImage: ./build-hero.jpeg
 ---
 
-> Building the touchscreen edition? Follow the [Lightning Piggy p1 build guide](/build/p1/).
 Making your very own Lightning Piggy is squealy easy. Here are the steps you need to follow:
 
 1. Source the parts.

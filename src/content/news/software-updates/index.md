@@ -55,7 +55,7 @@ Removed features:
 
 Credits: [https://github.com/ThomasFarstrike](https://github.com/ThomasFarstrike) with valuable new feature and improvement contributions from [https://github.com/lonerookie](https://github.com/lonerookie)
 
-Team LightningPiggy
+Team Lightning Piggy
 
 ---
 Lightning Piggy is an electronic cash piggy bank for children, that accepts bitcoin sent over lightning while displaying the amount saved in satoshis.

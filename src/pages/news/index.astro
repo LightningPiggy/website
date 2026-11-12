@@ -3,8 +3,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import NewsletterForm from '../../components/ui/NewsletterForm.astro';
 import { getCollection } from 'astro:content';
 
-// Fetch all news posts and group by category (newest first; posts from the
-// same day by slug, newest version first)
+// Fetch all news posts and group by category (newest first; same-day posts
+// by slug)
 const allPosts = (await getCollection('news')).sort((a, b) =>
   b.data.pubDate.valueOf() - a.data.pubDate.valueOf() || b.data.slug.localeCompare(a.data.slug));
 
@@ -64,7 +64,7 @@ const sections = [
 ];
 ---
 
-<BaseLayout title="Freedom Farm News" metaTitle="Freedom Farm News and Firmware Updates" description="Freedom Farm News: Lightning Piggy announcements, firmware release notes, press coverage and community challenges, fresh from the farm.">
+<BaseLayout title="Freedom Farm News" metaTitle="Freedom Farm News and Firmware Updates" description="Freedom Farm News: Lightning Piggy announcements, firmware release notes and press coverage, fresh from the farm.">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="text-center mb-16">

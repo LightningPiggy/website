@@ -15,7 +15,7 @@ const tools = [
   },
   {
     href: '/build/lnurl-qr/',
-    title: 'LNbits ZapRewards QR Generator',
+    title: 'LNbits Zap Rewards QR Generator',
     description: 'Branded QR codes for your LNbits LNURL pay links.',
     icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>',
   },
@@ -27,7 +27,10 @@ const tools = [
   },
 ];
 
-const others = tools.filter(t => t.href !== current);
+// Compared with the trailing slash either way, so a page passing '/build/x'
+// still hides its own '/build/x/' link
+const norm = (p: string) => p.replace(/\/?$/, '/');
+const others = tools.filter(t => norm(t.href) !== norm(current));
 ---
 
 <div class="mt-12 pt-8 border-t border-gray-200">

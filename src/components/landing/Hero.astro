@@ -47,7 +47,10 @@ const showcaseImages = fs.readdirSync(showcaseDir)
             <img
               id="hero-img-a"
               src={`/images/showcase/${showcaseImages[0]}`}
-              alt="LightningPiggy showcase"
+              alt="Lightning Piggy showcase"
+              width="512"
+              height="512"
+              fetchpriority="high"
               class="absolute inset-0 w-full h-full object-cover rounded-2xl drop-shadow-2xl transition-opacity duration-1000 ease-in-out opacity-100"
             />
             <img
@@ -71,20 +74,19 @@ const showcaseImages = fs.readdirSync(showcaseDir)
 
 <script define:vars={{ showcaseImages }}>
   document.addEventListener('DOMContentLoaded', function () {
-    // Fisher-Yates shuffle
-    var pool = showcaseImages.slice();
+    // Fisher-Yates shuffle of the rest; the first image stays the one in the
+    // HTML (the LCP element), so it is not downloaded and painted twice.
+    var pool = showcaseImages.slice(1);
     for (var i = pool.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
       var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
     }
+    pool.unshift(showcaseImages[0]);
 
     var imgA = document.getElementById('hero-img-a');
     var imgB = document.getElementById('hero-img-b');
     var current = 0;
     var showingA = true;
-
-    // First image already set server-side, update to shuffled first
-    imgA.src = '/images/showcase/' + pool[0];
 
     function preload(idx) {
       var img = new Image();

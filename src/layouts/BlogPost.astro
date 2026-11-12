@@ -2,17 +2,22 @@
 import BaseLayout from './BaseLayout.astro';
 import NewsletterForm from '../components/ui/NewsletterForm.astro';
 import { safeJsonLd } from '../lib/jsonLd';
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
 
 interface Props {
   title: string;
   description?: string;
   pubDate: Date;
   updatedDate?: Date;
-  heroImage?: string;
+  heroImage?: ImageMetadata;
   tags?: string[];
 }
 
 const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
+// The original file stays the share image (og:image, JSON-LD): social crawlers
+// get the full-size JPEG/PNG. The page itself shows a resized WebP.
+const heroSrc = heroImage?.src;
 
 const articleSchema = {
   "@context": "https://schema.org",
@@ -21,7 +26,7 @@ const articleSchema = {
   "datePublished": pubDate.toISOString(),
   ...(updatedDate && { "dateModified": updatedDate.toISOString() }),
   ...(description && { "description": description }),
-  ...(heroImage && { "image": heroImage.startsWith('http') ? heroImage : `https://lightningpiggy.com${heroImage}` }),
+  ...(heroSrc && { "image": `https://lightningpiggy.com${heroSrc}` }),
   "author": {
     "@type": "Organization",
     "name": "Lightning Piggy",
@@ -53,7 +58,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
 <BaseLayout
   title={title}
   description={description}
-  image={heroImage}
+  image={heroSrc}
   imageAlt={title}
   pageType="article"
   pubDate={pubDate}
@@ -65,9 +70,13 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       {heroImage && (
         <div class="mb-8 -mx-4 sm:mx-0">
-          <img
+          <Image
             src={heroImage}
             alt={title}
+            widths={[480, 768, 1024, 1536].filter((w) => w <= heroImage.width)}
+            sizes="(min-width: 768px) 768px, 100vw"
+            loading="eager"
+            fetchpriority="high"
             class="w-full rounded-none sm:rounded-2xl object-cover max-h-96"
           />
         </div>

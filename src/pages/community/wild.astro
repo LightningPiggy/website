@@ -41,7 +41,7 @@ const images = fs.existsSync(wildDir)
                 src={src}
                 alt={`LightningPiggy in the wild ${i + 1}`}
                 class="w-full aspect-square object-cover object-center rounded-lg hover:opacity-90 transition-opacity"
-                loading="lazy"
+                loading={i < 3 ? 'eager' : 'lazy'}
               />
             </label>
             <label for={`lightbox-${i}`} class="lightbox-overlay">
@@ -49,6 +49,7 @@ const images = fs.existsSync(wildDir)
                 src={src}
                 alt={`LightningPiggy in the wild ${i + 1}`}
                 class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                loading="lazy"
               />
             </label>
           </div>

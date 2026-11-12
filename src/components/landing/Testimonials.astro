@@ -83,6 +83,8 @@ const platformIcons: Record<string, { svg: string; color: string }> = {
                   <img
                     src={testimonial.profilePic}
                     alt={testimonial.name}
+                    loading="lazy"
+                    decoding="async"
                     class="w-full h-full object-cover"
                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                   />

@@ -349,6 +349,12 @@ const facets = [
   { key: 'model', label: 'Model', options: [...new Set(cases.map(modelGroup))].sort((a, b) => (a === 'Other') - (b === 'Other')), accent: [] },
 ];
 
+// Counts shown on the filter buttons, rendered into the HTML so the client
+// script's first render() changes no text: when it filled them in, the
+// buttons widened, the rows rewrapped and the case list jumped down.
+const facetValue = { generation: generationOf, board: (c) => c.tag, model: modelGroup };
+const countOf = (key, v) => cases.filter((c) => facetValue[key](c) === v).length;
+
 // Global image counter for unique lightbox IDs
 let imgCounter = 0;
 ---
@@ -375,12 +381,12 @@ let imgCounter = 0;
             <span class="w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-gray-400">{f.label}</span>
             <button type="button" data-value="all" aria-pressed="true"
               class="case-filter px-3 py-1.5 text-sm font-medium rounded-full bg-gray-900 text-white transition-colors">
-              All <span class="count text-xs opacity-70"></span>
+              All <span class="count text-xs opacity-70">({cases.length})</span>
             </button>
             {f.options.map((opt) => (
               <button type="button" data-value={opt} aria-pressed="false" data-active={f.accent.includes(opt) ? 'bg-yellow text-gray-900' : undefined}
                 class="case-filter px-3 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-                {opt} <span class="count text-xs opacity-70"></span>
+                {opt} <span class="count text-xs opacity-70">({countOf(f.key, opt)})</span>
               </button>
             ))}
           </div>
@@ -417,6 +423,7 @@ let imgCounter = 0;
                           src={src}
                           alt={`${titleOf(c)} - image ${i + 1}`}
                           class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                          loading="lazy"
                         />
                       </label>
                     </div>

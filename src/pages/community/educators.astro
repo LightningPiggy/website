@@ -4,7 +4,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 const activities = [
   {
     title: 'Group Build Workshop',
-    image: '/images/educators/group-build-workshop.jpeg',
+    image: '/images/educators/group-build-workshop.webp',
     duration: '1 hour',
     difficulty: 'Easy',
     venue: 'Schools, community groups, meet-ups, and conferences.',
@@ -21,7 +21,7 @@ const activities = [
   },
   {
     title: 'Informal Open-Source Project Build Area',
-    image: '/images/educators/informal-build-area.jpeg',
+    image: '/images/educators/informal-build-area.webp',
     duration: 'Flexible',
     difficulty: 'Easy',
     venue: 'Hackerspaces, maker fares, and conference side events.',
@@ -33,7 +33,7 @@ const activities = [
   },
   {
     title: 'Character Design Challenge',
-    image: '/images/educators/character-design-challenge.jpeg',
+    image: '/images/educators/character-design-challenge.webp',
     duration: '30–60 minutes',
     difficulty: 'Easy',
     venue: 'Schools, community groups, conferences with activities for smart savers, and family fun.',
@@ -50,7 +50,7 @@ const activities = [
   },
   {
     title: 'Piggy Build Challenge',
-    image: '/images/educators/piggy-build-challenge.jpeg',
+    image: '/images/educators/piggy-build-challenge.webp',
     duration: '1–2 hours',
     difficulty: 'Medium',
     venue: 'Schools, community groups, conferences with activities for smart savers, and family fun.',
@@ -67,7 +67,7 @@ const activities = [
   },
   {
     title: 'Piggy Pips Seed Workshop',
-    image: '/images/educators/piggy-build-challenge.jpeg',
+    image: '/images/educators/piggy-build-challenge.webp',
     duration: '45 minutes',
     difficulty: 'Easy',
     venue: 'Schools, community groups, meet-ups, and conferences.',
@@ -97,10 +97,10 @@ const difficultyColor = (d: string) => {
       </header>
 
       <div class="space-y-8">
-        {activities.map((activity) => (
+        {activities.map((activity, i) => (
           <div class="bg-white rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow">
             {activity.image && (
-              <img src={activity.image} alt={activity.title} class="w-full h-48 md:h-56 object-cover rounded-t-2xl" />
+              <img src={activity.image} alt={activity.title} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-48 md:h-56 object-cover rounded-t-2xl" />
             )}
             <div class="p-6 md:p-8">
               <div class="flex flex-wrap items-center gap-3 mb-3">

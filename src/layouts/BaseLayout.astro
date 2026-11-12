@@ -6,6 +6,11 @@ import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 import '../styles/global.css';
+// The same files the @fontsource CSS points at (Vite gives them the same
+// hashed name), preloaded so the regular and bold latin faces arrive with the
+// CSS instead of after it: less text reflow when Inter swaps in.
+import interLatin400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
+import interLatin700 from '@fontsource/inter/files/inter-latin-700-normal.woff2?url';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import { safeJsonLd } from '../lib/jsonLd';
@@ -76,6 +81,8 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="preload" href={interLatin400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={interLatin700} as="font" type="font/woff2" crossorigin />
     <title>{siteTitle}</title>
     <meta name="description" content={description} />
 

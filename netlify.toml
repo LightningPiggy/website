@@ -32,6 +32,14 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
+# Astro's build output (CSS, JS, fonts and processed images). Every file name
+# carries a hash of its content, so a changed file always gets a new name and
+# browsers can keep these for a year without checking back with the server.
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # NIP-05: Nostr web clients fetch this from other sites, and without the
 # header the browser hides the answer from them.
 [[headers]]

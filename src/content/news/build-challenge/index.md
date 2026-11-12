@@ -1,6 +1,8 @@
 ---
 title: Piggy Build Challenge
 slug: build-challenge
+description: "Design, build and decorate your own piggy from any materials, or draw it on paper. Get our tips and meet the Friends of Lightning Piggy for inspiration."
+seoTitle: "Piggy Build Challenge: Design Your Own"
 pubDate: 2024-08-12
 ---
 

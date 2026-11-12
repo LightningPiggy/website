@@ -80,7 +80,7 @@ const cases = [
     name: 'ZapStand',
     anchor: 'p1-zapstand',
     tag: 'ESP32-S3 2 inch',
-    description: "The 'ZapStand' desk edition sits at a comfortable viewing angle on your desk or counter, keeping the screen easy to see and easy to tap. Its party trick is the swappable badge: printed inserts drop into a pocket on the front and can be changed in seconds - print your name, your favorite project's logo, or whatever you fancy, and show it off alongside your Piggy.",
+    description: "The 'ZapStand' desk edition sits at a comfortable viewing angle on your desk or counter, keeping the screen easy to see and easy to tap. Its party trick is the swappable badge: printed inserts drop into a pocket on the front and can be changed in seconds - print your name, your favourite project's logo, or whatever you fancy, and show it off alongside your Piggy.",
     images: [
       '/images/cases/zapstand-lcd-01.png',
       '/images/cases/zapstand-lcd-02.png',
@@ -91,8 +91,8 @@ const cases = [
       board: 'Waveshare ESP32-S3 2inch Touch Display',
       displaySize: '2 inch',
       os: 'MicroPythonOS',
-      material: 'Stand: PLA or PETG | Badges: PLA (multi-color)',
-      printing: 'Prints support-free in the plated orientation. Add rafts to secure the two buttons to the printer bed. Badges print face down; the multi-color detail lives in the first few layers only.',
+      material: 'Stand: PLA or PETG | Badges: PLA (multi-colour)',
+      printing: 'Prints support-free in the plated orientation. Add rafts to secure the two buttons to the printer bed. Badges print face down; the multi-colour detail lives in the first few layers only.',
       extraHardware: [
         { label: 'M2 x8mm screws (Qty 4)', url: 'https://www.amazon.de/-/en/dp/B0FKTFTB44', source: 'amazon.de' },
       ],
@@ -361,6 +361,7 @@ let imgCounter = 0;
 
 <BaseLayout
   title="Cases & Enclosures"
+  metaTitle="3D-Printed and Laser-Cut Piggy Cases"
   description="Community-designed cases and enclosures for your Lightning Piggy. 3D-printable, laser-cut, and cardboard designs from the community."
   image="/images/cases/genesispiggy-01.png"
   imageAlt="Genesis Piggy 3D-printed case for Lightning Piggy"
@@ -413,7 +414,7 @@ let imgCounter = 0;
                       <label for={`case-lb-${id}`} class="cursor-pointer block w-full h-full">
                         <img
                           src={src}
-                          alt={`${titleOf(c)} - image ${i + 1}`}
+                          alt={`${titleOf(c)} case for Lightning Piggy, photo ${i + 1}`}
                           class="w-full h-full object-cover hover:opacity-90 transition-opacity"
                           loading="lazy"
                         />
@@ -421,7 +422,7 @@ let imgCounter = 0;
                       <label for={`case-lb-${id}`} class="lightbox-overlay">
                         <img
                           src={src}
-                          alt={`${titleOf(c)} - image ${i + 1}`}
+                          alt={`${titleOf(c)} case for Lightning Piggy, photo ${i + 1}`}
                           class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
                           loading="lazy"
                         />

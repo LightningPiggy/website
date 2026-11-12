@@ -1,6 +1,10 @@
 ---
 title: Software Updates V2.1.1 & V2.0.0
 slug: software-updates
+description: "Firmware v2.0.0 stretches battery life with a smart watchdog and adds a fiat balance and boot quotes; v2.1.1 adds the CHF symbol and more weekday languages."
+seoTitle: "Classic Firmware v2.0.0 and v2.1.1"
+heroImageAlt: "Character Design Challenge entry: Space Cat flying a rainbow trail towards a giant bitcoin"
+category: software-update
 pubDate: 2024-03-19
 heroImage: './LightningPiggy-Character-Design-Challenge-page-14.jpeg'
 tags: ["news"]
@@ -54,11 +58,11 @@ Credits: [https://github.com/ThomasFarstrike](https://github.com/ThomasFarstrike
 Team LightningPiggy
 
 ---
-LightingPiggy is an electronic cash piggy bank for children, that accepts bitcoin sent over lightning while displaying the amount saved in satoshis.
+Lightning Piggy is an electronic cash piggy bank for children, that accepts bitcoin sent over lightning while displaying the amount saved in satoshis.
 
 Our vision is to make bitcoin the savings’ standard for every child, while creating an educational platform to inspire future generations, not only to save in bitcoin, but also to learn to code and build in a free and open source way.
 
-[Build](/build/classic) your own
+[Build](/build/classic/) your own
 
 Chat with our [community](https://t.me/LightningPiggy)  
 

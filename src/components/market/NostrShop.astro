@@ -9,8 +9,8 @@
 //   "products": { "mode": "all" }
 //
 // SEO: products are fetched from relays AT BUILD TIME and rendered as a static,
-// crawlable grid (plus JSON-LD). The client script then refreshes the grid
-// live on load, so humans get up-to-date listings and bots/no-JS get the
+// crawlable grid. The client script then refreshes the grid live on load, so
+// humans get up-to-date listings and bots/no-JS get the
 // build-time snapshot. Build-time fetch is fail-safe: if relays are unreachable
 // the grid falls back to client-only rendering and the build still succeeds.
 
@@ -18,7 +18,6 @@ import {
   npubToHex,
   buildShopProducts,
   shopCardHtml,
-  productsJsonLd,
   type Shop,
 } from '../../lib/market';
 import { fetchMarketEvents } from '../../lib/marketServer';
@@ -55,7 +54,6 @@ const events = await fetchMarketEvents(authors, [30402, 30018]);
 const products = buildShopProducts(events, shops);
 const prerenderHtml = products.map(shopCardHtml).join('');
 const hasPrerender = products.length > 0;
-const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.site).href) : '';
 ---
 
 {shops.length > 0 && (
@@ -77,8 +75,6 @@ const jsonLd = hasPrerender ? productsJsonLd(products, new URL('/market', Astro.
     <div id="shop-empty" class="text-center py-8 hidden">
       <p class="text-gray-500">No products available right now.</p>
     </div>
-
-    {hasPrerender && <script type="application/ld+json" set:html={jsonLd} />}
   </div>
 )}
 

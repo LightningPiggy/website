@@ -19,7 +19,7 @@ This option is ideal for users comfortable with the technical aspects of managin
 
 **Cons**
 
-- Difficult to set up for the purpose of connecting your LightingPiggy to interact with the outside world.
+- Difficult to set up for the purpose of connecting your Lightning Piggy to interact with the outside world.
 - Ideally needs dedicated hardware, such as a Raspberry Pi or a compatible server, to operate effectively.
 
 How: Install bitcoin, lightning and LNbits on your dedicated hardware device such as your own computer/server, [Raspiblitz](https://raspiblitz.org), [Start 9](https://start9.com) or [Umbrel](https://umbrel.com) device. Please refer to the set-up and configuration instructions provided by your hardware node supplier.
@@ -61,37 +61,37 @@ How: Visit [LNbits](https://lnbits.com/) or [egg](https://www.eggstr.com/) or an
 ---
 Select *create a new wallet*, give it a name (we'll use Satoshi in this example), and follow the on screen instructions.
 
-![](./LNbits_Guide_01-1.png)
+![LNbits demo server login page with the Create New Wallet button](./LNbits_Guide_01-1.png)
 > Be sure to bookmark/save the wallet webpage otherwise the wallet is unrecoverable.
 A wallet list should be show on the lefthand side of the page (1), if not expand the page, or click the *burger icon* in the top lefthand corner of the screen (2).
 
-![](./LNbits_Guide_02.jpg)Give your wallet a name using the *Rename wallet* button (3) if you didn't already do this at the beginning.
+![LNbits wallet page with the wallet list, menu, Rename wallet and Extensions marked 1 to 4](./LNbits_Guide_02.jpg)Give your wallet a name using the *Rename wallet* button (3) if you didn't already do this at the beginning.
 
 Under the *Wallets* header should be *Extensions* (4). Click this and find the *Pay Links* extension (5). Enable it by clicking *Enable*.
 
-![](./LNbits_Guide_03.png)Now the Pay Links extension will appear under your wallets' list (6). Click it and select *New Pay Link* (7).
+![LNbits extensions list with the Enable button on Pay Links marked 5](./LNbits_Guide_03.png)Now the Pay Links extension will appear under your wallets' list (6). Click it and select *New Pay Link* (7).
 
-![](./LNbits_Guide_04.png)Choose your wallet from the dropdown list (8), give it a description (the name of your smart saver for example), and add a Lightning Address if you wish. Deselect *Fixed amount* (9) and configure the *Min* and *Max* amounts of satoshis your wallet can receive.
+![LNbits Pay Links extension with the New Pay Link button marked 7](./LNbits_Guide_04.png)Choose your wallet from the dropdown list (8), give it a description (the name of your smart saver for example), and add a Lightning Address if you wish. Deselect *Fixed amount* (9) and configure the *Min* and *Max* amounts of satoshis your wallet can receive.
 
-![](./LNbits_Guide_05.png)We suggest using 1 Min and 10,000,000 Max (10). Click to expand the *Advanced options* area (11), and enter the maximum number of characters you wish to allow when someone leaves a message with a payment in the *Comment maximum characters box* (12). We recommend using 100. *Enable nostr zaps* if you wish and then click *Create Pay Link* to save the settings.
+![New Pay Link form with the wallet dropdown and Fixed amount checkbox marked 8 and 9](./LNbits_Guide_05.png)We suggest using 1 Min and 10,000,000 Max (10). Click to expand the *Advanced options* area (11), and enter the maximum number of characters you wish to allow when someone leaves a message with a payment in the *Comment maximum characters box* (12). We recommend using 100. *Enable nostr zaps* if you wish and then click *Create Pay Link* to save the settings.
 
-![](./LNbits_Guide_06-1.png)Your LNURLp payment link will now be attached to your wallet.
+![Completed Pay Link form: Min 1 and Max 10,000,000 sats, Advanced options and a 100-character comment limit](./LNbits_Guide_06-1.png)Your LNURLp payment link will now be attached to your wallet.
 
 Next we need to flash the piggy with the latest software. Click the pertinent link below to proceed.
 
-👉 [LightingPiggy Classic](https://lightningpiggy.github.io/)
+👉 [Lightning Piggy Classic web installer](https://lightningpiggy.github.io/)
 
-👉 [LightingPiggy MPOS](https://install.micropythonos.com/)
+👉 [Lightning Piggy p1 installer (MicroPythonOS)](https://install.micropythonos.com/)
 
 > Return to this window when you have installed the firmware.
 Now the piggy firmware is installed, click on your wallet name (13) and expand the API docs list on the righthand side of the page (14).
 
 We need to add the *Node URL* and the*Invoice/Read key* (15) for this wallet to the physical piggy. If you're running MPOS and have a built in camera, the easiest way to do this is by scanning the QR code for each data point - unless you're good at typing on the tiny onscreen keyboard.
 
-![](./LNbits_Guide_07-1.png)Congratulations! 🥳 Your wallet is set up and ready to receive zaps on your piggy. Next, follow the links below to continue your build.
+![LNbits API info panel showing the Node URL and Invoice/read key to copy into your piggy](./LNbits_Guide_07-1.png)Congratulations! 🥳 Your wallet is set up and ready to receive zaps on your piggy. Next, follow the links below to continue your build.
 
-👉 [Lightning Piggy Classic](/build/classic#4-connect-to-and-configure-your-piggy)
+👉 [Lightning Piggy Classic](/build/classic/#4-connect-to-and-configure-your-piggy)
 
-👉 [Lightning Piggy MPOS](/build/p1#4-connect-to-wi-fi-and-configure-your-piggy)
+👉 [Lightning Piggy MPOS](/build/p1/#4-connect-to-wi-fi-and-configure-your-piggy)
 
 If you run into any issues or have questions, feel free to reach out in our community [Telegram group](https://t.me/LightningPiggy), we’re always happy to help.

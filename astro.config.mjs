@@ -57,8 +57,10 @@ export default defineConfig({
   site: 'https://lightningpiggy.com',
   integrations: [
     mdx(),
-    // The newsletter confirm pages are only reached from emails.
-    sitemap({ filter: (page) => !/\/newsletter-confirm(ed)?\/?$/.test(page) }),
+    // Not in the sitemap: the newsletter confirm pages (only reached from
+    // emails), /treasure/ (one client-rendered shell for every treasure) and
+    // /pos/ (the team's till). All three are noindex too.
+    sitemap({ filter: (page) => !/\/(newsletter-confirm(ed)?|treasure|pos)\/?$/.test(page) }),
     tailwind(),
     treasureDevRewrite(),
     launchAgentPortGuard(),
@@ -69,10 +71,15 @@ export default defineConfig({
     // astro.config.mjs edit, say) must not restart this one's dev server.
     server: { watch: { ignored: ['**/.claude/**'] } },
   },
-  // Help moved onto the build page; keep the old /help URL working.
-  // The standalone NIP-05 page was folded into /market; keep its old URL working.
+  // Help moved onto the build page, the NIP-05 page was folded into /market,
+  // and the v1/v2 build guides were renamed classic/p1. netlify.toml answers
+  // all of these with real 301s; these entries keep the old URLs working in
+  // `astro dev` (in the build they only write meta-refresh pages, which the
+  // forced Netlify rules answer before).
   redirects: {
-    '/help': '/build#help',
-    '/market/nip05': '/market',
+    '/help': '/build/#help',
+    '/market/nip05': '/market/#nostr-handles',
+    '/build/v1': '/build/classic/',
+    '/build/v2': '/build/p1/',
   },
 });

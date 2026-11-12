@@ -1,6 +1,10 @@
 ---
 title: Software Update v4.x
 slug: software-update-v4
+description: "Firmware v4 auto-detects 2.13 and 2.66 inch e-paper displays, updates the screen faster, adds UTF-8 characters, new boot slogans and currency symbols."
+seoTitle: "Classic Firmware v4 Release Notes"
+heroImageAlt: "Character Design Challenge entry: a colourful Torogoz bird with Bitcoin symbols"
+category: software-update
 pubDate: 2024-04-11
 heroImage: './LightningPiggy-Character-Design-Challenge-page-26-2.jpeg'
 tags: ["news"]
@@ -34,11 +38,11 @@ Credits: [Thomas](https://github.com/ThomasFarstrike) with thanks noted above.
 Team LightningPiggy
 
 ---
-LightingPiggy is an electronic cash piggy bank for children, that accepts Bitcoin sent over the Lightning Network. It displays payment amounts, messages, and the total satoshis saved.
+Lightning Piggy is an electronic cash piggy bank for children, that accepts Bitcoin sent over the Lightning Network. It displays payment amounts, messages, and the total satoshis saved.
 
 Our vision is to make bitcoin the savings’ standard for every child, while creating an educational platform to inspire future generations, not only to save in bitcoin, but also to learn to code and build in a free and open source way.
 
-[Build](/build/classic) your own
+[Build](/build/classic/) your own
 
 Chat with our [community](https://t.me/LightningPiggy)  
 

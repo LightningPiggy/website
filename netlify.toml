@@ -47,6 +47,53 @@
   [headers.values]
     Access-Control-Allow-Origin = "*"
 
+# Moved pages: real 301s. Astro's `redirects` (astro.config.mjs) only write
+# a 200 page with a meta refresh into dist, so `force` makes Netlify answer
+# before that file. Netlify matches these with or without a trailing slash.
+[[redirects]]
+  from = "/help"
+  to = "/build/#help"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/market/nip05"
+  to = "/market/#nostr-handles"
+  status = 301
+  force = true
+
+# The v1/v2 build guides were renamed classic/p1; old links, printed QR codes
+# and firmware READMEs still land on the right guide.
+[[redirects]]
+  from = "/build/v1"
+  to = "/build/classic/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/build/v2"
+  to = "/build/p1/"
+  status = 301
+  force = true
+
+# A typo the news page used to link to
+[[redirects]]
+  from = "/news/software-upate-v4"
+  to = "/news/software-update-v4/"
+  status = 301
+
+# The v6.3.0 post's old address
+[[redirects]]
+  from = "/news/so"
+  to = "/news/software-update-v6-3-0/"
+  status = 301
+
+# Crawlers and people often try /sitemap.xml first
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap-index.xml"
+  status = 301
+
 [[redirects]]
   from = "/.well-known/lnurlp/*"
   to = "https://lnbits.lightningpiggy.com/.well-known/lnurlp/:splat"

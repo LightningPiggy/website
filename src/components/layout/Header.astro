@@ -1,13 +1,13 @@
 ---
 const navItems = [
-  { label: 'About', href: '/about' },
+  { label: 'About', href: '/about/' },
   {
     label: 'Build',
-    href: '/build',
+    href: '/build/',
     children: [
-      { label: 'Classic (Arduino)', href: '/build/classic' },
-      { label: 'p1 (MicroPythonOS)', href: '/build/p1' },
-      { label: 'Cases', href: '/build/cases' },
+      { label: 'Classic (Arduino)', href: '/build/classic/' },
+      { label: 'p1 (MicroPythonOS)', href: '/build/p1/' },
+      { label: 'Cases', href: '/build/cases/' },
       { label: 'Guides', href: '/build/#guides' },
       { label: 'Tools', href: '/build/#tools' },
       { label: 'Under the Hood', href: '/build/#under-the-hood' },
@@ -16,7 +16,7 @@ const navItems = [
   },
   {
     label: 'Market',
-    href: '/market',
+    href: '/market/',
     children: [
       { label: 'Shop', href: '/market/#products' },
       { label: 'Vendors', href: '/market/#vendors' },
@@ -25,26 +25,26 @@ const navItems = [
   },
   {
     label: 'Community',
-    href: '/community',
+    href: '/community/',
     children: [
-      { label: 'In the Wild', href: '/community/wild' },
-      { label: 'Educators', href: '/community/educators' },
-      { label: 'Bitcoin Kids', href: '/community/bitcoinkids' },
-      { label: 'ZapMyPiggy', href: '/community/zapmypiggy' },
-      { label: 'Credits', href: '/community/credits' },
+      { label: 'In the Wild', href: '/community/wild/' },
+      { label: 'Educators', href: '/community/educators/' },
+      { label: 'Bitcoin Kids', href: '/community/bitcoinkids/' },
+      { label: 'ZapMyPiggy', href: '/community/zapmypiggy/' },
+      { label: 'Credits', href: '/community/credits/' },
     ]
   },
-  { label: 'Family App', href: '/app' },
-  { label: 'Treasure Hunt', href: '/treasure-hunt' },
+  { label: 'Family App', href: '/app/' },
+  { label: 'Treasure Hunt', href: '/treasure-hunt/' },
   {
     label: 'News',
-    href: '/news',
+    href: '/news/',
     children: [
       { label: 'In the News', href: '/news/#in-the-news' },
       { label: 'Software Updates', href: '/news/#software-updates' },
     ]
   },
-  { label: 'Donate', href: '/donate' },
+  { label: 'Donate', href: '/donate/' },
 ];
 
 const currentPath = Astro.url.pathname;
@@ -107,7 +107,7 @@ const isActive = (href: string) => {
 
       <!-- CTA Button -->
       <a
-        href="/build"
+        href="/build/"
         class="hidden lg:inline-flex items-center px-4 py-2 text-sm font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors"
       >
         Build Your Own
@@ -161,7 +161,7 @@ const isActive = (href: string) => {
         </div>
       ))}
       <a
-        href="/build"
+        href="/build/"
         class="block w-full text-center px-4 py-3 text-base font-semibold text-white bg-pink rounded-full hover:bg-gray-900 transition-colors mt-4"
       >
         Build Your Own

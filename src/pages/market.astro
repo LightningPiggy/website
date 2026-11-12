@@ -17,7 +17,7 @@ const nip05Points = [
   },
   {
     title: 'Easy to share',
-    body: 'Instead of a long npub, just tell people your handle (you@lightningpiggy.com) — like an email address for Nostr.',
+    body: 'Instead of a long npub, just tell people your handle (you@lightningpiggy.com), like an email address for Nostr.',
   },
   {
     title: 'Client support',
@@ -33,7 +33,8 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
 
 <BaseLayout
   title="Market"
-  description="This little piggy went to market… Shop Lightning Piggy gear pulled live from Nostr, buy direct from awesome vendors, and claim your yourname@lightningpiggy.com Nostr handle."
+  metaTitle="Buy a Bitcoin Piggy Bank: Shop and Vendors"
+  description="This little piggy went to market! Buy a Lightning Piggy and gear from vendors around the world, or claim your own @lightningpiggy.com Nostr handle."
 >
   <!-- 1. Banner -->
   <section class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 text-white">
@@ -43,7 +44,7 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
           <p class="text-pink text-sm font-semibold uppercase tracking-widest mb-3">The Market</p>
           <h1 class="text-4xl md:text-5xl font-bold mb-4">This little piggy went to market…</h1>
           <p class="text-lg text-gray-300 leading-relaxed max-w-xl mx-auto md:mx-0">
-            Shop Lightning Piggy gear — every product pulled <strong class="text-white">live from Nostr</strong>.
+            Buy a ready-made Bitcoin piggy bank and gear: every product is pulled <strong class="text-white">live from Nostr</strong>.
             Buy direct from awesome vendors and grab your own Nostr handle.
           </p>
         </div>
@@ -74,7 +75,7 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
       <div class="mb-8">
         <h2 class="text-3xl font-bold text-gray-900 mb-2">Where to buy</h2>
         <p class="text-gray-600 max-w-2xl">
-          Vendors stocking Lightning Piggy — each card is pulled <strong>live from the vendor's Nostr profile</strong>.
+          Vendors stocking Lightning Piggy: each card is pulled <strong>live from the vendor's Nostr profile</strong>.
           Vendors marked <span class="font-semibold">★ Pride of the Market</span> have pledged at least
           <strong>10% of their sales</strong> back to the project.
         </p>
@@ -117,7 +118,7 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
           Lightning Piggy is fully open source. Source the parts yourself and follow our
           step-by-step build guide.
         </p>
-        <Button href="/build" variant="outline">
+        <Button href="/build/" variant="outline">
           View Build Guide →
         </Button>
       </div>
@@ -133,7 +134,7 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
           <span class="text-pink">yourname</span>@lightningpiggy.com
         </h2>
         <p class="text-gray-300 text-lg leading-relaxed mb-2">
-          A verified, memorable NIP-05 handle for Nostr — powered by the Lightning Piggy community.
+          A verified, memorable NIP-05 handle for Nostr, powered by the Lightning Piggy community.
         </p>
         <p class="text-gray-400 text-sm mb-6">
           {LIGHTNING_PAUSED

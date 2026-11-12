@@ -1,11 +1,15 @@
 ---
 title: Massive updates for Lightning Piggy v2 are here!
 slug: massive-updates-for-lightningpiggy-2-0-are-here
+description: "Lightning Piggy App v0.0.17 and MicroPythonOS v0.3.2 bring multi-relay NWC, rewritten wallets, tap-to-switch balance units and smoother navigation."
+seoTitle: "p1 App v0.0.17 and MicroPythonOS 0.3.2"
+heroImageAlt: "Cartoon Lightning Piggy pushing a wheelbarrow of banknotes, wearing a 21,000 sats sign"
+category: software-update
 pubDate: 2025-11-19
 heroImage: './228bfad66cc9fb046608dab5ae9b24e21b648587dc75a3b94a5d686d25b4408c.png'
 ---
 
-[MicroPythonOS](https://micropythonos.com/) v0.3.2 and [Lightning Piggy](/build/p1) App v0.0.17 are now live.
+[MicroPythonOS](https://micropythonos.com/) v0.3.2 and [Lightning Piggy](/build/p1/) App v0.0.17 are now live.
 
 App v0.0.17–0.0.15 highlights:
 

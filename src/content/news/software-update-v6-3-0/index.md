@@ -1,6 +1,10 @@
 ---
 title: Software Update v6.3.0
-slug: so
+slug: software-update-v6-3-0
+description: "Classic firmware v6.3.0 adds automatic captive portal setup, a shorter Piggy Config access point name, a refreshed login page and updated libraries."
+seoTitle: "Classic Firmware v6.3.0 Release Notes"
+heroImageAlt: "Cartoon Lightning Piggy running with a 21,000 sats sign"
+category: software-update
 pubDate: 2025-04-30
 heroImage: './405B2C34-D394-42C5-83A2-A19388EDEB06.png'
 tags: ["news"]
@@ -36,17 +40,16 @@ Enjoy the update! Stay humble, hog sats!
 
 - Thomas [GitHub](https://github.com/ThomasFarstrike)  [Nostr](https://primal.net/p/nprofile1qqspsyfhq487vr04z6yhvvglp06ym0jt6nfwptmfxfwla606sx5vhks9qgyxq)
 
-Team LightningPiggy
+Team Lightning Piggy
 
-[http://www.lightningpiggy.com](/)
 
-LightingPiggy is an electronic cash piggy bank for children, that accepts Bitcoin sent over the Lightning Network. It displays payment amounts, messages, and the total satoshis saved.
+Lightning Piggy is an electronic cash piggy bank for children, that accepts Bitcoin sent over the Lightning Network. It displays payment amounts, messages, and the total satoshis saved.
 
 Our vision is to make bitcoin the savings’ standard for every child, while creating an educational platform to inspire future generations, not only to save in bitcoin, but also to learn to code and build in a free and open-source way.
 
 Web installer: [https://lightningpiggy.github.io/](https://lightningpiggy.github.io/)
 
-Build your own: [https://www.lightningpiggy.com/build/](/build/classic)
+Build your own: [Lightning Piggy Classic build guide](/build/classic/)
 
 Chat with our community: [https://t.me/LightningPiggy](https://t.me/LightningPiggy)
 

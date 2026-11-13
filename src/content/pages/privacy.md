@@ -10,7 +10,7 @@ updatedDate: 2026-11-09
 
 **What changed on 9 November 2026:** the web server in front of our payment software now keeps access logs for 7 days, and we now describe in more detail what our payment software's logs keep and how our payment server is backed up (see 2a and 9).
 
-This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
+This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms/).
 
 The Services are provided by Lightning Piggy ("we", "us" or "our"), a free and open-source project with volunteer contributors. The project is in early development and is not currently incorporated as a legal entity. The maintainers who run the Website and our payment servers on the project's behalf are responsible for the personal data described in this policy (the "controller"). You can contact them about your data at **<oink@lightningpiggy.com>**.
 
@@ -75,7 +75,7 @@ You can donate on the Donate page through our **BTCPay Server**. We record the a
 
 You can also donate to our Lightning address **[oink@lightningpiggy.com](lightning:oink@lightningpiggy.com)**, which is handled by our **LNbits** server. It records the amount and any comment you add. Some wallets also send payer details, such as a name or email address. Our LNbits technical logs record what your wallet sends with the payment, together with the IP address it comes from, which is often your own phone's or computer's (see 2a). If your wallet sends the payment as a Nostr "zap" (a Lightning payment linked to your Nostr profile), it includes your Nostr public key, and our LNbits server then publishes a public "zap receipt" to the Nostr relays your wallet names. The receipt contains your public key, the amount and any comment, and like other Nostr posts it cannot reliably be deleted.
 
-**The amount and comment of each payment to this address are public.** They are shown live on our [Oink page](/oink), and in the public feed that page reads, as each payment arrives. Please do not put anything private in a comment.
+**The amount and comment of each payment to this address are public.** They are shown live on our [Oink page](/oink/), and in the public feed that page reads, as each payment arrives. Please do not put anything private in a comment.
 
 Donations through **Geyser.fund** are handled entirely by Geyser under its own privacy policy.
 
@@ -89,7 +89,7 @@ If you donate **$50 or more** and give your npub or X handle, we look up your pu
 
 ### d) Buying a case design download
 
-When you support a case design on the [Cases page](/build/cases), we record the design, the amount and, if you give one, your **email address**. Giving an email address is optional: without one you still get your files straight after paying, but no receipt to download them again later. If you give one, it is stored with the payment on our BTCPay Server. We use it to send you a receipt with your download links (through Resend), to reply if you contact us about your purchase, and in the note we send ourselves about the purchase. It is not added to the newsletter. While you are paying, your browser keeps the address in its session storage, so that the page can confirm where your receipt is going.
+When you support a case design on the [Cases page](/build/cases/), we record the design, the amount and, if you give one, your **email address**. Giving an email address is optional: without one you still get your files straight after paying, but no receipt to download them again later. If you give one, it is stored with the payment on our BTCPay Server. We use it to send you a receipt with your download links (through Resend), to reply if you contact us about your purchase, and in the note we send ourselves about the purchase. It is not added to the newsletter. While you are paying, your browser keeps the address in its session storage, so that the page can confirm where your receipt is going.
 
 **Your download links work like a key:** anyone who has one can download those files, so please keep them to yourself.
 
@@ -186,7 +186,7 @@ Please note the limits of what we can remove. We can take your details off the W
 
 ## 11. Children's privacy
 
-The Services are intended to be set up and supervised by a parent or legal guardian (see our [Terms & Conditions](/terms)). Because the Services use no accounts, we do not knowingly collect personal data directly from children. If you believe a child has provided us with personal data (for example, by emailing us or submitting a form), contact us and we will delete what we can (see section 10). Some pages name or show young people, sometimes with their age: the Bitcoin Kids page and credits, case-design credits, some news posts, community and workshop photos, and Character Design Challenge entries. We publish a young person's name, photo or age only with the agreement of their parent or legal guardian. If you are a parent or legal guardian, or the young person concerned, and would like any of these removed, contact us and we will remove them from the Website (see section 10 for copies we cannot remove).
+The Services are intended to be set up and supervised by a parent or legal guardian (see our [Terms & Conditions](/terms/)). Because the Services use no accounts, we do not knowingly collect personal data directly from children. If you believe a child has provided us with personal data (for example, by emailing us or submitting a form), contact us and we will delete what we can (see section 10). Some pages name or show young people, sometimes with their age: the Bitcoin Kids page and credits, case-design credits, some news posts, community and workshop photos, and Character Design Challenge entries. We publish a young person's name, photo or age only with the agreement of their parent or legal guardian. If you are a parent or legal guardian, or the young person concerned, and would like any of these removed, contact us and we will remove them from the Website (see section 10 for copies we cannot remove).
 
 ## 12. Security
 

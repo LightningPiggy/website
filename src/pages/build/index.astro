@@ -6,42 +6,42 @@ const helpResources = [
   {
     title: 'Troubleshooting',
     description: 'Solutions to common issues with setup, connectivity, and firmware.',
-    href: '/help/troubleshooting',
+    href: '/help/troubleshooting/',
     icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>',
   },
   {
     title: 'Serial Monitor',
     description: 'Real-time serial console for debugging your Lightning Piggy device directly in the browser.',
-    href: '/help/serial-monitor',
+    href: '/help/serial-monitor/',
     icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>',
   },
   {
     title: 'FAQs',
     description: 'Common questions about Lightning Piggy, Lightning Network, and getting started.',
-    href: '/help/faqs',
+    href: '/help/faqs/',
     icon: '<svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>',
   },
 ];
 ---
 
-<BaseLayout title="Build" description="Build your own Lightning Piggy - choose between the E-paper or LCD edition">
+<BaseLayout title="Build" metaTitle="Build Your Own Bitcoin Piggy Bank" description="Build your own Bitcoin piggy bank: choose the Classic e-paper edition or the p1 colour touchscreen. Free and open source, with step-by-step guides and cases.">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="text-center">
-        <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          Build Your Own
-        </h2>
+        <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          Build Your Own Lightning Piggy
+        </h1>
         <p class="text-lg text-gray-600 max-w-2xl mx-auto mb-6">
-          Choose the version that's right for you. Both are fully open source with step-by-step guides.
+          Build your own Bitcoin piggy bank on an ESP32 board. Choose the version that's right for you: both are fully open source with step-by-step guides.
         </p>
         <details class="max-w-2xl mx-auto text-left mb-2">
           <summary class="cursor-pointer text-sm font-medium text-pink hover:text-pink/80 transition-colors">Learn more about the different options</summary>
           <div class="mt-4 space-y-4">
             <p class="text-gray-600">
-              LightningPiggy began with a simple idea and a C++ codebase running on LILYGO hardware via the Arduino development environment. After months of iteration, we shipped something we were proud of - but one thing nagged at us. The code wasn't as accessible as we wanted. If we were serious about helping smart savers develop real STEMM skills by tinkering with their own piggy banks, we needed a codebase they could actually read, understand, and make their own.
+              Lightning Piggy began with a simple idea and a C++ codebase running on LILYGO hardware via the Arduino development environment. After months of iteration, we shipped something we were proud of - but one thing nagged at us. The code wasn't as accessible as we wanted. If we were serious about helping smart savers develop real STEMM skills by tinkering with their own piggy banks, we needed a codebase they could actually read, understand, and make their own.
             </p>
             <p class="text-gray-600">
-              So we started over. Our lead developer Thomas built an entirely new lightweight operating system from scratch using MicroPython, designed to run on any ESP32-based board. That foundation became the launchpad for the first MicroPythonOS app - and the beginning of the LightningPiggy 'p' series. P for Python, or P for Piggy? We'll let you decide.
+              So we started over. Our lead developer Thomas built an entirely new lightweight operating system from scratch using MicroPython, designed to run on any ESP32-based board. That foundation became the launchpad for the first MicroPythonOS app - and the beginning of the Lightning Piggy 'p' series. P for Python, or P for Piggy? We'll let you decide.
             </p>
           </div>
         </details>
@@ -52,8 +52,11 @@ const helpResources = [
         <div class="bg-white rounded-3xl overflow-hidden border border-gray-200 hover:border-pink hover:shadow-xl transition-all">
           <div class="aspect-video bg-gray-100 overflow-hidden">
             <img
-              src="/images/v1-example.jpeg"
-              alt="LightningPiggy Classic E-paper edition"
+              src="/images/v1-example-900.webp"
+              alt="Lightning Piggy Classic with an e-paper display in a 3D-printed Genesis Piggy case"
+              width="900"
+              height="629"
+              fetchpriority="high"
               class="w-full h-full object-cover"
             />
           </div>
@@ -86,7 +89,7 @@ const helpResources = [
                 Battery or USB powered
               </li>
             </ul>
-            <Button href="/build/classic" variant="outline" class="w-full">
+            <Button href="/build/classic/" variant="outline" class="w-full">
               Classic Build Guide
             </Button>
           </div>
@@ -99,8 +102,10 @@ const helpResources = [
           </div>
           <div class="aspect-video bg-gray-100 overflow-hidden">
             <img
-              src="/images/v2-example.jpeg"
-              alt="LightningPiggy MPOS LCD edition"
+              src="/images/v2-example-900.webp"
+              alt="Lightning Piggy p1 with a colour touchscreen in a 3D-printed Genesis Piggy case"
+              width="900"
+              height="641"
               class="w-full h-full object-cover object-center"
             />
           </div>
@@ -133,7 +138,7 @@ const helpResources = [
                 MicroPythonOS (learner friendly)
               </li>
             </ul>
-            <Button href="/build/p1" variant="primary" class="w-full">
+            <Button href="/build/p1/" variant="primary" class="w-full">
               p1 Build Guide
             </Button>
           </div>
@@ -146,7 +151,7 @@ const helpResources = [
         <p class="text-gray-600 mb-6 max-w-2xl mx-auto">
           Browse community-designed enclosures or create your own. 3D printable, laser-cut, or DIY options available.
         </p>
-        <Button href="/build/cases" variant="outline">
+        <Button href="/build/cases/" variant="outline">
           Browse Cases →
         </Button>
       </div>
@@ -157,7 +162,7 @@ const helpResources = [
         <p class="text-gray-600 mb-6">Step-by-step guides to help you set up your Lightning Piggy.</p>
         <div class="grid gap-6">
           <a
-            href="/build/lnbits"
+            href="/build/lnbits/"
             class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
           >
             <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
@@ -186,7 +191,7 @@ const helpResources = [
         </div>
         <div class="grid gap-6">
           <a
-            href="/build/wifi-qr"
+            href="/build/wifi-qr/"
             class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
           >
             <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
@@ -203,7 +208,7 @@ const helpResources = [
             </svg>
           </a>
           <a
-            href="/build/nwc-qr"
+            href="/build/nwc-qr/"
             class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
           >
             <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
@@ -220,7 +225,7 @@ const helpResources = [
             </svg>
           </a>
           <a
-            href="/build/lnurl-qr"
+            href="/build/lnurl-qr/"
             class="group flex items-start gap-6 p-6 bg-white rounded-2xl border border-gray-200 hover:border-pink hover:shadow-lg transition-all"
           >
             <div class="w-14 h-14 bg-pink-light/50 rounded-xl flex items-center justify-center text-pink flex-shrink-0 group-hover:bg-pink-light transition-colors">
@@ -228,7 +233,7 @@ const helpResources = [
             </div>
             <div class="flex-1">
               <h3 class="text-xl font-bold text-gray-900 group-hover:text-pink transition-colors">
-                LNbits ZapRewards! - QR Code Generator
+                LNbits Zap Rewards QR Generator
               </h3>
               <p class="text-gray-600 mt-1">Generate scannable QR codes for your LNbits LNURL pay links.</p>
             </div>
@@ -258,10 +263,10 @@ const helpResources = [
           </p>
           <p>
             There are two firmware families, one per hardware generation.
-            <a href="/build/classic" class="text-pink hover:underline font-semibold">Classic</a>
+            <a href="/build/classic/" class="text-pink hover:underline font-semibold">Classic</a>
             is written in C on the Arduino toolchain for LILYGO T5 boards, driving a low-power e-paper
             display that keeps showing the balance even between refreshes.
-            <a href="/build/p1" class="text-pink hover:underline font-semibold">p1</a>
+            <a href="/build/p1/" class="text-pink hover:underline font-semibold">p1</a>
             is a Python app running on
             <a href="https://micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline font-semibold">MicroPythonOS</a>,
             on a WaveShare ESP32-S3 board with a colour touchscreen and an onboard camera for scanning

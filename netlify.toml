@@ -32,12 +32,67 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=()"
 
+# Astro's build output (CSS, JS, fonts and processed images). Every file name
+# carries a hash of its content, so a changed file always gets a new name and
+# browsers can keep these for a year without checking back with the server.
+[[headers]]
+  for = "/_astro/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 # NIP-05: Nostr web clients fetch this from other sites, and without the
 # header the browser hides the answer from them.
 [[headers]]
   for = "/.well-known/nostr.json"
   [headers.values]
     Access-Control-Allow-Origin = "*"
+
+# Moved pages: real 301s. Astro's `redirects` (astro.config.mjs) only write
+# a 200 page with a meta refresh into dist, so `force` makes Netlify answer
+# before that file. Netlify matches these with or without a trailing slash.
+[[redirects]]
+  from = "/help"
+  to = "/build/#help"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/market/nip05"
+  to = "/market/#nostr-handles"
+  status = 301
+  force = true
+
+# The v1/v2 build guides were renamed classic/p1; old links, printed QR codes
+# and firmware READMEs still land on the right guide.
+[[redirects]]
+  from = "/build/v1"
+  to = "/build/classic/"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/build/v2"
+  to = "/build/p1/"
+  status = 301
+  force = true
+
+# A typo the news page used to link to
+[[redirects]]
+  from = "/news/software-upate-v4"
+  to = "/news/software-update-v4/"
+  status = 301
+
+# The v6.3.0 post's old address
+[[redirects]]
+  from = "/news/so"
+  to = "/news/software-update-v6-3-0/"
+  status = 301
+
+# Crawlers and people often try /sitemap.xml first
+[[redirects]]
+  from = "/sitemap.xml"
+  to = "/sitemap-index.xml"
+  status = 301
 
 [[redirects]]
   from = "/.well-known/lnurlp/*"
@@ -73,3 +128,31 @@
   from = "/downloads/cases/*"
   to = "/build/cases/"
   status = 301
+
+# Free community case files (CC0), restored from the old blog's /content/files/.
+# Old links from the blog, and the /blog/content/files/ paths the cases page used, still work.
+[[redirects]]
+  from = "/content/files/2024/01/*"
+  to = "/files/cases/block-lamp/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/content/files/2024/03/*"
+  to = "/files/cases/legoblock/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/blog/content/files/2024/01/*"
+  to = "/files/cases/block-lamp/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/blog/content/files/2024/03/*"
+  to = "/files/cases/legoblock/:splat"
+  status = 301
+
+[[headers]]
+  for = "/files/cases/*"
+  [headers.values]
+    Content-Disposition = "attachment"
+    X-Robots-Tag = "noindex"

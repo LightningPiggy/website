@@ -5,14 +5,13 @@ pubDate: 2023-01-30
 heroImage: ./build-hero.jpeg
 ---
 
-> For Lightning Piggy p1 click [here](/build/p1)!
 Making your very own Lightning Piggy is squealy easy. Here are the steps you need to follow:
 
 1. Source the parts.
 2. Create a wallet.
 3. [Flash the firmware](#3-flash-the-firmware).
 4. Connect to and configure your piggy.
-5. Make a [case](/build/cases) and assemble the parts.
+5. Make a [case](/build/cases/) and assemble the parts.
 
 💡 IMPORTANT: This is not a toy. It contains small parts which could be a choking and ingestion hazard. There are also sharp edges. It should not be handled by children under 4 years of age. Assembly and use of this product is at your own risk. We take no responsibility for any losses that may be incurred.
 
@@ -48,7 +47,7 @@ If you already have the single board computer, follow these steps:
 
 - [MakerFocus](https://www.makerfocus.com/products/4pcs-952540-3-7v-1000mah-battery-with-jst1-25-connector-lithium-rechargeable-battery) 1000mAh. Note: The size of this battery 26 *44* 9 mm (1.02 *1.73* 0.35 inch) doesn't fit perfectly in the Genesis and Robotechy pig cases.
 
-**Case:** One homemade case using materials of your choice. Check out our [cases and enclosures](/build/cases) page if you wish to use one of ours. Please note depending on your selection there may be extra hardware to source.
+**Case:** One homemade case using materials of your choice. Check out our [cases and enclosures](/build/cases/) page if you wish to use one of ours. Please note depending on your selection there may be extra hardware to source.
 
 **Micro USB data cable:** Available cheaply for bulk purchases from [Aliexpress](https://www.aliexpress.com) or [Amazon](http://amazon.com) if you don't have one lying around.
 
@@ -61,7 +60,7 @@ If you already have the single board computer, follow these steps:
 
 Here's an image showing your piggy's controls:
 
-![Lightning Piggy's Controls](./T5-2.13-Buttons-1.jpeg)
+![Lightning Piggy Classic controls on the LILYGO T5 board: Wake-up, Reboot and Power](./T5-2.13-Buttons-1.jpeg)
 *Lightning Piggy's Controls*
 
 If you'd like to add a tilt switch, simply solder it between pins 32 and 3V3. Any standard tilt switches will work; for example, the SW-520D ball switch is a suitable option.
@@ -86,7 +85,7 @@ Below is a detailed comparison:
 | **Wallet Support** | Any NWC-enabled wallet | Internal + NWC via extension |
 | **Best For** | Simple wallet connection | Self-hosted, multiple accounts, extensions |
 
-### Nostr Wallet Connect
+#### Nostr Wallet Connect
 
 Choose an NWC-enabled wallet and follow the provider's setup instructions. Here are some popular options:
 
@@ -106,9 +105,9 @@ nostr+walletconnect://f3a192b445cd7e8f2d4a60c578eb932a57b83d9265fa790042bd865937
 
 Keep a record of your wallet’s Lightning address (which resembles an email address), as it will be used to receive bitcoin payments over the lightning network. This address will be automatically converted into a QR code and displayed on the Piggy's screen for easy scanning.
 
-### LNbits
+#### LNbits
 
-If you wish to run a LNbits wallet, please refer to our detailed [guide](/build/lnbits) for step-by-step instructions.
+If you wish to run a LNbits wallet, please refer to our detailed [guide](/build/lnbits/) for step-by-step instructions.
 
 ### 3. Flash the firmware
 
@@ -161,7 +160,7 @@ Once installed, the device will automatically reboot with its Wi-Fi access point
 
 If you don't see the **Piggy Config** access point in your available Wi-Fi networks after updating the software, press and hold the IO39 (Wake-up) button for at least 3 seconds to activate it.
 
-![](./T5-2.13-Buttons-1.jpeg)
+![LILYGO T5 board with the Wake-up (IO39), Reboot and Power switch labelled](./T5-2.13-Buttons-1.jpeg)
 *Lightning Piggy's Controls*
 
 Please note, since the piggy's access point doesn't provide internet access, the device you're using to connect to it may automatically disconnect after a period of inactivity. It is worth preparing your credentials (summarised below) in advance for easy copy and paste.
@@ -174,7 +173,7 @@ Please note, since the piggy's access point doesn't provide internet access, the
 
 ---
 
-### Accessing Piggy's Configuration Settings
+#### Accessing Piggy's Configuration Settings
 
 **1. Activate Piggy's Wi-Fi access point**
 
@@ -211,7 +210,7 @@ Time to get creative! Build your very own Lightning Piggy case out of any materi
 
 💡 IMPORTANT: When installed correctly, the battery and/or board components should not get hot when it is being charged (i.e. the USB is connected to power and the battery is installed).
 
-Check out our [case options](/build/cases).
+Check out our [case options](/build/cases/).
 
 If you would like to share your design with others, please either email your creation to [oink@lightningpiggy.com](mailto:oink@lightningpiggy.com), or post a note on nostr with a photo of your piggy, including the hashtag **#zapmypiggy** for inclusion on this website.
 

@@ -6,12 +6,23 @@ import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 import '../styles/global.css';
+// The same files the @fontsource CSS points at (Vite gives them the same
+// hashed name), preloaded so the regular and bold latin faces arrive with the
+// CSS instead of after it: less text reflow when Inter swaps in.
+import interLatin400 from '@fontsource/inter/files/inter-latin-400-normal.woff2?url';
+import interLatin700 from '@fontsource/inter/files/inter-latin-700-normal.woff2?url';
 import Header from '../components/layout/Header.astro';
 import Footer from '../components/layout/Footer.astro';
 import { safeJsonLd } from '../lib/jsonLd';
+import { organization, website, breadcrumbList } from '../lib/structuredData';
 
 interface Props {
+  // The page's own name (often also its H1). The <title> is this, or
+  // metaTitle when given, followed by ' | Lightning Piggy'.
   title: string;
+  // A <title> written for search results, when the page's own name is too
+  // short or vague on its own (e.g. 'Build').
+  metaTitle?: string;
   description?: string;
   image?: string;
   imageAlt?: string;
@@ -28,14 +39,22 @@ interface Props {
   // true sends no Referer from this page (to the next page or anywhere), for
   // pages whose address carries personal data.
   noReferrer?: boolean;
+  // false leaves out the canonical link and og:url, for pages served at many
+  // addresses (the 404 page, /treasure/<naddr>).
+  canonical?: false;
+  // Extra JSON-LD nodes for this page, added to the site's @graph.
+  schema?: Record<string, unknown>[];
 }
 
 const DEFAULT_OG_IMAGE = '/images/og-image.png';
 const DEFAULT_OG_ALT = 'Lightning Piggy - Bitcoin savings for the next generation';
 
+const DEFAULT_DESCRIPTION = 'An open source Bitcoin piggy bank for families: save in satoshis over the Lightning Network.';
+
 const {
   title,
-  description = 'Lightning Piggy - An open source Bitcoin piggy bank for families. Save in satoshis over the Lightning Network.',
+  metaTitle,
+  description = DEFAULT_DESCRIPTION,
   image = DEFAULT_OG_IMAGE,
   imageAlt,
   pageType = 'website',
@@ -46,18 +65,40 @@ const {
   analytics = true,
   noindex = false,
   noReferrer = false,
+  canonical,
+  schema = [],
 } = Astro.props;
 
-const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+// Every page that search engines index needs its own description: a shared
+// one is shown for none of them. Warn at build time.
+if (!Astro.props.description && !noindex) {
+  console.warn(`[seo] ${Astro.url.pathname} has no description; it gets the site default`);
+}
+
+const canonicalUrl = canonical === false ? null : new URL(Astro.url.pathname, Astro.site).href;
 const absoluteImage = image.startsWith('http') ? image : new URL(image, Astro.site).href;
 const isDefaultImage = image === DEFAULT_OG_IMAGE;
 const ogImageAlt = imageAlt || (isDefaultImage ? DEFAULT_OG_ALT : title);
 
-const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPiggy`;
+const siteTitle = `${metaTitle ?? title} | Lightning Piggy`;
+
+// One JSON-LD graph per page: the organisation everywhere, the website (for
+// the site name in search results) on the home page, a breadcrumb trail on
+// pages one level into a section, and whatever the page adds.
+const breadcrumbs = noindex ? null : breadcrumbList(Astro.url.pathname, title);
+const graph = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    organization,
+    ...(Astro.url.pathname === '/' ? [website] : []),
+    ...(breadcrumbs ? [breadcrumbs] : []),
+    ...schema,
+  ],
+};
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en-GB">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -76,6 +117,8 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="generator" content={Astro.generator} />
+    <link rel="preload" href={interLatin400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={interLatin700} as="font" type="font/woff2" crossorigin />
     <title>{siteTitle}</title>
     <meta name="description" content={description} />
 
@@ -92,9 +135,9 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
       </>
     )}
     <meta property="og:image:alt" content={ogImageAlt} />
-    <meta property="og:url" content={canonicalUrl} />
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
     <meta property="og:type" content={pageType} />
-    <meta property="og:site_name" content="LightningPiggy" />
+    <meta property="og:site_name" content="Lightning Piggy" />
     <meta property="og:locale" content="en_GB" />
 
     {pageType === 'article' && pubDate && (
@@ -120,26 +163,19 @@ const siteTitle = title === 'Home' ? 'LightningPiggy' : `${title} | LightningPig
     <meta name="twitter:image:alt" content={ogImageAlt} />
 
     <!-- Canonical -->
-    <link rel="canonical" href={canonicalUrl} />
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    <link rel="alternate" type="application/rss+xml" title="Lightning Piggy News" href="/rss.xml" />
 
     <!-- JSON-LD Structured Data -->
-    <script type="application/ld+json" set:html={safeJsonLd({
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "Lightning Piggy",
-      "url": "https://lightningpiggy.com",
-      "logo": "https://lightningpiggy.com/images/mascot.png",
-      "description": "An open source Bitcoin piggy bank for families. Save in satoshis over the Lightning Network.",
-      "sameAs": [
-        "https://github.com/LightningPiggy"
-      ]
-    })} />
+    <script type="application/ld+json" set:html={safeJsonLd(graph)} />
 
-    {noindex && <meta name="robots" content="noindex" />}
+    <!-- Robots: noindex, or allow large image previews in search and Discover -->
+    <meta name="robots" content={noindex ? 'noindex' : 'max-image-preview:large'} />
     {noReferrer && <meta name="referrer" content="no-referrer" />}
 
     <!-- Analytics -->
-    {analytics && <script defer src="https://cloud.umami.is/script.js" data-website-id="078dd909-9f20-4738-a479-d1d0c0226f94"></script>}
+    <!-- data-domains: only visits to the live site count, not the local dev server or deploy previews -->
+    {analytics && <script defer src="https://cloud.umami.is/script.js" data-website-id="078dd909-9f20-4738-a479-d1d0c0226f94" data-domains="lightningpiggy.com"></script>}
   </head>
   <body class="min-h-screen flex flex-col bg-white">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:px-4 focus:py-2 focus:rounded focus:shadow-lg focus:text-pink">

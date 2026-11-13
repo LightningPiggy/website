@@ -1,6 +1,10 @@
 ---
 title: Software Update V3.0.3
 slug: v303
+description: "Firmware v3.0.3 adds near-instant payment alerts over a websocket, stays awake after each payment and fixes display, battery and timeout bugs."
+seoTitle: "Classic Firmware v3.0.3 Release Notes"
+heroImageAlt: "Handmade red and blue card model of Lightning Piggy"
+category: software-update
 pubDate: 2024-03-30
 heroImage: './IMG_3356.jpeg'
 tags: ["news"]
@@ -36,16 +40,15 @@ Fixes
 
 Credit: [https://github.com/ThomasFarstrike](https://github.com/ThomasFarstrike)
 
-Team LightningPiggy
+Team Lightning Piggy
 
-[http://www.lightningpiggy.com](/)
 
 ---
-LightingPiggy is an electronic cash piggy bank for children, that accepts bitcoin sent over lightning while displaying the amount saved in satoshis.
+Lightning Piggy is an electronic cash piggy bank for children, that accepts bitcoin sent over lightning while displaying the amount saved in satoshis.
 
 Our vision is to make bitcoin the savings’ standard for every child, while creating an educational platform to inspire future generations, not only to save in bitcoin, but also to learn to code and build in a free and open source way.
 
-[Build](/build/classic) your own
+[Build](/build/classic/) your own
 
 Chat with our [community](https://t.me/LightningPiggy)  
 

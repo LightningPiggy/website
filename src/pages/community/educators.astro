@@ -4,24 +4,24 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 const activities = [
   {
     title: 'Group Build Workshop',
-    image: '/images/educators/group-build-workshop.jpeg',
+    image: '/images/educators/group-build-workshop.webp',
     duration: '1 hour',
     difficulty: 'Easy',
     venue: 'Schools, community groups, meet-ups, and conferences.',
     audience: 'Adults building for the next generation and young bitcoiners.',
     description: 'A guided, hands-on session where participants build and configure their own Lightning Piggy from scratch.',
-    equipment: 'A build space with a screen for everyone to follow along, wifi, and USB-C power supplies. Development boards and USB-C data cables. Optional 3D printed cases - we recommend the <a href="/build/cases" class="text-pink hover:underline">ZapBox</a> because it\'s compact and easy to print.',
+    equipment: 'A build space with a screen for everyone to follow along, wifi, and USB-C power supplies. Development boards and USB-C data cables. Optional 3D printed cases - we recommend the <a href="/build/cases/" class="text-pink hover:underline">ZapBox</a> because it\'s compact and easy to print.',
     materials: [
       { label: 'Workshop Presentation', formats: [
         { ext: '.pptx', href: '/files/lightning-piggy-workshop-p1-v1.pptx' },
         { ext: '.pdf', href: '/files/lightning-piggy-workshop-p1-v1.pdf' },
       ]},
     ],
-    link: { label: 'Build Guide', href: '/build' },
+    link: { label: 'Build Guide', href: '/build/' },
   },
   {
     title: 'Informal Open-Source Project Build Area',
-    image: '/images/educators/informal-build-area.jpeg',
+    image: '/images/educators/informal-build-area.webp',
     duration: 'Flexible',
     difficulty: 'Easy',
     venue: 'Hackerspaces, maker fares, and conference side events.',
@@ -29,16 +29,16 @@ const activities = [
     description: 'Set up a drop-in build station where people can explore Lightning Piggy at their own pace - no formal schedule needed.',
     equipment: 'A room or build area, laptop, wifi, USB-C power, development boards and optional additional hardware as required.',
     materials: [],
-    link: { label: 'Build Guide', href: '/build' },
+    link: { label: 'Build Guide', href: '/build/' },
   },
   {
     title: 'Character Design Challenge',
-    image: '/images/educators/character-design-challenge.jpeg',
+    image: '/images/educators/character-design-challenge.webp',
     duration: '30–60 minutes',
     difficulty: 'Easy',
     venue: 'Schools, community groups, conferences with activities for smart savers, and family fun.',
     audience: 'Smart savers (ages 5+).',
-    description: 'Draw, paint, or colour a character inspired by Lightning Piggy\'s <a href="/about/origin-story" class="text-pink hover:underline">origin story</a> - his incredible journey to freedom down a rabbit hole.',
+    description: 'Draw, paint, or colour a character inspired by Lightning Piggy\'s <a href="/about/origin-story/" class="text-pink hover:underline">origin story</a> - his incredible journey to freedom down a rabbit hole.',
     equipment: 'Paper, pencils, markers, and paints.',
     materials: [
       { label: 'Challenge Brief', formats: [
@@ -50,7 +50,7 @@ const activities = [
   },
   {
     title: 'Piggy Build Challenge',
-    image: '/images/educators/piggy-build-challenge.jpeg',
+    image: '/images/educators/piggy-build-challenge.webp',
     duration: '1–2 hours',
     difficulty: 'Medium',
     venue: 'Schools, community groups, conferences with activities for smart savers, and family fun.',
@@ -63,19 +63,19 @@ const activities = [
         { ext: '.pdf', href: '/files/piggy-build-challenge-v1.pdf' },
       ]},
     ],
-    link: { label: 'Challenge Details', href: '/news/build-challenge' },
+    link: { label: 'Challenge Details', href: '/news/build-challenge/' },
   },
   {
     title: 'Piggy Pips Seed Workshop',
-    image: '/images/educators/piggy-build-challenge.jpeg',
+    image: '/images/educators/piggy-build-challenge.webp',
     duration: '45 minutes',
     difficulty: 'Easy',
     venue: 'Schools, community groups, meet-ups, and conferences.',
-    audience: 'Smart savers and newcomers — no prior Bitcoin knowledge needed.',
-    description: 'A hands-on session where smart savers draw BIP-39 words from a bowl of Piggy Pips and discover how Bitcoin keys are really made — real randomness they can hold, shake, and verify themselves.',
+    audience: 'Smart savers and newcomers: no prior Bitcoin knowledge needed.',
+    description: 'A hands-on session where smart savers draw BIP-39 words from a bowl of Piggy Pips and discover how Bitcoin keys are really made: real randomness they can hold, shake, and verify themselves.',
     equipment: 'One verified Piggy Pips set, an opaque bowl, pencil and paper, a printed BIP-39 wordlist for verification, and a signing device such as a <a href="https://seedsigner.com" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">SeedSigner</a> to calculate the final word.',
     materials: [],
-    link: { label: 'Facilitator Manual', href: '/pips' },
+    link: { label: 'Facilitator Manual', href: '/pips/' },
   },
 ];
 
@@ -86,7 +86,7 @@ const difficultyColor = (d: string) => {
 };
 ---
 
-<BaseLayout title="For Educators" description="Resources for teachers and workshop leaders to bring Lightning Piggy into the classroom">
+<BaseLayout title="For Educators" metaTitle="Bitcoin Workshops for Educators" description="Free resources for teachers and workshop leaders: run a group build, a character design challenge or a Piggy Pips seed workshop with Lightning Piggy.">
   <section class="py-10 md:py-16">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       <header class="mb-12">
@@ -97,14 +97,14 @@ const difficultyColor = (d: string) => {
       </header>
 
       <div class="space-y-8">
-        {activities.map((activity) => (
+        {activities.map((activity, i) => (
           <div class="bg-white rounded-2xl border border-gray-200 hover:shadow-lg transition-shadow">
             {activity.image && (
-              <img src={activity.image} alt={activity.title} class="w-full h-48 md:h-56 object-cover rounded-t-2xl" />
+              <img src={activity.image} alt={activity.title} loading={i === 0 ? 'eager' : 'lazy'} decoding="async" class="w-full h-48 md:h-56 object-cover rounded-t-2xl" />
             )}
             <div class="p-6 md:p-8">
               <div class="flex flex-wrap items-center gap-3 mb-3">
-                <h3 class="text-xl font-bold text-gray-900">{activity.title}</h3>
+                <h2 class="text-xl font-bold text-gray-900">{activity.title}</h2>
                 <span class={`text-xs font-medium px-2.5 py-0.5 rounded-full ${difficultyColor(activity.difficulty)}`}>
                   {activity.difficulty}
                 </span>

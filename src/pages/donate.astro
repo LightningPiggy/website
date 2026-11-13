@@ -5,20 +5,24 @@ import LightningPaused from '../components/ui/LightningPaused.astro';
 import { LIGHTNING_PAUSED } from '../lib/lightning';
 ---
 
-<BaseLayout title="Donate" description="Support Lightning Piggy - an open source Bitcoin piggy bank for families. Donate with Bitcoin on-chain or over Lightning.">
+<BaseLayout title="Donate" metaTitle="Donate Bitcoin to Keep the Piggy Oinking" description={LIGHTNING_PAUSED
+  ? 'Support Lightning Piggy, the open source Bitcoin piggy bank for families. Donate bitcoin on-chain through our own BTCPay Server.'
+  : 'Support Lightning Piggy, the open source Bitcoin piggy bank for families. Donate bitcoin on-chain or over Lightning through our own BTCPay Server.'}>
 
   <!-- Hero -->
   <div class="relative overflow-hidden bg-gradient-to-b from-gray-900 to-gray-800 text-white">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-16 text-center">
       <img
-        src="/images/mascot.png"
-        alt="LightningPiggy mascot"
+        src="/images/mascot-192.webp"
+        alt="Lightning Piggy mascot"
+        width="80"
+        height="80"
         class="w-20 h-20 mx-auto mb-6 rounded-2xl"
       />
       <h1 class="text-4xl md:text-5xl font-bold mb-6">Support Lightning Piggy</h1>
       <p class="text-xl text-gray-300 leading-relaxed max-w-2xl mx-auto">
         Lightning Piggy is free, open source, and community funded. Your donation helps
-        <a href="/about" class="text-pink hover:underline">Lightning Piggy</a>
+        <a href="/about/" class="text-pink hover:underline">Lightning Piggy</a>
         keep building sound money tools for the next generation.
       </p>
     </div>
@@ -129,9 +133,9 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
 
           <p class="text-xs text-gray-500 text-center">
             Donations are voluntary and non-refundable. By donating you agree to our
-            <a href="/terms" class="underline underline-offset-2 hover:text-pink">Terms</a>
+            <a href="/terms/" class="underline underline-offset-2 hover:text-pink">Terms</a>
             and
-            <a href="/privacy" class="underline underline-offset-2 hover:text-pink">Privacy Policy</a>.
+            <a href="/privacy/" class="underline underline-offset-2 hover:text-pink">Privacy Policy</a>.
           </p>
 
         </form>
@@ -435,10 +439,10 @@ import { LIGHTNING_PAUSED } from '../lib/lightning';
         Your support helps us reach more families around the world.
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button href="/community" variant="outline">
+        <Button href="/community/" variant="outline">
           Join the Community
         </Button>
-        <Button href="/community/credits" variant="outline">
+        <Button href="/community/credits/" variant="outline">
           Meet the Team
         </Button>
       </div>

@@ -128,3 +128,31 @@
   from = "/downloads/cases/*"
   to = "/build/cases/"
   status = 301
+
+# Free community case files (CC0), restored from the old blog's /content/files/.
+# Old links from the blog, and the /blog/content/files/ paths the cases page used, still work.
+[[redirects]]
+  from = "/content/files/2024/01/*"
+  to = "/files/cases/block-lamp/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/content/files/2024/03/*"
+  to = "/files/cases/legoblock/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/blog/content/files/2024/01/*"
+  to = "/files/cases/block-lamp/:splat"
+  status = 301
+
+[[redirects]]
+  from = "/blog/content/files/2024/03/*"
+  to = "/files/cases/legoblock/:splat"
+  status = 301
+
+[[headers]]
+  for = "/files/cases/*"
+  [headers.values]
+    Content-Disposition = "attachment"
+    X-Robots-Tag = "noindex"

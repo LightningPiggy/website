@@ -271,12 +271,12 @@ const cases = [
     creator: { name: 'Silexperience', url: 'https://njump.me/npub1zn99rseq50npesxs0zh0m396h9anz9h8u7ju5vc44c3n5m7ptuws8k7lrh' },
     licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
     downloads: [
-      { label: 'BASE2.stl', url: '/blog/content/files/2024/01/BASE2.stl' },
-      { label: 'DOme.stl', url: '/blog/content/files/2024/01/DOme.stl' },
-      { label: 'Embase.stl', url: '/blog/content/files/2024/01/Embase.stl' },
-      { label: 'interieur.stl', url: '/blog/content/files/2024/01/interieur.stl' },
-      { label: 'Superieur.stl', url: '/blog/content/files/2024/01/Superieur.stl' },
-      { label: 'Supportbertical.stl', url: '/blog/content/files/2024/01/Supportbertical.stl' },
+      { label: 'BASE2.stl', url: '/files/cases/block-lamp/BASE2.stl' },
+      { label: 'DOme.stl', url: '/files/cases/block-lamp/DOme.stl' },
+      { label: 'Embase.stl', url: '/files/cases/block-lamp/Embase.stl' },
+      { label: 'interieur.stl', url: '/files/cases/block-lamp/interieur.stl' },
+      { label: 'Superieur.stl', url: '/files/cases/block-lamp/Superieur.stl' },
+      { label: 'Supportbertical.stl', url: '/files/cases/block-lamp/Supportbertical.stl' },
     ],
   },
   {
@@ -297,8 +297,8 @@ const cases = [
     creator: { name: 'Richard', url: 'https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel' },
     licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
     downloads: [
-      { label: 'LegoBlock.3mf', url: '/blog/content/files/2024/03/LegoBlock.3mf' },
-      { label: 'LegoBlock.stl', url: '/blog/content/files/2024/03/LegoBlock.stl' },
+      { label: 'LegoBlock.3mf', url: '/files/cases/legoblock/LegoBlock.3mf' },
+      { label: 'LegoBlock.stl', url: '/files/cases/legoblock/LegoBlock.stl' },
     ],
   },
   {
@@ -516,6 +516,7 @@ let imgCounter = 0;
                   ) : (
                     <a
                       href={g.d.url}
+                      download={g.d.url.startsWith('/') ? true : undefined}
                       target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"

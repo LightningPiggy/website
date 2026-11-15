@@ -49,6 +49,16 @@ function escapeHtml(str) {
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// Error text that is safe for the function logs: without the API key (fetch
+// repeats a header value it rejects, such as a key with a line break in it)
+// and without any email address, cut to 200 characters.
+function forLog(text, apiKey, address) {
+  let s = String(text || '');
+  if (apiKey) s = s.split(apiKey).join('[key]');
+  if (address) s = s.split(address).join('[address]');
+  return s.replace(/\S+@\S+/g, '[address]').slice(0, 200);
+}
+
 // Send email notification via Resend
 async function sendEmailNotification(amount, currency, metadata) {
   const apiKey = process.env.RESEND_API_KEY;
@@ -98,10 +108,10 @@ async function sendEmailNotification(amount, currency, metadata) {
 
     if (!res.ok) {
       const text = await res.text();
-      console.error('Resend API error:', res.status, text);
+      console.error('Resend API error:', res.status, forLog(text, apiKey));
     }
   } catch (err) {
-    console.error('Failed to send email notification:', err);
+    console.error('Failed to send email notification:', forLog(err && err.message, apiKey));
   }
 }
 
@@ -127,12 +137,27 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
       : 'The file is a sliced 3MF project. Open it in your slicer to see the plates, materials and print settings the designer used; the <a href="https://lightningpiggy.com/build/cases" style="color:#EC008C;">cases page</a> has printing notes for each design.';
   const paid = '$' + escapeHtml(String(amount)) + ' ' + escapeHtml(currency);
   const when = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
-  const send = (to, subject, html) => fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + apiKey },
-    // mail.lightningpiggy.com has no MX, so replies ("Just reply to this email") need reply_to.
-    body: JSON.stringify({ from: 'Lightning Piggy <newsletter@mail.lightningpiggy.com>', reply_to: 'oink@lightningpiggy.com', to: [to], subject, html }),
-  }).catch((e) => console.error('receipt email failed:', e.message));
+  // A send Resend refuses (a revoked key, say) doesn't throw, so its status is
+  // logged too: otherwise a buyer's link would go missing without a trace.
+  // The log names the receipt and invoice, never the email address or key.
+  const send = async (who, to, subject, html) => {
+    const which = who + ' receipt, invoice ' + invoiceId;
+    try {
+      const res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + apiKey },
+        // mail.lightningpiggy.com has no MX, so replies ("Just reply to this email") need reply_to.
+        body: JSON.stringify({ from: 'Lightning Piggy <newsletter@mail.lightningpiggy.com>', reply_to: 'oink@lightningpiggy.com', to: [to], subject, html }),
+      });
+      if (!res.ok) {
+        let reason = '';
+        try { const b = await res.json(); reason = [b.name, b.message].filter(Boolean).join(': '); } catch (e) { /* no JSON body */ }
+        console.error('receipt email failed (' + which + '): Resend ' + res.status + (reason ? ' ' + forLog(reason, apiKey, to) : ''));
+      }
+    } catch (e) {
+      console.error('receipt email failed (' + which + '): ' + forLog(e && e.message, apiKey, to));
+    }
+  };
 
   const buyer = typeof metadata.buyerEmail === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(metadata.buyerEmail) ? metadata.buyerEmail : null;
   if (buyer) {
@@ -192,9 +217,9 @@ async function sendDownloadReceipt(amount, currency, metadata, invoiceId) {
       '</td></tr></table>',
       '</body></html>',
     ].join('\n');
-    await send(buyer, 'Thank you - your Lightning Piggy model file', html);
+    await send('buyer', buyer, 'Thank you - your Lightning Piggy model file', html);
   }
-  await send('oink@lightningpiggy.com', 'Model download: ' + fileId + ' (' + '$' + amount + ' ' + currency + ')',
+  await send('owner', 'oink@lightningpiggy.com', 'Model download: ' + fileId + ' (' + '$' + amount + ' ' + currency + ')',
     '<p>' + escapeHtml(fileId) + (otherFormats.length ? ' (+ ' + otherFormats.map((f) => escapeHtml(fmtLabel(f))).join(', ') + ')' : '') + ' - ' + paid + (buyer ? ' - ' + escapeHtml(buyer) : ' - no email given') + '<br>Invoice ' + escapeHtml(invoiceId) + '</p>');
 }
 

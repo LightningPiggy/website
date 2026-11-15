@@ -60,6 +60,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 </style>
 
 <script>
+  import { isWellFormedEvent } from '../../lib/nostrEvent';
+
   const RELAYS = [
     'wss://nostr.oxtr.dev',
     'wss://relay.ditto.pub',
@@ -90,6 +92,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 
   const notes = new Map<string, NostrEvent>();
   const profiles = new Map<string, NostrProfile>();
+  // created_at of the profile kept for each pubkey: the newest one wins.
+  const profileTimes = new Map<string, number>();
   let connectedRelays = 0;
   let closedRelays = 0;
 
@@ -159,93 +163,121 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     return 'npub1' + encoded;
   }
 
-  function escapeHtml(str: string): string {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  // Escapes all five HTML-significant characters, quotes included, so the
+  // result is safe both as text and inside a quoted attribute.
+  function escapeHtml(str: unknown): string {
+    return String(str ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
-  function sanitizeUrl(url: string): string {
+  // An http(s) URL in its normalised form, or '' for anything else, or for a
+  // URL holding a double quote, angle bracket, backtick or whitespace (new
+  // URL() keeps those in the host). Callers still escape it in attributes.
+  function sanitizeUrl(url: unknown): string {
+    if (typeof url !== 'string') return '';
     try {
       const parsed = new URL(url);
-      if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
-        return url.replace(/"/g, '%22').replace(/</g, '%3C').replace(/>/g, '%3E');
-      }
+      if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+      if (/["<>`\s]/.test(parsed.href)) return '';
+      return parsed.href;
     } catch {}
     return '';
   }
 
-  function formatContent(content: string): { text: string; images: string[] } {
-    // Extract image URLs before escaping
-    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg)(\?[^\s]*)?$/i;
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const images: string[] = [];
-
-    // Find all URLs and separate images from regular links
-    const urls = content.match(urlRegex) || [];
-    urls.forEach(url => {
-      // Clean URL (remove trailing punctuation)
-      const cleanUrl = url.replace(/[,.)]+$/, '');
-      if (imageExtensions.test(cleanUrl) ||
-          cleanUrl.includes('nostr.build') ||
-          cleanUrl.includes('imgur.com') ||
-          cleanUrl.includes('primal.net/media') ||
-          cleanUrl.includes('image.nostr.build')) {
-        const safeUrl = sanitizeUrl(cleanUrl);
-        if (safeUrl) images.push(safeUrl);
+  // A URL with trailing punctuation that belongs to the sentence (, . and an
+  // unmatched closing parenthesis) moved out. A loop, not a $-anchored regex,
+  // whose backtracking slows down badly on long runs of punctuation.
+  function splitTrailing(raw: string): [string, string] {
+    let open = raw.split('(').length - 1;
+    let close = raw.split(')').length - 1;
+    let end = raw.length;
+    for (;;) {
+      const ch = raw[end - 1];
+      if (ch === ',' || ch === '.') {
+        end--;
+      } else if (ch === ')' && close > open) {
+        // More ) than ( : this one closes the sentence's bracket, not the URL's.
+        end--;
+        close--;
+      } else {
+        break;
       }
-    });
+    }
+    return [raw.slice(0, end), raw.slice(end)];
+  }
 
-    // Escape HTML
-    let formatted = content
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+  // Only the start of a long note is shown (four lines), so only that much is
+  // formatted.
+  const MAX_FORMATTED_CHARS = 4000;
 
-    // Remove image URLs from text content (they'll be displayed separately)
-    images.forEach(img => {
-      const escapedImg = img.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      formatted = formatted.replace(new RegExp(escapedImg.replace(/&/g, '&amp;'), 'g'), '');
-    });
-
-    // Convert remaining URLs to links
-    formatted = formatted.replace(
-      /(https?:\/\/[^\s]+)/g,
-      '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-pink underline break-all">$1</a>'
+  function isImageUrl(url: string): boolean {
+    return (
+      /\.(jpg|jpeg|png|gif|webp|svg)(\?[^\s]*)?$/i.test(url) ||
+      url.includes('nostr.build') ||
+      url.includes('imgur.com') ||
+      url.includes('primal.net/media')
     );
+  }
 
-    // Remove nostr: references (npub, nprofile, note, nevent) from display
-    formatted = formatted.replace(/nostr:(npub1[a-z0-9]+)/gi, '');
-    formatted = formatted.replace(/nostr:(nprofile1[a-z0-9]+)/gi, '');
-    formatted = formatted.replace(/nostr:(note1[a-z0-9]+)/gi, '');
-    formatted = formatted.replace(/nostr:(nevent1[a-z0-9]+)/gi, '');
-
-    // Highlight hashtags
-    formatted = formatted.replace(
-      /#(\w+)/g,
-      '<span class="text-pink font-medium">#$1</span>'
-    );
-
-    // Convert newlines to breaks and clean up extra breaks
-    formatted = formatted.replace(/\n/g, '<br>');
-    formatted = formatted.replace(/(<br>\s*)+/g, '<br>');
-    formatted = formatted.replace(/^(<br>)+|(<br>)+$/g, '');
-
-    return { text: formatted, images };
+  // Turns a note into HTML in one pass over its text. URLs become links (or
+  // images, shown separately), hashtags are highlighted, nostr: references are
+  // dropped and line breaks kept. Everything else is escaped text. The markup
+  // is built from these pieces rather than by regex replacements over HTML,
+  // so nothing in a note can end up inside an attribute it doesn't belong in.
+  function formatContent(fullContent: string): { text: string; images: string[] } {
+    const content = fullContent.slice(0, MAX_FORMATTED_CHARS);
+    const images: string[] = [];
+    const parts: string[] = [];
+    const token = /(https?:\/\/[^\s]+)|(nostr:(?:npub1|nprofile1|note1|nevent1)[a-z0-9]+)|#(\w+)|(\n+)/gi;
+    let last = 0;
+    let m: RegExpExecArray | null;
+    while ((m = token.exec(content))) {
+      parts.push(escapeHtml(content.slice(last, m.index)));
+      last = token.lastIndex;
+      if (m[1]) {
+        // Trailing punctuation stays text, outside the link.
+        const [url, trailing] = splitTrailing(m[1]);
+        const safe = sanitizeUrl(url);
+        if (safe && isImageUrl(url)) {
+          if (!images.includes(safe)) images.push(safe);
+        } else if (safe) {
+          parts.push(
+            `<a href="${escapeHtml(safe)}" target="_blank" rel="noopener noreferrer" class="text-pink underline break-all">${escapeHtml(url)}</a>`,
+          );
+        } else {
+          parts.push(escapeHtml(url));
+        }
+        parts.push(escapeHtml(trailing));
+      } else if (m[3] !== undefined) {
+        parts.push(`<span class="text-pink font-medium">#${escapeHtml(m[3])}</span>`);
+      } else if (m[4]) {
+        parts.push('<br>');
+      }
+      // m[2]: a nostr: reference, left out of the text.
+    }
+    parts.push(escapeHtml(content.slice(last)));
+    const text = parts
+      .join('')
+      .replace(/(<br>\s*)+/g, '<br>')
+      .replace(/^(\s*<br>)+|(<br>\s*)+$/g, '');
+    return { text, images };
   }
 
   function getDisplayName(pubkey: string): string {
     const profile = profiles.get(pubkey);
-    if (profile?.display_name) return escapeHtml(profile.display_name);
-    if (profile?.name) return escapeHtml(profile.name);
-    return pubkey.slice(0, 8) + '...' + pubkey.slice(-4);
+    if (typeof profile?.display_name === 'string' && profile.display_name) return escapeHtml(profile.display_name);
+    if (typeof profile?.name === 'string' && profile.name) return escapeHtml(profile.name);
+    return escapeHtml(pubkey.slice(0, 8) + '...' + pubkey.slice(-4));
   }
 
   function getProfilePicture(pubkey: string): string {
-    const profile = profiles.get(pubkey);
-    if (profile?.picture) {
-      const safe = sanitizeUrl(profile.picture);
-      if (safe) return safe;
-    }
-    return `https://robohash.org/${pubkey}?set=set4&size=48x48`;
+    const safe = sanitizeUrl(profiles.get(pubkey)?.picture);
+    if (safe) return escapeHtml(safe);
+    return `https://robohash.org/${encodeURIComponent(pubkey)}?set=set4&amp;size=48x48`;
   }
 
   function renderNotes() {
@@ -277,9 +309,9 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         const imagesHtml = images.length > 0 ? `
           <div class="-mx-3 mt-2">
             ${images.map(img => `
-              <button class="lightbox-trigger block w-full cursor-zoom-in" data-src="${img}">
+              <button class="lightbox-trigger block w-full cursor-zoom-in" data-src="${escapeHtml(img)}">
                 <img
-                  src="${img}"
+                  src="${escapeHtml(img)}"
                   alt="Note image"
                   class="w-full h-auto max-h-48 object-cover"
                   loading="lazy"
@@ -376,27 +408,41 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
       ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data[0] === 'EVENT') {
+          // Only well-formed events (see lib/nostrEvent.ts): their ids and
+          // pubkeys go into links and attributes below.
+          if (data[0] === 'EVENT' && isWellFormedEvent(data[2])) {
             const nostrEvent = data[2] as NostrEvent;
-            if (nostrEvent.kind === 0) {
-              // Profile metadata
+            if (data[1] === 'profiles' && nostrEvent.kind === 0) {
+              // Profile metadata: only for authors of notes shown here, and
+              // only if newer than the profile already kept.
+              const isAuthor = [...notes.values()].some((n) => n.pubkey === nostrEvent.pubkey);
+              if (!isAuthor || nostrEvent.created_at <= (profileTimes.get(nostrEvent.pubkey) ?? -1)) return;
               try {
-                const profile = JSON.parse(nostrEvent.content) as NostrProfile;
-                profiles.set(nostrEvent.pubkey, profile);
-                renderNotes();
+                const profile = JSON.parse(nostrEvent.content);
+                if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
+                  profiles.set(nostrEvent.pubkey, profile as NostrProfile);
+                  profileTimes.set(nostrEvent.pubkey, nostrEvent.created_at);
+                  renderNotes();
+                }
               } catch {
                 // Invalid profile JSON
               }
-            } else if (nostrEvent.kind === 1) {
-              // Text note
+            } else if (
+              data[1] === 'zapmypiggy' &&
+              nostrEvent.kind === 1 &&
+              nostrEvent.tags.some((t) => t[0] === 't' && HASHTAGS.includes(t[1]))
+            ) {
+              // Text note carrying one of the hashtags asked for
               if (!notes.has(nostrEvent.id)) {
                 notes.set(nostrEvent.id, nostrEvent);
                 fetchProfiles([nostrEvent.pubkey], ws);
                 renderNotes();
               }
             }
-          } else if (data[0] === 'EOSE') {
-            // End of stored events - fetch profiles for all notes
+          } else if (data[0] === 'EOSE' && data[1] === 'zapmypiggy') {
+            // End of the stored notes: fetch profiles for all of them. Only
+            // for the notes subscription: answering the profiles one's EOSE
+            // too would re-ask, in a loop, for authors who have no profile.
             const pubkeys = Array.from(notes.values()).map((n) => n.pubkey);
             fetchProfiles(pubkeys, ws);
           }

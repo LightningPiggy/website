@@ -10,6 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import qrcode from 'qrcode-generator';
+import { isWellFormedEvent } from '../lib/nostrEvent';
 
 // An inline SVG QR code for `text` (e.g. a bolt11 invoice), rendered without any
 // external request. Low error-correction to fit long invoices; auto version.
@@ -86,10 +87,13 @@ export function escapeHtml(str: string): string {
 export function sanitizeUrl(url: string): string {
   try {
     const parsed = new URL(url);
-    // Return the normalized href, not the raw input: new URL() percent-encodes
-    // quotes/spaces, so interpolating this into src="…"/href="…" can't break
-    // out of the attribute. Returning the raw string kept a literal " intact.
-    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return parsed.href;
+    // The normalised href, and only if it holds no double quote, angle
+    // bracket, backtick or whitespace: new URL() percent-encodes those in the
+    // path but keeps them in the host (https://x"y.invalid/ stays as it is).
+    // Callers still escape it where it goes into an attribute.
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return '';
+    if (/["<>`\s]/.test(parsed.href)) return '';
+    return parsed.href;
   } catch {}
   return '';
 }
@@ -283,7 +287,9 @@ function reqFromRelay(
     ws.onmessage = (e) => {
       try {
         const msg = JSON.parse(e.data);
-        if (msg[0] === 'EVENT' && msg[1] === subId && msg[2]) {
+        // Only well-formed events: the relay's ids and pubkeys reach links and
+        // HTML attributes, and the parsers expect string tags and content.
+        if (msg[0] === 'EVENT' && msg[1] === subId && isWellFormedEvent(msg[2])) {
           events.push(msg[2]);
         }
         if (msg[0] === 'EOSE' && msg[1] === subId) {
@@ -570,8 +576,13 @@ async function fetchProfiles(pubkeys: string[]): Promise<void> {
     try {
       const meta = JSON.parse(ev.content || '{}');
       const picture = typeof meta.picture === 'string' ? sanitizeUrl(meta.picture) : '';
+      // Only string names: anything else would make escapeHtml throw and
+      // blank the leaderboard or a find log.
+      const name = [meta.display_name, meta.displayName, meta.name].find(
+        (v) => typeof v === 'string' && v,
+      );
       profileCache.set(pk, {
-        name: meta.display_name || meta.displayName || meta.name || null,
+        name: name || null,
         picture: picture || null,
         lud16: typeof meta.lud16 === 'string' && meta.lud16.includes('@') ? meta.lud16 : null,
         lud06: typeof meta.lud06 === 'string' && meta.lud06 ? meta.lud06 : null,
@@ -770,7 +781,7 @@ function relativeTime(ts: number): string {
 // the fallback underneath - no broken-image icon.
 export function avatarHtml(picture: string | null): string {
   const img = picture
-    ? `<img src="${picture}" alt="" referrerpolicy="no-referrer" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">`
+    ? `<img src="${escapeHtml(picture)}" alt="" referrerpolicy="no-referrer" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;">`
     : '';
   return `<span style="position:relative;width:28px;height:28px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:9999px;background:#fce7f3;overflow:hidden;">${USER_SVG}${img}</span>`;
 }
@@ -782,7 +793,7 @@ function renderLogRow(log: FindLogEntry): string {
 
   const safeImg = log.imageUrl ? sanitizeUrl(log.imageUrl) : '';
   const imgBlock = safeImg
-    ? `<img src="${safeImg}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'" style="margin-top:6px;width:100%;border-radius:8px;object-fit:cover;max-height:130px;">`
+    ? `<img src="${escapeHtml(safeImg)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display='none'" style="margin-top:6px;width:100%;border-radius:8px;object-fit:cover;max-height:130px;">`
     : '';
 
   const satsBadge =
@@ -1121,7 +1132,7 @@ export function heroBlock(
   const safeImg = cache.imageUrl ? sanitizeUrl(cache.imageUrl) : '';
 
   const photo = safeImg
-    ? `<img class="pg-hero-photo" src="${safeImg}" alt="${escapeHtml(
+    ? `<img class="pg-hero-photo" src="${escapeHtml(safeImg)}" alt="${escapeHtml(
         cache.name,
       )}" referrerpolicy="no-referrer" onerror="this.style.display='none'" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;">`
     : '';

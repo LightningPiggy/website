@@ -3,12 +3,12 @@ title: "Privacy Policy"
 slug: "privacy"
 description: "What personal data Lightning Piggy collects, publishes and shares, why, and the choices and rights you have."
 pubDate: 2026-06-26
-updatedDate: 2026-11-09
+updatedDate: 2026-11-15
 ---
 
-**Last updated: 9 November 2026**
+**Last updated: 15 November 2026**
 
-**What changed on 9 November 2026:** the web server in front of our payment software now keeps access logs for 7 days, and we now describe in more detail what our payment software's logs keep and how our payment server is backed up (see 2a and 9).
+**What changed on 15 November 2026:** the admin pages of our LNbits server are now behind a sign-in page that only our team uses. Nothing changes for visitors or for anyone who pays us. We describe what the sign-in page records, how long that is kept, the cookies and browser storage it uses and the emails it sends our team (see 1, 2a, 2e, 6, 7, 9 and 11).
 
 This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
 
@@ -18,7 +18,7 @@ The Services are provided by Lightning Piggy ("we", "us" or "our"), a free and o
 
 Lightning Piggy is built to collect as little personal data as possible.
 
-- The Services use **no user accounts**. You do not register, and we do not build a profile of what you do.
+- The Services have **no user accounts** for visitors, supporters or customers. You do not register, and we do not build a profile of what you do. The only accounts are our own team's, used to manage our payment server (see 2e).
 - The **Device and the App connect directly to a wallet you control and to public networks** (the Bitcoin and Lightning networks and Nostr relays). They do not route your balances, transactions or activity through our servers, and **we cannot see, access or recover your keys, funds or transaction history**.
 - We take most payments with **our own BTCPay Server and LNbits**, open-source software that runs on a server we manage, rather than through a payment company (see 3b for the exception).
 - We do **not** sell or rent your personal data, we do **not** use advertising or cross-site tracking, and the Website sets **no tracking cookies**.
@@ -37,11 +37,11 @@ Our own server functions also write some details to these logs to help us fix pr
 
 Our BTCPay Server and LNbits run on a server we manage, hosted by **Hostinger** in Lithuania. That server also receives your IP address and browser details when you open our point-of-sale or shop pages (which embed our BTCPay checkout), go to one of our checkouts, or switch on notifications on the Oink page. When a wallet pays our Lightning address, its request passes through Netlify to this server, so both receive it, including the wallet's IP address.
 
-The web server in front of our payment software keeps an access log. For each request, it records the **IP address**, browser details and the other technical details sent with the request, the web address requested, the time, and the status and size of the response. For a payment to our Lightning address, the IP address is that of the paying wallet, which is often your own phone or computer, and the web address includes the amount. Before saving each entry, the web server removes LNbits wallet access keys, login codes and tokens, cookies, the address of the page you came from, and what a wallet can send about you with a payment: a comment, payer details such as a name or email address, and the Nostr public key in a zap. We use these access logs to fix problems and stop abuse. They are deleted automatically after 7 days and are not included in our own backups.
+The web server in front of our payment software keeps an access log, which also covers the sign-in page described in 2e. For each request, it records the **IP address**, browser details and the other technical details sent with the request, the web address requested, the time, and the status and size of the response. For a payment to our Lightning address, the IP address is that of the paying wallet, which is often your own phone or computer, and the web address includes the amount. Before saving each entry, the web server removes LNbits wallet access keys, the address of the admin page someone was trying to open before signing in, login codes and tokens, cookies, the address of the page you came from, and what a wallet can send about you with a payment: a comment, payer details such as a name or email address, and the Nostr public key in a zap. We use these access logs to fix problems and stop abuse. They are deleted automatically after 7 days and are not included in our own backups.
 
 The payment software also keeps its own technical logs. LNbits logs each request it receives with the **IP address** and the full web address requested. For a payment to our Lightning address, that web address includes the amount and any comment, payer details or Nostr public key sent with it. Unlike the access logs, these logs keep all of that. The LNbits logs are deleted automatically, normally within three weeks. BTCPay Server's technical logs contain no IP addresses, email addresses or Nostr public keys, and are kept until we next update the software, which can take several months.
 
-We back up the payment server every day. Our own backups stay on the same server and are deleted after 30 days. They include the payment records described in section 3 and the LNbits technical logs, so copies of those logs are kept for up to 30 days after the logs themselves are deleted. They do not include the access logs. Hostinger also makes weekly backups of the whole server, which contain everything on it, including the access logs and our own backups. Hostinger decides how long to keep them, and at present that appears to be about two weeks (see section 9).
+We back up the payment server every day. Our own backups stay on the same server and are deleted after 30 days. They include the payment records described in section 3, our team's sign-in accounts (see 2e) and the LNbits technical logs, so copies of those logs are kept for up to 30 days after the logs themselves are deleted. They do not include the access logs or the sign-in page's records and logs. Hostinger also makes weekly backups of the whole server, which contain everything on it, including the access logs, the sign-in page's records and logs, and our own backups. Hostinger decides how long to keep them, and at present that appears to be about two weeks (see section 9).
 
 Our legal basis for all of this is our legitimate interest in operating, securing and protecting the Services.
 
@@ -62,6 +62,24 @@ The treasure-hunt pages load map tiles from **CARTO** and, only if you switch on
 These pages also show other people's public Nostr profiles and posts as they appear on Nostr. For example, the treasure-hunt pages show caches and find logs, the leaderboard shows the people who have published the most treasure-hunt caches or finds, and the #ZapMyPiggy page shows recent public posts with that hashtag. Apart from the market (see 3f), this content is loaded live from Nostr, and we do not store it. To stop appearing, you can ask Nostr relays to delete your posts (not all relays do) or stop using the hashtag.
 
 Our legal basis for these connections (2c and 2d) is our legitimate interest in providing working tools and showing community activity. You can block them with a content blocker, but some pages may then not work.
+
+### e) Our team's sign-in page
+
+Our team manages our LNbits server through admin pages on lnbits.lightningpiggy.com. These pages are behind a sign-in page at auth.lnbits.lightningpiggy.com, which runs **Authelia**, open-source sign-in software, on the server we manage at Hostinger (see 2a). The addresses used for payments, for our Lightning address, by Devices and for the live feed on our Oink page are not behind it: if you pay us, use our Lightning address, connect a Device or open the Oink page, you never pass through the sign-in page.
+
+Only members of our team sign in there, with a password and a **passkey**. A passkey is a digital key kept on their phone, computer or password manager, or on a small hardware security key, which they unlock with a fingerprint, face scan or PIN.
+
+When anyone tries to sign in, the server records the time, the **IP address**, whether it worked and which step it was (password or passkey). If the username typed in belongs to our team, that is recorded too. Other usernames are not recorded in these records. We use them to stop people guessing passwords: after repeated failed attempts in a short time, we block that IP address, or that username, from signing in for 30 minutes. We delete these records and blocks automatically after 5 days, and attempts with usernames that are not ours after 1 hour. The one-time codes we email our team (see below) are deleted after 5 days too. They are stored scrambled so that they cannot be read back, together with the IP address that asked for each code and the one that used it.
+
+The sign-in software also keeps an error log. It records, for example, a failed sign-in with its IP address and the username typed in, whether or not it is one of ours. Each day's log is deleted 5 days after it was started, so every entry is gone within 6 days. The web server's access log covers the sign-in page too, as described in 2a. None of these records and logs are in our own backups, but as with everything on that server, copies can stay in Hostinger's weekly backups, at present for about two weeks (see 9).
+
+This paragraph concerns only our team members. For each of them, the server keeps an account (username, display name, email address, their password scrambled so that it cannot be read back, and which of our sites they may sign in to) for as long as they are on the team. Accounts are included in our own backups (see 9). For each passkey, it keeps the public key (the matching private key never reaches our server), the name given to the passkey, what kind it is (built into a device or separate, synced or kept on one device, and a code for its make and model) and the date it was added. The date it was last used is cleared after 5 days. Passkey records are encrypted on the server, kept until the passkey is removed, and not included in our own backups. While a team member is signed in, the server holds their sign-in session (username and sign-in times) only in its working memory, never on disk. While they add or remove a passkey, it also holds their IP address in the same way. All of this is lost when the session ends (at most 6 days after their last sign-in step or passkey change) or when the sign-in software restarts.
+
+Only when a team member adds or removes a passkey, the sign-in page emails them a one-time code, or a notice that a passkey was added or removed, through **Resend**, our email provider, from `auth@mail.lightningpiggy.com`. The email contains their display name and email address, the site name, the code and a link to cancel it if it wasn't them. It contains no IP address or location, and we have switched off tracking of whether it is opened or its links are clicked.
+
+The sign-in page loads nothing from other sites and uses no analytics. Its security certificate, which lets your browser connect to it securely, comes from **Let's Encrypt**. Every such certificate is listed in public logs that anyone can search, so the address auth.lnbits.lightningpiggy.com is public. These logs contain no personal data.
+
+Our legal basis is our legitimate interest in keeping our payment server and the payments on it secure.
 
 ## 3. Information you choose to give us
 
@@ -141,21 +159,28 @@ We never collect, and the Device and App never transmit to us, your **private ke
 
 ## 6. Cookies and browser storage
 
-Pages on lightningpiggy.com do not set cookies. They use your browser's storage only where a feature needs it:
+The Website's own pages (on lightningpiggy.com itself) do not set cookies. They use your browser's storage only where a feature needs it:
 
 - **Session storage** holds your email address while you buy a case design download (see 3d). It is cleared once your payment is confirmed, or when you close the tab.
 - Umami checks local storage for a setting that switches analytics off. It does not store anything there itself.
 
 Our BTCPay Server (btcpay.lightningpiggy.com), which also loads inside our point-of-sale and shop pages, may use cookies and local storage that it needs for checkout and for your shopping cart.
 
+Our team's sign-in page (see 2e) uses two cookies:
+
+- `authelia_session` keeps a team member signed in, and is needed for that. It holds only a random code, and is sent only to lnbits.lightningpiggy.com and auth.lnbits.lightningpiggy.com, never to lightningpiggy.com itself or our BTCPay Server. It lasts 12 hours from their last sign-in step, or 6 days if they tick "Remember me". Without "Remember me", they are also signed out after 1 hour without use. A browser that still has one from an earlier sign-in gets it renewed, even while signed out. Visitors who never sign in do not get this cookie.
+- `language` is set for anyone who opens the sign-in page. It stores your browser's language (for example "en"), lasts 1 year and is sent only to auth.lnbits.lightningpiggy.com.
+
+The sign-in page also uses your browser's local storage to remember the sign-in method (passkey) and, if a team member changes them, the colour theme and language. None of this leaves your browser.
+
 ## 7. Who we share data with
 
 We share personal data with these service providers, which act on our behalf (what we publish is described in sections 3 and 4, and the profile-picture lookup in 3c):
 
 - **Netlify**: hosts the Website and its server functions and logs, and stores vendor applications.
-- **Resend**: sends our emails and holds the newsletter list.
+- **Resend**: sends our emails and holds the newsletter list. It also sends our team the one-time codes and notices from the sign-in page (see 2e), which contain no IP address or location and are not tracked.
 - **Umami**: analytics (see 2b).
-- **Hostinger**: provides the server, in Lithuania, that runs our BTCPay Server and LNbits and handles orders from Nostr marketplaces, and makes weekly backups of that whole server.
+- **Hostinger**: provides the server, in Lithuania, that runs our BTCPay Server, LNbits and our team's sign-in page, and handles orders from Nostr marketplaces. Hostinger also makes weekly backups of that whole server.
 - **GitHub**: hosts our public code repository, including the data we publish on the Website.
 - **Namecheap Private Email**: hosts our <oink@lightningpiggy.com> mailbox.
 
@@ -174,8 +199,9 @@ We keep personal data only as long as needed for the purpose it was collected:
 - **Vendor applications:** if we decline an application, we delete it, including the copy emailed to us. We delete the IP address once we have reviewed an application. If we accept one, we keep it as a record of your listing, and delete it on request.
 - **Published content:** we keep it on the Website until it is removed, at your request or ours.
 - **Our private list of featured people and vendors:** kept while we feature you, and updated or deleted on request.
-- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. On our own server, the web server's access logs are deleted automatically after 7 days. The LNbits technical logs, which include IP addresses, are normally deleted within three weeks, and BTCPay Server's, which do not, when we next update the software (see 2a). The logs of orders from Nostr marketplaces are deleted within about five weeks (see 3g). Copies may stay longer in backups (see the next point).
-- **Backups:** we back up our payment server every day, to the same server, and delete each backup after 30 days. These backups include the payment records and the LNbits technical logs, but not the access logs. Hostinger's weekly backups of the whole server contain everything on it, including the access logs and our own backups. Hostinger decides how long to keep them, and at present that appears to be about two weeks. So something we delete from that server may stay in our own backups for up to 30 days, and in Hostinger's for about two weeks more.
+- **Sign-in records:** the sign-in page's own records of sign-in attempts and one-time codes, and its error log, including IP addresses, are deleted automatically within 6 days, and its records of attempts with usernames that are not ours within 1 hour. The web server's access log for the sign-in page is kept for 7 days, like the others (see the next point). Our team members' accounts are kept while they are on the team, and their passkey records until the passkey is removed (see 2e). The sign-in records and logs are not in our own backups, but copies can stay in Hostinger's (see Backups below).
+- **Logs and analytics:** Netlify and Umami keep logs and analytics for limited periods that they set. On our own server, the web server's access logs, including those for the sign-in page, are deleted automatically after 7 days. The LNbits technical logs, which include IP addresses, are normally deleted within three weeks, and BTCPay Server's, which do not, when we next update the software (see 2a). The logs of orders from Nostr marketplaces are deleted within about five weeks (see 3g). Copies may stay longer in backups (see the next point).
+- **Backups:** we back up our payment server every day, to the same server, and delete each backup after 30 days. These backups include the payment records, the LNbits technical logs and our team members' sign-in accounts, but not the access logs, the sign-in page's records and logs, or passkey records. Hostinger's weekly backups of the whole server contain everything on it at that moment, including the access logs, the sign-in page's records and logs, our team members' passkey records and our own backups. Hostinger decides how long to keep them, and at present that appears to be about two weeks. So something we delete from that server may stay in our own backups for up to 30 days, and in Hostinger's for about two weeks more.
 - **Emails:** emails you send us, and the notifications our systems send us about sign-ups, donations, purchases, orders and vendor applications, are kept in our mailbox only as long as we need them, and we delete them on request. Resend, our email provider, keeps copies of the emails we send for a limited period that it sets.
 
 ## 10. Your rights
@@ -186,7 +212,7 @@ Please note the limits of what we can remove. We can take your details off the W
 
 ## 11. Children's privacy
 
-The Services are intended to be set up and supervised by a parent or legal guardian (see our [Terms & Conditions](/terms)). Because the Services use no accounts, we do not knowingly collect personal data directly from children. If you believe a child has provided us with personal data (for example, by emailing us or submitting a form), contact us and we will delete what we can (see section 10). Some pages name or show young people, sometimes with their age: the Bitcoin Kids page and credits, case-design credits, some news posts, community and workshop photos, and Character Design Challenge entries. We publish a young person's name, photo or age only with the agreement of their parent or legal guardian. If you are a parent or legal guardian, or the young person concerned, and would like any of these removed, contact us and we will remove them from the Website (see section 10 for copies we cannot remove).
+The Services are intended to be set up and supervised by a parent or legal guardian (see our [Terms & Conditions](/terms)). Because the Services have no accounts other than our own team's (see 2e), we do not knowingly collect personal data directly from children. If you believe a child has provided us with personal data (for example, by emailing us or submitting a form), contact us and we will delete what we can (see section 10). Some pages name or show young people, sometimes with their age: the Bitcoin Kids page and credits, case-design credits, some news posts, community and workshop photos, and Character Design Challenge entries. We publish a young person's name, photo or age only with the agreement of their parent or legal guardian. If you are a parent or legal guardian, or the young person concerned, and would like any of these removed, contact us and we will remove them from the Website (see section 10 for copies we cannot remove).
 
 ## 12. Security
 

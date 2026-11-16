@@ -3,12 +3,14 @@ title: "Privacy Policy"
 slug: "privacy"
 description: "What personal data Lightning Piggy collects, publishes and shares, why, and the choices and rights you have."
 pubDate: 2026-06-26
-updatedDate: 2026-11-15
+updatedDate: 2026-11-16
 ---
 
-**Last updated: 15 November 2026**
+**Last updated: 16 November 2026**
 
 **What changed on 15 November 2026:** the admin pages of our LNbits server are now behind a sign-in page that only our team uses. Nothing changes for visitors or for anyone who pays us. We describe what the sign-in page records, how long that is kept, the cookies and browser storage it uses and the emails it sends our team (see 1, 2a, 2e, 6, 7, 9 and 11).
+
+**What changed on 16 November 2026:** we now say how long Resend, our email provider, keeps the emails we send (30 days), and the exact limits that stop password guessing on our team's sign-in page (see 2e and 9).
 
 This Privacy Policy explains what personal data we collect when you use the Lightning Piggy website at lightningpiggy.com (the "Website"), our BTCPay Server and LNbits at btcpay.lightningpiggy.com and lnbits.lightningpiggy.com, the Lightning Piggy hardware (the "Device"), the Lightning Piggy mobile app (the "App"), and related services (together, the "Services"). It also explains why we collect it, who we share it with, what we publish, and the choices and rights you have. It should be read together with our [Terms & Conditions](/terms).
 
@@ -69,7 +71,7 @@ Our team manages our LNbits server through admin pages on lnbits.lightningpiggy.
 
 Only members of our team sign in there, with a password and a **passkey**. A passkey is a digital key kept on their phone, computer or password manager, or on a small hardware security key, which they unlock with a fingerprint, face scan or PIN.
 
-When anyone tries to sign in, the server records the time, the **IP address**, whether it worked and which step it was (password or passkey). If the username typed in belongs to our team, that is recorded too. Other usernames are not recorded in these records. We use them to stop people guessing passwords: after repeated failed attempts in a short time, we block that IP address, or that username, from signing in for 30 minutes. We delete these records and blocks automatically after 5 days, and attempts with usernames that are not ours after 1 hour. The one-time codes we email our team (see below) are deleted after 5 days too. They are stored scrambled so that they cannot be read back, together with the IP address that asked for each code and the one that used it.
+When anyone tries to sign in, the server records the time, the **IP address**, whether it worked and which step it was (password or passkey). If the username typed in belongs to our team, that is recorded too. Other usernames are not recorded in these records. We use them to stop people guessing passwords: 5 failed sign-ins within 10 minutes from one IP address block that address for 30 minutes, and 5 wrong passwords within 10 minutes for one of our usernames, from any address, block that username for 30 minutes. We delete these records and blocks automatically after 5 days, and attempts with usernames that are not ours after 1 hour. The one-time codes we email our team (see below) are deleted after 5 days too. They are stored scrambled so that they cannot be read back, together with the IP address that asked for each code and the one that used it.
 
 The sign-in software also keeps an error log. It records, for example, a failed sign-in with its IP address and the username typed in, whether or not it is one of ours. Each day's log is deleted 5 days after it was started, so every entry is gone within 6 days. The web server's access log covers the sign-in page too, as described in 2a. None of these records and logs are in our own backups, but as with everything on that server, copies can stay in Hostinger's weekly backups, at present for about two weeks (see 9).
 

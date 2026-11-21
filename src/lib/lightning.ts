@@ -1,8 +1,8 @@
-// Lightning payments are paused: our LNbits server, which handles
-// oink@lightningpiggy.com and BTCPay's Lightning payments, is switched off
-// until a software update is out (since 8 November 2026). On-chain payments
-// through BTCPay still work.
+// Lightning payments were paused from 8 to 21 November 2026, while our
+// LNbits server (oink@lightningpiggy.com and BTCPay's Lightning payments)
+// waited for a software update. They work again.
 //
-// When Lightning is back, set this to false: every "Lightning payments are
-// paused" notice (components/ui/LightningPaused.astro) then disappears.
-export const LIGHTNING_PAUSED = true;
+// If Lightning ever has to be paused again, set this to true: every
+// "Lightning payments are paused" notice (components/ui/LightningPaused.astro)
+// then shows on the pages that take Lightning payments.
+export const LIGHTNING_PAUSED = false;

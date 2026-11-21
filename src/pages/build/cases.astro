@@ -80,7 +80,7 @@ const cases = [
     name: 'ZapStand',
     anchor: 'p1-zapstand',
     tag: 'ESP32-S3 2 inch',
-    description: "The 'ZapStand' desk edition sits at a comfortable viewing angle on your desk or counter, keeping the screen easy to see and easy to tap. Its party trick is the swappable badge: printed inserts drop into a pocket on the front and can be changed in seconds - print your name, your favorite project's logo, or whatever you fancy, and show it off alongside your Piggy.",
+    description: "The 'ZapStand' desk edition sits at a comfortable viewing angle on your desk or counter, keeping the screen easy to see and easy to tap. Its party trick is the swappable badge: printed inserts drop into a pocket on the front and can be changed in seconds - print your name, your favourite project's logo, or whatever you fancy, and show it off alongside your Piggy.",
     images: [
       '/images/cases/zapstand-lcd-01.png',
       '/images/cases/zapstand-lcd-02.png',
@@ -91,8 +91,8 @@ const cases = [
       board: 'Waveshare ESP32-S3 2inch Touch Display',
       displaySize: '2 inch',
       os: 'MicroPythonOS',
-      material: 'Stand: PLA or PETG | Badges: PLA (multi-color)',
-      printing: 'Prints support-free in the plated orientation. Add rafts to secure the two buttons to the printer bed. Badges print face down; the multi-color detail lives in the first few layers only.',
+      material: 'Stand: PLA or PETG | Badges: PLA (multi-colour)',
+      printing: 'Prints support-free in the plated orientation. Add rafts to secure the two buttons to the printer bed. Badges print face down; the multi-colour detail lives in the first few layers only.',
       extraHardware: [
         { label: 'M2 x8mm screws (Qty 4)', url: 'https://www.amazon.de/-/en/dp/B0FKTFTB44', source: 'amazon.de' },
       ],
@@ -271,12 +271,12 @@ const cases = [
     creator: { name: 'Silexperience', url: 'https://njump.me/npub1zn99rseq50npesxs0zh0m396h9anz9h8u7ju5vc44c3n5m7ptuws8k7lrh' },
     licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
     downloads: [
-      { label: 'BASE2.stl', url: '/blog/content/files/2024/01/BASE2.stl' },
-      { label: 'DOme.stl', url: '/blog/content/files/2024/01/DOme.stl' },
-      { label: 'Embase.stl', url: '/blog/content/files/2024/01/Embase.stl' },
-      { label: 'interieur.stl', url: '/blog/content/files/2024/01/interieur.stl' },
-      { label: 'Superieur.stl', url: '/blog/content/files/2024/01/Superieur.stl' },
-      { label: 'Supportbertical.stl', url: '/blog/content/files/2024/01/Supportbertical.stl' },
+      { label: 'BASE2.stl', url: '/files/cases/block-lamp/BASE2.stl' },
+      { label: 'DOme.stl', url: '/files/cases/block-lamp/DOme.stl' },
+      { label: 'Embase.stl', url: '/files/cases/block-lamp/Embase.stl' },
+      { label: 'interieur.stl', url: '/files/cases/block-lamp/interieur.stl' },
+      { label: 'Superieur.stl', url: '/files/cases/block-lamp/Superieur.stl' },
+      { label: 'Supportbertical.stl', url: '/files/cases/block-lamp/Supportbertical.stl' },
     ],
   },
   {
@@ -297,8 +297,8 @@ const cases = [
     creator: { name: 'Richard', url: 'https://njump.me/npub1dwekunm9w9agazkwcq88ymxmj0j3qgxcu4mwfqnjqvyusa9cuxrs0wsqel' },
     licence: { name: 'CC0', url: 'https://creativecommons.org/publicdomain/zero/1.0/' },
     downloads: [
-      { label: 'LegoBlock.3mf', url: '/blog/content/files/2024/03/LegoBlock.3mf' },
-      { label: 'LegoBlock.stl', url: '/blog/content/files/2024/03/LegoBlock.stl' },
+      { label: 'LegoBlock.3mf', url: '/files/cases/legoblock/LegoBlock.3mf' },
+      { label: 'LegoBlock.stl', url: '/files/cases/legoblock/LegoBlock.stl' },
     ],
   },
   {
@@ -349,12 +349,19 @@ const facets = [
   { key: 'model', label: 'Model', options: [...new Set(cases.map(modelGroup))].sort((a, b) => (a === 'Other') - (b === 'Other')), accent: [] },
 ];
 
+// Counts shown on the filter buttons, rendered into the HTML so the client
+// script's first render() changes no text: when it filled them in, the
+// buttons widened, the rows rewrapped and the case list jumped down.
+const facetValue = { generation: generationOf, board: (c) => c.tag, model: modelGroup };
+const countOf = (key, v) => cases.filter((c) => facetValue[key](c) === v).length;
+
 // Global image counter for unique lightbox IDs
 let imgCounter = 0;
 ---
 
 <BaseLayout
   title="Cases & Enclosures"
+  metaTitle="3D-Printed and Laser-Cut Piggy Cases"
   description="Community-designed cases and enclosures for your Lightning Piggy. 3D-printable, laser-cut, and cardboard designs from the community."
   image="/images/cases/genesispiggy-01.png"
   imageAlt="Genesis Piggy 3D-printed case for Lightning Piggy"
@@ -375,12 +382,12 @@ let imgCounter = 0;
             <span class="w-20 shrink-0 text-xs font-semibold uppercase tracking-wide text-gray-400">{f.label}</span>
             <button type="button" data-value="all" aria-pressed="true"
               class="case-filter px-3 py-1.5 text-sm font-medium rounded-full bg-gray-900 text-white transition-colors">
-              All <span class="count text-xs opacity-70"></span>
+              All <span class="count text-xs opacity-70">({cases.length})</span>
             </button>
             {f.options.map((opt) => (
               <button type="button" data-value={opt} aria-pressed="false" data-active={f.accent.includes(opt) ? 'bg-yellow text-gray-900' : undefined}
                 class="case-filter px-3 py-1.5 text-sm font-medium rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
-                {opt} <span class="count text-xs opacity-70"></span>
+                {opt} <span class="count text-xs opacity-70">({countOf(f.key, opt)})</span>
               </button>
             ))}
           </div>
@@ -407,7 +414,7 @@ let imgCounter = 0;
                       <label for={`case-lb-${id}`} class="cursor-pointer block w-full h-full">
                         <img
                           src={src}
-                          alt={`${titleOf(c)} - image ${i + 1}`}
+                          alt={`${titleOf(c)} case for Lightning Piggy, photo ${i + 1}`}
                           class="w-full h-full object-cover hover:opacity-90 transition-opacity"
                           loading="lazy"
                         />
@@ -415,8 +422,9 @@ let imgCounter = 0;
                       <label for={`case-lb-${id}`} class="lightbox-overlay">
                         <img
                           src={src}
-                          alt={`${titleOf(c)} - image ${i + 1}`}
+                          alt={`${titleOf(c)} case for Lightning Piggy, photo ${i + 1}`}
                           class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                          loading="lazy"
                         />
                       </label>
                     </div>
@@ -508,6 +516,7 @@ let imgCounter = 0;
                   ) : (
                     <a
                       href={g.d.url}
+                      download={g.d.url.startsWith('/') ? true : undefined}
                       target="_blank"
                       rel="noopener noreferrer"
                       class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors"

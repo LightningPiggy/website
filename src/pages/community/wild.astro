@@ -18,7 +18,8 @@ const images = fs.existsSync(wildDir)
 
 <BaseLayout
   title="In the Wild"
-  description="Lightning Piggy builds and sightings from around the world - the curated gallery plus the latest posts from Nostr."
+  metaTitle="In the Wild: Community Builds and Sightings"
+  description="Lightning Piggy builds and sightings from around the world: a curated photo gallery of community piggies plus the latest image posts from Nostr."
 >
   <section class="py-8 md:py-12">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -39,16 +40,17 @@ const images = fs.existsSync(wildDir)
             <label for={`lightbox-${i}`} class="cursor-pointer block">
               <img
                 src={src}
-                alt={`LightningPiggy in the wild ${i + 1}`}
+                alt={`Community-built Lightning Piggy, photo ${i + 1}`}
                 class="w-full aspect-square object-cover object-center rounded-lg hover:opacity-90 transition-opacity"
-                loading="lazy"
+                loading={i < 3 ? 'eager' : 'lazy'}
               />
             </label>
             <label for={`lightbox-${i}`} class="lightbox-overlay">
               <img
                 src={src}
-                alt={`LightningPiggy in the wild ${i + 1}`}
+                alt={`Community-built Lightning Piggy, photo ${i + 1}`}
                 class="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                loading="lazy"
               />
             </label>
           </div>
@@ -82,7 +84,7 @@ const images = fs.existsSync(wildDir)
         <p class="text-gray-600">
           Built or spotted a Lightning Piggy? Post it on <strong>Nostr</strong> and tag
           <a href="https://njump.me/npub1y2qcaseaspuwvjtyk4suswdhgselydc42ttlt0t2kzhnykne7s5swvaffq" target="_blank" rel="noopener noreferrer" class="text-pink underline">@LightningPiggy</a>
-          — or use <strong>#LightningPiggy</strong> — and email us at
+          (or use <strong>#LightningPiggy</strong>) and email us at
           <a href="mailto:oink@lightningpiggy.com" class="text-pink underline">oink@lightningpiggy.com</a>.
           Bonus zaps if your image includes a scannable payment QR.
         </p>

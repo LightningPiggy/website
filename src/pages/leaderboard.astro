@@ -4,7 +4,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Treasure Hunt Leaderboard"
-  description="The top hiders and finders on the Lightning Piggy treasure hunt, ranked live from Nostr."
+  description="See the top hiders and finders in the Lightning Piggy treasure hunt, ranked live from Nostr. Switch between all geocaches and Piglets with real sats inside."
 >
   <style is:global>
     .pg-lb-grid {
@@ -110,7 +110,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
     <a
-      href="/treasure-hunt"
+      href="/treasure-hunt/"
       class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-pink transition-colors"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M19 12H5M12 19l-7-7 7-7" /></svg>
@@ -258,7 +258,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         ? entries.map((e, i) => rowHtml(e, i + 1, kind)).join('')
         : `<div style="padding:16px 0;font-size:13px;color:#9ca3af;">No ${
             mode === 'piglets' ? 'Piglet ' : ''
-          }${kind === 'hiders' ? 'hiders' : 'finders'} yet — go be the first!</div>`;
+          }${kind === 'hiders' ? 'hiders' : 'finders'} yet. Go be the first!</div>`;
     }
 
     function updateHeaderIcons(): void {

@@ -5,7 +5,7 @@ pubDate: 2025-06-14
 heroImage: ./build2-hero.jpeg
 ---
 
-> For Lightning Piggy Classic click [here](/build/classic).
+> Building the e-paper edition? Follow the [Lightning Piggy Classic build guide](/build/classic/).
 
 Making your very own Lightning Piggy is squealy easy. Here are the steps you need to follow:
 
@@ -13,7 +13,7 @@ Making your very own Lightning Piggy is squealy easy. Here are the steps you nee
 2. Create a wallet.
 3. [Flash](https://install.micropythonos.com/) the firmware.
 4. Connect to wifi and configure your piggy.
-5. Make a [case](/build/cases) and assemble the parts.
+5. Make a [case](/build/cases/) and assemble the parts.
 
 > ⚠️ **IMPORTANT:** This is not a toy. It contains small parts which could be a choking and ingestion hazard. There are also sharp edges. It should not be handled by children under 4 years of age. Assembly and use of this product is at your own risk. We take no responsibility for any losses that may be incurred.
 
@@ -31,7 +31,7 @@ If you already have the single board computer, follow these steps:
 
 2. Flash the firmware using the [MicroPythonOS web installer](https://install.micropythonos.com/). You'll need a Wi-Fi enabled computer with Chrome, Brave, Opera, or Edge browser.
 
-3. Connect to Wi-Fi, install the Lightning Piggy app from the MicroPytonOS AppStore, then configure your NWC credentials in Settings. You can turn your credentials into scannable QR codes with our [QR code generation tools](/build#tools).
+3. Connect to Wi-Fi, install the Lightning Piggy app from the MicroPytonOS AppStore, then configure your NWC credentials in Settings. You can turn your credentials into scannable QR codes with our [QR code generation tools](/build/#tools).
 
 > 💡 *Tip:* To improve QR code detection when scanning, zoom in on the code in your browser to make it as large and clear as possible.
 
@@ -43,7 +43,7 @@ If you already have the single board computer, follow these steps:
 
 **Single Board Computer (SBC):** WaveShare ESP32-S3-Touch with a 2inch screen - including the optional camera makes setup a breeze. Available direct from [WaveShare](https://www.waveshare.com/esp32-s3-touch-lcd-2.htm) or from resellers.
 
-**Case:** One homemade case using materials of your choice. Check out our [cases and enclosures](/build/cases) page if you wish to use one of ours. Please note depending on your selection there may be extra hardware to source.
+**Case:** One homemade case using materials of your choice. Check out our [cases and enclosures](/build/cases/) page if you wish to use one of ours. Please note depending on your selection there may be extra hardware to source.
 
 **USB-C data cable:** Available cheaply for bulk purchases from [Aliexpress](https://www.aliexpress.com) or [Amazon](http://amazon.com) if you don't have one lying around.
 
@@ -68,7 +68,7 @@ Below is a detailed comparison:
 | **Wallet Support** | Any NWC-enabled wallet | Internal + NWC via extension |
 | **Best For** | Simple wallet connection | Self-hosted, multiple accounts, extensions |
 
-### Nostr Wallet Connect
+#### Nostr Wallet Connect
 
 Choose an NWC-enabled wallet and follow the provider's setup instructions. Here are some popular options:
 
@@ -88,9 +88,9 @@ nostr+walletconnect://f3a192b445cd7e8f2d4a60c578eb932a57b83d9265fa790042bd865937
 
 Keep a record of your wallet’s Lightning address (which resembles an email address), as it will be used to receive bitcoin payments over the lightning network. This address will be automatically converted into a QR code and displayed on the Piggy's screen for easy scanning.
 
-### LNbits
+#### LNbits
 
-If you wish to run a LNbits wallet, please refer to our detailed [guide](/build/lnbits) for step-by-step instructions.
+If you wish to run a LNbits wallet, please refer to our detailed [guide](/build/lnbits/) for step-by-step instructions.
 
 ### 3. Flash the Firmware
 
@@ -133,7 +133,7 @@ Once saved, your device will connect to your wallet and update the screen to sho
 
 Time to get creative! Build your very own Lightning Piggy case out of any material you wish to use, and assemble the parts.
 
-Check out our [case options](/build/cases).
+Check out our [case options](/build/cases/).
 
 If you would like to share your design with others, please either email your creation to [oink@lightningpiggy.com](mailto:oink@lightningpiggy.com), or post a note on nostr with a photo of your piggy, including the hashtag **#zapmypiggy** for inclusion on this website.
 

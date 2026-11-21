@@ -1,12 +1,16 @@
 ---
 title: Software Update v6.2.0
 slug: software-update-v6-2-0
+description: "Classic firmware v6.2.0 brings three sleep modes, an always-on clock, live startup status, automatic WiFi reconnection and a last wallet check time."
+seoTitle: "Classic Firmware v6.2.0 Release Notes"
+heroImageAlt: "Cartoon Lightning Piggy in a black hoodie coding on a laptop"
+category: software-update
 pubDate: 2025-04-30
 heroImage: './5D57CD42-D8F7-4775-92BC-E6CAEEA4469A.png'
 tags: ["news"]
 ---
 
-While fiat savers are wallowing in the mud, LightingPiggy keeps on shipping!
+While fiat savers are wallowing in the mud, Lightning Piggy keeps on shipping!
 
 Check out our latest v6.2.0 update, it’s a meal of new user experience improvements.
 
@@ -54,15 +58,14 @@ Enjoy the update! Stay humble, hog sats!
 
 - Thomas [GitHub](https://github.com/ThomasFarstrike)  [Nostr](https://primal.net/p/nprofile1qqspsyfhq487vr04z6yhvvglp06ym0jt6nfwptmfxfwla606sx5vhks9qgyxq)
 
-Team LightningPiggy
+Team Lightning Piggy
 
-[http://www.lightningpiggy.com](/)
 
-LightingPiggy is an electronic cash piggy bank for children, that accepts Bitcoin sent over the Lightning Network. It displays payment amounts, messages, and the total satoshis saved.
+Lightning Piggy is an electronic cash piggy bank for children, that accepts Bitcoin sent over the Lightning Network. It displays payment amounts, messages, and the total satoshis saved.
 
 Our vision is to make bitcoin the savings’ standard for every child, while creating an educational platform to inspire future generations, not only to save in bitcoin, but also to learn to code and build in a free and open-source way.
 
-Build your own: [https://www.lightningpiggy.com/build/](/build/classic)
+Build your own: [Lightning Piggy Classic build guide](/build/classic/)
 
 Chat with our community: [https://t.me/LightningPiggy](https://t.me/LightningPiggy)
 

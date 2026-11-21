@@ -35,6 +35,8 @@ const hasSocials = showGlobe || partner.nostrUrl || partner.xUrl || partner.gith
         src={partner.logo}
         alt={partner.name}
         class="w-full h-full object-cover"
+        loading="lazy"
+        decoding="async"
         referrerpolicy="no-referrer"
         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
       />

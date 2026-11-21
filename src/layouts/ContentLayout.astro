@@ -2,25 +2,29 @@
 import BaseLayout from './BaseLayout.astro';
 
 interface Props {
+  // The H1
   title: string;
+  // The <title> for search results, when it should differ from the H1
+  metaTitle?: string;
   description?: string;
   heroImage?: string;
   imageAlt?: string;
 }
 
-const { title, description, heroImage, imageAlt } = Astro.props;
+const { title, metaTitle, description, heroImage, imageAlt } = Astro.props;
 // When a hero image is set, default the alt to the page title
 const ogImageAlt = imageAlt || (heroImage ? title : undefined);
 ---
 
-<BaseLayout title={title} description={description} image={heroImage} imageAlt={ogImageAlt}>
+<BaseLayout title={title} metaTitle={metaTitle} description={description} image={heroImage} imageAlt={ogImageAlt}>
   <article class="py-8 md:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       {heroImage && (
         <div class="mb-8 -mx-4 sm:mx-0">
           <img
             src={heroImage}
-            alt={title}
+            alt={imageAlt || title}
+            fetchpriority="high"
             class="w-full rounded-none sm:rounded-2xl object-cover max-h-96"
           />
         </div>

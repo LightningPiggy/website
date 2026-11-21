@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<!-- Netlify serves dist/404.html, with status 404, for any address that has
+     no page: no canonical, as it answers at every such address. -->
+<BaseLayout
+  title="Page Not Found"
+  description="This page has trotted off. Find your way back to Lightning Piggy."
+  canonical={false}
+  noindex
+>
+  <section class="py-16 md:py-24">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <img src="/images/mascot-192.webp" alt="" width="80" height="80" class="w-20 h-20 mx-auto mb-6 rounded-2xl object-contain" />
+      <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Oink? This page has wandered off</h1>
+      <p class="text-lg text-gray-600 mb-8">
+        We couldn't find the page you asked for. It may have moved, or the link may have a typo.
+      </p>
+      <div class="flex flex-wrap justify-center gap-3">
+        <a href="/" class="inline-flex items-center px-6 py-3 text-white bg-pink rounded-full font-semibold hover:bg-gray-900 transition-colors">Back to the homepage</a>
+        <a href="/build/" class="inline-flex items-center px-6 py-3 text-gray-900 border border-gray-300 rounded-full font-semibold hover:border-pink hover:text-pink transition-colors">Build guides</a>
+        <a href="/market/" class="inline-flex items-center px-6 py-3 text-gray-900 border border-gray-300 rounded-full font-semibold hover:border-pink hover:text-pink transition-colors">Market</a>
+        <a href="/news/" class="inline-flex items-center px-6 py-3 text-gray-900 border border-gray-300 rounded-full font-semibold hover:border-pink hover:text-pink transition-colors">News</a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

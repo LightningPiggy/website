@@ -22,12 +22,16 @@ const showcaseImages = fs.readdirSync(showcaseDir)
           An open source electronic piggy bank that accepts Bitcoin over Lightning.
           Teach smart savers sound money with sats.
         </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+        <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4 justify-center md:justify-start">
           <Button href="/build/" variant="primary" size="lg">
             Build Your Own
           </Button>
           <Button href="/market/" variant="outline" size="lg">
             Buy Ready-Made
+          </Button>
+          <Button href="/videos/lightning-piggy-trailer.mp4" variant="secondary" size="lg" id="trailer-open" aria-haspopup="dialog">
+            <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+            Watch the Trailer
           </Button>
         </div>
         <p class="mt-6 text-sm text-gray-500">
@@ -64,6 +68,25 @@ const showcaseImages = fs.readdirSync(showcaseDir)
     </div>
   </div>
 
+  <!-- Trailer, in a pop-up. Nothing is downloaded until play is pressed (preload="none"). -->
+  <dialog id="trailer-dialog" aria-label="Lightning Piggy trailer" class="trailer-dialog p-0 bg-transparent max-w-4xl w-[calc(100%-2rem)]">
+    <div class="relative">
+      <button type="button" id="trailer-close" aria-label="Close the trailer" class="absolute -top-11 right-0 text-white hover:text-pink text-3xl leading-none px-2">&times;</button>
+      <video
+        id="trailer-video"
+        controls
+        preload="none"
+        playsinline
+        width="1280"
+        height="720"
+        poster="/videos/lightning-piggy-trailer-poster.jpg"
+        class="w-full h-auto rounded-xl bg-black"
+      >
+        <source src="/videos/lightning-piggy-trailer.mp4" type="video/mp4" />
+      </video>
+    </div>
+  </dialog>
+
   <!-- Wave decoration -->
   <div class="absolute bottom-0 left-0 right-0 pointer-events-none z-0">
     <svg viewBox="0 0 1440 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full">
@@ -71,6 +94,31 @@ const showcaseImages = fs.readdirSync(showcaseDir)
     </svg>
   </div>
 </section>
+
+<style>
+  .trailer-dialog::backdrop { background: rgb(0 0 0 / 0.8); }
+  .trailer-dialog { overflow: visible; }
+</style>
+
+<script is:inline>
+  (function () {
+    var open = document.getElementById('trailer-open');
+    var dialog = document.getElementById('trailer-dialog');
+    var video = document.getElementById('trailer-video');
+    var close = document.getElementById('trailer-close');
+    if (!open || !dialog || !video || typeof dialog.showModal !== 'function') return;
+    open.addEventListener('click', function (e) {
+      e.preventDefault();
+      dialog.showModal();
+      var played = video.play();
+      if (played && played.catch) played.catch(function () {});
+    });
+    close.addEventListener('click', function () { dialog.close(); });
+    // A click on the dark area around the video closes it too
+    dialog.addEventListener('click', function (e) { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('close', function () { video.pause(); });
+  })();
+</script>
 
 <script define:vars={{ showcaseImages }}>
   document.addEventListener('DOMContentLoaded', function () {

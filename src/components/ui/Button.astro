@@ -1,12 +1,14 @@
 ---
 interface Props {
   href?: string;
+  [key: string]: unknown;
   variant?: 'primary' | 'secondary' | 'outline';
   size?: 'sm' | 'md' | 'lg';
   class?: string;
 }
 
-const { href, variant = 'primary', size = 'md', class: className = '' } = Astro.props;
+// Any other attributes (id, aria-*, data-*) are passed on to the element
+const { href, variant = 'primary', size = 'md', class: className = '', ...rest } = Astro.props;
 
 const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
 
@@ -26,11 +28,11 @@ const classes = `${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`
 ---
 
 {href ? (
-  <a href={href} class={classes}>
+  <a href={href} class={classes} {...rest}>
     <slot />
   </a>
 ) : (
-  <button class={classes}>
+  <button class={classes} {...rest}>
     <slot />
   </button>
 )}

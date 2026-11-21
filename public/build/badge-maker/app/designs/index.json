@@ -1,0 +1,274 @@
+[
+ {
+  "id": "lightning-piggy",
+  "title": "Lightning Piggy",
+  "svg": "designs/lightning-piggy.svg",
+  "badge": "PLA Basic/Jade White",
+  "badgeHex": "#FFFFFF",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#F5547C": "PLA Basic/Hot Pink",
+   "#FFD21F": "PLA Basic/Sunflower Yellow"
+  },
+  "source": "lightningpiggy-badge-3.6mm-lifted.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "satoshi",
+  "title": "SATOSHI",
+  "svg": "designs/satoshi.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "thickness": 3.6,
+  "example": true,
+  "source": "the page's own example (js/app.js DEFAULTS)"
+ },
+ {
+  "id": "lnbits",
+  "title": "LNbits",
+  "svg": "designs/lnbits.svg",
+  "badge": "PLA Matte/Charcoal",
+  "badgeHex": "#161616",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#FF1FE1": "custom/#FF1FE1"
+  },
+  "source": "lnbits_lifted.3mf",
+  "relief": 1.22
+ },
+ {
+  "id": "alby",
+  "title": "Alby",
+  "svg": "designs/alby.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#FFD21F": "PLA Basic/Sunflower Yellow",
+   "#FFFFFF": "PLA Basic/Jade White"
+  },
+  "source": "alby_badge_lifted.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "micropythonos",
+  "title": "MicroPythonOS",
+  "svg": "designs/micropythonos.svg",
+  "badge": "PLA Matte/Charcoal",
+  "badgeHex": "#161616",
+  "style": "raised",
+  "made": "flush",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White"
+  },
+  "source": "micropythonos-os-badge-tight-facedown.3mf"
+ },
+ {
+  "id": "bitaxe",
+  "title": "Bitaxe",
+  "svg": "designs/bitaxe.svg",
+  "badge": "PLA Matte/Charcoal",
+  "badgeHex": "#161616",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White"
+  },
+  "source": "Bitaxe_badge_lifted.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "seedsigner",
+  "title": "SeedSigner",
+  "svg": "designs/seedsigner.svg",
+  "badge": "PLA Basic/Jade White",
+  "badgeHex": "#FFFFFF",
+  "style": "raised",
+  "made": "flush",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#FF9016": "PLA Basic/Pumpkin Orange"
+  },
+  "source": "seedsigner-badges-tight-facedown.3mf"
+ },
+ {
+  "id": "mempool",
+  "title": "Mempool",
+  "svg": "designs/mempool.svg",
+  "badge": "PLA Matte/Charcoal",
+  "badgeHex": "#161616",
+  "style": "raised",
+  "made": "flush",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#2E3349": "custom/#2E3349",
+   "#60A8EB": "custom/#60A8EB"
+  },
+  "source": "mempool-badge-tight-facedown_1.3mf"
+ },
+ {
+  "id": "enogtyve",
+  "title": "ENOGTYVE",
+  "svg": "designs/enogtyve.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#FF9016": "PLA Basic/Pumpkin Orange",
+   "#FFFFFF": "PLA Basic/Jade White"
+  },
+  "source": "enogtyve-badge-3.6mm-lifted-border_wh_on_bl.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "noderunners",
+  "title": "Noderunners",
+  "svg": "designs/noderunners.svg",
+  "badge": "PLA Basic/Pumpkin Orange",
+  "badgeHex": "#FF9016",
+  "style": "raised",
+  "made": "flush",
+  "thickness": 3.6,
+  "colours": {
+   "#000000": "PLA Matte/Charcoal"
+  },
+  "source": "noderunners-badge_orangebg-tight-facedown.3mf"
+ },
+ {
+  "id": "bitfest",
+  "title": "Bitfest",
+  "svg": "designs/bitfest.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#FF9016": "PLA Basic/Pumpkin Orange"
+  },
+  "source": "sources/bitfest.svg",
+  "fit": true
+ },
+ {
+  "id": "btchel",
+  "title": "BTCHEL",
+  "svg": "designs/btchel.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#FF9016": "PLA Basic/Pumpkin Orange"
+  },
+  "source": "btchel_badge_lifted.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "bull-bitcoin",
+  "title": "Bull Bitcoin",
+  "svg": "designs/bull-bitcoin.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#D6001C": "custom/#D6001C",
+   "#FFFFFF": "PLA Basic/Jade White"
+  },
+  "source": "bull_bitcoin_badge.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "blink",
+  "title": "Blink",
+  "svg": "designs/blink.svg",
+  "badge": "PLA Basic/Jade White",
+  "badgeHex": "#FFFFFF",
+  "style": "raised",
+  "made": "flush",
+  "thickness": 3.6,
+  "colours": {
+   "#FF9016": "PLA Basic/Pumpkin Orange",
+   "#000000": "PLA Basic/Black"
+  },
+  "source": "blink-badge-tight-facedown_1.3mf"
+ },
+ {
+  "id": "21energy",
+  "title": "21energy",
+  "svg": "designs/21energy.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#00AE42": "PLA Basic/Bambu Green"
+  },
+  "source": "21energy_lifted.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "plebeian-market",
+  "title": "Plebeian Market",
+  "svg": "designs/plebeian-market.svg",
+  "badge": "PLA Matte/Charcoal",
+  "badgeHex": "#161616",
+  "style": "raised",
+  "made": "flush",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#F5547C": "PLA Basic/Hot Pink"
+  },
+  "source": "plebeian-market-badge-tight-facedown_2.3mf"
+ },
+ {
+  "id": "satsback",
+  "title": "Satsback",
+  "svg": "designs/satsback.svg",
+  "badge": "PLA Basic/Black",
+  "badgeHex": "#000000",
+  "style": "raised",
+  "made": "raised",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#00AE42": "PLA Basic/Bambu Green"
+  },
+  "source": "satsback_badge.3mf",
+  "relief": 1.2
+ },
+ {
+  "id": "shop21",
+  "title": "Shop21",
+  "svg": "designs/shop21.svg",
+  "badge": "PLA Matte/Charcoal",
+  "badgeHex": "#161616",
+  "style": "raised",
+  "made": "flush",
+  "thickness": 3.6,
+  "colours": {
+   "#FFFFFF": "PLA Basic/Jade White",
+   "#FF9016": "PLA Basic/Pumpkin Orange"
+  },
+  "source": "shop21dk-badge-tight-facedown.3mf"
+ }
+]

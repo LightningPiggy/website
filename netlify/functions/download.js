@@ -5,6 +5,7 @@
 //   GET ?invoice=<id>&file=<name>.<3mf|stl|step> -> the file (attachment)
 //   GET ?invoice=<id>&file=<name>.<ext>&check=1  -> JSON status, no file
 const fs = require('fs');
+const path = require('path');
 const { resolveFile, corsHeaders, getInvoice, contentTypeFor, sameModel, formatsFor } = require('./lib/downloads');
 
 const json = (event, status, obj) => ({ statusCode: status, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'private, no-store', ...corsHeaders(event) }, body: JSON.stringify(obj) });
@@ -30,11 +31,12 @@ exports.handler = async function (event) {
   if (inv.status === 'Settled') {
     if (q.check) return json(event, 200, { status: 'settled', formats: formatsFor(fileId) });
     const data = fs.readFileSync(full);
+    const name = path.basename(full);                 // its current name, also when asked by an earlier one
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': contentTypeFor(fileId),
-        'Content-Disposition': `attachment; filename="${fileId}"`,
+        'Content-Type': contentTypeFor(name),
+        'Content-Disposition': `attachment; filename="${name}"`,
         'Content-Length': String(data.length),
         'Cache-Control': 'private, no-store',
         ...corsHeaders(event),

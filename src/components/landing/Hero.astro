@@ -11,17 +11,24 @@ const showcaseImages = fs.readdirSync(showcaseDir)
 
 <section class="relative overflow-hidden bg-gradient-to-b from-gray-50 to-white">
   <div class="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-14 md:py-20">
-    <div class="grid md:grid-cols-2 gap-12 items-center">
-      <!-- Content -->
-      <div class="text-center md:text-left">
+    <!-- On phones and tablets: heading, then the photos, then the buttons, so
+         the photos show without scrolling. On desktop: text and buttons on
+         the left, photos on the right. -->
+    <div class="grid md:grid-cols-2 gap-x-12 gap-y-8 items-center">
+      <!-- Heading -->
+      <div class="order-1 text-center md:text-left md:col-start-1 md:row-start-1 md:self-end">
         <h1 class="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight mb-6">
           Bitcoin savings for the
           <span class="text-pink">next generation</span>
         </h1>
-        <p class="text-lg md:text-xl text-gray-600 mb-8 max-w-lg">
+        <p class="text-lg md:text-xl text-gray-600 max-w-lg mx-auto md:mx-0">
           An open source electronic piggy bank that accepts Bitcoin over Lightning.
           Teach smart savers sound money with sats.
         </p>
+      </div>
+
+      <!-- Buttons -->
+      <div class="order-3 text-center md:text-left md:col-start-1 md:row-start-2 md:self-start">
         <div class="flex flex-col sm:flex-row sm:flex-wrap gap-4 justify-center md:justify-start">
           <Button href="/build" variant="primary" size="lg">
             Build Your Own
@@ -40,7 +47,7 @@ const showcaseImages = fs.readdirSync(showcaseDir)
       </div>
 
       <!-- Image -->
-      <div class="relative flex justify-center">
+      <div class="order-2 relative flex justify-center md:col-start-2 md:row-start-1 md:row-span-2">
         <div class="relative">
           <!-- Decorative elements -->
           <div class="absolute -top-4 -right-4 w-72 h-72 bg-yellow/20 rounded-full blur-3xl"></div>

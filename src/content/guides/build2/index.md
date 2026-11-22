@@ -78,6 +78,7 @@ Choose an NWC-enabled wallet and follow the provider's setup instructions. Here 
 | [Cashu](https://wallet.cashu.me) | Free, open-source Bitcoin wallet that uses ecash |
 | [Coinos](https://coinos.io/) | Free custodial web wallet and payment page |
 | [Primal](https://primal.net/) | Popular nostr client with integrated custodial wallet |
+| [Rizful](https://rizful.com/) | Lightning wallet that runs in the browser, with a free Lightning address |
 | [Zeus](https://zeusln.com/) | Self-custodial, open-source Bitcoin wallet |
 
 Go to the NWC information page in your chosen wallet (usually found in the settings). Locate and copy the NWC link, which should follow this structure:

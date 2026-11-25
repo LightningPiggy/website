@@ -36,7 +36,7 @@ const sections = [
         title: 'Update MicroPythonOS before installing the Lightning Piggy app',
         tags: mpos,
         problem: null,
-        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases - installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
+        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on features only available in recent MicroPythonOS releases, and on outdated firmware the app can crash or features can silently fail. To update, open the <strong>OSUpdate</strong> app on your piggy: it updates over Wi-Fi and keeps your apps and settings. Then install or update the Lightning Piggy app from the built-in app store. Don\'t use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update: it does a clean install, which can erase your apps, Wi-Fi networks and wallet settings. It\'s for a first install, or for when OSUpdate can\'t run.',
       },
       {
         title: 'Connecting your device',
@@ -204,17 +204,17 @@ const sections = [
         title: 'Update MicroPythonOS before installing the Lightning Piggy app',
         tags: mpos,
         problem: null,
-        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on APIs or features only available in recent MicroPythonOS releases - installing the app on outdated firmware can cause crashes or features to silently fail. Use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update first, then install the Lightning Piggy app from the built-in app store.',
+        solution: 'Always update MicroPythonOS to the latest version <strong>before</strong> installing or updating the Lightning Piggy app. Newer versions of the app may rely on features only available in recent MicroPythonOS releases, and on outdated firmware the app can crash or features can silently fail. To update, open the <strong>OSUpdate</strong> app on your piggy: it updates over Wi-Fi and keeps your apps and settings. Then install or update the Lightning Piggy app from the built-in app store. Don\'t use the <a href="https://install.micropythonos.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">MicroPythonOS web installer</a> to update: it does a clean install, which can erase your apps, Wi-Fi networks and wallet settings. It\'s for a first install, or for when OSUpdate can\'t run.',
       },
       {
         title: 'MicroPythonOS app store fails to install Lightning Piggy',
         tags: mpos,
         problem: 'The Lightning Piggy app cannot be installed from the MicroPythonOS app store.',
-        solution: 'This issue was resolved in app version 0.0.11. Ensure you are running the latest version of the MicroPythonOS app store. If the problem persists, try manual installation via the <a href="https://lightningpiggy.github.io/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">web installer</a>. See <a href="https://github.com/LightningPiggy/lightning-piggy/issues/38" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">GitHub #38</a>',
+        solution: 'This issue was resolved in app version 0.0.11. Ensure you are running the latest version of the MicroPythonOS app store. See <a href="https://github.com/LightningPiggy/lightning-piggy/issues/38" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">GitHub #38</a>',
       },
       {
         title: 'Balance Bias setting not showing on restart',
-        tags: mpos,
+        tags: classic,
         problem: 'The Balance Bias configuration option disappears or resets after restarting the device.',
         solution: 'This bug has been fixed. Update to the latest firmware version via the <a href="https://lightningpiggy.github.io/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">web installer</a> to resolve this issue. See <a href="https://github.com/LightningPiggy/lightning-piggy/issues/19" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">GitHub #19</a>',
       },
@@ -279,7 +279,7 @@ const sections = [
         <h2 data-ts-section={section.slug}>{section.title}</h2>
         {section.title === 'Community Q&A' ? (
           <>
-            <p data-ts-section={section.slug}><em>Have a question not answered here? Join our <a href="https://t.me/+Y2zSiQELdXxhZDlk" target="_blank" rel="noopener noreferrer">Telegram group</a> for live support from other Lightning Piggy builders.</em></p>
+            <p data-ts-section={section.slug}><em>Have a question not answered here? Join our <a href="https://t.me/LightningPiggy" target="_blank" rel="noopener noreferrer">Telegram group</a> for live support from other Lightning Piggy builders.</em></p>
             <p data-ts-section={section.slug}><em>If you've discovered a solution to a common problem, please share it with the community or email <a href="mailto:oink@lightningpiggy.com">oink@lightningpiggy.com</a> so we can add it here.</em></p>
           </>
         ) : (

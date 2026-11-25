@@ -22,7 +22,7 @@ Making your very own Lightning Piggy is squealy easy. Here are the steps you nee
 If you already have the single board computer, follow these steps:
 
 1. Choose a wallet that supports Nostr Wallet Connect (NWC).
-   - **For beginners:** We recommend [Coinos](https://coinos.io) - it's simple and custodial (with the option to auto-withdraw to cold storage), so you can get started quickly.
+   - **For beginners:** We recommend a classic [Coinos](https://coinos.io) account - it's simple and custodial (with the option to auto-withdraw to cold storage), so you can get started quickly.
    - **For a non-custodial setup:** We recommend [LNbits](https://lnbits.com/) or [Alby Hub](https://albyhub.com/) - both support multiple friends and family accounts and are easy to use.
 
    Once your wallet is set up, copy your **Lightning Address** and **NWC link** - you'll need both in the next step.
@@ -93,8 +93,8 @@ Choose an NWC-enabled wallet and follow the provider's setup instructions. Here 
 |--------|-------------|
 | [Alby Hub](https://albyhub.com/) | Self-custodial, open-source lightning wallet that connects to apps |
 | [Cashu](https://wallet.cashu.me) | Free, open-source Bitcoin wallet that uses ecash |
-| [Coinos](https://coinos.io/) | Free custodial web wallet and payment page |
-| [Primal](https://primal.net/) | Popular nostr client with integrated custodial wallet |
+| [Coinos](https://coinos.io/) | Free web wallet and payment page: classic accounts are custodial, the new v3 is self-custodial |
+| [Primal](https://primal.net/) | Popular nostr client with a built-in self-custodial wallet (Spark) that works while your phone is online |
 | [Zeus](https://zeusln.com/) | Self-custodial, open-source Bitcoin wallet |
 
 Go to the NWC information page in your chosen wallet (usually found in the settings). Locate and copy the NWC link, which should follow this structure:

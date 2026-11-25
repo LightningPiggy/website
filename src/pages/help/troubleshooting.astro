@@ -27,10 +27,10 @@ const sections = [
         solutionAfterCode: 'You do not need to copy the Pay Link onto the Piggy: it fetches the link from LNbits by itself, so the Piggy only needs an LNbits address it can reach and the read (invoice) key of that wallet. If the Piggy then reports connection errors, see "Connection errors when fetching balance" under Connectivity.',
       },
       {
-        title: 'Primal NWC wallet not working',
+        title: 'Using a Primal wallet',
         tags: ['classic', 'mpos', 'nwc'],
-        problem: '<a href="https://primal.net" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Primal</a> NWC wallet currently doesn\'t work with Lightning Piggy.',
-        solution: 'Primal uses a Spark backend, which Lightning Piggy doesn\'t currently support. Use a different NWC-compatible wallet (e.g. <a href="https://albyhub.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby Hub</a> or <a href="https://coinos.io" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Coinos</a>) until Spark support is added.',
+        problem: 'My Piggy is connected to a <a href="https://primal.net" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Primal</a> wallet, but it doesn\'t always update.',
+        solution: 'Primal\'s wallet now works with the Lightning Piggy app on MicroPythonOS. Its wallet connection (NWC) runs in the Primal app on your phone, so your Piggy only gets answers while that phone is switched on and online, and the first update after a quiet spell can take a little longer. If you want your Piggy to update whether or not your phone is on, use a wallet that runs online all the time, such as <a href="https://albyhub.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby Hub</a> or a classic <a href="https://coinos.io" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Coinos</a> account.',
       },
       {
         title: 'Update MicroPythonOS before installing the Lightning Piggy app',
@@ -154,10 +154,10 @@ const sections = [
         solution: 'You may need to type it in manually. If you leave this field blank, the device falls back to the LNURL QR, which is compatible with most Lightning wallets.',
       },
       {
-        title: 'Primal NWC wallet not working',
+        title: 'Using a Primal wallet',
         tags: ['classic', 'mpos', 'nwc'],
-        problem: '<a href="https://primal.net" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Primal</a> NWC wallet currently doesn\'t work with Lightning Piggy.',
-        solution: 'Primal uses a Spark backend, which Lightning Piggy doesn\'t currently support. Use a different NWC-compatible wallet (e.g. <a href="https://albyhub.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby Hub</a> or <a href="https://coinos.io" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Coinos</a>) until Spark support is added.',
+        problem: 'My Piggy is connected to a <a href="https://primal.net" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Primal</a> wallet, but it doesn\'t always update.',
+        solution: 'Primal\'s wallet now works with the Lightning Piggy app on MicroPythonOS. Its wallet connection (NWC) runs in the Primal app on your phone, so your Piggy only gets answers while that phone is switched on and online, and the first update after a quiet spell can take a little longer. If you want your Piggy to update whether or not your phone is on, use a wallet that runs online all the time, such as <a href="https://albyhub.com/" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Alby Hub</a> or a classic <a href="https://coinos.io" target="_blank" rel="noopener noreferrer" class="text-pink hover:underline">Coinos</a> account.',
       },
     ],
   },

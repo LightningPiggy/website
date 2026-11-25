@@ -48,53 +48,6 @@ const helpResources = [
       </div>
 
       <div class="mt-16 grid md:grid-cols-2 gap-8">
-        <!-- LightningPiggy Classic -->
-        <div class="bg-white rounded-3xl overflow-hidden border border-gray-200 hover:border-pink hover:shadow-xl transition-all">
-          <div class="aspect-video bg-gray-100 overflow-hidden">
-            <img
-              src="/images/v1-example-900.webp"
-              alt="Lightning Piggy Classic with an e-paper display in a 3D-printed Genesis Piggy case"
-              width="900"
-              height="629"
-              fetchpriority="high"
-              class="w-full h-full object-cover"
-            />
-          </div>
-          <div class="p-8">
-            <div class="flex items-center gap-3 mb-4">
-              <span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">Classic</span>
-            </div>
-            <h3 class="text-2xl font-bold text-gray-900 mb-2">Lightning Piggy Classic</h3>
-            <p class="text-gray-500 mb-2">Arduino-based</p>
-            <p class="text-gray-600 mb-6">
-              The original Lightning Piggy - Arduino-based firmware designed for LILYGO T5 boards, supporting both 2.13” and 2.66” e-paper displays. Displayed here in a “Genesis Piggy” 3D printed case.
-            </p>
-            <ul class="space-y-2 text-sm text-gray-600 mb-6">
-              <li class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                E-paper display (paper-like, low power)
-              </li>
-              <li class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                LILYGO T5 board
-              </li>
-              <li class="flex items-center gap-2">
-                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                Battery or USB powered
-              </li>
-            </ul>
-            <Button href="/build/classic/" variant="outline" class="w-full">
-              Classic Build Guide
-            </Button>
-          </div>
-        </div>
-
         <!-- LightningPiggy MPOS -->
         <div class="bg-white rounded-3xl overflow-hidden border-2 border-pink shadow-xl relative">
           <div class="absolute top-4 right-4 z-10">
@@ -106,6 +59,7 @@ const helpResources = [
               alt="Lightning Piggy p1 with a colour touchscreen in a 3D-printed Genesis Piggy case"
               width="900"
               height="641"
+              fetchpriority="high"
               class="w-full h-full object-cover object-center"
             />
           </div>
@@ -140,6 +94,52 @@ const helpResources = [
             </ul>
             <Button href="/build/p1/" variant="primary" class="w-full">
               p1 Build Guide
+            </Button>
+          </div>
+        </div>
+
+        <!-- LightningPiggy Classic -->
+        <div class="bg-white rounded-3xl overflow-hidden border border-gray-200 hover:border-pink hover:shadow-xl transition-all">
+          <div class="aspect-video bg-gray-100 overflow-hidden">
+            <img
+              src="/images/v1-example-900.webp"
+              alt="Lightning Piggy Classic with an e-paper display in a 3D-printed Genesis Piggy case"
+              width="900"
+              height="629"
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div class="p-8">
+            <div class="flex items-center gap-3 mb-4">
+              <span class="px-3 py-1 bg-gray-100 text-gray-600 text-sm font-medium rounded-full">Classic</span>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">Lightning Piggy Classic</h3>
+            <p class="text-gray-500 mb-2">Arduino-based</p>
+            <p class="text-gray-600 mb-6">
+              The original Lightning Piggy - Arduino-based firmware designed for LILYGO T5 boards, supporting both 2.13” and 2.66” e-paper displays. Displayed here in a “Genesis Piggy” 3D printed case.
+            </p>
+            <ul class="space-y-2 text-sm text-gray-600 mb-6">
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                E-paper display (paper-like, low power)
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                LILYGO T5 board
+              </li>
+              <li class="flex items-center gap-2">
+                <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                Battery or USB powered
+              </li>
+            </ul>
+            <Button href="/build/classic/" variant="outline" class="w-full">
+              Classic Build Guide
             </Button>
           </div>
         </div>

@@ -106,6 +106,90 @@ h1, h2, h3, h4, h5, h6 {
   margin-bottom: 0.5rem;
 }
 
+/* Heading sizes for Markdown content. Without these, headings rendered at body
+   size. :where() keeps the specificity at zero, so a heading with its own
+   Tailwind classes (or inside .not-prose) keeps them. */
+:where(.prose) :where(h2, h3, h4):where(:not(.not-prose *)) {
+  color: #171717;
+}
+
+:where(.prose) h2:where(:not(.not-prose *)) {
+  font-size: 1.5rem;
+}
+
+:where(.prose) h3:where(:not(.not-prose *)) {
+  font-size: 1.25rem;
+}
+
+:where(.prose) h4:where(:not(.not-prose *)) {
+  font-size: 1.0625rem;
+}
+
+@media (min-width: 768px) {
+  :where(.prose) h2:where(:not(.not-prose *)) {
+    font-size: 1.75rem;
+  }
+}
+
+/* Tables in Markdown content */
+:where(.prose) table:where(:not(.not-prose *)) {
+  width: 100%;
+  margin: 1.5rem 0;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+:where(.prose) :where(th, td):where(:not(.not-prose *)) {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #E5E5E5;
+  text-align: left;
+  vertical-align: top;
+  /* Long links and code examples wrap instead of widening the table on phones */
+  overflow-wrap: anywhere;
+}
+
+:where(.prose) td:first-child:where(:not(.not-prose *)) {
+  white-space: nowrap;
+}
+
+:where(.prose) pre:where(:not(.not-prose *)) {
+  margin: 1rem 0 1.25rem;
+}
+
+:where(.prose) th:where(:not(.not-prose *)) {
+  background: #F5F5F5;
+  color: #171717;
+  font-weight: 600;
+}
+
+:where(.prose) tbody tr:nth-child(even):where(:not(.not-prose *)) {
+  background: #FAFAFA;
+}
+
+/* "On this page" links at the top of the build guides */
+.prose nav.guide-toc {
+  margin: 1.5rem 0 2rem;
+  padding: 1rem 1.25rem;
+  background: #FAFAFA;
+  border: 1px solid #E5E5E5;
+  border-radius: 0.75rem;
+}
+
+.prose nav.guide-toc p {
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #171717;
+}
+
+.prose nav.guide-toc ol {
+  margin: 0;
+}
+
+.prose nav.guide-toc li {
+  margin-bottom: 0.25rem;
+}
+
 /* Offset anchor targets so they land below the sticky header instead of being
    hidden underneath it when arriving via /page/#some-id.
    Covers any element carrying an id, not just headings: the nav's dropdown

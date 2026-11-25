@@ -1,49 +1,53 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 import NewsletterForm from '../components/ui/NewsletterForm.astro';
-import { safeJsonLd } from '../lib/jsonLd';
+import { Image } from 'astro:assets';
+import { orgRef, publisherRef } from '../lib/structuredData';
+import type { ImageMetadata } from 'astro';
 
 interface Props {
   title: string;
+  // The <title> for search results, when it should differ from the H1
+  metaTitle?: string;
   description?: string;
   pubDate: Date;
   updatedDate?: Date;
-  heroImage?: string;
+  heroImage?: ImageMetadata;
+  heroImageAlt?: string;
   tags?: string[];
+  // An 'In the News' post: the article it is about, linked under the header
+  url?: string;
 }
 
-const { title, description, pubDate, updatedDate, heroImage, tags } = Astro.props;
+const { title, metaTitle, description, pubDate, updatedDate, heroImage, heroImageAlt, tags, url } = Astro.props;
+const articleHost = url ? new URL(url).hostname.replace(/^www\./, '') : '';
+// The original file stays the share image (og:image, JSON-LD): social crawlers
+// get the full-size JPEG/PNG. The page itself shows a resized WebP.
+const heroSrc = heroImage?.src;
 
+const pageUrl = new URL(Astro.url.pathname, Astro.site).href;
 const articleSchema = {
-  "@context": "https://schema.org",
-  "@type": "BlogPosting",
-  "headline": title,
-  "datePublished": pubDate.toISOString(),
-  ...(updatedDate && { "dateModified": updatedDate.toISOString() }),
-  ...(description && { "description": description }),
-  ...(heroImage && { "image": heroImage.startsWith('http') ? heroImage : `https://lightningpiggy.com${heroImage}` }),
-  "author": {
-    "@type": "Organization",
-    "name": "Lightning Piggy",
-    "url": "https://lightningpiggy.com"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Lightning Piggy",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://lightningpiggy.com/images/mascot.png"
-    }
-  }
+  '@type': 'BlogPosting',
+  '@id': `${pageUrl}#article`,
+  mainEntityOfPage: pageUrl,
+  url: pageUrl,
+  headline: title,
+  ...(description && { description }),
+  ...(heroSrc && { image: [new URL(heroSrc, Astro.site).href] }),
+  datePublished: pubDate.toISOString(),
+  dateModified: (updatedDate ?? pubDate).toISOString(),
+  inLanguage: 'en-GB',
+  author: orgRef,
+  publisher: publisherRef,
 };
 
-const formattedPubDate = pubDate.toLocaleDateString('en-us', {
+const formattedPubDate = pubDate.toLocaleDateString('en-GB', {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
 });
 
-const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
+const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-GB', {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
@@ -52,22 +56,27 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
 
 <BaseLayout
   title={title}
+  metaTitle={metaTitle}
   description={description}
-  image={heroImage}
-  imageAlt={title}
+  image={heroSrc}
+  imageAlt={heroImage ? (heroImageAlt ?? title) : undefined}
   pageType="article"
   pubDate={pubDate}
   updatedDate={updatedDate}
   tags={tags}
+  schema={[articleSchema]}
 >
-  <script type="application/ld+json" set:html={safeJsonLd(articleSchema)} />
   <article class="py-8 md:py-12">
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
       {heroImage && (
         <div class="mb-8 -mx-4 sm:mx-0">
-          <img
+          <Image
             src={heroImage}
-            alt={title}
+            alt={heroImageAlt ?? title}
+            widths={[480, 768, 1024, 1536]}
+            sizes="(min-width: 768px) 768px, 100vw"
+            loading="eager"
+            fetchpriority="high"
             class="w-full rounded-none sm:rounded-2xl object-cover max-h-96"
           />
         </div>
@@ -94,6 +103,11 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
             ))}
           </div>
         )}
+        {url && (
+          <p class="mt-4">
+            <a href={url} target="_blank" rel="noopener noreferrer" class="text-pink font-semibold hover:underline">Read the article on {articleHost}</a>
+          </p>
+        )}
       </header>
 
       <div class="prose max-w-none">
@@ -103,7 +117,7 @@ const formattedUpdatedDate = updatedDate?.toLocaleDateString('en-us', {
       <!-- Newsletter signup -->
       <div class="mt-10 pt-8 border-t border-gray-200">
         <div class="bg-gray-50 rounded-2xl p-6 text-center">
-          <h3 class="text-lg font-bold text-gray-900 mb-1">Stay in the loop</h3>
+          <h2 class="text-lg font-bold text-gray-900 mb-1">Stay in the loop</h2>
           <p class="text-gray-600 text-sm mb-4">Subscribe for project updates and community news.</p>
           <div class="max-w-md mx-auto">
             <NewsletterForm variant="light" />

@@ -8,8 +8,6 @@
 // specific: see marketServer.ts (Node, build) and each component's <script>
 // (browser).
 
-import { safeJsonLd } from './jsonLd';
-
 export const RELAYS = [
   'wss://nostr.oxtr.dev',
   'wss://nos.lol',
@@ -388,8 +386,12 @@ export function vendorHtml(v: VendorView, showProducts: boolean): string {
         v.nip05.replace(/^_@/, ''),
       )}</span>`
     : '';
-  const website = v.website
-    ? `<a href="${escapeHtml(v.website)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 text-sm font-semibold text-gray-700 hover:text-pink"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z M3.6 9h16.8 M3.6 15h16.8 M12 3a15 15 0 010 18 M12 3a15 15 0 000 18"/></svg>Visit store</a>`
+  // A vendor with a page on this site (vendors.json storeUrl '/market/...')
+  // links there, not to its Nostr profile's website
+  const storeHref = v.storeUrl && v.storeUrl.startsWith('/') ? v.storeUrl : v.website;
+  const storeExternal = !!storeHref && !storeHref.startsWith('/');
+  const website = storeHref
+    ? `<a href="${escapeHtml(storeHref)}"${storeExternal ? ' target="_blank" rel="noopener noreferrer"' : ''} class="inline-flex items-center gap-1 text-sm font-semibold text-gray-700 hover:text-pink"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z M3.6 9h16.8 M3.6 15h16.8 M12 3a15 15 0 010 18 M12 3a15 15 0 000 18"/></svg>Visit store</a>`
     : '';
   const products =
     showProducts && v.products.length > 0
@@ -423,38 +425,4 @@ export function vendorHtml(v: VendorView, showProducts: boolean): string {
         </div>
         ${products}
       </div>`;
-}
-
-// JSON-LD ItemList of Products for SEO (build-time only). Titles, descriptions
-// and vendor names come from relays, so the output is escaped via safeJsonLd.
-export function productsJsonLd(products: Product[], pageUrl: string): string {
-  const items = products.map((p, i) => {
-    const item: any = {
-      '@type': 'Product',
-      name: p.title,
-      ...(p.image ? { image: p.image } : {}),
-      ...(p.summary ? { description: p.summary.slice(0, 300) } : {}),
-      ...(p.vendor ? { brand: { '@type': 'Brand', name: p.vendor } } : {}),
-    };
-    if (p.priceAmount) {
-      item.offers = {
-        '@type': 'Offer',
-        price: p.priceAmount,
-        ...(p.priceCurrency && p.priceCurrency !== 'SAT' && p.priceCurrency !== 'SATS'
-          ? { priceCurrency: p.priceCurrency }
-          : {}),
-        ...(p.storeUrl ? { url: p.storeUrl } : {}),
-        availability: 'https://schema.org/InStock',
-      };
-    }
-    return { '@type': 'ListItem', position: i + 1, item };
-  });
-  return safeJsonLd({
-    '@context': 'https://schema.org',
-    '@type': 'ItemList',
-    name: 'Lightning Piggy Market',
-    url: pageUrl,
-    numberOfItems: products.length,
-    itemListElement: items,
-  });
 }

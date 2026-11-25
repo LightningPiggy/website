@@ -45,7 +45,7 @@ const features = [
     title: 'Hunt Piglets',
     body: 'Find hidden Piglets out in the wild and claim the real sats inside.',
     icon: '<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>',
-    href: '/treasure-hunt',
+    href: '/treasure-hunt/',
   },
   {
     title: 'Nostr integration',
@@ -62,7 +62,8 @@ const features = [
 
 <BaseLayout
   title="Family App"
-  description="Install the Lightning Piggy Family App - a Bitcoin Lightning and Nostr enabled app for the whole family. In open beta for testing purposes on iPhone (TestFlight) and Android (APK)."
+  metaTitle="Family Bitcoin App for iPhone and Android"
+  description="Connect your family's Lightning wallets over NWC, save in sats, chat and hunt for Piglets. The Lightning Piggy app is in open beta on iPhone and Android."
 >
   <!-- Hero -->
   <section class="hero-app">
@@ -72,17 +73,17 @@ const features = [
         Get the Lightning Piggy Family App
       </h1>
       <p class="text-lg text-gray-600 max-w-xl mx-auto leading-relaxed">
-        A Bitcoin Lightning and Nostr enabled app for the whole family - connect to your favourite lightning wallets, and hunt for <a href="/treasure-hunt" class="text-pink font-semibold hover:underline">Piglets</a>
+        A Bitcoin Lightning and Nostr enabled app for the whole family - connect to your favourite lightning wallets, and hunt for <a href="/treasure-hunt/" class="text-pink font-semibold hover:underline">Piglets</a>
         out in the wild. In open beta for testing purposes on iPhone and Android.
       </p>
 
       <!-- Phone showcase -->
       <div class="showcase" role="img" aria-label="Screens from the Lightning Piggy app: wallet, explore, map, geo-cache list, and Piglet detail">
-        <div class="slot s-ol"><div class="phone p-ol"><img src="/images/app/02-explore.webp" alt="" width="480" height="1067" loading="lazy" /></div></div>
-        <div class="slot s-il"><div class="phone p-il"><img src="/images/app/03-map.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
-        <div class="slot s-c"><div class="phone p-c"><img src="/images/app/01-wallet.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
-        <div class="slot s-ir"><div class="phone p-ir"><img src="/images/app/05-piglet.webp" alt="" width="480" height="1067" loading="eager" /></div></div>
-        <div class="slot s-or"><div class="phone p-or"><img src="/images/app/04-hunt.webp" alt="" width="480" height="1067" loading="lazy" /></div></div>
+        <div class="slot s-ol"><div class="phone p-ol"><img src="/images/app/02-explore.webp" alt="Lightning Piggy app Explore screen with a map, nearby Bitcoin-accepting places and geocaches" width="480" height="1067" loading="lazy" /></div></div>
+        <div class="slot s-il"><div class="phone p-il"><img src="/images/app/03-map.webp" alt="Lightning Piggy app map of Bitcoin-accepting merchants" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-c"><div class="phone p-c"><img src="/images/app/01-wallet.webp" alt="Lightning Piggy app wallet screen showing a sats balance and recent payments" width="480" height="1067" loading="eager" fetchpriority="high" /></div></div>
+        <div class="slot s-ir"><div class="phone p-ir"><img src="/images/app/05-piglet.webp" alt="Lightning Piggy app Piglet details with its sats prize, difficulty and a Try prize button" width="480" height="1067" loading="eager" /></div></div>
+        <div class="slot s-or"><div class="phone p-or"><img src="/images/app/04-hunt.webp" alt="Lightning Piggy app list of nearby geocaches and Piglets" width="480" height="1067" loading="lazy" /></div></div>
       </div>
     </div>
   </section>

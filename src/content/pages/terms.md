@@ -78,7 +78,7 @@ The App (and certain firmware and tools) may be offered as pre-release, "open be
 
 ## 9. Third-party services, wallets and networks
 
-The Services interoperate with, link to, or rely on third parties that we neither control nor endorse, including but not limited to: wallet providers and software (such as LNbits, Alby Hub, Coinos, Zeus and Primal), the Bitcoin network, the Lightning Network, Nostr relays, app distribution platforms (Apple, Google), code hosting (GitHub), and donation platforms (such as Geyser.fund). The BTCPay Server and LNbits that we use to accept payments are run by us, and our [Privacy Policy](/privacy) explains how they handle your data.
+The Services interoperate with, link to, or rely on third parties that we neither control nor endorse, including but not limited to: wallet providers and software (such as LNbits, Alby Hub, Coinos, Zeus and Primal), the Bitcoin network, the Lightning Network, Nostr relays, app distribution platforms (Apple, Google), code hosting (GitHub), and donation platforms (such as Geyser.fund). The BTCPay Server and LNbits that we use to accept payments are run by us, and our [Privacy Policy](/privacy/) explains how they handle your data.
 
 Your use of any third-party service is governed by that third party's own terms and privacy practices, which are solely between you and that third party. We are not responsible or liable for the availability, accuracy, security, custody practices, acts or omissions of any third party, including any loss of funds arising from a connected wallet or network. Choose your wallet and counterparties carefully and do your own research.
 
@@ -103,7 +103,7 @@ Donations made to Lightning Piggy are voluntary gifts in support of the project.
 
 ## 13. Newsletter and communications
 
-If you subscribe to our newsletter you consent to receiving emails from us. You can unsubscribe at any time using the link in those emails. We process the email address you provide in accordance with our [Privacy Policy](/privacy).
+If you subscribe to our newsletter you consent to receiving emails from us. You can unsubscribe at any time using the link in those emails. We process the email address you provide in accordance with our [Privacy Policy](/privacy/).
 
 ## 14. User-submitted content
 
@@ -119,7 +119,7 @@ The Lightning Piggy **source code and hardware designs** are made available unde
 
 ## 17. Privacy
 
-Your use of the Services is also governed by our [Privacy Policy](/privacy), which explains what limited personal data we process (for example, a newsletter email address or a vendor application) and how. Where the Device and App operate without accounts and connect directly to your wallet and to public networks, much of your activity does not pass through our servers at all.
+Your use of the Services is also governed by our [Privacy Policy](/privacy/), which explains what limited personal data we process (for example, a newsletter email address or a vendor application) and how. Where the Device and App operate without accounts and connect directly to your wallet and to public networks, much of your activity does not pass through our servers at all.
 
 ## 18. Disclaimer of warranties
 

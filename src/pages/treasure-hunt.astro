@@ -4,7 +4,8 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 <BaseLayout
   title="Treasure Hunt"
-  description="Explore live Lightning Piggy Piglets and NIP-GC geocaches on an interactive world map, pulled straight from Nostr relays."
+  metaTitle="Bitcoin Treasure Hunt Map: Find Piglets"
+  description="Find Piglets, hidden caches that can hold real sats, on a live map from Nostr. Use the Lightning Piggy app to find the tag, scan it and claim the treasure."
 >
   <!-- MapLibre GL JS (CDN, no npm dependency). Version pinned + SRI-checked. -->
   <link
@@ -126,10 +127,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           <span class="inline-flex h-7 w-7 items-center justify-center rounded-full text-white border-2 border-white shrink-0" style="background:#EC008C;">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/><path d="M16 11h.01"/></svg>
           </span>
-          <h2 class="text-base font-bold text-gray-900">Find a Piglet and claim the treasure!</h2>
+          <h1 class="text-base font-bold text-gray-900">Find a Piglet and claim the treasure!</h1>
         </div>
         <p class="mt-2.5 leading-relaxed">
-          Each <span class="font-semibold text-pink">Piglet</span> is a modern-day treasure chest — use the
+          Each <span class="font-semibold text-pink">Piglet</span> is a modern-day treasure chest: use the
           <span class="font-semibold">Lightning Piggy</span> app to navigate to one, find the hidden tag and scan it.
           Piglets marked <span class="inline-flex h-4 w-4 align-text-bottom items-center justify-center rounded-full bg-white shadow-sm"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="#FFC107" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></span> hold <span class="font-semibold">real sats</span> you can claim.
         </p>
@@ -165,7 +166,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
       <!-- Leaderboard link - a full-width button matching the app CTA's shape -->
       <a
-        href="/leaderboard"
+        href="/leaderboard/"
         class="w-full inline-flex items-center justify-center gap-2 rounded-full bg-white shadow-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-900 hover:bg-gray-50 transition-colors"
       >
         <span aria-hidden="true">🏆</span> View the leaderboard
@@ -279,7 +280,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       chip.style.cssText = `width:${d}px;height:${d}px;border-radius:9999px;background:${BRAND_PINK};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;color:#fff;font-family:Inter,system-ui,sans-serif;font-weight:700;font-size:${count >= 100 ? 13 : 14}px;`;
       chip.textContent = count >= 1000 ? `${Math.round(count / 100) / 10}k` : String(count);
       el.appendChild(chip);
-      el.setAttribute('aria-label', `${count} geocaches${hasPiglet ? ' including Piglets' : ''} — zoom in`);
+      el.setAttribute('aria-label', `${count} geocaches${hasPiglet ? ' including Piglets' : ''}: zoom in`);
       return el;
     }
 
@@ -675,10 +676,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         return {
           diagnosticsUrl: `${scheme}://gpu`,
           steps: [
-            `Open ${scheme}://gpu and look at the WebGL row — that tells you whether the browser can see your graphics card at all.`,
+            `Open ${scheme}://gpu and look at the WebGL row: that tells you whether the browser can see your graphics card at all.`,
             `In ${scheme}://flags, set "Override software rendering list" to Disabled. Forcing it on an unsupported driver stops WebGL falling back to software.`,
             `In ${settings}, check that graphics acceleration is switched on.`,
-            'Quit the browser completely — every window, not just this tab — then reopen it. Flag changes only apply to a fresh start.',
+            'Quit the browser completely (every window, not just this tab), then reopen it. Flag changes only apply to a fresh start.',
             'If your graphics driver was updated recently, restart your computer so the new driver is actually loaded.',
           ],
         };
@@ -740,7 +741,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
           // fall back to telling them what to type rather than failing silently.
           try {
             await navigator.clipboard.writeText(url);
-            copyBtn.textContent = 'Copied — paste it in the address bar';
+            copyBtn.textContent = 'Copied: paste it in the address bar';
           } catch {
             copyBtn.textContent = `Type ${url} in the address bar`;
           }

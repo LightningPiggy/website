@@ -8,9 +8,12 @@ const news = defineCollection({
       title: z.string(),
       slug: z.string(),
       description: z.string().optional(),
+      // The <title> for search results, when it should differ from the H1
+      seoTitle: z.string().optional(),
       pubDate: z.coerce.date(),
       updatedDate: z.coerce.date().optional(),
       heroImage: image().optional(),
+      heroImageAlt: z.string().optional(),
       tags: z.array(z.string()).optional(),
       category: z.enum(['freedom-farm-newsletter', 'in-the-news', 'software-update']).optional(),
       url: z.string().optional(),

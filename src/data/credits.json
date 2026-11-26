@@ -616,6 +616,15 @@
       "nostrUrl": "https://njump.me/npub1w2eget49s60cyeznumcmqczk0xkmhz24ajqgzfyfrugdfl4mz7ns7rpmgp",
       "xUrl": "https://x.com/btchelevent",
       "githubUrl": ""
+    },
+    {
+      "name": "Bitfest",
+      "description": "",
+      "url": "https://bitfest.uk",
+      "logo": "/images/profiles/bitfest-f5b5778b.jpg",
+      "nostrUrl": "https://njump.me/npub1r9zwdj8a3z5ue9yrzr094msgsm6fc0zmd8ukhkmegqwag8ths5aq7jq8lx",
+      "xUrl": "https://x.com/bitfestuk",
+      "githubUrl": ""
     }
   ],
   "inTheNews": [
